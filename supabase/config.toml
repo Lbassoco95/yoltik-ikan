@@ -1,0 +1,34 @@
+# Supabase config para Ikán
+# Proyecto remoto: cibpguwwggwzdhhpdomz.supabase.co
+# Vincular con: supabase link --project-ref cibpguwwggwzdhhpdomz
+
+project_id = "yoltik-regtech-hub"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[auth]
+enabled = true
+# En remoto, Site URL y redirect URLs se configuran en el dashboard.
+# Estos valores son para `supabase start` local opcional.
+site_url = "http://localhost:8080"
+additional_redirect_urls = [
+  "http://localhost:8080",
+  "https://yoltik-regtech-hub.vercel.app"
+]
+jwt_expiry = 3600
+enable_signup = false  # En Ikán solo el Admin invita usuarios.
+
+[auth.email]
+enable_signup = false
+enable_confirmations = true
+
+[auth.mfa]
+max_enrolled_factors = 1
