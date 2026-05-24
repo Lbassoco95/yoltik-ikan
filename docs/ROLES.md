@@ -1,0 +1,75 @@
+# Roles y permisos · Ikán
+
+Tres roles operativos. Un usuario puede acumular roles (típicamente OC + Admin).
+
+## Operador
+
+- Vende u opera. Captura clientes y operaciones. **Su flujo termina con el acuse.**
+- Ve solo lo que él capturó.
+- No ve alertas/hallazgos/avisos. No es notificado por el OC.
+
+## Oficial de Cumplimiento (OC)
+
+- Consume las bandejas del Motor PLD: operaciones identificadas, hallazgos por tipología,
+  avisos por firmar, clientes Alto pendientes DDR.
+- Marca Inusual/Preocupante. Firma avisos.
+- Aprueba (no edita) cambios técnicos propuestos por el Admin (metodología, tipologías,
+  catálogos, reglas).
+
+## Administrador
+
+- Configura el motor: gestiona usuarios y roles, edita metodología EBR, edita tipologías
+  por AV, edita catálogos y reglas.
+- Sus cambios pasan por **aprobación del OC** en `pending_approvals` antes de quedar
+  vigentes.
+- Si OC = Admin, auto-firma pero queda registrado en bitácora.
+
+## Matriz de permisos resumida
+
+| Acción                                              | Operador | OC  | Admin |
+| --------------------------------------------------- | -------- | --- | ----- |
+| Dar de alta cliente / capturar operación            | Sí       | Sí  | Sí    |
+| Ver lista completa de operaciones de la org         | Solo suyas | Sí | Sí  |
+| Ver y resolver hallazgos                            | No       | Sí  | Si=OC |
+| Marcar Inusual / Preocupante                        | No       | Sí  | Si=OC |
+| Generar y descargar Aviso 24h / mensual             | No       | Sí  | Si=OC |
+| Aprobar DDR de cliente Alto                         | No       | Sí  | Si=OC |
+| Crear / desactivar usuarios                         | No       | Si=Admin | Sí |
+| Editar metodología EBR                              | No       | Aprobar | Editar |
+| Editar tipologías por AV                            | No       | Aprobar | Editar |
+| Editar catálogos                                    | No       | Aprobar | Editar |
+| Editar reglas y umbrales                            | No       | Aprobar | Editar |
+| Ver bitácora completa de la organización            | Solo suyas | Sí | Sí |
+
+## Mapeo de páginas Lovable → roles
+
+| Ruta | Página | Roles con acceso | Justificación |
+|------|--------|------------------|---------------|
+| `/` | `DashboardPage` | operador, oc, admin | KPIs + kanban; contenido se filtra por rol activo en Sprint D-3 |
+| `/clientes` | `ClientsPage` | operador, oc, admin | Operador alta + ve los suyos (RLS); OC/Admin ven todos |
+| `/clientes/:id` | `ClientDetailPage` | operador, oc, admin | Misma lógica RLS |
+| `/operaciones` | `OperationsPage` | operador, oc, admin | Operador captura; OC/Admin consultan |
+| `/verificacion` | `VerificationPage` | operador, oc | KYC mock Moffin. Admin no opera KYC directamente |
+| `/alertas` | `AlertsPage` | oc, admin | Bandeja futura de hallazgos del Motor PLD. Operador NO ve |
+| `/reportes` | `ReportsPage` | oc, admin | Avisos 24h y mensual |
+| `/auditoria` | `AuditPage` | oc, admin | Bitácora completa |
+| `/listas` | `ListsPage` | admin | Catálogos GAFI/OFAC. OC aprueba via pending_approvals |
+| `/motor-reglas` | `RulesEnginePage` | admin | Configura tipologías + umbrales. OC aprueba via pending_approvals |
+| `/configuracion` | `ConfigPage` | admin | Usuarios, metodología EBR |
+
+## RLS — cómo se aplica
+
+- Todas las tablas core usan `current_org_id()` (lee de `user_profile.organization_id`)
+  + `has_rol('rol')` (lee de `user_roles`) para discriminar acceso.
+- El Operador solo ve filas con `capturado_por = auth.uid()` en `client`, `operation` y
+  vistas relacionadas.
+- El OC y el Admin ven toda la org.
+- Solo el Admin escribe en tablas de configuración (metodología, tipologías, catálogos).
+- Solo el OC actualiza estado de hallazgos y avisos.
+- Solo el OC resuelve `pending_approvals`.
+
+## Selector de rol activo
+
+Cuando un usuario tiene varios roles, el `AppHeader` muestra un selector "Operando como".
+La elección persiste en `localStorage`. La bitácora registra el rol activo en cada
+acción para que la auditoría pueda diferenciar.

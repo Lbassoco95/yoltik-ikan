@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm install --save-dev:*)",
+      "Bash(npm run dev)",
+      "Bash(npm run build)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run lint)",
+      "Bash(npm run format)",
+      "Bash(npm run bootstrap:users)",
+      "Bash(npm run supabase:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx supabase:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push origin claude/*)"
+    ],
+    "deny": [
+      "Bash(git push origin main:*)",
+      "Bash(git push:* --force:*)",
+      "Bash(rm -rf:*)",
+      "Bash(npx supabase db reset --linked:*)"
+    ]
+  }
+}
