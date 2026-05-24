@@ -73,6 +73,12 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
           muted: "hsl(var(--sidebar-muted))",
         },
+        ikan: {
+          navy: "hsl(var(--navy, 218 60% 12%))",
+          jade: "hsl(var(--jade, 165 80% 32%))",
+          mint: "hsl(160 60% 88%)",
+          ambar: "hsl(38 92% 50%)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
