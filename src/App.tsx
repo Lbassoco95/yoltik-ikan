@@ -4,6 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "@/components/AppLayout";
+import { AuthProvider } from "@/lib/auth-context";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { LoginPage } from "@/pages/auth/Login";
 import DashboardPage from "@/pages/DashboardPage";
 import ClientsPage from "@/pages/ClientsPage";
 import ClientDetailPage from "@/pages/ClientDetailPage";
@@ -21,28 +24,107 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/clientes" element={<ClientsPage />} />
-            <Route path="/clientes/:id" element={<ClientDetailPage />} />
-            <Route path="/operaciones" element={<OperationsPage />} />
-            <Route path="/alertas" element={<AlertsPage />} />
-            <Route path="/reportes" element={<ReportsPage />} />
-            <Route path="/listas" element={<ListsPage />} />
-            <Route path="/reglas" element={<RulesEnginePage />} />
-            <Route path="/verificacion" element={<VerificationPage />} />
-            <Route path="/auditoria" element={<AuditPage />} />
-            <Route path="/configuracion" element={<ConfigPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/" element={<DashboardPage />} />
+              <Route
+                path="/clientes"
+                element={
+                  <ProtectedRoute requireAnyRole={['operador', 'oc', 'admin']}>
+                    <ClientsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/clientes/:id"
+                element={
+                  <ProtectedRoute requireAnyRole={['operador', 'oc', 'admin']}>
+                    <ClientDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/operaciones"
+                element={
+                  <ProtectedRoute requireAnyRole={['operador', 'oc', 'admin']}>
+                    <OperationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/verificacion"
+                element={
+                  <ProtectedRoute requireAnyRole={['operador', 'oc']}>
+                    <VerificationPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/alertas"
+                element={
+                  <ProtectedRoute requireAnyRole={['oc', 'admin']}>
+                    <AlertsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reportes"
+                element={
+                  <ProtectedRoute requireAnyRole={['oc', 'admin']}>
+                    <ReportsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/auditoria"
+                element={
+                  <ProtectedRoute requireAnyRole={['oc', 'admin']}>
+                    <AuditPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/listas"
+                element={
+                  <ProtectedRoute requireRole="admin">
+                    <ListsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reglas"
+                element={
+                  <ProtectedRoute requireRole="admin">
+                    <RulesEnginePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/configuracion"
+                element={
+                  <ProtectedRoute requireRole="admin">
+                    <ConfigPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

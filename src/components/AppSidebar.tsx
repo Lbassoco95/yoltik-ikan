@@ -1,27 +1,9 @@
 import { NavLink, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard, Users, ArrowLeftRight, Bell, FileText,
-  Shield, SlidersHorizontal, ScanLine, ClipboardCheck, Settings,
-  ChevronLeft, ChevronRight, Heart
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { mockAlerts } from "@/data/mockData";
-
-const mainNav = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { label: "Clientes", icon: Users, path: "/clientes" },
-  { label: "Operaciones", icon: ArrowLeftRight, path: "/operaciones" },
-  { label: "Alertas", icon: Bell, path: "/alertas", badge: mockAlerts.filter(a => a.status === "Nueva").length },
-  { label: "Reportes", icon: FileText, path: "/reportes" },
-  { label: "Listas", icon: Shield, path: "/listas" },
-  { label: "Motor de Reglas", icon: SlidersHorizontal, path: "/reglas" },
-  { label: "ID No Presencial", icon: ScanLine, path: "/verificacion" },
-];
-
-const secondaryNav = [
-  { label: "Auditoría", icon: ClipboardCheck, path: "/auditoria" },
-  { label: "Configuración", icon: Settings, path: "/configuracion" },
-];
+import { useActiveRole } from "@/hooks/useActiveRole";
+import { navEntriesForRole } from "@/lib/role-routes";
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -30,6 +12,15 @@ interface AppSidebarProps {
 
 export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
   const location = useLocation();
+  const { activeRole } = useActiveRole();
+
+  // Si todavía no hay rol activo (cargando), no renderizamos nada en el nav.
+  const mainNav = activeRole ? navEntriesForRole(activeRole, 'main') : [];
+  const secondaryNav = activeRole ? navEntriesForRole(activeRole, 'secondary') : [];
+
+  // Counter de alertas nuevas. TODO[Sprint D-3]: reemplazar mockAlerts por
+  // query a hallazgo where estado='abierto'.
+  const alertasCount = mockAlerts.filter((a) => a.status === "Nueva").length;
 
   return (
     <aside
@@ -49,11 +40,12 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
       {/* Main Nav */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {mainNav.map((item) => {
-          const isActive = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
+          const isActive = location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(item.to));
+          const badge = item.badgeKey === 'alertas_nuevas' ? alertasCount : 0;
           return (
             <NavLink
-              key={item.path}
-              to={item.path}
+              key={item.to}
+              to={item.to}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative group",
                 isActive
@@ -66,12 +58,12 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               )}
               <item.icon className="w-5 h-5 shrink-0" />
               {!collapsed && <span>{item.label}</span>}
-              {item.badge && item.badge > 0 && (
+              {badge > 0 && (
                 <span className={cn(
                   "ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center",
                   collapsed ? "absolute -top-1 -right-1 w-4 h-4 text-[10px]" : "w-5 h-5"
                 )}>
-                  {item.badge}
+                  {badge}
                 </span>
               )}
             </NavLink>
@@ -80,34 +72,28 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
       </nav>
 
       {/* Secondary Nav */}
-      <div className="border-t border-sidebar-border py-4 px-3 space-y-1">
-        {secondaryNav.map((item) => {
-          const isActive = location.pathname.startsWith(item.path);
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-              )}
-            >
-              <item.icon className="w-5 h-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </NavLink>
-          );
-        })}
-
-        {/* User */}
-        {!collapsed && (
-          <div className="mt-4 px-3 py-3 rounded-lg bg-sidebar-accent/30">
-            <p className="text-sm font-semibold text-sidebar-accent-foreground">Lic. Patricia Vega</p>
-            <p className="text-xs text-sidebar-foreground/60">Oficial de Cumplimiento</p>
-          </div>
-        )}
-      </div>
+      {secondaryNav.length > 0 && (
+        <div className="border-t border-sidebar-border py-4 px-3 space-y-1">
+          {secondaryNav.map((item) => {
+            const isActive = location.pathname.startsWith(item.to);
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <item.icon className="w-5 h-5 shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
+              </NavLink>
+            );
+          })}
+        </div>
+      )}
 
       {/* Collapse Toggle */}
       <button

@@ -4,3 +4,24 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * UMA 2026 — referencia. Verificar al cierre de cada año con INEGI.
+ * Umbral de identificación PLD: 645 UMA = 72,930.15 MXN aprox (Art. 17 LFPIORPI).
+ */
+export const UMA_MXN = 113.07;
+
+export const UMBRAL_IDENTIFICACION_UMA = 645;
+export const UMBRAL_IDENTIFICACION_MXN = UMA_MXN * UMBRAL_IDENTIFICACION_UMA;
+
+export function umaToMxn(uma: number): number {
+  return uma * UMA_MXN;
+}
+
+export function formatMxn(value: number): string {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
