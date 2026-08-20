@@ -128,5 +128,39 @@ permite auditar después por qué disparó, con los valores del momento.
 
 ## Estado en Sprint D-1
 
-`supabase/functions/motor-pld/index.ts` queda como **stub** que solo registra el `motor_run`
-sin generar hallazgos. Los evaluadores reales de `regla_dsl` entran en Sprint D-3.
+`supabase/functions/motor-pld/index.ts` quedó como **stub** que solo registra el `motor_run`
+sin generar hallazgos. Los evaluadores reales de `regla_dsl` estaban planeados para Sprint D-3.
+
+## Estado RCG-0 (evaluadores implementados)
+
+RCG0.B0 cerró esa deuda. La lógica de evaluación vive ahora en
+`supabase/functions/motor-pld/evaluadores.ts` (módulo **puro**, sin dependencias de Deno ni
+Supabase, para poder testearse con vitest — ver `src/test/motor-evaluadores.test.ts`). La Edge
+Function `index.ts` carga los datos, corre el motor, inserta hallazgos de forma idempotente,
+marca `operation.requiere_aviso` para severidades alta/crítica y registra el `motor_run` con el
+desglose por tipología.
+
+Tipos de `regla_dsl` soportados: los 6 documentados arriba más las variantes realmente
+sembradas — `lookup` por lista de `valores` (XVI-08) y `agregado` con `count_ip_anonima`
+(XVI-06). Un tipo desconocido no dispara y se reporta en `motor_run.metadata.tipos_no_soportados`.
+
+El valor de la UMA es la única constante del motor y refleja `src/lib/utils.ts` (`UMA_MXN`).
+Ningún umbral se inventa: salen de la tipología (`regla_dsl`) o de la operación.
+
+### Forma esperada de `operation.contraparte` (señales)
+
+Las señales que no son columnas propias viven en el jsonb `operation.contraparte`. Varias son
+**MOCK** hasta que haya integración real (analítica on-chain, listas en tiempo real) y el front
+las muestra con banner ámbar "DEMO":
+
+| Campo en `contraparte`        | Tipología | Origen           |
+|-------------------------------|-----------|------------------|
+| `pais_iso2`                   | XVI-04    | captura / KYC    |
+| `exposicion_pct`, `categorias`| XVI-03    | MOCK on-chain    |
+| `razon_retiro_saldo`          | XVI-02    | derivado / MOCK  |
+| `device_id`, `ip`, `biometric_hash` | XVI-05 | sesión / KYC   |
+| `ip_anonima` (bool)           | XVI-06    | sesión / MOCK    |
+
+El perfil transaccional mensual declarado (XVI-07 `desviacion`) se lee de
+`client.datos_kyc.perfil_transaccional_mensual_uma`. Sin perfil declarado, XVI-07 no dispara
+(fail-closed).

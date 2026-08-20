@@ -18,6 +18,7 @@
 --   4. Catálogos auxiliares (países GAFI/OFAC, entidades MX, señales on-chain)
 --   5. Plantilla matriz de cliente XVI
 --   6. Cliente Juan Pérez Ejemplo (demo)
+--   7. Operaciones DEMO de Juan Pérez (para que el Motor PLD genere hallazgos)
 -- =====================================================================
 
 \i 01_organization_fiatcoin.sql
@@ -26,3 +27,4 @@
 \i 04_catalogos_paises_entidades.sql
 \i 05_plantilla_matriz_cliente_xvi.sql
 \i 06_juan_perez_demo.sql
+\i 07_operaciones_demo.sql
