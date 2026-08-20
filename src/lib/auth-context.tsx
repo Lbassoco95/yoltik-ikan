@@ -40,20 +40,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRoles([]);
         return;
       }
-      // TODO[Sprint D1.B2]: reemplazar este placeholder por query real
-      // contra user_profile + user_roles. Por ahora se infiere el rol del
-      // prefijo del email para permitir testear el routing antes de tener
-      // la BD vinculada.
+      const user = session.user;
+
+      // Fallback: si no hay BD vinculada o el perfil aún no existe, se infiere
+      // el rol del prefijo del email para poder testear el routing.
       const inferredRol: RolUsuario =
-        session.user.email?.startsWith('admin@') ? 'admin' :
-        session.user.email?.startsWith('oc@') ? 'oc' : 'operador';
+        user.email?.startsWith('admin@') ? 'admin' :
+        user.email?.startsWith('oc@') ? 'oc' : 'operador';
+
+      // Query real contra user_profile + user_roles (RCG0.B0b).
+      try {
+        const [{ data: prof }, { data: rolesData }] = await Promise.all([
+          supabase
+            .from('user_profile')
+            .select('organization_id, nombre, email, activo')
+            .eq('id', user.id)
+            .maybeSingle(),
+          supabase.from('user_roles').select('rol').eq('user_id', user.id),
+        ]);
+
+        if (prof) {
+          const p = prof as { organization_id: string; nombre: string; email: string; activo: boolean };
+          const dbRoles = ((rolesData ?? []) as { rol: RolUsuario }[]).map((r) => r.rol);
+          const rolesFinal = dbRoles.length ? dbRoles : [inferredRol];
+          setProfile({
+            id: user.id,
+            organization_id: p.organization_id,
+            organization_name: 'FIATCOIN RAMPLE',
+            email: p.email ?? user.email ?? '',
+            nombre: p.nombre ?? user.email?.split('@')[0] ?? 'Usuario',
+            roles: rolesFinal,
+            activo: p.activo,
+            mfa_habilitado: true,
+          });
+          setRoles(rolesFinal);
+          return;
+        }
+      } catch {
+        // Sin BD disponible: se usa el fallback de abajo.
+      }
 
       setProfile({
-        id: session.user.id,
+        id: user.id,
         organization_id: 'pending',
         organization_name: 'FIATCOIN RAMPLE',
-        email: session.user.email ?? '',
-        nombre: session.user.user_metadata?.nombre ?? session.user.email?.split('@')[0] ?? 'Usuario',
+        email: user.email ?? '',
+        nombre: user.user_metadata?.nombre ?? user.email?.split('@')[0] ?? 'Usuario',
         roles: [inferredRol],
         activo: true,
         mfa_habilitado: true,
