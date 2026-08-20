@@ -19,7 +19,11 @@ export function umaToMxn(uma: number): number {
 }
 
 export function formatMxn(value: number): string {
-  return formatMxnValue(value) + " MXN";
+  return formatMxnValue(value);
+}
+
+export function formatMxnWithUnit(value: number): string {
+  return formatMxn(value) + " MXN";
 }
 
 export function formatMxnValue(value: number): string {

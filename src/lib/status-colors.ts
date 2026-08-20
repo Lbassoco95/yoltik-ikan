@@ -1,6 +1,6 @@
 import type { Client, Operation, Report } from "@/data/_legacy_mock";
 
-export const clientRiskBadgeTintColors: Record<Client["riskLevel"], string> = {
+export const clientRiskTintColors: Record<Client["riskLevel"], string> = {
   Bajo: "bg-success/10 text-success",
   Medio: "bg-warning/10 text-warning",
   Alto: "bg-destructive/10 text-destructive",
