@@ -185,7 +185,7 @@ const RegistroPage = ({
       ? ["actividad_vulnerable", "estado_operacion"]
       : [];
 
-    const isValid = await form.trigger(fieldsToValidate as any);
+    const isValid = await form.trigger(fieldsToValidate as (keyof ProspectFormValues)[]);
     
     if (isValid) {
       setCurrentStep((prev) => Math.min(prev + 1, 2));
