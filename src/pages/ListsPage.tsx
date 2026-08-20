@@ -1,7 +1,8 @@
-import { Shield, Search, RefreshCw } from "lucide-react";
+import { Shield, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { SearchInput } from "@/components/shared/SearchInput";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 
 const lists = [
   { name: "OFAC — SDN List", source: "EE.UU. — Dept. del Tesoro", lastUpdate: "2026-03-28", entries: "12,456", status: "Actualizada" },
@@ -15,16 +16,10 @@ const lists = [
 export default function ListsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Listas Restrictivas</h1>
-        <Button variant="outline" className="gap-2"><RefreshCw className="w-4 h-4" /> Actualizar todas</Button>
-      </div>
+      <PageHeader title="Listas Restrictivas" action={<Button variant="outline" className="gap-2"><RefreshCw className="w-4 h-4" /> Actualizar todas</Button>} />
 
       <div className="glass-card p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar persona o entidad en listas…" className="pl-10" />
-        </div>
+        <SearchInput placeholder="Buscar persona o entidad en listas…" />
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -41,7 +36,7 @@ export default function ListsPage() {
             </div>
             <div className="mt-4 flex items-center justify-between text-xs">
               <span className="text-muted-foreground">{list.entries} registros</span>
-              <span className={cn("status-badge bg-success/10 text-success")}>{list.status}</span>
+              <StatusBadge className="bg-success/10 text-success">{list.status}</StatusBadge>
             </div>
             <p className="text-[10px] text-muted-foreground mt-2">Última actualización: {list.lastUpdate}</p>
           </div>
