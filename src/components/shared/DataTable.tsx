@@ -6,11 +6,7 @@ interface DataTableProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export function DataTable({ className, children, ...props }: DataTableProps) {
-  return (
-    <div className={cn("glass-card overflow-hidden", className)} {...props}>
-      {children}
-    </div>
-  );
+  return <div className={cn("glass-card overflow-hidden", className)} {...props}>{children}</div>;
 }
 
 interface DataTableHeaderProps {
@@ -20,12 +16,7 @@ interface DataTableHeaderProps {
   rowClassName?: string;
 }
 
-export function DataTableHeader({
-  headers,
-  cellPadding = "px-4",
-  trackingWider = false,
-  rowClassName,
-}: DataTableHeaderProps) {
+export function DataTableHeader({ headers, cellPadding = "px-4", trackingWider = false, rowClassName }: DataTableHeaderProps) {
   const cellClassName = trackingWider
     ? cellPadding === "px-3"
       ? "text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3"
@@ -38,9 +29,7 @@ export function DataTableHeader({
     <thead>
       <tr className={cn("border-b border-border bg-muted/30", rowClassName)}>
         {headers.map((header, index) => (
-          <th key={index} className={cellClassName}>
-            {header}
-          </th>
+          <th key={index} className={cellClassName}>{header}</th>
         ))}
       </tr>
     </thead>
@@ -52,12 +41,7 @@ interface DataTableRowProps extends HTMLAttributes<HTMLTableRowElement> {
   hover?: boolean;
 }
 
-export function DataTableRow({
-  className,
-  children,
-  hover = true,
-  ...props
-}: DataTableRowProps) {
+export function DataTableRow({ className, children, hover = true, ...props }: DataTableRowProps) {
   return (
     <tr
       className={cn(

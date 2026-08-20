@@ -10,15 +10,13 @@ interface AppHeaderProps {
 }
 
 function getInitials(nombre: string | undefined): string {
-  if (!nombre) return "—";
+  if (!nombre) return '—';
   const parts = nombre.trim().split(/\s+/);
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
   return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
 }
 
-export function AppHeader({
-  onToggleSidebar: _onToggleSidebar,
-}: AppHeaderProps) {
+export function AppHeader({ onToggleSidebar: _onToggleSidebar }: AppHeaderProps) {
   const { profile, roles, signOut } = useAuth();
   const { activeRole, setActiveRole } = useActiveRole();
 
@@ -33,15 +31,11 @@ export function AppHeader({
 
       <div className="flex items-center gap-4">
         <span className="text-sm font-medium text-muted-foreground">
-          {profile?.organization_name ?? "—"}
+          {profile?.organization_name ?? '—'}
         </span>
 
         {activeRole && (
-          <RoleSwitcher
-            roles={roles}
-            activeRole={activeRole}
-            onChange={setActiveRole}
-          />
+          <RoleSwitcher roles={roles} activeRole={activeRole} onChange={setActiveRole} />
         )}
 
         <Button variant="ghost" size="icon" className="relative">
@@ -58,10 +52,10 @@ export function AppHeader({
           </div>
           <div className="hidden md:flex flex-col">
             <span className="text-sm font-semibold text-foreground leading-tight">
-              {profile?.nombre ?? "—"}
+              {profile?.nombre ?? '—'}
             </span>
             <span className="text-xs text-muted-foreground leading-tight">
-              {profile?.email ?? ""}
+              {profile?.email ?? ''}
             </span>
           </div>
         </div>

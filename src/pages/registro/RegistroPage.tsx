@@ -12,65 +12,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 const ESTADOS_MX = [
-  "Aguascalientes",
-  "Baja California",
-  "Baja California Sur",
-  "Campeche",
-  "Chiapas",
-  "Chihuahua",
-  "Coahuila",
-  "Colima",
-  "Durango",
-  "Guanajuato",
-  "Guerrero",
-  "Hidalgo",
-  "Jalisco",
-  "Estado de México",
-  "Michoacán",
-  "Morelos",
-  "Nayarit",
-  "Nuevo León",
-  "Oaxaca",
-  "Puebla",
-  "Querétaro",
-  "Quintana Roo",
-  "San Luis Potosí",
-  "Sinaloa",
-  "Sonora",
-  "Tabasco",
-  "Tamaulipas",
-  "Tlaxcala",
-  "Veracruz",
-  "Yucatán",
-  "Zacatecas",
-  "Ciudad de México",
+  "Aguascalientes", "Baja California", "Baja California Sur", "Campeche", 
+  "Chiapas", "Chihuahua", "Coahuila", "Colima", "Durango", "Guanajuato",
+  "Guerrero", "Hidalgo", "Jalisco", "Estado de México", "Michoacán",
+  "Morelos", "Nayarit", "Nuevo León", "Oaxaca", "Puebla", "Querétaro",
+  "Quintana Roo", "San Luis Potosí", "Sinaloa", "Sonora", "Tabasco",
+  "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas", "Ciudad de México"
 ];
 
 const REGIMENES_FISCALES = [
@@ -79,107 +33,58 @@ const REGIMENES_FISCALES = [
   { value: "605", label: "605 - Sueldos y Salarios e Ingresos Asimilados" },
   { value: "606", label: "606 - Arrendamiento" },
   { value: "608", label: "608 - Demás ingresos" },
-  {
-    value: "612",
-    label: "612 - Personas Físicas con Actividades Empresariales",
-  },
+  { value: "612", label: "612 - Personas Físicas con Actividades Empresariales" },
   { value: "621", label: "621 - Incorporación Fiscal" },
-  {
-    value: "622",
-    label: "622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras",
-  },
-  { value: "626", label: "626 - Régimen Simplificado de Confianza" },
+  { value: "622", label: "622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras" },
+  { value: "626", label: "626 - Régimen Simplificado de Confianza" }
 ];
 
 const ACTIVIDADES_VULNERABLES = [
-  {
-    value: "IV",
-    label: "IV",
-    descripcion:
-      "Mutuo, préstamo, crédito con o sin garantía (SOFOMs, fintech de crédito)",
-  },
+  { value: "IV", label: "IV", descripcion: "Mutuo, préstamo, crédito con o sin garantía (SOFOMs, fintech de crédito)" },
   { value: "V", label: "V", descripcion: "Inmuebles (compraventa, corretaje)" },
-  {
-    value: "V_BIS",
-    label: "V Bis",
-    descripcion: "Desarrollo inmobiliario (nuevo 2026)",
-  },
-  {
-    value: "VII",
-    label: "VII",
-    descripcion: "Metales preciosos, joyas, piedras",
-  },
-  {
-    value: "VIII",
-    label: "VIII",
-    descripcion: "Vehículos aéreos, marítimos, terrestres",
-  },
+  { value: "V_BIS", label: "V Bis", descripcion: "Desarrollo inmobiliario (nuevo 2026)" },
+  { value: "VII", label: "VII", descripcion: "Metales preciosos, joyas, piedras" },
+  { value: "VIII", label: "VIII", descripcion: "Vehículos aéreos, marítimos, terrestres" },
   { value: "IX", label: "IX", descripcion: "Blindaje" },
   { value: "X", label: "X", descripcion: "Traslado de valores" },
-  {
-    value: "XI",
-    label: "XI",
-    descripcion: "Servicios profesionales (despachos)",
-  },
-  {
-    value: "XII",
-    label: "XII",
-    descripcion: "Fe pública (notarios, corredores, facilitadores MASC)",
-  },
+  { value: "XI", label: "XI", descripcion: "Servicios profesionales (despachos)" },
+  { value: "XII", label: "XII", descripcion: "Fe pública (notarios, corredores, facilitadores MASC)" },
   { value: "XIII", label: "XIII", descripcion: "Donativos" },
   { value: "XIV", label: "XIV", descripcion: "Comercio exterior" },
   { value: "XV", label: "XV", descripcion: "Arrendamiento" },
-  {
-    value: "XVI",
-    label: "XVI",
-    descripcion: "Activos virtuales (exchanges, custodios)",
-  },
+  { value: "XVI", label: "XVI", descripcion: "Activos virtuales (exchanges, custodios)" }
 ];
 
 const prospectSchema = z.object({
   razon_social: z.string().min(1, "Razón social requerida"),
-  rfc: z
-    .string()
-    .min(12, "RFC debe tener 12 caracteres")
-    .max(13, "RFC debe tener 13 caracteres"),
+  rfc: z.string().min(12, "RFC debe tener 12 caracteres").max(13, "RFC debe tener 13 caracteres"),
   regimen_fiscal: z.string().optional(),
   ciudad: z.string().optional(),
   estado_republica: z.string().optional(),
-  actividad_vulnerable: z
-    .array(z.string())
-    .min(1, "Selecciona al menos una actividad vulnerable"),
+  actividad_vulnerable: z.array(z.string()).min(1, "Selecciona al menos una actividad vulnerable"),
   estado_operacion: z.string().optional(),
   volumen_ops_mes: z.coerce.number().int().min(0).optional().nullable(),
   clientes_activos: z.coerce.number().int().min(0).optional().nullable(),
   tiene_oc_designado: z.enum(["si", "no", "no_se"]).optional(),
   registrado_sppld: z.enum(["si", "no", "no_se"]).optional(),
   tiene_manual_pld: z.enum(["si", "no", "no_se"]).optional(),
-  extra_fedatario: z
-    .object({
-      matricula: z.string().optional(),
-      entidad_federativa: z.string().optional(),
-      tipo_fedatario: z.enum(["notario", "corredor", "facilitador"]).optional(),
-    })
-    .optional(),
+  extra_fedatario: z.object({
+    matricula: z.string().optional(),
+    entidad_federativa: z.string().optional(),
+    tipo_fedatario: z.enum(["notario", "corredor", "facilitador"]).optional(),
+  }).optional(),
   contacto_nombre: z.string().min(1, "Nombre de contacto requerido"),
   contacto_cargo: z.string().optional(),
   contacto_email: z.string().email("Email inválido"),
   contacto_telefono: z.string().optional(),
   notas: z.string().max(500).optional(),
-  consentimiento_privacidad: z.literal(true, {
-    errorMap: () => ({ message: "Debe aceptar el aviso de privacidad" }),
-  }),
-  consentimiento_contacto: z.literal(true, {
-    errorMap: () => ({ message: "Debe aceptar el contacto" }),
-  }),
+  consentimiento_privacidad: z.literal(true, { errorMap: () => ({ message: "Debe aceptar el aviso de privacidad" }) }),
+  consentimiento_contacto: z.literal(true, { errorMap: () => ({ message: "Debe aceptar el contacto" }) }),
 });
 
 type ProspectFormValues = z.infer<typeof prospectSchema>;
 
-type RadioFieldName =
-  | "tiene_oc_designado"
-  | "registrado_sppld"
-  | "tiene_manual_pld";
+type RadioFieldName = "tiene_oc_designado" | "registrado_sppld" | "tiene_manual_pld";
 
 interface RadioBooleanFieldProps {
   control: Control<ProspectFormValues>;
@@ -236,12 +141,12 @@ interface RegistroPageProps {
   subtitulo?: string;
 }
 
-const RegistroPage = ({
+const RegistroPage = ({ 
   defaultOrigen = "form_general",
   defaultActividad = [],
   showFedatario = false,
   titulo = "Empieza tu diagnóstico Ikán",
-  subtitulo = "30 minutos con nuestro equipo de cumplimiento para entender tu operación y configurar la plataforma a tu medida. Sin tarjeta, sin compromiso.",
+  subtitulo = "30 minutos con nuestro equipo de cumplimiento para entender tu operación y configurar la plataforma a tu medida. Sin tarjeta, sin compromiso."
 }: RegistroPageProps) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
@@ -278,18 +183,15 @@ const RegistroPage = ({
   });
 
   const actividadVulnerable = form.watch("actividad_vulnerable");
-  const showFedatarioForm =
-    showFedatario || actividadVulnerable.includes("XII");
+  const showFedatarioForm = showFedatario || actividadVulnerable.includes("XII");
 
   const onSubmit = async (values: ProspectFormValues) => {
     setIsSubmitting(true);
-
+    
     try {
-      const supabaseUrl =
-        import.meta.env.VITE_SUPABASE_URL ||
-        "https://cibpguwwggwzdhhpdomz.supabase.co";
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://cibpguwwggwzdhhpdomz.supabase.co";
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-
+      
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
       const edgeFunctionUrl = `${supabaseUrl}/functions/v1/on-prospect-intake`;
@@ -305,7 +207,7 @@ const RegistroPage = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${supabaseAnonKey}`,
+          "Authorization": `Bearer ${supabaseAnonKey}`,
         },
         body: JSON.stringify(payload),
       });
@@ -320,32 +222,21 @@ const RegistroPage = ({
       navigate("/registro/gracias");
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Error al procesar solicitud",
-      );
+      toast.error(error instanceof Error ? error.message : "Error al procesar solicitud");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const nextStep = async () => {
-    const fieldsToValidate =
-      currentStep === 0
-        ? [
-            "razon_social",
-            "rfc",
-            "regimen_fiscal",
-            "ciudad",
-            "estado_republica",
-          ]
-        : currentStep === 1
-          ? ["actividad_vulnerable", "estado_operacion"]
-          : [];
+    const fieldsToValidate = currentStep === 0 
+      ? ["razon_social", "rfc", "regimen_fiscal", "ciudad", "estado_republica"]
+      : currentStep === 1
+      ? ["actividad_vulnerable", "estado_operacion"]
+      : [];
 
-    const isValid = await form.trigger(
-      fieldsToValidate as (keyof ProspectFormValues)[],
-    );
-
+    const isValid = await form.trigger(fieldsToValidate as (keyof ProspectFormValues)[]);
+    
     if (isValid) {
       setCurrentStep((prev) => Math.min(prev + 1, 2));
     }
@@ -359,15 +250,15 @@ const RegistroPage = ({
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => (window.location.href = "https://www.yoltik.mx")}
+          <Button 
+            variant="ghost" 
+            onClick={() => window.location.href = "https://www.yoltik.mx"}
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver a yoltik.mx
           </Button>
-
+          
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-slate-900 mb-2">{titulo}</h1>
             <p className="text-lg text-slate-600">{subtitulo}</p>
@@ -409,10 +300,8 @@ const RegistroPage = ({
               <CardContent className="pt-6">
                 {currentStep === 0 && (
                   <div className="space-y-4">
-                    <h2 className="text-2xl font-semibold mb-4">
-                      Sujeto Obligado
-                    </h2>
-
+                    <h2 className="text-2xl font-semibold mb-4">Sujeto Obligado</h2>
+                    
                     <FormField
                       control={form.control}
                       name="razon_social"
@@ -420,10 +309,7 @@ const RegistroPage = ({
                         <FormItem>
                           <FormLabel>Razón Social *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Ej: Empresa S.A. de C.V."
-                              {...field}
-                            />
+                            <Input placeholder="Ej: Empresa S.A. de C.V." {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -437,18 +323,14 @@ const RegistroPage = ({
                         <FormItem>
                           <FormLabel>RFC *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Ej: ABCD123456XYZ"
+                            <Input 
+                              placeholder="Ej: ABCD123456XYZ" 
                               maxLength={13}
                               {...field}
-                              onChange={(e) =>
-                                field.onChange(e.target.value.toUpperCase())
-                              }
+                              onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                             />
                           </FormControl>
-                          <FormDescription>
-                            12 o 13 caracteres (personas morales o físicas)
-                          </FormDescription>
+                          <FormDescription>12 o 13 caracteres (personas morales o físicas)</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -460,10 +342,7 @@ const RegistroPage = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Régimen Fiscal</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecciona tu régimen fiscal" />
@@ -471,10 +350,7 @@ const RegistroPage = ({
                             </FormControl>
                             <SelectContent>
                               {REGIMENES_FISCALES.map((regimen) => (
-                                <SelectItem
-                                  key={regimen.value}
-                                  value={regimen.value}
-                                >
+                                <SelectItem key={regimen.value} value={regimen.value}>
                                   {regimen.label}
                                 </SelectItem>
                               ))}
@@ -506,26 +382,23 @@ const RegistroPage = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Estado</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecciona estado" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {ESTADOS_MX.map((estado) => (
-                                  <SelectItem key={estado} value={estado}>
-                                    {estado}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecciona estado" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {ESTADOS_MX.map((estado) => (
+                                <SelectItem key={estado} value={estado}>
+                                  {estado}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                       />
                     </div>
                   </div>
@@ -533,23 +406,16 @@ const RegistroPage = ({
 
                 {currentStep === 1 && (
                   <div className="space-y-4">
-                    <h2 className="text-2xl font-semibold mb-4">
-                      Actividad Vulnerable
-                    </h2>
-
+                    <h2 className="text-2xl font-semibold mb-4">Actividad Vulnerable</h2>
+                    
                     <FormField
                       control={form.control}
                       name="actividad_vulnerable"
                       render={() => (
                         <FormItem>
                           <div className="mb-4">
-                            <FormLabel className="text-base">
-                              Selecciona las actividades que aplican a tu
-                              operación *
-                            </FormLabel>
-                            <FormDescription>
-                              Puedes seleccionar múltiples opciones
-                            </FormDescription>
+                            <FormLabel className="text-base">Selecciona las actividades que aplican a tu operación *</FormLabel>
+                            <FormDescription>Puedes seleccionar múltiples opciones</FormDescription>
                           </div>
                           <div className="space-y-3">
                             {ACTIVIDADES_VULNERABLES.map((actividad) => (
@@ -565,31 +431,21 @@ const RegistroPage = ({
                                     >
                                       <FormControl>
                                         <Checkbox
-                                          checked={field.value?.includes(
-                                            actividad.value,
-                                          )}
+                                          checked={field.value?.includes(actividad.value)}
                                           onCheckedChange={(checked) => {
                                             return checked
-                                              ? field.onChange([
-                                                  ...field.value,
-                                                  actividad.value,
-                                                ])
+                                              ? field.onChange([...field.value, actividad.value])
                                               : field.onChange(
                                                   field.value?.filter(
-                                                    (value) =>
-                                                      value !== actividad.value,
-                                                  ),
+                                                    (value) => value !== actividad.value
+                                                  )
                                                 );
                                           }}
-                                          disabled={defaultActividad.includes(
-                                            actividad.value,
-                                          )}
+                                          disabled={defaultActividad.includes(actividad.value)}
                                         />
                                       </FormControl>
                                       <div className="space-y-1 leading-none">
-                                        <FormLabel className="font-medium">
-                                          {actividad.label}
-                                        </FormLabel>
+                                        <FormLabel className="font-medium">{actividad.label}</FormLabel>
                                         <FormDescription className="text-xs">
                                           {actividad.descripcion}
                                         </FormDescription>
@@ -611,10 +467,7 @@ const RegistroPage = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Estado de Operación</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecciona estado de operación" />
@@ -622,9 +475,7 @@ const RegistroPage = ({
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="operando">Operando</SelectItem>
-                              <SelectItem value="por_iniciar">
-                                Por iniciar
-                              </SelectItem>
+                              <SelectItem value="por_iniciar">Por iniciar</SelectItem>
                               <SelectItem value="en_pausa">En pausa</SelectItem>
                             </SelectContent>
                           </Select>
@@ -635,9 +486,7 @@ const RegistroPage = ({
 
                     {showFedatarioForm && (
                       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <h3 className="font-semibold text-blue-900 mb-4">
-                          Información de Fedatario
-                        </h3>
+                        <h3 className="font-semibold text-blue-900 mb-4">Información de Fedatario</h3>
                         <div className="space-y-4">
                           <FormField
                             control={form.control}
@@ -658,13 +507,8 @@ const RegistroPage = ({
                             name="extra_fedatario.entidad_federativa"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>
-                                  Entidad Federativa donde ejerce
-                                </FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
+                                <FormLabel>Entidad Federativa donde ejerce</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Selecciona entidad" />
@@ -689,25 +533,16 @@ const RegistroPage = ({
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Tipo de Fedatario</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Selecciona tipo" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="notario">
-                                      Notario
-                                    </SelectItem>
-                                    <SelectItem value="corredor">
-                                      Corredor
-                                    </SelectItem>
-                                    <SelectItem value="facilitador">
-                                      Facilitador MASC
-                                    </SelectItem>
+                                    <SelectItem value="notario">Notario</SelectItem>
+                                    <SelectItem value="corredor">Corredor</SelectItem>
+                                    <SelectItem value="facilitador">Facilitador MASC</SelectItem>
                                   </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -722,31 +557,21 @@ const RegistroPage = ({
 
                 {currentStep === 2 && (
                   <div className="space-y-4">
-                    <h2 className="text-2xl font-semibold mb-4">
-                      Operación y Contacto
-                    </h2>
-
+                    <h2 className="text-2xl font-semibold mb-4">Operación y Contacto</h2>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="volumen_ops_mes"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>
-                              Volumen aproximado de operaciones/mes
-                            </FormLabel>
+                            <FormLabel>Volumen aproximado de operaciones/mes</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="Ej: 100"
+                              <Input 
+                                type="number" 
+                                placeholder="Ej: 100" 
                                 {...field}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    e.target.value
-                                      ? parseInt(e.target.value)
-                                      : null,
-                                  )
-                                }
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -761,17 +586,11 @@ const RegistroPage = ({
                           <FormItem>
                             <FormLabel>Clientes Activos</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="Ej: 50"
+                              <Input 
+                                type="number" 
+                                placeholder="Ej: 50" 
                                 {...field}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    e.target.value
-                                      ? parseInt(e.target.value)
-                                      : null,
-                                  )
-                                }
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
                               />
                             </FormControl>
                             <FormMessage />
@@ -781,30 +600,16 @@ const RegistroPage = ({
                     </div>
 
                     <div className="space-y-4">
-                      <RadioBooleanField
-                        control={form.control}
-                        name="tiene_oc_designado"
-                        label="¿Tiene OC designado?"
-                      />
+                      <RadioBooleanField control={form.control} name="tiene_oc_designado" label="¿Tiene OC designado?" />
 
-                      <RadioBooleanField
-                        control={form.control}
-                        name="registrado_sppld"
-                        label="¿Registrado en SPPLD?"
-                      />
+                      <RadioBooleanField control={form.control} name="registrado_sppld" label="¿Registrado en SPPLD?" />
 
-                      <RadioBooleanField
-                        control={form.control}
-                        name="tiene_manual_pld"
-                        label="¿Tiene manual PLD vigente?"
-                      />
+                      <RadioBooleanField control={form.control} name="tiene_manual_pld" label="¿Tiene manual PLD vigente?" />
                     </div>
 
                     <div className="border-t pt-4 mt-4">
-                      <h3 className="font-semibold mb-4">
-                        Información de Contacto
-                      </h3>
-
+                      <h3 className="font-semibold mb-4">Información de Contacto</h3>
+                      
                       <FormField
                         control={form.control}
                         name="contacto_nombre"
@@ -812,10 +617,7 @@ const RegistroPage = ({
                           <FormItem>
                             <FormLabel>Nombre Completo *</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="Ej: Juan Pérez López"
-                                {...field}
-                              />
+                              <Input placeholder="Ej: Juan Pérez López" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -829,10 +631,7 @@ const RegistroPage = ({
                           <FormItem>
                             <FormLabel>Cargo</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="Ej: Director General"
-                                {...field}
-                              />
+                              <Input placeholder="Ej: Director General" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -847,11 +646,7 @@ const RegistroPage = ({
                             <FormItem>
                               <FormLabel>Email *</FormLabel>
                               <FormControl>
-                                <Input
-                                  type="email"
-                                  placeholder="ejemplo@empresa.com"
-                                  {...field}
-                                />
+                                <Input type="email" placeholder="ejemplo@empresa.com" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -865,10 +660,7 @@ const RegistroPage = ({
                             <FormItem>
                               <FormLabel>Teléfono</FormLabel>
                               <FormControl>
-                                <Input
-                                  placeholder="Ej: +52 55 1234 5678"
-                                  {...field}
-                                />
+                                <Input placeholder="Ej: +52 55 1234 5678" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -883,16 +675,14 @@ const RegistroPage = ({
                           <FormItem>
                             <FormLabel>Notas / Preguntas</FormLabel>
                             <FormControl>
-                              <Textarea
-                                placeholder="Alguna pregunta o comentario adicional..."
+                              <Textarea 
+                                placeholder="Alguna pregunta o comentario adicional..." 
                                 className="resize-none"
                                 maxLength={500}
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription>
-                              Máximo 500 caracteres
-                            </FormDescription>
+                            <FormDescription>Máximo 500 caracteres</FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -914,15 +704,14 @@ const RegistroPage = ({
                             <div className="space-y-1 leading-none">
                               <FormLabel>
                                 He leído y acepto el{" "}
-                                <a
-                                  href="https://www.yoltik.mx/aviso-de-privacidad"
-                                  target="_blank"
+                                <a 
+                                  href="https://www.yoltik.mx/aviso-de-privacidad" 
+                                  target="_blank" 
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:underline"
                                 >
                                   aviso de privacidad
-                                </a>{" "}
-                                *
+                                </a> *
                               </FormLabel>
                               <FormMessage />
                             </div>
@@ -943,8 +732,7 @@ const RegistroPage = ({
                             </FormControl>
                             <div className="space-y-1 leading-none">
                               <FormLabel>
-                                Acepto que Kawiil me contacte para agendar
-                                sesión de diagnóstico *
+                                Acepto que Kawiil me contacte para agendar sesión de diagnóstico *
                               </FormLabel>
                               <FormMessage />
                             </div>
@@ -985,21 +773,11 @@ const RegistroPage = ({
         <div className="mt-8 text-center text-sm text-slate-500">
           <p>
             Al continuar, aceptas nuestros{" "}
-            <a
-              href="https://www.yoltik.mx/terminos-y-condiciones"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
+            <a href="https://www.yoltik.mx/terminos-y-condiciones" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
               términos y condiciones
             </a>{" "}
             y{" "}
-            <a
-              href="https://www.yoltik.mx/aviso-de-privacidad"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
+            <a href="https://www.yoltik.mx/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
               política de privacidad
             </a>
           </p>

@@ -19,22 +19,9 @@ interface BannerProps {
   layout?: "row" | "block";
 }
 
-export function Banner({
-  variant,
-  icon,
-  children,
-  className,
-  layout = "row",
-}: BannerProps) {
+export function Banner({ variant, icon, children, className, layout = "row" }: BannerProps) {
   return (
-    <div
-      className={cn(
-        variantClasses[variant],
-        baseClasses,
-        layout === "row" && "flex items-center gap-3",
-        className,
-      )}
-    >
+    <div className={cn(variantClasses[variant], baseClasses, layout === "row" && "flex items-center gap-3", className)}>
       {icon}
       {children}
     </div>

@@ -4,17 +4,8 @@ import { Banner } from "@/components/shared/Banner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import {
-  alertPriorityColors,
-  clientRiskSolidColors,
-  operationStatusColors,
-} from "@/lib/status-colors";
-import {
-  formatMxn,
-  formatMxnValue,
-  formatMxnWithUnit,
-  umaToMxn,
-} from "@/lib/utils";
+import { alertPriorityColors, clientRiskSolidColors, operationStatusColors } from "@/lib/status-colors";
+import { formatMxn, formatMxnValue, formatMxnWithUnit, umaToMxn } from "@/lib/utils";
 
 describe("utilidades compartidas", () => {
   it("formatea montos MXN y conversiones UMA", () => {
@@ -25,9 +16,7 @@ describe("utilidades compartidas", () => {
   });
 
   it("expone mapas de color tipados por estado", () => {
-    expect(clientRiskSolidColors.Alto).toBe(
-      "bg-destructive text-destructive-foreground",
-    );
+    expect(clientRiskSolidColors.Alto).toBe("bg-destructive text-destructive-foreground");
     expect(operationStatusColors.Alertada).toBe("bg-warning/10 text-warning");
     expect(alertPriorityColors.Baja).toBe("bg-muted text-muted-foreground");
   });
@@ -40,16 +29,8 @@ describe("componentes compartidos", () => {
   });
 
   it("renderiza encabezado con subtítulo y acción", () => {
-    render(
-      <PageHeader
-        title="Alertas"
-        subtitle="Hoy"
-        action={<button>Nuevo</button>}
-      />,
-    );
-    expect(
-      screen.getByRole("heading", { name: "Alertas" }),
-    ).toBeInTheDocument();
+    render(<PageHeader title="Alertas" subtitle="Hoy" action={<button>Nuevo</button>} />);
+    expect(screen.getByRole("heading", { name: "Alertas" })).toBeInTheDocument();
     expect(screen.getByText("Hoy")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Nuevo" })).toBeInTheDocument();
   });
@@ -58,18 +39,11 @@ describe("componentes compartidos", () => {
     render(
       <>
         <SearchInput aria-label="Buscar" value="texto" readOnly />
-        <Banner variant="primarySubtle" layout="block">
-          Aviso
-        </Banner>
+        <Banner variant="primarySubtle" layout="block">Aviso</Banner>
       </>,
     );
-    expect(screen.getByRole("textbox", { name: "Buscar" })).toHaveClass(
-      "pl-10",
-    );
-    expect(screen.getByText("Aviso")).toHaveClass(
-      "bg-primary/5",
-      "border-primary/20",
-    );
+    expect(screen.getByRole("textbox", { name: "Buscar" })).toHaveClass("pl-10");
+    expect(screen.getByText("Aviso")).toHaveClass("bg-primary/5", "border-primary/20");
     expect(screen.getByText("Aviso")).not.toHaveClass("flex");
   });
 });
