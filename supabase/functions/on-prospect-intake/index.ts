@@ -42,16 +42,25 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  try {
-    if (req.method !== 'POST') {
+  if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const body = await req.json()
-    
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch (error) {
+    console.error('Error parsing request body:', error)
+    return new Response(JSON.stringify({ error: 'El cuerpo de la solicitud no es un JSON válido' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  try {
     // Validar payload con zod
     const validatedData = prospectIntakeSchema.parse(body)
 

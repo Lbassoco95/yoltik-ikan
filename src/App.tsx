@@ -1,5 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,7 +24,18 @@ import NotariosPage from "@/pages/registro/NotariosPage";
 import GraciasPage from "@/pages/registro/GraciasPage";
 import NotFound from "./pages/NotFound.tsx";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: () => {
+      toast.error("No se pudieron cargar los datos. Intenta de nuevo.");
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: () => {
+      toast.error("No se pudieron guardar los cambios. Intenta de nuevo.");
+    },
+  }),
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

@@ -10,13 +10,21 @@ interface Props {
 }
 
 export function ProtectedRoute({ children, requireRole, requireAnyRole }: Props) {
-  const { session, roles, loading } = useAuth();
+  const { session, roles, loading, authError } = useAuth();
   const location = useLocation();
 
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center text-muted-foreground">
         Cargando…
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className="flex h-screen items-center justify-center px-6 text-center text-muted-foreground">
+        <p>No se pudo cargar tu sesión: {authError.message}</p>
       </div>
     );
   }
