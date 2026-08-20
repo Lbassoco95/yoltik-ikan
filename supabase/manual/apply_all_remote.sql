@@ -2,12 +2,15 @@
 -- Ikán · Aplicar TODO el esquema + seeds al Supabase remoto (una vez)
 -- =====================================================================
 -- Generado concatenando migrations/0001..0005 + seed/01..07 EN ORDEN.
--- Úsalo SOLO en un proyecto vacío (las migrations no son idempotentes:
--- 'create type/table' truena si ya existen). Los seeds sí son idempotentes.
--- Pégalo completo en el SQL Editor del dashboard y córrelo una vez.
+-- ENVUELTO EN TRANSACCIÓN (begin/commit): si algo truena a media, revierte
+-- TODO y el proyecto queda vacío (estado seguro para reintentar), nunca a
+-- medias. Úsalo en un proyecto vacío (las migrations no son idempotentes).
+-- Pégalo completo en el SQL Editor y córrelo una vez.
 -- Después corre supabase/manual/bootstrap_usuario_maestro.sql.
--- Alternativa con CLI: supabase link --project-ref cibpguwwggwzdhhpdomz && supabase db push
+-- CLI alterna: supabase link --project-ref cibpguwwggwzdhhpdomz && supabase db push
 -- =====================================================================
+
+begin;
 
 
 -- ============================================================
@@ -1575,3 +1578,5 @@ values
    '2026-08-19T15:00:00Z')
 on conflict (id) do nothing;
 
+
+commit;
