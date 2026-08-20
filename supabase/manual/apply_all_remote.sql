@@ -303,14 +303,14 @@ create policy "methodology_write_admin" on risk_methodology
 create policy "element_select_via_methodology" on risk_element
   for select using (
     exists (select 1 from risk_methodology m
-            where m.id = element_id and m.organization_id = public.current_org_id())
+            where m.id = methodology_id and m.organization_id = public.current_org_id())
   );
 
 create policy "element_write_admin" on risk_element
   for all using (
     public.has_rol('admin')
     and exists (select 1 from risk_methodology m
-                where m.id = element_id and m.organization_id = public.current_org_id())
+                where m.id = methodology_id and m.organization_id = public.current_org_id())
   );
 
 create policy "indicator_select_via_element" on risk_indicator
