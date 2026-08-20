@@ -1,7 +1,7 @@
 /**
  * scripts/bootstrap-users.ts
  *
- * Crea los 3 usuarios iniciales de FIATCOIN para el demo Sprint D-1.
+ * Crea los usuarios iniciales de FIATCOIN para el demo (3 de rol + 1 maestro).
  * Genera passwords aleatorios seguros y los imprime una sola vez.
  *
  * Requiere las variables de entorno (NO commitear):
@@ -65,6 +65,13 @@ const SEED_USERS: SeedUser[] = [
     email: 'admin@fiatcoin.mx',
     nombre: 'Admin delegado (demo)',
     roles: ['admin'],
+  },
+  {
+    // Usuario maestro de Kawiil: los 3 roles para poder recorrer todo el demo
+    // con una sola cuenta. Si se reconstruye el entorno, este script lo recrea.
+    email: 'leo.bassoco@kawiil.mx',
+    nombre: 'Leo Bassoco (maestro)',
+    roles: ['operador', 'oc', 'admin'],
   },
 ];
 
