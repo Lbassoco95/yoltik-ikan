@@ -26,12 +26,16 @@
 
 do $$
 declare
-  v_uid uuid := 'PEGA_AQUI_EL_UID';                                -- ← UID de auth.users (paso 2)
+  v_uid_text text := 'PEGA_AQUI_EL_UID';                           -- ← UID de auth.users (paso 2)
+  v_uid uuid;
   v_org uuid := '11111111-1111-1111-1111-111111111111';            -- FIATCOIN RAMPLE (no cambiar)
 begin
-  if v_uid = 'PEGA_AQUI_EL_UID' then
-    raise exception 'Falta pegar el UID real en v_uid antes de correr el script.';
+  -- Se valida como texto ANTES de castear a uuid, para dar un mensaje claro
+  -- si olvidaste pegar el UID (si casteáramos en el declare, tronaría antes).
+  if v_uid_text = 'PEGA_AQUI_EL_UID' then
+    raise exception 'Falta pegar el UID real (Authentication → Users) en v_uid_text antes de correr el script.';
   end if;
+  v_uid := v_uid_text::uuid;
 
   -- Perfil (idempotente).
   insert into user_profile (id, organization_id, nombre, email, activo)
