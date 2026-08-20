@@ -2,9 +2,24 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { z } from "https://esm.sh/zod@3.22.4"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Orígenes permitidos para el form público de registro
+// (app propia + embed desde yoltik.mx + dev local).
+const ALLOWED_ORIGINS = [
+  'https://yoltik.mx',
+  'https://www.yoltik.mx',
+  'https://yoltik-regtech-hub.vercel.app',
+  'http://localhost:8080',
+]
+
+function corsHeadersFor(req: Request) {
+  const origin = req.headers.get('Origin')
+  return {
+    'Access-Control-Allow-Origin':
+      origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
 }
 
 // Schema de validación con zod (igual al form del cliente)
@@ -37,6 +52,8 @@ const prospectIntakeSchema = z.object({
 })
 
 serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req)
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })

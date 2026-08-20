@@ -16,17 +16,29 @@
 
 // @ts-expect-error — Deno runtime, no Node.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// @ts-expect-error — Deno runtime, no Node.
+import { z } from 'https://esm.sh/zod@3.22.4';
 
 // @ts-expect-error — Deno runtime
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 // @ts-expect-error — Deno runtime
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+// @ts-expect-error — Deno runtime
+const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-interface RunInput {
-  organization_id: string;
-  trigger_tipo: 'on_insert' | 'manual' | 'cron';
-  operation_id?: string;
-}
+const runInputSchema = z.object({
+  organization_id: z.string().uuid(),
+  trigger_tipo: z.enum(['on_insert', 'manual', 'cron']),
+  operation_id: z.string().uuid().optional(),
+});
+
+type RunInput = z.infer<typeof runInputSchema>;
+
+const jsonResponse = (body: unknown, status: number) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
 
 // @ts-expect-error — Deno.serve
 Deno.serve(async (req: Request) => {
@@ -34,8 +46,38 @@ Deno.serve(async (req: Request) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const input: RunInput = await req.json();
+  const parsed = runInputSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) {
+    return jsonResponse({ error: 'Payload inválido', details: parsed.error.errors }, 400);
+  }
+  const input: RunInput = parsed.data;
+
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // Autorización: el service_role (triggers de BD / cron) pasa directo;
+  // cualquier otro caller debe ser un usuario con rol OC o Admin en la
+  // organización objetivo.
+  const authHeader = req.headers.get('Authorization') ?? '';
+  const bearer = authHeader.replace(/^Bearer\s+/i, '');
+  if (bearer !== SERVICE_KEY) {
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return jsonResponse({ error: 'No autenticado' }, 401);
+    }
+    const { data: rolRows, error: rolErr } = await supabase
+      .from('user_roles')
+      .select('rol')
+      .eq('user_id', userData.user.id)
+      .eq('organization_id', input.organization_id)
+      .in('rol', ['oc', 'admin']);
+    if (rolErr || !rolRows?.length) {
+      return jsonResponse({ error: 'No autorizado para esta organización' }, 403);
+    }
+  }
+
   const t0 = Date.now();
 
   const { data: tipologias, error: errTips } = await supabase
@@ -45,7 +87,7 @@ Deno.serve(async (req: Request) => {
     .eq('activa', true);
 
   if (errTips) {
-    return new Response(JSON.stringify({ error: errTips.message }), { status: 500 });
+    return jsonResponse({ error: errTips.message }, 500);
   }
 
   let opQuery = supabase
@@ -55,7 +97,7 @@ Deno.serve(async (req: Request) => {
   if (input.operation_id) opQuery = opQuery.eq('id', input.operation_id);
   const { data: operaciones, error: errOps } = await opQuery;
   if (errOps) {
-    return new Response(JSON.stringify({ error: errOps.message }), { status: 500 });
+    return jsonResponse({ error: errOps.message }, 500);
   }
 
   // TODO[Sprint D-3]: implementar evaluadores por tipo de regla_dsl.
@@ -80,14 +122,14 @@ Deno.serve(async (req: Request) => {
     },
   });
 
-  return new Response(
-    JSON.stringify({
+  return jsonResponse(
+    {
       ok: true,
       operaciones_procesadas: operaciones?.length ?? 0,
       hallazgos_creados,
       duracion_ms,
-    }),
-    { headers: { 'content-type': 'application/json' } },
+    },
+    200,
   );
 });
 
