@@ -86,6 +86,7 @@ Deno.serve(async (req: Request) => {
       .eq('activa', true);
 
     if (errTips) {
+      console.error('[motor-pld] No se pudieron cargar las tipologías:', errTips);
       return jsonResponse({ error: errTips.message }, 500);
     }
 
@@ -96,6 +97,7 @@ Deno.serve(async (req: Request) => {
     if (input.operation_id) opQuery = opQuery.eq('id', input.operation_id);
     const { data: operaciones, error: errOps } = await opQuery;
     if (errOps) {
+      console.error('[motor-pld] No se pudieron cargar las operaciones:', errOps);
       return jsonResponse({ error: errOps.message }, 500);
     }
 
