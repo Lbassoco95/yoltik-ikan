@@ -14,6 +14,7 @@
 | Bloque | Descripción | Estado |
 |--------|-------------|--------|
 | RCG0.B0 | Evaluadores reales del Motor PLD (deuda D-3) | ✅ hecho |
+| **RCG0.B0.1** | **Ingesta propia de listas abiertas (OFAC + GAFI + 69-B)** | ⏳ **nuevo — intercalar según dependencias** |
 | **RCG0.B0b** | **Alta de cliente final por el Operador (Nivel 1)** | ⏳ **nuevo — ver abajo** |
 | RCG0.B1 | SLA de 24h sobre hallazgos | ⏳ pendiente |
 | RCG0.B2 | Ajustes al piloto XVI (jurisdicción + comisión) | ⏳ pendiente |
@@ -90,6 +91,82 @@ en paralelo si hiciera falta.
 **Pregunta abierta para Polo:** ¿el alta debe forzar la matriz de riesgo como paso obligatorio
 del mismo flujo, o la matriz puede quedar como acción separada posterior al alta? (No inventar
 la obligatoriedad sin confirmar.)
+
+---
+
+## RCG0.B0.1 · Ingesta propia de listas abiertas (OFAC + GAFI + 69-B) — NUEVO
+
+**Por qué existe:** Polo definió una **arquitectura de dos capas** para las fuentes de
+listas/país del Motor PLD, que se complementan (no es "nosotros vs. tercero"):
+
+1. **Capa propia (este bloque):** Kawiil mantiene su propia ingesta de fuentes públicas y
+   gratuitas, actualizada de forma continua, para no depender nunca por completo de un tercero.
+2. **Capa de terceros (después, fuera de este bloque):** Zenpli u otros proveedores se conectan
+   vía API como fuente **adicional**, sobre el mismo contrato de datos — nunca como reemplazo de
+   la capa propia.
+
+Este bloque es **solo la Capa 1**. La Capa 2 (conexión real a Zenpli/OpenSanctions) se diseña
+cuando Polo cierre esa plática — aquí solo se deja el contrato listo para que sumarla después no
+requiera rediseño.
+
+**Alcance confirmado (mínimo viable, no ampliar sin avisar):** OFAC + GAFI + 69-B. ONU y UE
+quedan documentadas como próxima fuente a automatizar, **NO** entran a este bloque. El score de
+medios adversos (OSINT) tampoco entra — pendiente de proveedor
+(ver `Ikan-Fuentes-Abiertas-Listas-y-OSINT-v1.0-2026-08-20.docx`).
+
+**Regla de oro adicional:** la **frecuencia** de cada job (diaria/semanal/…) es propuesta
+técnica, NO valor regulatorio → confirmar con Polo/Kawiil-Cumplimiento antes de fijarla en
+producción. Igual el estado vigente de la lista GAFI a la fecha de siembra: verificarlo directo
+contra fatf-gafi.org, no de fuentes secundarias ni de investigación previa.
+
+### Contrato de datos común (documentar primero, antes de tocar más código)
+
+Todas las fuentes se normalizan al mismo contrato, para que el evaluador `lookup` no dependa del
+origen del match y para que sumar Zenpli/OpenSanctions luego sea *agregar una fuente*, no
+rediseñar:
+
+- **`lista_sancionada`** (o nombre que respete la convención del schema — evaluar si extiende
+  `sanctions_list_entry` de `0003` antes de crear tabla nueva): `id`, `fuente`
+  (`ofac_sdn` | `sat_69b`; futuros: `onu`, `ue`, `zenpli`, `opensanctions`), `tipo_entidad`
+  (persona/empresa), `nombre`, `identificadores` (RFC/pasaporte/alias, JSON), `pais`,
+  `fecha_publicacion_fuente`, `fecha_ingesta`, `raw_payload` (snapshot inmutable del registro
+  original — mismo principio que `hallazgo`), `activo` (boolean — no borrar los que salen de una
+  lista; desactivar conservando historial).
+- **`lista_jurisdiccion_riesgo`** (puede vivir como extensión de `country_risk_list` de `0003`
+  si el schema lo permite — evaluar antes de crear tabla): `pais_iso`, `categoria`
+  (`negra` | `gris`, GAFI), `fecha_vigencia_desde`, `fuente` (`gafi`), `fecha_actualizacion`.
+
+### Sub-bloques
+
+1. **Ingesta OFAC (automatizada):** job programado que descargue el XML SDN oficial (Sanctions
+   List Service, gratuito, sin auth) y lo normalice a `lista_sancionada` con `fuente='ofac_sdn'`.
+   Mecanismo sugerido: Edge Function + `pg_cron` (o el scheduler que ya use el proyecto —
+   confirmar antes de introducir pieza nueva). Idempotente: cada corrida compara contra el
+   snapshot previo y **desactiva** (no borra) lo que ya no aparece, preservando `raw_payload`.
+   Frecuencia propuesta: diaria — **PENDIENTE_CONFIRMAR**.
+2. **Ingesta SAT 69-B (automatizada):** job que consulte el listado público 69-B (EFOS/EDOS) y
+   lo normalice a `lista_sancionada` con `fuente='sat_69b'`. **Etiquetar claramente** que el
+   69-B es de naturaleza **fiscal** (operaciones simuladas), no una sanción AML pura, para que
+   el OC no lo confunda. Mismo patrón de idempotencia; frecuencia **PENDIENTE_CONFIRMAR**.
+3. **Carga de GAFI (manual, por diseño — no automatizar):** pantalla de Admin o script para que
+   Kawiil-Cumplimiento actualice `lista_jurisdiccion_riesgo` cuando el GAFI publique (PDF, 3x/año:
+   plenarias feb/jun/oct). **No** construir scraper de PDF (frecuencia no lo justifica, riesgo de
+   mal-parseo > ahorro). Estado vigente: verificar directo en fatf-gafi.org.
+4. **Conectar el evaluador `lookup`:** que XVI-04 consulte `lista_jurisdiccion_riesgo`, y que un
+   evaluador (extensión de tipología existente o nueva, según el DSL actual) consulte
+   `lista_sancionada` por nombre/identificador del cliente. **Aquí el hallazgo deja de ser mock
+   y pasa a ser real**, citando fuente y fecha de la corrida que lo detectó.
+5. **Diseño para sumar terceros (documento, no código):** documentar cómo una fuente
+   `api_externa` (Zenpli/OpenSanctions) se agrega a la misma tabla/contrato **sin tocar** el
+   evaluador del sub-bloque 4 — dejando explícito que es aditivo, no un reemplazo futuro.
+
+**Fuera de alcance de B0.1:** ONU y UE (documentadas como próximas); OSINT/medios adversos
+(pendiente de proveedor, no se construye en casa); conexión real a Zenpli/OpenSanctions (solo se
+documenta el diseño en el sub-bloque 5).
+
+**Relación con B0:** B0 dejó el evaluador `lookup` funcionando contra el catálogo sembrado
+(`country_risk_list`) con marca mock. B0.1 sustituye ese mock por ingesta propia real y conecta
+`lista_sancionada` por nombre. Se intercala con B0b/B1 según dependencias, sin orden forzado.
 
 ---
 
