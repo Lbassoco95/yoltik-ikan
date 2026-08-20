@@ -1,0 +1,101 @@
+# Sprint RCG-2026 · Fase 0 — Backlog
+
+> Origen: Acuerdo 115/2026 (RCG que desarrollan la reforma LFPIORPI, DOF 07/ago/2026).
+> Ver `Ikan-Nota-Tecnica-Arquitectura-RCG2026-v1.0-2026-08-10.docx` (carpeta de proyectos de
+> Polo). Esta fase cubre lo que debe existir antes del **30 de noviembre de 2026**.
+>
+> Regla operativa: **bloque por bloque con checkpoint**. Cada bloque cierra con
+> `npm run typecheck && npm run lint && npm run build` (y `npm run test` cuando aplique) en
+> verde, y reporte al usuario antes de seguir. No inventar campos ni valores; mocks visibles
+> con banner ámbar "DEMO — sin integración real".
+
+## Estado de bloques
+
+| Bloque | Descripción | Estado |
+|--------|-------------|--------|
+| RCG0.B0 | Evaluadores reales del Motor PLD (deuda D-3) | ✅ hecho |
+| **RCG0.B0b** | **Alta de cliente final por el Operador (Nivel 1)** | ⏳ **nuevo — ver abajo** |
+| RCG0.B1 | SLA de 24h sobre hallazgos | ⏳ pendiente |
+| RCG0.B2 | Ajustes al piloto XVI (jurisdicción + comisión) | ⏳ pendiente |
+| RCG0.B3 | Modelo de datos para fideicomisos (solo modelo) | ⏳ pendiente |
+| RCG0.B4 | Rol "Representante Encargado de Cumplimiento" | ⏳ pendiente |
+| RCG0.B5 | Desarrollo Inmobiliario (V Bis) | ⛔ condicional — sin arrancar |
+| RCG0.B6 | Smoke test de Fase RCG-0 | ⏳ pendiente |
+
+Decisiones confirmadas con Polo (2026-08-20):
+- **B1**: el contador de 24h basta con que sea **visible** en el panel del OC (contador
+  regresivo). Sin alerta proactiva push/email en esta fase.
+- **B3**: solo el **modelo de datos** de fideicomisos; no se abre el flujo completo de captura
+  (no hay prospecto concreto todavía).
+- **B5**: se queda **condicional, sin arrancar** (sin prospecto del sector inmobiliario).
+
+Pendiente de housekeeping (no es un bloque): añadir la migration que crea la tabla
+`prospect_intake` (hoy solo la usa la Edge Function `on-prospect-intake`, sin migration en
+`main`) para que `supabase db reset` no se rompa — se resuelve dentro de RCG0.B6.
+
+---
+
+## RCG0.B0 · Evaluadores reales del Motor PLD — ✅ hecho
+
+Reemplazó el stub de `supabase/functions/motor-pld/index.ts` por evaluadores reales de
+`regla_dsl`. Núcleo puro y testeado en `supabase/functions/motor-pld/evaluadores.ts`
+(18 tests en `src/test/motor-evaluadores.test.ts`). Tipos soportados: `agregado`, `secuencia`,
+`score`, `lookup` (por `fuentes` y por `valores`), `duplicado`, `desviacion`. Semilla DEMO
+`07_operaciones_demo.sql` para que el motor genere hallazgos en el walkthrough. Sin cambios de
+schema. Ver `docs/MOTOR_PLD.md` (sección "Estado RCG-0").
+
+---
+
+## RCG0.B0b · Alta de cliente final por el Operador (Nivel 1) — NUEVO
+
+**Por qué existe:** el demo necesita mostrar el flujo lineal completo
+`Operador captura cliente → captura operación → Motor PLD → OC consume`. Hoy el alta de cliente
+final **no existe**: `ClientsPage.tsx` sigue con el mock de Lovable (`mockData.ts`) y no hay
+`insert` a la tabla `client`. Sin este bloque no se puede decir que el **Nivel 1** esté cerrado.
+
+**Orden (decisión):** va **inmediatamente después de B0 y antes de B1**. Razón: B0 ya se puede
+probar contra la semilla DEMO, pero el resto de la narrativa del demo (y B1, que muestra el SLA
+sobre hallazgos) gana muchísimo si el Operador puede capturar clientes y operaciones reales que
+el motor procese en vivo. No bloquea a B2–B4 (que son schema + metadata), así que puede correr
+en paralelo si hiciera falta.
+
+**No inventa nada nuevo:** se apoya en lo que ya existe en el schema:
+- Tabla `client` y `client_risk_assessment` (migration `0004`).
+- Plantilla de matriz de riesgo XVI ya sembrada (`44444444-0000-0000-0000-000000000001`,
+  seed `05`).
+- RLS: `client_insert` / `operation_insert` exigen `capturado_por = auth.uid()` y rol
+  `operador`/`oc`/`admin`.
+
+**Alcance:**
+- `src/lib/api/clientes.ts`: `crearCliente(...)` (insert en `client`) y
+  `evaluarRiesgoCliente(...)` (insert en `client_risk_assessment` a partir de la plantilla),
+  respetando `organization_id` y `capturado_por`.
+- Formulario de alta del Operador (envolver/instrumentar `ClientsPage.tsx` + detalle):
+  captura de persona física/moral con los campos de `client` (sin inventar campos nuevos),
+  y paso de matriz de riesgo que calcula `score_total` y `clasificacion` con la plantilla XVI.
+- Conectar la captura de operación (`OperationsPage.tsx`) al `insert` real en `operation`
+  (hoy también mock), para que el Motor PLD tenga datos capturados por el Operador, no solo
+  semilla.
+- Acuse neutro tras capturar: "Operación registrada" (sin mencionar al OC, por `docs/ROLES.md`).
+
+**Criterio de aceptación:**
+- Un Operador autenticado puede dar de alta un cliente persona física y uno moral; el registro
+  aparece en `client` con su `capturado_por` y `organization_id` correctos (RLS respetada).
+- Al alta se le puede correr la matriz de riesgo XVI y queda un `client_risk_assessment` con
+  `score_total` y `clasificacion`.
+- El Operador puede registrar una operación para ese cliente; queda en `operation` y el Motor
+  PLD la evalúa (produce hallazgo si dispara alguna tipología).
+- Lo no integrado (Moffin/KYC externo) va con banner ámbar "DEMO — sin integración real".
+
+**Pregunta abierta para Polo:** ¿el alta debe forzar la matriz de riesgo como paso obligatorio
+del mismo flujo, o la matriz puede quedar como acción separada posterior al alta? (No inventar
+la obligatoriedad sin confirmar.)
+
+---
+
+## Bloques RCG0.B1–B6
+
+El detalle de B1–B6 vive en la nota de backlog original de esta fase (mensaje de arranque del
+Sprint RCG-0) y en `Ikan-Nota-Tecnica-Arquitectura-RCG2026-v1.0-2026-08-10.docx`. Resumen de
+cada uno arriba en la tabla de estado. Cada bloque se detalla aquí a medida que se arranca,
+para no duplicar la fuente regulatoria.
