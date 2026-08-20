@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider, useAuth } from "./auth-context";
+import { SUPABASE_REQUEST_TIMEOUT_MS } from "./with-timeout";
 
 const { getSession, onAuthStateChange } = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -27,6 +28,11 @@ function AuthStatus() {
 }
 
 describe("AuthProvider", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
   beforeEach(() => {
     getSession.mockReset();
     onAuthStateChange.mockReset();
@@ -45,5 +51,27 @@ describe("AuthProvider", () => {
     );
 
     expect(await screen.findByText("error:Supabase no disponible")).toBeInTheDocument();
+  });
+
+  it("termina la carga cuando getSession excede el tiempo límite", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    getSession.mockReturnValue(new Promise(() => undefined));
+
+    render(
+      <AuthProvider>
+        <AuthStatus />
+      </AuthProvider>,
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SUPABASE_REQUEST_TIMEOUT_MS);
+    });
+
+    expect(
+      screen.getByText(
+        "error:No se pudo resolver la sesión porque Supabase tardó demasiado. Intenta de nuevo.",
+      ),
+    ).toBeInTheDocument();
   });
 });

@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { SUPABASE_REQUEST_TIMEOUT_MS, withTimeout } from "@/lib/with-timeout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -147,9 +148,15 @@ const RegistroPage = ({
         extra_fedatario: showFedatarioForm ? values.extra_fedatario : undefined,
       };
 
-      const { error } = await supabase.functions.invoke("on-prospect-intake", {
-        body: payload,
-      });
+      const { error } = await withTimeout(
+        (signal) =>
+          supabase.functions.invoke("on-prospect-intake", {
+            body: payload,
+            signal,
+          }),
+        SUPABASE_REQUEST_TIMEOUT_MS,
+        "La solicitud tardó demasiado. Intenta de nuevo.",
+      );
 
       if (error) {
         let message = "No se pudo enviar la solicitud. Intenta de nuevo.";

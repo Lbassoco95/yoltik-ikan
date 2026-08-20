@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "@/components/AppLayout";
 import { AuthProvider } from "@/lib/auth-context";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoginPage } from "@/pages/auth/Login";
 import DashboardPage from "@/pages/DashboardPage";
@@ -37,10 +38,21 @@ const queryClient = new QueryClient({
   }),
 });
 
+function SupabaseConfigNotice() {
+  if (isSupabaseConfigured) return null;
+
+  return (
+    <div className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-950">
+      DEMO — Supabase no está configurado. Las funciones conectadas no están disponibles.
+    </div>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
+        <SupabaseConfigNotice />
         <Toaster />
         <Sonner />
         <BrowserRouter>

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import { SUPABASE_REQUEST_TIMEOUT_MS, withTimeout } from './with-timeout';
 import type { RolUsuario, UserProfile } from '@/types/domain';
 
 const ACTIVE_ROLE_STORAGE_KEY = 'ikan.activeRole';
@@ -35,7 +36,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function resolveSession() {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await withTimeout(
+          () => supabase.auth.getSession(),
+          SUPABASE_REQUEST_TIMEOUT_MS,
+          'No se pudo resolver la sesión porque Supabase tardó demasiado. Intenta de nuevo.',
+        );
         if (error) throw error;
         if (disposed) return;
         setSession(data.session);
