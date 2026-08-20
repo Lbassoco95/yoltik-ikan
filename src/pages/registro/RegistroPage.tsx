@@ -165,7 +165,7 @@ const RegistroPage = ({
               message = body.error;
             }
           } catch {
-            message = "No se pudo enviar la solicitud. Intenta de nuevo.";
+            // respuesta sin cuerpo JSON: se conserva el mensaje genérico
           }
         }
         throw new Error(message);
