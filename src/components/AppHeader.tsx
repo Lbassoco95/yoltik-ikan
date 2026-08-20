@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
 import { useActiveRole } from "@/hooks/useActiveRole";
 import { RoleSwitcher } from "@/components/layout/RoleSwitcher";
+import { toast } from "sonner";
 
 interface AppHeaderProps {
   onToggleSidebar: () => void;
@@ -19,6 +20,15 @@ function getInitials(nombre: string | undefined): string {
 export function AppHeader({ onToggleSidebar: _onToggleSidebar }: AppHeaderProps) {
   const { profile, roles, signOut } = useAuth();
   const { activeRole, setActiveRole } = useActiveRole();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error: unknown) {
+      console.error("Error al cerrar sesión:", error);
+      toast.error("No se pudo cerrar la sesión. Intenta de nuevo.");
+    }
+  };
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 shrink-0">
@@ -66,7 +76,7 @@ export function AppHeader({ onToggleSidebar: _onToggleSidebar }: AppHeaderProps)
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => void signOut()}
+          onClick={() => void handleSignOut()}
           aria-label="Cerrar sesión"
         >
           <LogOut className="w-5 h-5" />

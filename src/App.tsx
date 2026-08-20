@@ -1,10 +1,12 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "@/components/AppLayout";
 import { AuthProvider } from "@/lib/auth-context";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoginPage } from "@/pages/auth/Login";
 import DashboardPage from "@/pages/DashboardPage";
@@ -23,12 +25,34 @@ import NotariosPage from "@/pages/registro/NotariosPage";
 import GraciasPage from "@/pages/registro/GraciasPage";
 import NotFound from "./pages/NotFound.tsx";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: () => {
+      toast.error("No se pudieron cargar los datos. Intenta de nuevo.");
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: () => {
+      toast.error("No se pudieron guardar los cambios. Intenta de nuevo.");
+    },
+  }),
+});
+
+function SupabaseConfigNotice() {
+  if (isSupabaseConfigured) return null;
+
+  return (
+    <div className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-950">
+      DEMO — Supabase no está configurado. Las funciones conectadas no están disponibles.
+    </div>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
+        <SupabaseConfigNotice />
         <Toaster />
         <Sonner />
         <BrowserRouter>

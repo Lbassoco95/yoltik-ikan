@@ -3,8 +3,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
-import { createClient } from "@supabase/supabase-js";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { SUPABASE_REQUEST_TIMEOUT_MS, withTimeout } from "@/lib/with-timeout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -139,13 +141,6 @@ const RegistroPage = ({
     setIsSubmitting(true);
     
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://cibpguwwggwzdhhpdomz.supabase.co";
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-      
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-      const edgeFunctionUrl = `${supabaseUrl}/functions/v1/on-prospect-intake`;
-
       const payload = {
         ...values,
         rfc: values.rfc.toUpperCase(),
@@ -153,26 +148,41 @@ const RegistroPage = ({
         extra_fedatario: showFedatarioForm ? values.extra_fedatario : undefined,
       };
 
-      const response = await fetch(edgeFunctionUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabaseAnonKey}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const { error } = await withTimeout(
+        (signal) =>
+          supabase.functions.invoke("on-prospect-intake", {
+            body: payload,
+            signal,
+          }),
+        SUPABASE_REQUEST_TIMEOUT_MS,
+        "La solicitud tardó demasiado. Intenta de nuevo.",
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Error al procesar solicitud");
+      if (error) {
+        let message = "No se pudo enviar la solicitud. Intenta de nuevo.";
+        if (error instanceof FunctionsHttpError) {
+          try {
+            const body: unknown = await error.context.json();
+            if (
+              typeof body === "object" &&
+              body !== null &&
+              "error" in body &&
+              typeof body.error === "string"
+            ) {
+              message = body.error;
+            }
+          } catch {
+            // respuesta sin cuerpo JSON: se conserva el mensaje genérico
+          }
+        }
+        throw new Error(message);
       }
 
       toast.success("Solicitud enviada correctamente");
       navigate("/registro/gracias");
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error(error instanceof Error ? error.message : "Error al procesar solicitud");
+      toast.error(error instanceof Error ? error.message : "No se pudo enviar la solicitud. Intenta de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
