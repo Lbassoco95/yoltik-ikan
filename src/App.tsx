@@ -15,6 +15,9 @@ import RulesEnginePage from "@/pages/RulesEnginePage";
 import VerificationPage from "@/pages/VerificationPage";
 import AuditPage from "@/pages/AuditPage";
 import ConfigPage from "@/pages/ConfigPage";
+import RegistroPage from "@/pages/registro/RegistroPage";
+import NotariosPage from "@/pages/registro/NotariosPage";
+import GraciasPage from "@/pages/registro/GraciasPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -26,6 +29,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/registro" element={<RegistroPage />} />
+          <Route path="/registro/notarios" element={<NotariosPage />} />
+          <Route path="/registro/gracias" element={<GraciasPage />} />
           <Route element={<AppLayout />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/clientes" element={<ClientsPage />} />
