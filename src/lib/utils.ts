@@ -19,9 +19,13 @@ export function umaToMxn(uma: number): number {
 }
 
 export function formatMxn(value: number): string {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+export function formatMxnWithUnit(value: number): string {
+  return formatMxn(value) + " MXN";
 }

@@ -3,8 +3,10 @@ import { ArrowLeft, Shield, Mail, Phone, Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockClients, mockOperations, mockAlerts } from "@/data/mockData";
 import { cn } from "@/lib/utils";
-
-const riskColors = { Bajo: "bg-success text-success-foreground", Medio: "bg-warning text-warning-foreground", Alto: "bg-destructive text-destructive-foreground" };
+import { formatMxnWithUnit } from "@/lib/utils";
+import { DataTable, DataTableHeader, DataTableRow } from "@/components/shared/DataTable";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { clientRiskSolidColors, operationStatusColors } from "@/lib/status-colors";
 
 export default function ClientDetailPage() {
   const { id } = useParams();
@@ -100,29 +102,23 @@ export default function ClientDetailPage() {
             </TabsContent>
 
             <TabsContent value="operaciones">
-              <div className="glass-card overflow-hidden">
+              <DataTable>
                 <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
-                      {["Fecha", "Tipo", "Monto", "Activo", "Estado"].map(h => (
-                        <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
+                  <DataTableHeader headers={["Fecha", "Tipo", "Monto", "Activo", "Estado"]} />
                   <tbody>
                     {clientOps.map(op => (
-                      <tr key={op.id} className="border-b border-border last:border-0">
+                      <DataTableRow key={op.id} hover={false}>
                         <td className="px-4 py-3 text-sm">{op.date}</td>
                         <td className="px-4 py-3 text-sm">{op.type}</td>
-                        <td className="px-4 py-3 text-sm font-medium">${op.amount.toLocaleString()} MXN</td>
+                        <td className="px-4 py-3 text-sm font-medium">{formatMxnWithUnit(op.amount)}</td>
                         <td className="px-4 py-3 text-sm">{op.asset}</td>
-                        <td className="px-4 py-3"><span className={cn("status-badge", op.status === "Normal" ? "bg-success/10 text-success" : op.status === "Alertada" ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive")}>{op.status}</span></td>
-                      </tr>
+                        <td className="px-4 py-3"><StatusBadge className={operationStatusColors[op.status]}>{op.status}</StatusBadge></td>
+                      </DataTableRow>
                     ))}
                     {clientOps.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Sin operaciones registradas</td></tr>}
                   </tbody>
                 </table>
-              </div>
+              </DataTable>
             </TabsContent>
 
             <TabsContent value="historial">
@@ -148,7 +144,7 @@ export default function ClientDetailPage() {
         <div className="space-y-4">
           <div className="glass-card p-5 text-center">
             <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Nivel de Riesgo</p>
-            <div className={cn("inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold", riskColors[client.riskLevel])}>
+            <div className={cn("inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold", clientRiskSolidColors[client.riskLevel])}>
               <Shield className="w-4 h-4" /> {client.riskLevel}
             </div>
             <p className="text-xs text-muted-foreground mt-3">Próxima actualización: 2026-06-15</p>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import type { Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
@@ -82,6 +83,55 @@ const prospectSchema = z.object({
 });
 
 type ProspectFormValues = z.infer<typeof prospectSchema>;
+
+type RadioFieldName = "tiene_oc_designado" | "registrado_sppld" | "tiene_manual_pld";
+
+interface RadioBooleanFieldProps {
+  control: Control<ProspectFormValues>;
+  name: RadioFieldName;
+  label: string;
+}
+
+function RadioBooleanField({ control, name, label }: RadioBooleanFieldProps) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className="space-y-3">
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <RadioGroup
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+              className="flex flex-col space-y-1"
+            >
+              <FormItem className="flex items-center space-x-3 space-y-0">
+                <FormControl>
+                  <RadioGroupItem value="si" />
+                </FormControl>
+                <FormLabel className="font-normal">Sí</FormLabel>
+              </FormItem>
+              <FormItem className="flex items-center space-x-3 space-y-0">
+                <FormControl>
+                  <RadioGroupItem value="no" />
+                </FormControl>
+                <FormLabel className="font-normal">No</FormLabel>
+              </FormItem>
+              <FormItem className="flex items-center space-x-3 space-y-0">
+                <FormControl>
+                  <RadioGroupItem value="no_se" />
+                </FormControl>
+                <FormLabel className="font-normal">No sé</FormLabel>
+              </FormItem>
+            </RadioGroup>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
 
 interface RegistroPageProps {
   defaultOrigen?: string;
@@ -550,116 +600,11 @@ const RegistroPage = ({
                     </div>
 
                     <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="tiene_oc_designado"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel>¿Tiene OC designado?</FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="flex flex-col space-y-1"
-                              >
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="si" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">Sí</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="no" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">No</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="no_se" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">No sé</FormLabel>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <RadioBooleanField control={form.control} name="tiene_oc_designado" label="¿Tiene OC designado?" />
 
-                      <FormField
-                        control={form.control}
-                        name="registrado_sppld"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel>¿Registrado en SPPLD?</FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="flex flex-col space-y-1"
-                              >
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="si" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">Sí</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="no" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">No</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="no_se" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">No sé</FormLabel>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <RadioBooleanField control={form.control} name="registrado_sppld" label="¿Registrado en SPPLD?" />
 
-                      <FormField
-                        control={form.control}
-                        name="tiene_manual_pld"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel>¿Tiene manual PLD vigente?</FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="flex flex-col space-y-1"
-                              >
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="si" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">Sí</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="no" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">No</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="no_se" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">No sé</FormLabel>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <RadioBooleanField control={form.control} name="tiene_manual_pld" label="¿Tiene manual PLD vigente?" />
                     </div>
 
                     <div className="border-t pt-4 mt-4">

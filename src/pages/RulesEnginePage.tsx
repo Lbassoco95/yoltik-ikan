@@ -1,7 +1,9 @@
 import { UMA_VALUE } from "@/data/mockData";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
+import { cn, formatMxnWithUnit } from "@/lib/utils";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Banner } from "@/components/shared/Banner";
 
 const thresholdRules = [
   { name: "Operación individual ≥ umbral identificación", threshold: 645, active: true },
@@ -28,11 +30,11 @@ const correlationRules = [
 export default function RulesEnginePage() {
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Motor de Reglas</h1>
+      <PageHeader title="Motor de Reglas" />
 
-      <div className="bg-accent/10 border border-accent/30 rounded-lg px-4 py-3 text-sm">
+      <Banner variant="accent" layout="block" className="text-sm">
         <strong>UMA vigente 2026:</strong> ${UMA_VALUE} MXN — Actualización automática INEGI
-      </div>
+      </Banner>
 
       {/* Threshold Rules */}
       <div className="glass-card p-6">
@@ -50,7 +52,7 @@ export default function RulesEnginePage() {
               <tr key={rule.name} className="border-b border-border last:border-0">
                 <td className="px-4 py-4 text-sm font-medium text-foreground">{rule.name}</td>
                 <td className="px-4 py-4 text-sm font-mono">{rule.threshold.toLocaleString()} UMA</td>
-                <td className="px-4 py-4 text-sm font-semibold">${(rule.threshold * UMA_VALUE).toLocaleString("es-MX", { maximumFractionDigits: 0 })} MXN</td>
+                <td className="px-4 py-4 text-sm font-semibold">{formatMxnWithUnit(rule.threshold * UMA_VALUE)}</td>
                 <td className="px-4 py-4"><Switch checked={rule.active} /></td>
               </tr>
             ))}

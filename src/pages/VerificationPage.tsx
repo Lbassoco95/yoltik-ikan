@@ -1,6 +1,11 @@
 import { ScanLine, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { MetricCard } from "@/components/shared/MetricCard";
+import { DataTable, DataTableHeader, DataTableRow } from "@/components/shared/DataTable";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { verificationResultColors, type VerificationResult } from "@/lib/status-colors";
 
 const verificationMetrics = [
   { label: "Verificaciones hoy", value: 12 },
@@ -28,43 +33,27 @@ const verificationSteps = [
   { step: "Resolución", score: null, pass: true, label: "Aprobado automáticamente" },
 ];
 
-const resultColors = {
-  Aprobado: "bg-success/10 text-success",
-  Rechazado: "bg-destructive/10 text-destructive",
-  "Revisión manual": "bg-warning/10 text-warning",
-};
-
 export default function VerificationPage() {
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">ID No Presencial</h1>
+      <PageHeader title="ID No Presencial" />
 
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-4">
         {verificationMetrics.map(m => (
-          <div key={m.label} className="metric-card">
-            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl bg-accent" />
-            <p className="text-xs font-medium text-muted-foreground uppercase">{m.label}</p>
-            <p className="text-3xl font-bold text-foreground mt-1">{m.value}</p>
-          </div>
+          <MetricCard key={m.label} label={m.label} value={m.value} />
         ))}
       </div>
 
       <div className="grid grid-cols-3 gap-6">
         {/* Table */}
         <div className="col-span-2">
-          <div className="glass-card overflow-hidden">
+          <DataTable>
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  {["ID", "Cliente", "Fecha", "Doc", "Liveness", "Face", "CURP", "Listas", "Resultado"].map(h => (
-                    <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase px-3 py-3">{h}</th>
-                  ))}
-                </tr>
-              </thead>
+              <DataTableHeader headers={["ID", "Cliente", "Fecha", "Doc", "Liveness", "Face", "CURP", "Listas", "Resultado"]} cellPadding="px-3" />
               <tbody>
                 {recentVerifications.map(v => (
-                  <tr key={v.id} className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors">
+                  <DataTableRow key={v.id} className="cursor-pointer">
                     <td className="px-3 py-3 text-xs font-mono">{v.id}</td>
                     <td className="px-3 py-3 text-sm font-medium text-foreground">{v.client}</td>
                     <td className="px-3 py-3 text-xs text-muted-foreground">{v.date}</td>
@@ -73,12 +62,12 @@ export default function VerificationPage() {
                     <td className="px-3 py-3 text-xs font-bold">{v.faceScore}%</td>
                     <td className="px-3 py-3">{v.curp ? <CheckCircle className="w-4 h-4 text-success" /> : <XCircle className="w-4 h-4 text-destructive" />}</td>
                     <td className="px-3 py-3">{v.lists ? <CheckCircle className="w-4 h-4 text-success" /> : <AlertTriangle className="w-4 h-4 text-warning" />}</td>
-                    <td className="px-3 py-3"><span className={cn("status-badge text-[10px]", resultColors[v.result as keyof typeof resultColors])}>{v.result}</span></td>
-                  </tr>
+                    <td className="px-3 py-3"><StatusBadge className={cn("text-[10px]", verificationResultColors[v.result as VerificationResult])}>{v.result}</StatusBadge></td>
+                  </DataTableRow>
                 ))}
               </tbody>
             </table>
-          </div>
+          </DataTable>
 
           {/* Stepper */}
           <div className="glass-card p-6 mt-4">

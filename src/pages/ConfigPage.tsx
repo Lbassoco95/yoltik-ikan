@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Key, Webhook, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { DataTable, DataTableHeader, DataTableRow } from "@/components/shared/DataTable";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 
 const activities = [
   { name: "TDPA — Transmisor de Dinero", badge: "CNBV/UIF", active: true, color: "border-l-primary" },
@@ -25,7 +28,7 @@ const users = [
 export default function ConfigPage() {
   return (
     <div className="space-y-8 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
+      <PageHeader title="Configuración" />
 
       {/* Activities */}
       <section>
@@ -35,7 +38,7 @@ export default function ConfigPage() {
             <div key={a.name} className={cn("glass-card p-4 border-l-4 flex items-center justify-between", a.color)}>
               <div>
                 <p className={cn("text-sm font-medium", a.active ? "text-foreground" : "text-muted-foreground")}>{a.name}</p>
-                <span className="status-badge bg-muted text-muted-foreground mt-1">{a.badge}</span>
+                <StatusBadge className="bg-muted text-muted-foreground mt-1">{a.badge}</StatusBadge>
               </div>
               <Switch checked={a.active} />
             </div>
@@ -67,28 +70,22 @@ export default function ConfigPage() {
           <h2 className="text-lg font-semibold text-foreground">Usuarios del sistema</h2>
           <Button className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"><Plus className="w-4 h-4" /> Nuevo usuario</Button>
         </div>
-        <div className="glass-card overflow-hidden">
+        <DataTable>
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                {["Nombre", "Email", "Rol", "Estado", "Último acceso"].map(h => (
-                  <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3">{h}</th>
-                ))}
-              </tr>
-            </thead>
+            <DataTableHeader headers={["Nombre", "Email", "Rol", "Estado", "Último acceso"]} />
             <tbody>
               {users.map(u => (
-                <tr key={u.email} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                <DataTableRow key={u.email}>
                   <td className="px-4 py-3 text-sm font-medium text-foreground">{u.name}</td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">{u.email}</td>
-                  <td className="px-4 py-3"><span className="status-badge bg-primary/10 text-primary">{u.role}</span></td>
-                  <td className="px-4 py-3"><span className={cn("status-badge", u.status === "Activo" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground")}>{u.status}</span></td>
+                  <td className="px-4 py-3"><StatusBadge className="bg-primary/10 text-primary">{u.role}</StatusBadge></td>
+                  <td className="px-4 py-3"><StatusBadge className={u.status === "Activo" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}>{u.status}</StatusBadge></td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">{u.lastAccess}</td>
-                </tr>
+                </DataTableRow>
               ))}
             </tbody>
           </table>
-        </div>
+        </DataTable>
       </section>
 
       {/* Integrations */}
