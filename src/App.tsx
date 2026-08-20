@@ -18,6 +18,9 @@ import RulesEnginePage from "@/pages/RulesEnginePage";
 import VerificationPage from "@/pages/VerificationPage";
 import AuditPage from "@/pages/AuditPage";
 import ConfigPage from "@/pages/ConfigPage";
+import RegistroPage from "@/pages/registro/RegistroPage";
+import NotariosPage from "@/pages/registro/NotariosPage";
+import GraciasPage from "@/pages/registro/GraciasPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -30,7 +33,13 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Rutas públicas (sin auth) */}
+            <Route path="/registro" element={<RegistroPage />} />
+            <Route path="/registro/notarios" element={<NotariosPage />} />
+            <Route path="/registro/gracias" element={<GraciasPage />} />
             <Route path="/login" element={<LoginPage />} />
+
+            {/* Rutas protegidas */}
             <Route
               element={
                 <ProtectedRoute>
