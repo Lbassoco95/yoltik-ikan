@@ -17,13 +17,12 @@ interface DataTableHeaderProps {
 }
 
 export function DataTableHeader({ headers, cellPadding = "px-4", trackingWider = false, rowClassName }: DataTableHeaderProps) {
-  const cellClassName = trackingWider
-    ? cellPadding === "px-3"
-      ? "text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3"
-      : "text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3"
-    : cellPadding === "px-3"
-      ? "text-left text-xs font-semibold text-muted-foreground uppercase px-3 py-3"
-      : "text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3";
+  const cellClassName = cn(
+    "text-left text-xs font-semibold text-muted-foreground uppercase",
+    trackingWider && "tracking-wider",
+    cellPadding,
+    "py-3",
+  );
 
   return (
     <thead>

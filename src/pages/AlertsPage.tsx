@@ -20,10 +20,10 @@ export default function AlertsPage() {
           const alerts = mockAlerts.filter(a => a.status === col.status);
           return (
             <AlertKanbanColumn key={col.title} title={col.title} count={alerts.length} color={col.color} variant="board">
-                {alerts.map(alert => (
-                  <AlertKanbanCard key={alert.id} alert={alert} variant="board" showAmount queueSuffix="d en cola" />
-                ))}
-                {alerts.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Sin alertas</p>}
+              {alerts.map(alert => (
+                <AlertKanbanCard key={alert.id} alert={alert} variant="board" showAmount queueSuffix="d en cola" />
+              ))}
+              {alerts.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Sin alertas</p>}
             </AlertKanbanColumn>
           );
         })}

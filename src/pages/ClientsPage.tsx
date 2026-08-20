@@ -22,12 +22,15 @@ export default function ClientsPage() {
     const matchRisk = riskFilter === "all" || c.riskLevel === riskFilter;
     return matchSearch && matchType && matchRisk;
   });
+  const newClientButton = (
+    <Button className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
+      <Plus className="w-4 h-4" /> Nuevo Cliente
+    </Button>
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Clientes" action={<Button className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
-          <Plus className="w-4 h-4" /> Nuevo Cliente
-        </Button>} />
+      <PageHeader title="Clientes" action={newClientButton} />
 
       {/* Filters */}
       <div className="glass-card p-4 flex items-center gap-4">

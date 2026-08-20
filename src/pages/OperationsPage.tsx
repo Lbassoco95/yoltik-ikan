@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockOperations, UMA_VALUE } from "@/data/mockData";
-import { cn, formatMxnValue, formatMxnWithUnit } from "@/lib/utils";
+import { cn, formatMxn, formatMxnWithUnit } from "@/lib/utils";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { DataTable, DataTableHeader, DataTableRow } from "@/components/shared/DataTable";
@@ -68,7 +68,7 @@ export default function OperationsPage() {
                     <td className="px-4 py-3"><StatusBadge className="bg-vulnerable/10 text-vulnerable">{op.asset}</StatusBadge></td>
                     <td className="px-4 py-3 text-sm font-mono">{op.quantity}</td>
                     <td className="px-4 py-3 text-xs font-mono text-muted-foreground">{op.hash}</td>
-                    <td className="px-4 py-3 text-sm">{op.exchangeRate === undefined ? "" : formatMxnValue(op.exchangeRate)}</td>
+                    <td className="px-4 py-3 text-sm">{op.exchangeRate === undefined ? "" : formatMxn(op.exchangeRate)}</td>
                     <td className="px-4 py-3">
                       <StatusBadge className={operationStatusColors[op.status]}>{op.status}</StatusBadge>
                     </td>
