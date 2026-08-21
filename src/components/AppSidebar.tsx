@@ -1,7 +1,8 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { mockAlerts } from "@/data/mockData";
+import { contarHallazgosAbiertos } from "@/lib/api/hallazgos";
 import { useActiveRole } from "@/hooks/useActiveRole";
 import { navEntriesForRole } from "@/lib/role-routes";
 
@@ -18,9 +19,13 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
   const mainNav = activeRole ? navEntriesForRole(activeRole, 'main') : [];
   const secondaryNav = activeRole ? navEntriesForRole(activeRole, 'secondary') : [];
 
-  // Counter de alertas nuevas. TODO[Sprint D-3]: reemplazar mockAlerts por
-  // query a hallazgo where estado='abierto'.
-  const alertasCount = mockAlerts.filter((a) => a.status === "Nueva").length;
+  // Counter de hallazgos abiertos (badge). RLS solo devuelve datos para oc/admin;
+  // para operador el conteo es 0 y la entrada "Alertas" ni siquiera se muestra.
+  const { data: alertasCount = 0 } = useQuery({
+    queryKey: ["hallazgos", "abiertos", "count"],
+    queryFn: contarHallazgosAbiertos,
+    enabled: Boolean(activeRole && activeRole !== "operador"),
+  });
 
   return (
     <aside

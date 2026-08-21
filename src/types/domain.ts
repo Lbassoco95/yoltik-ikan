@@ -162,3 +162,26 @@ export interface ClientRiskTemplate {
   configuracion: MatrizConfig;
   activa: boolean;
 }
+
+// =====================================================================
+// Hallazgo del Motor PLD (tabla `hallazgo`, migration 0005)
+// =====================================================================
+export interface Hallazgo {
+  id: string;
+  organization_id: string;
+  operation_id: string | null;
+  client_id: string | null;
+  tipologia_id: string;
+  tipologia_codigo: string;
+  tipologia_nombre: string;
+  tipologia_version: number;
+  severidad: SeveridadTipologia;
+  regla_payload: Record<string, unknown>;
+  estado: EstadoHallazgo;
+  asignado_a: string | null;
+  resolucion: string | null;
+  creado_en: string;
+  /** Joins de display (no columnas propias de `hallazgo`). */
+  client?: { nombre_razon_social: string } | null;
+  operation?: { monto_mxn: number; activo_virtual: string | null; fecha: string } | null;
+}
