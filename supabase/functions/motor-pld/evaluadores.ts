@@ -519,6 +519,11 @@ export function correrMotor(
       continue;
     }
     const disparos = evaluarTipologia(tip, ops, ctx);
+    // Passthrough genérico: si la tipología trae una `nota` en su regla_dsl
+    // (p. ej. "referencia sujeta a confirmación"), viaja al regla_payload del
+    // hallazgo para que el OC la vea.
+    const nota = (tip.regla_dsl as { nota?: string }).nota;
+    if (nota) for (const d of disparos) d.regla_payload.nota_referencia = nota;
     porTipologia[tip.codigo] = disparos.length;
     candidatos.push(...disparos);
   }

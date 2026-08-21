@@ -1,6 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { listarHallazgos } from "@/lib/api/hallazgos";
+import { invocarMotor } from "@/lib/api/operaciones";
 import type { EstadoHallazgo, Hallazgo, SeveridadTipologia } from "@/types/domain";
 import { formatMxn } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -26,9 +29,19 @@ function esMock(h: Hallazgo): boolean {
 }
 
 export default function AlertsPage() {
+  const queryClient = useQueryClient();
   const { data: hallazgos = [], isLoading, isError, error } = useQuery({
     queryKey: ["hallazgos"],
     queryFn: listarHallazgos,
+  });
+
+  const recorrer = useMutation({
+    mutationFn: () => invocarMotor(), // sin operation_id: evalúa todas las operaciones de la organización
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hallazgos"] });
+      toast.success("Motor ejecutado sobre las operaciones de la organización");
+    },
+    onError: (e: Error) => toast.error(`No se pudo ejecutar el motor: ${e.message}`),
   });
 
   const hayMock = hallazgos.some(esMock);
@@ -42,6 +55,20 @@ export default function AlertsPage() {
             Hallazgos generados por el Motor PLD. El OC confirma, marca inusual/preocupante o descarta.
           </p>
         </div>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => recorrer.mutate()}
+          disabled={recorrer.isPending}
+          title="Ejecuta el Motor PLD sobre todas las operaciones de la organización"
+        >
+          {recorrer.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+          Recorrer motor
+        </Button>
       </div>
 
       {hayMock && (

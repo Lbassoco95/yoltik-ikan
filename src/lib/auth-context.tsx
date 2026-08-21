@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import type { RolUsuario, UserProfile } from '@/types/domain';
+import { type PerfilActividad, resolverPerfil } from './perfil-actividad';
 
 const ACTIVE_ROLE_STORAGE_KEY = 'ikan.activeRole';
 
@@ -11,6 +12,7 @@ interface AuthContextValue {
   roles: RolUsuario[];
   activeRole: RolUsuario | null;
   setActiveRole: (rol: RolUsuario) => void;
+  perfilActividad: PerfilActividad;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -22,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [roles, setRoles] = useState<RolUsuario[]>([]);
   const [activeRole, setActiveRoleInternal] = useState<RolUsuario | null>(null);
+  const [perfilActividad, setPerfilActividad] = useState<PerfilActividad>('generico');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!session?.user) {
         setProfile(null);
         setRoles([]);
+        setPerfilActividad('generico');
         return;
       }
       const user = session.user;
@@ -63,10 +67,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const p = prof as { organization_id: string; nombre: string; email: string; activo: boolean };
           const dbRoles = ((rolesData ?? []) as { rol: RolUsuario }[]).map((r) => r.rol);
           const rolesFinal = dbRoles.length ? dbRoles : [inferredRol];
+
+          // Organización: razón social + perfil de actividad (para "vestir" la UI).
+          let orgNombre = 'FIATCOIN RAMPLE';
+          let perfil: PerfilActividad = 'generico';
+          try {
+            const { data: org } = await supabase
+              .from('organizations')
+              .select('razon_social, perfil_actividad')
+              .eq('id', p.organization_id)
+              .maybeSingle();
+            if (org) {
+              const o = org as { razon_social: string | null; perfil_actividad: string | null };
+              orgNombre = o.razon_social ?? orgNombre;
+              perfil = resolverPerfil(o.perfil_actividad);
+            }
+          } catch {
+            // La columna perfil_actividad puede no existir en un remoto sin migrar.
+          }
+          setPerfilActividad(perfil);
+
           setProfile({
             id: user.id,
             organization_id: p.organization_id,
-            organization_name: 'FIATCOIN RAMPLE',
+            organization_name: orgNombre,
             email: p.email ?? user.email ?? '',
             nombre: p.nombre ?? user.email?.split('@')[0] ?? 'Usuario',
             roles: rolesFinal,
@@ -80,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Sin BD disponible: se usa el fallback de abajo.
       }
 
+      setPerfilActividad('generico');
       setProfile({
         id: user.id,
         organization_id: 'pending',
@@ -125,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, profile, roles, activeRole, setActiveRole, loading, signOut }}
+      value={{ session, profile, roles, activeRole, setActiveRole, perfilActividad, loading, signOut }}
     >
       {children}
     </AuthContext.Provider>

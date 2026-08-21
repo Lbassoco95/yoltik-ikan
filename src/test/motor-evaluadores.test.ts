@@ -307,4 +307,14 @@ describe("correrMotor", () => {
     expect(res.candidatos[0].tipologia_codigo).toBe("XVI-08");
     expect(res.tiposNoSoportados).toContain("XVI-99:raro");
   });
+
+  it("copia regla_dsl.nota a regla_payload.nota_referencia", () => {
+    const t = tip(
+      "XII-01",
+      { tipo: "lookup", campo: "activo_virtual", valores: ["XMR"], nota: "Referencia, sujeta a confirmación" } as unknown as Tipologia["regla_dsl"],
+    );
+    const ops = [op({ id: "x", fecha: "2026-08-19T10:00:00Z", activo_virtual: "XMR" })];
+    const res = correrMotor([t], ops, ctx());
+    expect(res.candidatos[0].regla_payload.nota_referencia).toBe("Referencia, sujeta a confirmación");
+  });
 });

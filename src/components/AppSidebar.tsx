@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { contarHallazgosAbiertos } from "@/lib/api/hallazgos";
 import { useActiveRole } from "@/hooks/useActiveRole";
+import { useAuth } from "@/lib/auth-context";
 import { navEntriesForRole } from "@/lib/role-routes";
+import { NAV_LABEL_OVERRIDES } from "@/lib/perfil-actividad";
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -14,6 +16,8 @@ interface AppSidebarProps {
 export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
   const location = useLocation();
   const { activeRole } = useActiveRole();
+  const { perfilActividad } = useAuth();
+  const navOverrides = NAV_LABEL_OVERRIDES[perfilActividad] ?? {};
 
   // Si todavía no hay rol activo (cargando), no renderizamos nada en el nav.
   const mainNav = activeRole ? navEntriesForRole(activeRole, 'main') : [];
@@ -62,7 +66,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-accent rounded-r-full" />
               )}
               <item.icon className="w-5 h-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && <span>{navOverrides[item.to] ?? item.label}</span>}
               {badge > 0 && (
                 <span className={cn(
                   "ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center",
@@ -93,7 +97,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
                 )}
               >
                 <item.icon className="w-5 h-5 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && <span>{navOverrides[item.to] ?? item.label}</span>}
               </NavLink>
             );
           })}

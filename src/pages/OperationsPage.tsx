@@ -24,6 +24,8 @@ import { listarClientes } from "@/lib/api/clientes";
 import { listarOperaciones, crearOperacion, invocarMotor } from "@/lib/api/operaciones";
 import type { NuevaOperacionInput, TipoOperacion } from "@/types/domain";
 import { UMA_MXN, UMBRAL_IDENTIFICACION_UMA, formatMxn, cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
+import { LABELS, TIPOS_ACTO_NOTARIA, UMBRALES_XII_REFERENCIA } from "@/lib/perfil-actividad";
 
 const threshold645 = UMBRAL_IDENTIFICACION_UMA * UMA_MXN;
 const threshold3210 = 3210 * UMA_MXN;
@@ -42,6 +44,7 @@ const FORM_INICIAL = {
   monto_mxn: "",
   activo_virtual: "",
   pais_iso2: "",
+  tipo_acto: "",
 };
 
 export default function OperationsPage() {
@@ -49,6 +52,9 @@ export default function OperationsPage() {
   const [dialogAbierto, setDialogAbierto] = useState(false);
   const [form, setForm] = useState(FORM_INICIAL);
   const queryClient = useQueryClient();
+  const { perfilActividad } = useAuth();
+  const L = LABELS[perfilActividad];
+  const esNotarias = perfilActividad === "notarias";
 
   const { data: operaciones = [], isLoading, isError, error } = useQuery({
     queryKey: ["operaciones"],
@@ -79,35 +85,44 @@ export default function OperationsPage() {
 
   function enviar() {
     if (!form.client_id) {
-      toast.error("Selecciona un cliente");
+      toast.error(esNotarias ? "Selecciona un compareciente" : "Selecciona un cliente");
       return;
     }
     const monto = Number(form.monto_mxn);
-    if (!Number.isFinite(monto) || monto <= 0) {
+    if (!Number.isFinite(monto) || monto < 0) {
       toast.error("Monto inválido");
       return;
     }
-    const contraparte = form.pais_iso2.trim()
-      ? { pais_iso2: form.pais_iso2.trim().toUpperCase() }
-      : undefined;
+    if (esNotarias && !form.tipo_acto) {
+      toast.error("Selecciona el tipo de acto");
+      return;
+    }
+
+    // Las señales (país, tipo de acto) viajan en contraparte (jsonb).
+    const contraparte: Record<string, unknown> = {};
+    if (form.pais_iso2.trim()) contraparte.pais_iso2 = form.pais_iso2.trim().toUpperCase();
+    if (esNotarias && form.tipo_acto) contraparte.tipo_acto = form.tipo_acto;
+
     alta.mutate({
       client_id: form.client_id,
-      tipo: form.tipo,
+      // En notarías el acto no es una operación cripto; se usa 'otro' y el detalle
+      // viaja en contraparte.tipo_acto.
+      tipo: esNotarias ? "otro" : form.tipo,
       monto_mxn: monto,
-      activo_virtual: form.activo_virtual.trim() || undefined,
-      contraparte,
+      activo_virtual: esNotarias ? undefined : form.activo_virtual.trim() || undefined,
+      contraparte: Object.keys(contraparte).length ? contraparte : undefined,
     });
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Operaciones</h1>
+        <h1 className="text-2xl font-bold text-foreground">{L.operaciones}</h1>
         <Button
           className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
           onClick={() => setDialogAbierto(true)}
         >
-          <Plus className="w-4 h-4" /> Registrar operación
+          <Plus className="w-4 h-4" /> {L.operacionNuevaBtn}
         </Button>
       </div>
 
@@ -115,7 +130,7 @@ export default function OperationsPage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por cliente…"
+            placeholder={esNotarias ? "Buscar por compareciente…" : "Buscar por cliente…"}
             className="pl-10"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -123,14 +138,35 @@ export default function OperationsPage() {
         </div>
       </div>
 
-      <div className="text-xs text-muted-foreground flex gap-6">
-        <span>
-          Umbral identificación (645 UMA): <strong>{formatMxn(threshold645)}</strong>
-        </span>
-        <span>
-          Umbral restricción (3,210 UMA): <strong>{formatMxn(threshold3210)}</strong>
-        </span>
-      </div>
+      {esNotarias ? (
+        <div className="glass-card p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground">
+              Umbrales de aviso — Fracción XII (fe pública)
+            </p>
+            <span className="status-badge bg-warning/20 text-warning text-[10px]">REFERENCIA</span>
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {UMBRALES_XII_REFERENCIA.items.map((u) => (
+              <div key={u.concepto} className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">{u.concepto}</p>
+                <p className="text-lg font-bold text-foreground">{u.umbral}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{u.detalle}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] text-warning">{UMBRALES_XII_REFERENCIA.nota}</p>
+        </div>
+      ) : (
+        <div className="text-xs text-muted-foreground flex gap-6">
+          <span>
+            Umbral identificación (645 UMA): <strong>{formatMxn(threshold645)}</strong>
+          </span>
+          <span>
+            Umbral restricción (3,210 UMA): <strong>{formatMxn(threshold3210)}</strong>
+          </span>
+        </div>
+      )}
 
       <div className="glass-card overflow-hidden">
         {isLoading ? (
@@ -193,7 +229,7 @@ export default function OperationsPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                    Sin operaciones registradas.
+                    {L.operacionesVacio}
                   </td>
                 </tr>
               )}
@@ -205,22 +241,21 @@ export default function OperationsPage() {
       <Dialog open={dialogAbierto} onOpenChange={setDialogAbierto}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Registrar operación</DialogTitle>
-            <DialogDescription>
-              Captura de operación de activos virtuales. Al registrar se ejecuta el monitoreo
-              automatizado.
-            </DialogDescription>
+            <DialogTitle>{L.operacionAltaTitulo}</DialogTitle>
+            <DialogDescription>{L.operacionAltaDesc}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div>
-              <Label>Cliente</Label>
+              <Label>{esNotarias ? "Compareciente" : "Cliente"}</Label>
               <Select
                 value={form.client_id}
                 onValueChange={(v) => setForm({ ...form, client_id: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un cliente…" />
+                  <SelectValue
+                    placeholder={esNotarias ? "Selecciona un compareciente…" : "Selecciona un cliente…"}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {clientes.map((c) => (
@@ -233,42 +268,67 @@ export default function OperationsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
+              {esNotarias ? (
+                <div className="col-span-2">
+                  <Label>Tipo de acto</Label>
+                  <Select
+                    value={form.tipo_acto}
+                    onValueChange={(v) => setForm({ ...form, tipo_acto: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el tipo de acto…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIPOS_ACTO_NOTARIA.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div>
+                  <Label>Tipo</Label>
+                  <Select
+                    value={form.tipo}
+                    onValueChange={(v) => setForm({ ...form, tipo: v as TipoOperacion })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIPOS.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div>
-                <Label>Tipo</Label>
-                <Select
-                  value={form.tipo}
-                  onValueChange={(v) => setForm({ ...form, tipo: v as TipoOperacion })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIPOS.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Monto (MXN)</Label>
+                <Label>{esNotarias ? "Valor del acto (MXN)" : "Monto (MXN)"}</Label>
                 <Input
                   type="number"
                   value={form.monto_mxn}
                   onChange={(e) => setForm({ ...form, monto_mxn: e.target.value })}
                 />
               </div>
+              {!esNotarias && (
+                <div>
+                  <Label>Activo virtual</Label>
+                  <Input
+                    placeholder="BTC, ETH, USDT, XMR…"
+                    value={form.activo_virtual}
+                    onChange={(e) => setForm({ ...form, activo_virtual: e.target.value })}
+                  />
+                </div>
+              )}
               <div>
-                <Label>Activo virtual</Label>
-                <Input
-                  placeholder="BTC, ETH, USDT, XMR…"
-                  value={form.activo_virtual}
-                  onChange={(e) => setForm({ ...form, activo_virtual: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>País contraparte (ISO2)</Label>
+                <Label>
+                  {esNotarias ? "País del socio / contraparte (ISO2)" : "País contraparte (ISO2)"}
+                </Label>
                 <Input
                   placeholder="MX, IR…"
                   maxLength={2}

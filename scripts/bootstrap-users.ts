@@ -38,6 +38,7 @@ if (!SERVICE_KEY) {
 }
 
 const FIATCOIN_ORG_ID = '11111111-1111-1111-1111-111111111111';
+const NOTARIA_ORG_ID = '12121212-1212-1212-1212-121212121212';
 
 /** Genera password de 24 caracteres URL-safe (~144 bits de entropía). */
 function generatePassword(): string {
@@ -48,6 +49,9 @@ interface SeedUser {
   email: string;
   nombre: string;
   roles: Array<'operador' | 'oc' | 'admin'>;
+  /** Organización del usuario. Default: FIATCOIN. La org debe existir en BD
+   *  (aplicar seeds) antes de correr el script. */
+  organizationId?: string;
 }
 
 const SEED_USERS: SeedUser[] = [
@@ -72,6 +76,13 @@ const SEED_USERS: SeedUser[] = [
     email: 'leo.bassoco@kawiil.mx',
     nombre: 'Leo Bassoco (maestro)',
     roles: ['operador', 'oc', 'admin'],
+  },
+  {
+    // Usuario de la notaría demo (org distinta). Requiere el seed 08 aplicado.
+    email: 'notaria@demo.mx',
+    nombre: 'Notaría Demo GDL',
+    roles: ['oc', 'admin'],
+    organizationId: NOTARIA_ORG_ID,
   },
 ];
 
@@ -109,10 +120,11 @@ async function ensureAuthUser(u: SeedUser): Promise<BootstrapResult> {
 }
 
 async function ensureProfileAndRoles(userId: string, u: SeedUser) {
+  const orgId = u.organizationId ?? FIATCOIN_ORG_ID;
   const { error: profErr } = await supabase.from('user_profile').upsert(
     {
       id: userId,
-      organization_id: FIATCOIN_ORG_ID,
+      organization_id: orgId,
       email: u.email,
       nombre: u.nombre,
       activo: true,
@@ -125,12 +137,12 @@ async function ensureProfileAndRoles(userId: string, u: SeedUser) {
     .from('user_roles')
     .delete()
     .eq('user_id', userId)
-    .eq('organization_id', FIATCOIN_ORG_ID);
+    .eq('organization_id', orgId);
   if (delErr) throw delErr;
 
   const rows = u.roles.map((rol) => ({
     user_id: userId,
-    organization_id: FIATCOIN_ORG_ID,
+    organization_id: orgId,
     rol,
   }));
   const { error: rolesErr } = await supabase.from('user_roles').insert(rows);

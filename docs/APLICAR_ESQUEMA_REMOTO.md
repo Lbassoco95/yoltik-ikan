@@ -77,3 +77,29 @@ seed, regénralo concatenando `migrations/0001..0005` + `seed/01..07` en ese ord
 - Al aplicar por primera vez apareció un bug en las políticas RLS de `risk_element` (usaban
   `element_id`, columna inexistente; corregido a `methodology_id` en `0002`). Afectaba también
   `supabase db reset`.
+
+## Demo Notarías (fracción XII) — aplicación
+
+Requiere aplicar la migration `0006` y el seed `08` **en dos envíos separados** del SQL Editor,
+por la regla de PostgreSQL de que un valor de enum recién agregado no puede usarse en la misma
+transacción:
+
+1. **Envío 1** — pega y corre `supabase/migrations/0006_perfil_actividad_notarias.sql`
+   (agrega el valor de enum `XII` y la columna `organizations.perfil_actividad`).
+2. **Envío 2** — pega y corre `supabase/seed/08_notarias_demo.sql` (org notaría, comparecientes,
+   actos DEMO y tipologías XII). Idempotente.
+3. **Usuario notaría**: Authentication → Users → Add user `notaria@demo.mx` (Auto Confirm), copia
+   el UID y corre `supabase/manual/bootstrap_usuario_notaria.sql`. (O `npm run bootstrap:users`,
+   que ya lo incluye.)
+
+Verificación:
+
+```sql
+select razon_social, perfil_actividad from organizations
+where id = '12121212-1212-1212-1212-121212121212';           -- perfil_actividad = 'notarias'
+select count(*) from tipologia_av where sector = 'XII';       -- 3
+```
+
+Al entrar con `notaria@demo.mx`, la UI se "viste" de notaría (Comparecientes / Actos). En la
+bandeja del OC, **Recorrer motor** genera los hallazgos de los actos DEMO (compraventa ≥16,000 UMA,
+poder irrevocable, socio en país de riesgo).

@@ -25,6 +25,8 @@ import {
 import { listarClientes, crearCliente } from "@/lib/api/clientes";
 import type { NuevoClienteInput, TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
+import { LABELS } from "@/lib/perfil-actividad";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
@@ -49,6 +51,8 @@ export default function ClientsPage() {
   const [form, setForm] = useState(FORM_INICIAL);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { perfilActividad } = useAuth();
+  const L = LABELS[perfilActividad];
 
   const { data: clientes = [], isLoading, isError, error } = useQuery({
     queryKey: ["clientes"],
@@ -101,12 +105,12 @@ export default function ClientsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
+        <h1 className="text-2xl font-bold text-foreground">{L.clientes}</h1>
         <Button
           className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
           onClick={() => setDialogAbierto(true)}
         >
-          <Plus className="w-4 h-4" /> Nuevo Cliente
+          <Plus className="w-4 h-4" /> {L.clienteNuevoBtn}
         </Button>
       </div>
 
@@ -188,7 +192,7 @@ export default function ClientsPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                    Sin clientes registrados.
+                    {L.clientesVacio}
                   </td>
                 </tr>
               )}
@@ -200,10 +204,10 @@ export default function ClientsPage() {
       <Dialog open={dialogAbierto} onOpenChange={setDialogAbierto}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Alta de cliente</DialogTitle>
+            <DialogTitle>{L.clienteAltaTitulo}</DialogTitle>
             <DialogDescription>
-              Captura del cliente final. La matriz de riesgo se evalúa como paso posterior desde
-              el detalle del cliente.
+              Captura del registro. La matriz de riesgo se evalúa como paso posterior desde
+              el detalle.
             </DialogDescription>
           </DialogHeader>
 
