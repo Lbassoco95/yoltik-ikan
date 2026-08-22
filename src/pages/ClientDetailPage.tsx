@@ -16,12 +16,17 @@ import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import { elementosAplicables, respuestasCompletas } from "@/lib/riesgo/matriz";
 import { formatMxn } from "@/lib/utils";
 import type { TipoPersona } from "@/types/domain";
+import { useAuth } from "@/lib/auth-context";
+import { LABELS } from "@/lib/perfil-actividad";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
 export default function ClientDetailPage() {
   const { id } = useParams();
   const [respuestas, setRespuestas] = useState<Record<string, number>>({});
+  const { perfilActividad } = useAuth();
+  const L = LABELS[perfilActividad];
+  const esNotarias = perfilActividad === "notarias";
 
   const { data: client, isLoading } = useQuery({
     queryKey: ["cliente", id],
@@ -59,7 +64,7 @@ export default function ClientDetailPage() {
         to="/clientes"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" /> Volver a clientes
+        <ArrowLeft className="w-4 h-4" /> {L.volverAClientes}
       </Link>
 
       <div className="glass-card p-6">
@@ -76,7 +81,7 @@ export default function ClientDetailPage() {
         <TabsList className="bg-muted/50">
           <TabsTrigger value="datos">Datos generales</TabsTrigger>
           <TabsTrigger value="matriz">Matriz de riesgo</TabsTrigger>
-          <TabsTrigger value="operaciones">Operaciones</TabsTrigger>
+          <TabsTrigger value="operaciones">{esNotarias ? "Actos" : "Operaciones"}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="datos">
