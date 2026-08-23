@@ -2,6 +2,7 @@ import { Users, AlertTriangle, FileCheck, Clock, TrendingDown, TrendingUp } from
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { mockAlerts, mockClients, mockDailyOperations, mockRiskDistribution, recentActivity } from "@/data/mockData";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
 const metrics = [
   { label: "Clientes activos", value: mockClients.filter(c => c.status === "Activo").length, change: "+12%", positive: true, icon: Users, color: "bg-accent" },
@@ -20,6 +21,15 @@ const kanbanColumns = [
 
 export default function DashboardPage() {
   const today = new Date().toLocaleDateString("es-MX", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const { profile, perfilActividad } = useAuth();
+  const esNotarias = perfilActividad === "notarias";
+  const nombre = profile?.nombre ?? "";
+  // Ajustes mínimos de copy por perfil (los datos siguen siendo mock por ahora).
+  const metricsView = metrics.map((m) =>
+    m.label === "Clientes activos" && esNotarias
+      ? { ...m, label: "Comparecientes activos" }
+      : m,
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -33,13 +43,13 @@ export default function DashboardPage() {
 
       {/* Greeting */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Buenos días, Patricia</h1>
+        <h1 className="text-2xl font-bold text-foreground">Hola, {nombre}</h1>
         <p className="text-sm text-muted-foreground capitalize">{today}</p>
       </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-5 gap-4">
-        {metrics.map((m) => (
+        {metricsView.map((m) => (
           <div key={m.label} className="metric-card">
             <div className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-xl", m.color)} />
             <div className="flex items-start justify-between">
@@ -110,7 +120,7 @@ export default function DashboardPage() {
         <div className="col-span-2 space-y-4">
           {/* Bar Chart */}
           <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Operaciones por día</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-4">{esNotarias ? "Actos por día" : "Operaciones por día"}</h3>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={mockDailyOperations.slice(-14)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 20%, 90%)" />

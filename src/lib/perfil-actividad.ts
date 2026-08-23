@@ -95,3 +95,9 @@ export const UMBRALES_XII_REFERENCIA = {
 export function resolverPerfil(raw: string | null | undefined): PerfilActividad {
   return raw === 'notarias' ? 'notarias' : 'generico';
 }
+
+/** Etiqueta legible del tipo de acto notarial (guardado en contraparte.tipo_acto). */
+export function labelTipoActo(value: unknown): string {
+  const v = String(value ?? '');
+  return TIPOS_ACTO_NOTARIA.find((t) => t.value === v)?.label ?? (v || '—');
+}

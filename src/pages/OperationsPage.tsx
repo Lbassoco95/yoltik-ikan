@@ -25,7 +25,7 @@ import { listarOperaciones, crearOperacion, invocarMotor } from "@/lib/api/opera
 import type { NuevaOperacionInput, TipoOperacion } from "@/types/domain";
 import { UMA_MXN, UMBRAL_IDENTIFICACION_UMA, formatMxn, cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { LABELS, TIPOS_ACTO_NOTARIA, UMBRALES_XII_REFERENCIA } from "@/lib/perfil-actividad";
+import { LABELS, TIPOS_ACTO_NOTARIA, UMBRALES_XII_REFERENCIA, labelTipoActo } from "@/lib/perfil-actividad";
 
 const threshold645 = UMBRAL_IDENTIFICACION_UMA * UMA_MXN;
 const threshold3210 = 3210 * UMA_MXN;
@@ -181,7 +181,14 @@ export default function OperationsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                {["Fecha", "Cliente", "Monto", "Tipo", "Activo", "Requiere aviso"].map((h) => (
+                {[
+                  "Fecha",
+                  esNotarias ? "Compareciente" : "Cliente",
+                  "Monto",
+                  esNotarias ? "Tipo de acto" : "Tipo",
+                  esNotarias ? "Valor (UMA)" : "Activo",
+                  "Requiere aviso",
+                ].map((h) => (
                   <th
                     key={h}
                     className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
@@ -211,11 +218,19 @@ export default function OperationsPage() {
                     {nombrePorCliente.get(op.client_id) ?? op.client_id}
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold">{formatMxn(op.monto_mxn)}</td>
-                  <td className="px-4 py-3 text-sm">{op.tipo}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {esNotarias ? labelTipoActo((op.contraparte as Record<string, unknown>)?.tipo_acto) : op.tipo}
+                  </td>
                   <td className="px-4 py-3">
-                    <span className="status-badge bg-vulnerable/10 text-vulnerable">
-                      {op.activo_virtual ?? "—"}
-                    </span>
+                    {esNotarias ? (
+                      <span className="text-sm text-muted-foreground">
+                        {Math.round(op.monto_mxn / UMA_MXN).toLocaleString("es-MX")} UMA
+                      </span>
+                    ) : (
+                      <span className="status-badge bg-vulnerable/10 text-vulnerable">
+                        {op.activo_virtual ?? "—"}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {op.requiere_aviso ? (

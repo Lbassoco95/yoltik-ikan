@@ -14,10 +14,10 @@ import { Button } from "@/components/ui/button";
 import { getCliente, getPlantillaRiesgoXVI } from "@/lib/api/clientes";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import { elementosAplicables, respuestasCompletas } from "@/lib/riesgo/matriz";
-import { formatMxn } from "@/lib/utils";
+import { formatMxn, UMA_MXN } from "@/lib/utils";
 import type { TipoPersona } from "@/types/domain";
 import { useAuth } from "@/lib/auth-context";
-import { LABELS } from "@/lib/perfil-actividad";
+import { LABELS, labelTipoActo } from "@/lib/perfil-actividad";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
@@ -80,7 +80,9 @@ export default function ClientDetailPage() {
       <Tabs defaultValue="datos" className="space-y-4">
         <TabsList className="bg-muted/50">
           <TabsTrigger value="datos">Datos generales</TabsTrigger>
-          <TabsTrigger value="matriz">Matriz de riesgo</TabsTrigger>
+          {/* La matriz de riesgo aún no tiene plantilla para sector XII; se oculta
+              en notarías para no mostrar el error de plantilla inexistente. */}
+          {!esNotarias && <TabsTrigger value="matriz">Matriz de riesgo</TabsTrigger>}
           <TabsTrigger value="operaciones">{esNotarias ? "Actos" : "Operaciones"}</TabsTrigger>
         </TabsList>
 
@@ -108,6 +110,7 @@ export default function ClientDetailPage() {
           </div>
         </TabsContent>
 
+        {!esNotarias && (
         <TabsContent value="matriz">
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-warning">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -166,13 +169,20 @@ export default function ClientDetailPage() {
             </div>
           )}
         </TabsContent>
+        )}
 
         <TabsContent value="operaciones">
           <div className="glass-card overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  {["Fecha", "Tipo", "Monto", "Activo", "Requiere aviso"].map((h) => (
+                  {[
+                    "Fecha",
+                    esNotarias ? "Tipo de acto" : "Tipo",
+                    "Monto",
+                    esNotarias ? "Valor (UMA)" : "Activo",
+                    "Requiere aviso",
+                  ].map((h) => (
                     <th
                       key={h}
                       className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
@@ -188,9 +198,15 @@ export default function ClientDetailPage() {
                     <td className="px-4 py-3 text-sm">
                       {new Date(op.fecha).toLocaleDateString("es-MX")}
                     </td>
-                    <td className="px-4 py-3 text-sm">{op.tipo}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {esNotarias ? labelTipoActo((op.contraparte as Record<string, unknown>)?.tipo_acto) : op.tipo}
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium">{formatMxn(op.monto_mxn)}</td>
-                    <td className="px-4 py-3 text-sm">{op.activo_virtual ?? "—"}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {esNotarias
+                        ? `${Math.round(op.monto_mxn / UMA_MXN).toLocaleString("es-MX")} UMA`
+                        : (op.activo_virtual ?? "—")}
+                    </td>
                     <td className="px-4 py-3">
                       {op.requiere_aviso ? (
                         <span className="status-badge bg-warning/10 text-warning">Sí</span>
