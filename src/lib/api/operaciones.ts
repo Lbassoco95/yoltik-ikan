@@ -40,9 +40,10 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
   return data as unknown as Operation;
 }
 
-/** Invoca la Edge Function motor-pld. El acuse al Operador es neutro: el motor
- *  corre en segundo plano y sus hallazgos los consume el OC. Un fallo al invocar
- *  no rompe el alta de la operación (se registra en consola). */
+/** Invoca la Edge Function motor-pld tras el alta de una operación. El acuse al
+ *  Operador es neutro: el motor corre en segundo plano y sus hallazgos los
+ *  consume el OC. Un fallo al invocar NO rompe el alta (se registra en consola).
+ *  Para una corrida manual con feedback real, usar `recorrerMotor()`. */
 export async function invocarMotor(operationId?: string): Promise<void> {
   try {
     const { organizationId } = await contextoSesion();
@@ -53,4 +54,37 @@ export async function invocarMotor(operationId?: string): Promise<void> {
   } catch (e) {
     console.warn('[motor-pld] no se pudo invocar:', (e as Error).message);
   }
+}
+
+export interface MotorRunResultado {
+  ok: boolean;
+  operaciones_procesadas: number;
+  hallazgos_creados: number;
+  por_tipologia?: Record<string, number>;
+  operaciones_marcadas_aviso?: number;
+  duracion_ms?: number;
+}
+
+/** Corre el motor sobre TODAS las operaciones de la organización (botón
+ *  "Recorrer motor" del OC). A diferencia de `invocarMotor`, NO traga errores:
+ *  lanza si la sesión/organización no se resuelve o si la función devuelve
+ *  error, para que la UI distinga un éxito real de uno falso. Devuelve el
+ *  resumen de la corrida (2xx). */
+export async function recorrerMotor(): Promise<MotorRunResultado> {
+  const { organizationId } = await contextoSesion();
+  const { data, error } = await supabase.functions.invoke('motor-pld', {
+    body: { organization_id: organizationId, trigger_tipo: 'manual' },
+  });
+  if (error) {
+    // supabase-js envuelve el cuerpo del error en error.context (Response).
+    let detalle = error.message;
+    try {
+      const body = await (error as { context?: Response }).context?.json();
+      if (body?.error) detalle = body.error;
+    } catch {
+      /* sin cuerpo JSON; se queda con error.message */
+    }
+    throw new Error(detalle);
+  }
+  return data as MotorRunResultado;
 }
