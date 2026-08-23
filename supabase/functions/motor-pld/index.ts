@@ -40,10 +40,30 @@ interface RunInput {
 // Severidades que marcan la operación como candidata a aviso.
 const SEVERIDADES_AVISO = new Set(['alta', 'critica']);
 
+// CORS: el navegador manda un preflight OPTIONS antes del POST de
+// supabase.functions.invoke. Sin estos headers el preflight falla (405) y el
+// POST real nunca se envía.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  });
+}
+
 // @ts-expect-error — Deno.serve
 Deno.serve(async (req: Request) => {
+  // Preflight CORS.
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
   }
 
   const input: RunInput = await req.json();
@@ -57,7 +77,7 @@ Deno.serve(async (req: Request) => {
     .eq('organization_id', input.organization_id)
     .eq('activa', true);
   if (errTips) {
-    return new Response(JSON.stringify({ error: errTips.message }), { status: 500 });
+    return json({ error: errTips.message }, 500);
   }
 
   // --- 2. Operaciones (+ cliente) ------------------------------------
@@ -68,7 +88,7 @@ Deno.serve(async (req: Request) => {
   if (input.operation_id) opQuery = opQuery.eq('id', input.operation_id);
   const { data: operacionesRaw, error: errOps } = await opQuery;
   if (errOps) {
-    return new Response(JSON.stringify({ error: errOps.message }), { status: 500 });
+    return json({ error: errOps.message }, 500);
   }
 
   // --- 3. Catálogo de países por fuente (para lookup XVI-04) ----------
@@ -77,7 +97,7 @@ Deno.serve(async (req: Request) => {
     .select('iso2, fuente')
     .eq('organization_id', input.organization_id);
   if (errPaises) {
-    return new Response(JSON.stringify({ error: errPaises.message }), { status: 500 });
+    return json({ error: errPaises.message }, 500);
   }
 
   const paisPorFuente: Record<string, Set<string>> = {};
@@ -153,7 +173,7 @@ Deno.serve(async (req: Request) => {
     }));
     const { data: insertados, error: errIns } = await supabase.from('hallazgo').insert(filas).select('id');
     if (errIns) {
-      return new Response(JSON.stringify({ error: errIns.message }), { status: 500 });
+      return json({ error: errIns.message }, 500);
     }
     hallazgos_creados = insertados?.length ?? 0;
   }
@@ -194,17 +214,14 @@ Deno.serve(async (req: Request) => {
     },
   });
 
-  return new Response(
-    JSON.stringify({
-      ok: true,
-      operaciones_procesadas: operaciones.length,
-      hallazgos_creados,
-      por_tipologia: porTipologia,
-      operaciones_marcadas_aviso: opsAviso.length,
-      duracion_ms,
-    }),
-    { headers: { 'content-type': 'application/json' } },
-  );
+  return json({
+    ok: true,
+    operaciones_procesadas: operaciones.length,
+    hallazgos_creados,
+    por_tipologia: porTipologia,
+    operaciones_marcadas_aviso: opsAviso.length,
+    duracion_ms,
+  });
 });
 
 export {};
