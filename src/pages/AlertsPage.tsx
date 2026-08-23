@@ -3,7 +3,7 @@ import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { listarHallazgos } from "@/lib/api/hallazgos";
-import { invocarMotor } from "@/lib/api/operaciones";
+import { recorrerMotor } from "@/lib/api/operaciones";
 import type { EstadoHallazgo, Hallazgo, SeveridadTipologia } from "@/types/domain";
 import { formatMxn } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -36,10 +36,13 @@ export default function AlertsPage() {
   });
 
   const recorrer = useMutation({
-    mutationFn: () => invocarMotor(), // sin operation_id: evalúa todas las operaciones de la organización
-    onSuccess: () => {
+    mutationFn: recorrerMotor, // evalúa todas las operaciones de la organización; lanza si falla
+    onSuccess: (r) => {
       queryClient.invalidateQueries({ queryKey: ["hallazgos"] });
-      toast.success("Motor ejecutado sobre las operaciones de la organización");
+      queryClient.invalidateQueries({ queryKey: ["hallazgos", "abiertos", "count"] });
+      toast.success(
+        `Motor ejecutado: ${r.hallazgos_creados} hallazgo(s) nuevo(s) sobre ${r.operaciones_procesadas} operación(es).`,
+      );
     },
     onError: (e: Error) => toast.error(`No se pudo ejecutar el motor: ${e.message}`),
   });
