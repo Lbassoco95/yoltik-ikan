@@ -1,15 +1,16 @@
-import type { MatrizConfig, MatrizElemento, MatrizVariable, TipoPersona } from '@/types/domain';
+import type {
+  MatrizConfig,
+  MatrizElemento,
+  MatrizVariable,
+  TipoPersona,
+  TriggerAltoDeOficio,
+} from '@/types/domain';
 
 /**
  * Helpers puros de la matriz de riesgo del cliente.
  *
- * NOTA[RCG-0]: el cálculo de `score_total`/`clasificacion` NO está aquí a
- * propósito. La fórmula de ponderación vive en el Excel original de Ixim Pay
- * ("Matriz de Riesgos Clientes - Ixim Pay.xlsx") y el seed de Juan Pérez
- * es inconsistente con una suma simple (subtotales suman 25 pero declara 17).
- * Por la regla "no inventar algoritmos", el score queda PENDIENTE hasta que
- * Kawiil-Cumplimiento confirme la fórmula. Estos helpers solo resuelven qué
- * variables aplican y validan que la captura esté completa.
+ * Resuelven qué variables aplican, validan que la captura esté completa y
+ * calculan score y clasificación (ver "Cálculo de score" más abajo).
  */
 
 /**
@@ -47,4 +48,151 @@ export function respuestasCompletas(
 ): boolean {
   const variables = variablesAplicables(config, tipoPersona);
   return variables.every((v) => typeof respuestas[v.codigo] === 'number');
+}
+
+// =====================================================================
+// Cálculo de score y clasificación
+// =====================================================================
+// Fórmula acordada (cierra RCG0.B0b): matriz ponderada estándar.
+//
+//   score_total = Σ (peso_variable × valor_opcion_elegida)
+//                 sobre las variables que aplican y que fueron respondidas.
+//
+// Un trigger de alto de oficio activado gana sobre el score.
+//
+// ADVERTENCIA: esta es metodología estándar de matriz ponderada, NO la copia
+// literal del Excel de Ixim Pay — ese sigue sin poder usarse tal cual (sus
+// subtotales suman 25 y declara score 17). Kawiil-Cumplimiento debe validarla
+// contra la intención del Excel antes de usarla para decisiones regulatorias
+// reales. No bloquea el piloto controlado.
+
+/** Peso por defecto cuando la variable no declara uno. */
+export const PESO_POR_DEFECTO = 1;
+
+export interface ResultadoEvaluacion {
+  score_total: number;
+  /** Score parcial por código de elemento; se persiste en `subtotales`. */
+  subtotales: Record<string, number>;
+  clasificacion: 'bajo' | 'medio' | 'alto';
+  /** Códigos de los triggers de alto de oficio que se activaron. */
+  triggers_activados: string[];
+  /** Texto para `client_risk_assessment.motivo_alto_de_oficio`; null si no aplica. */
+  motivo_alto_de_oficio: string | null;
+  /** Situaciones que no impiden clasificar pero conviene registrar. */
+  warnings: string[];
+}
+
+/** Score de una sola variable. Sin respuesta aporta 0. */
+function scoreVariable(v: MatrizVariable, respuestas: Record<string, number>): number {
+  const valor = respuestas[v.codigo];
+  if (typeof valor !== 'number') return 0;
+  return (v.peso ?? PESO_POR_DEFECTO) * valor;
+}
+
+/** Triggers de alto de oficio activados por las respuestas.
+ *  Solo puede dispararse un trigger que declare `variable_codigo` y
+ *  `valor_minimo`; los demás son documentales. */
+export function triggersActivados(
+  config: MatrizConfig,
+  tipoPersona: TipoPersona,
+  respuestas: Record<string, number>,
+): TriggerAltoDeOficio[] {
+  const aplicables = new Set(variablesAplicables(config, tipoPersona).map((v) => v.codigo));
+  return (config.triggers_alto_de_oficio ?? []).filter((t) => {
+    if (!t.variable_codigo || typeof t.valor_minimo !== 'number') return false;
+    // Un trigger que apunta a una variable que no aplica a este tipo de
+    // persona no dispara (ej. "PEP extranjero" de persona física en una moral).
+    if (!aplicables.has(t.variable_codigo)) return false;
+    const respuesta = respuestas[t.variable_codigo];
+    return typeof respuesta === 'number' && respuesta >= t.valor_minimo;
+  });
+}
+
+/** Clasifica un score contra las bandas de `escala_cliente`.
+ *  Si cae fuera de todas, usa la banda más cercana y lo reporta. */
+export function clasificarPorBanda(
+  config: MatrizConfig,
+  score: number,
+): { clasificacion: 'bajo' | 'medio' | 'alto'; warning: string | null } {
+  const bandas = (['bajo', 'medio', 'alto'] as const).map((nombre) => ({
+    nombre,
+    ...config.escala_cliente[nombre],
+  }));
+
+  const dentro = bandas.find((b) => score >= b.min && score <= b.max);
+  if (dentro) return { clasificacion: dentro.nombre, warning: null };
+
+  // Fuera de todas las bandas: la plantilla está mal calibrada. Se clasifica
+  // por el extremo más cercano en vez de fallar, y se deja constancia.
+  const ordenadas = [...bandas].sort((a, b) => a.min - b.min);
+  const menor = ordenadas[0];
+  const mayor = ordenadas[ordenadas.length - 1];
+
+  let elegida: (typeof bandas)[number];
+  if (score < menor.min) {
+    elegida = menor;
+  } else if (score > mayor.max) {
+    elegida = mayor;
+  } else {
+    // Hueco entre bandas: la más cercana por distancia al borde.
+    elegida = ordenadas.reduce((mejor, b) => {
+      const d = score < b.min ? b.min - score : score - b.max;
+      const dMejor = score < mejor.min ? mejor.min - score : score - mejor.max;
+      return d < dMejor ? b : mejor;
+    }, ordenadas[0]);
+  }
+
+  return {
+    clasificacion: elegida.nombre,
+    warning:
+      `score_total ${score} cae fuera de todas las bandas de escala_cliente ` +
+      `(${menor.min}–${mayor.max}); se clasificó como "${elegida.nombre}" por cercanía. ` +
+      'Revisar la calibración de la plantilla.',
+  };
+}
+
+/**
+ * Evalúa el riesgo de un cliente contra su plantilla.
+ *
+ * Solo debe llamarse con la captura completa (`respuestasCompletas`); el caller
+ * es quien decide qué hacer si no lo está.
+ */
+export function evaluarMatriz(
+  config: MatrizConfig,
+  tipoPersona: TipoPersona,
+  respuestas: Record<string, number>,
+): ResultadoEvaluacion {
+  const warnings: string[] = [];
+  const subtotales: Record<string, number> = {};
+  let score_total = 0;
+
+  for (const el of elementosAplicables(config, tipoPersona)) {
+    const subtotal = el.variables.reduce((s, v) => s + scoreVariable(v, respuestas), 0);
+    subtotales[el.codigo] = subtotal;
+    score_total += subtotal;
+  }
+
+  const activados = triggersActivados(config, tipoPersona, respuestas);
+  if (activados.length > 0) {
+    return {
+      score_total,
+      subtotales,
+      clasificacion: 'alto',
+      triggers_activados: activados.map((t) => t.codigo),
+      motivo_alto_de_oficio: activados.map((t) => `${t.codigo}: ${t.descripcion}`).join(' · '),
+      warnings,
+    };
+  }
+
+  const { clasificacion, warning } = clasificarPorBanda(config, score_total);
+  if (warning) warnings.push(warning);
+
+  return {
+    score_total,
+    subtotales,
+    clasificacion,
+    triggers_activados: [],
+    motivo_alto_de_oficio: null,
+    warnings,
+  };
 }

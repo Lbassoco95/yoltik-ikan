@@ -157,6 +157,17 @@ export interface MatrizEscalaRango {
   max: number;
   acciones: string;
 }
+/** Un trigger sin `variable_codigo`/`valor_minimo` es solo descriptivo: queda
+ *  documentado en la plantilla pero el motor no puede dispararlo solo. Ambas
+ *  claves son nuevas y opcionales, así que las plantillas ya publicadas siguen
+ *  siendo válidas sin migración. */
+export interface TriggerAltoDeOficio {
+  codigo: string;
+  descripcion: string;
+  variable_codigo?: string;
+  valor_minimo?: number;
+}
+
 export interface MatrizConfig {
   elementos: MatrizElemento[];
   escala_cliente: {
@@ -164,7 +175,7 @@ export interface MatrizConfig {
     medio: MatrizEscalaRango;
     alto: MatrizEscalaRango;
   };
-  triggers_alto_de_oficio: { codigo: string; descripcion: string }[];
+  triggers_alto_de_oficio: TriggerAltoDeOficio[];
 }
 export type EstadoPlantilla = 'borrador' | 'publicada';
 

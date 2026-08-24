@@ -151,6 +151,34 @@ async function ensureProfileAndRoles(userId: string, u: SeedUser) {
   console.log(`    roles: [${u.roles.join(', ')}]`);
 }
 
+/**
+ * Asigna `capturado_por` en los clientes y operaciones demo que lo tengan nulo.
+ *
+ * Sin esto, un Operador no puede ver ni evaluar a los clientes sembrados: la
+ * política `client_select` lo limita a los que él capturó, y la de
+ * `client_risk_assessment` evalúa su EXISTS sobre `client` bajo ese mismo RLS,
+ * así que el guardado de la matriz falla con "violates row-level security".
+ *
+ * Va aquí y no en un seed .sql porque los UUID de los usuarios los genera
+ * Supabase Auth al vuelo: el seed no puede referenciarlos. Es idempotente.
+ */
+async function asignarCapturadoPorDemo(operadorPorOrg: Map<string, string>) {
+  for (const [orgId, userId] of operadorPorOrg) {
+    for (const tabla of ['client', 'operation'] as const) {
+      const { data, error } = await supabase
+        .from(tabla)
+        .update({ capturado_por: userId })
+        .eq('organization_id', orgId)
+        .is('capturado_por', null)
+        .select('id');
+      if (error) throw error;
+      if (data?.length) {
+        console.log(`    ${tabla}: ${data.length} fila(s) demo asignadas al operador`);
+      }
+    }
+  }
+}
+
 async function main() {
   console.log('[bootstrap-users] target:', SUPABASE_URL);
   console.log('[bootstrap-users] organización:', IXIM_PAY_ORG_ID, '(Ixim Pay)\n');
@@ -178,6 +206,18 @@ async function main() {
     results.push(r);
     console.log('');
   }
+
+  // Los clientes/operaciones demo se siembran sin dueño; sin dueño el Operador
+  // no los ve (RLS) y no puede guardar su evaluación de riesgo.
+  console.log('Asignando datos demo a los operadores…');
+  const operadorPorOrg = new Map<string, string>();
+  for (const [i, u] of SEED_USERS.entries()) {
+    if (!u.roles.includes('operador')) continue;
+    const orgId = u.organizationId ?? IXIM_PAY_ORG_ID;
+    if (!operadorPorOrg.has(orgId)) operadorPorOrg.set(orgId, results[i].userId);
+  }
+  await asignarCapturadoPorDemo(operadorPorOrg);
+  console.log('');
 
   console.log('═══════════════════════════════════════════════════════════════');
   console.log(' CREDENCIALES DEMO (guarda en 1Password — NO se vuelven a mostrar)');
