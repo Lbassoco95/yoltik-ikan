@@ -1,7 +1,7 @@
 -- =====================================================================
 -- Ikán · Migration 0002 · Metodología EBR (institucional) y matriz de cliente
 -- =====================================================================
--- Generaliza el EBR FIATCOIN. Fuente: "Metodologia EBR - FIATCOIN RAMPLE.xlsx".
+-- Generaliza el EBR Ixim Pay. Fuente: "Metodologia EBR - Ixim Pay.xlsx".
 -- =====================================================================
 
 create table risk_methodology (

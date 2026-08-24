@@ -17,7 +17,7 @@
 
 ## Decisiones clave
 
-1. **Sector piloto**: XVI (Activos Virtuales). Seed = FIATCOIN.
+1. **Sector piloto**: XVI (Activos Virtuales). Seed = Ixim Pay.
 2. **Catálogo unificado**: el motor es uno solo; cada AV trae su set de tipologías.
 3. **Fase 1 monolito-funcional**: el front consume Supabase directo. Fase 2 (post-demo) introducirá API REST propia.
 4. **3 roles**: Operador, OC, Admin. Un usuario puede acumular roles. RLS discrimina por rol.

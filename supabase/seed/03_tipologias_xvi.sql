@@ -1,7 +1,7 @@
 -- =====================================================================
 -- Seed · Tipologías sector XVI (Activos Virtuales)
 -- =====================================================================
--- 8 tipologías derivadas de la metodología FIATCOIN y de las señales de
+-- 8 tipologías derivadas de la metodología Ixim Pay y de las señales de
 -- alerta UIF para activos virtuales (Anexo D de la metodología PLD-FT).
 -- Cada `regla_dsl` es declarativa: el Motor PLD las interpreta sin código.
 -- =====================================================================
@@ -36,7 +36,7 @@ values
       "secuencia": ["deposito_fiat", "retiro_cripto"],
       "condicion": { "razon_retiro_saldo": { "op": ">=", "valor": 0.9 } }
     }'::jsonb,
-   'alta', 1, 'GAFI Recomendación 15 · Anexo D Metodología FIATCOIN'),
+   'alta', 1, 'GAFI Recomendación 15 · Anexo D Metodología Ixim Pay'),
 
   -- XVI-03 Exposición on-chain
   ('33333333-0000-0000-0000-000000000003',
@@ -100,7 +100,7 @@ values
       "factor": 3.0,
       "comparar": "promedio_historico_mensual"
     }'::jsonb,
-   'alta', 1, 'Metodología FIATCOIN §6 — perfil transaccional'),
+   'alta', 1, 'Metodología Ixim Pay §6 — perfil transaccional'),
 
   -- XVI-08 Privacy coins
   ('33333333-0000-0000-0000-000000000008',

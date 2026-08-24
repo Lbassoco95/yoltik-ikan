@@ -42,9 +42,9 @@ Crea:
 - `supabase/migrations/0005_motor_pld.sql` (tipologías por AV, hallazgos, runs, avisos).
 - `supabase/functions/motor-pld/index.ts` (stub Sprint D-3).
 
-### ⏳ D1.B0d — Seeds FIATCOIN
+### ⏳ D1.B0d — Seeds Ixim Pay
 
-Crea `supabase/seed/seed.sql` + 6 archivos con datos exactos de FIATCOIN RAMPLE
+Crea `supabase/seed/seed.sql` + 6 archivos con datos exactos de Ixim Pay
 (organización, metodología EBR XVI, tipologías XVI-01..08, catálogos países/entidades,
 plantilla matriz cliente XVI, cliente demo Juan Pérez).
 
@@ -109,7 +109,7 @@ npx supabase db push
 # 3. Aplicar seeds al remoto
 #    Conexión desde: https://supabase.com/dashboard/project/cibpguwwggwzdhhpdomz/settings/database
 export DB_URL='postgresql://postgres.cibpguwwggwzdhhpdomz:<DB_PASSWORD>@aws-0-us-east-1.pooler.supabase.com:5432/postgres'
-psql "$DB_URL" -f supabase/seed/01_organization_fiatcoin.sql
+psql "$DB_URL" -f supabase/seed/01_organization_ixim_pay.sql
 psql "$DB_URL" -f supabase/seed/02_metodologia_ebr_xvi.sql
 psql "$DB_URL" -f supabase/seed/03_tipologias_xvi.sql
 psql "$DB_URL" -f supabase/seed/04_catalogos_paises_entidades.sql
@@ -137,9 +137,9 @@ npm run dev
 ### Criterio de aceptación
 
 - `http://localhost:8080` muestra el login Ikán.
-- Login `operador@fiatcoin.mx` → redirige al dashboard con sidebar de Operador.
-- Login `oc@fiatcoin.mx` → dashboard con sidebar OC + selector "Operando como".
-- Login `admin@fiatcoin.mx` → dashboard con sidebar Admin.
+- Login `operador@iximpay.mx` → redirige al dashboard con sidebar de Operador.
+- Login `oc@iximpay.mx` → dashboard con sidebar OC + selector "Operando como".
+- Login `admin@iximpay.mx` → dashboard con sidebar Admin.
 - `https://yoltik-regtech-hub.vercel.app` (deploy automático) acepta los mismos logins.
 
 **Checkpoint con Polo antes de seguir.**
@@ -176,7 +176,7 @@ setRoles(roles);
 
 **Criterio de aceptación**:
 - Cada usuario ve el sidebar correcto según sus roles reales.
-- `oc@fiatcoin.mx` puede cambiar entre OC y Admin desde el switcher.
+- `oc@iximpay.mx` puede cambiar entre OC y Admin desde el switcher.
 - Logout funciona y devuelve a `/login`.
 
 ---
@@ -196,7 +196,7 @@ en `audit_log` con el rol activo.
 ## D1.B4 · Onboarding wizard de organización (admin-only)
 
 **Objetivo**: pantalla de alta de organización (solo accesible para Admin). Aunque
-FIATCOIN ya está seedada, este wizard sirve para demos donde se quiere mostrar
+Ixim Pay ya está seedada, este wizard sirve para demos donde se quiere mostrar
 cómo se onboarda un sujeto obligado nuevo.
 
 **Archivos**:
@@ -257,7 +257,7 @@ pesos y mitigantes.
 - [ ] El sidebar muestra solo las opciones de su rol.
 - [ ] El usuario OC + Admin puede cambiar de rol y la pantalla cambia.
 - [ ] Admin puede crear una nueva organización.
-- [ ] Admin ve la metodología EBR FIATCOIN con cálculos correctos.
+- [ ] Admin ve la metodología EBR Ixim Pay con cálculos correctos.
 - [ ] Admin edita un peso y queda pendiente de aprobación.
 - [ ] OC aprueba el cambio y la versión sube.
 - [ ] Admin lista las 8 tipologías XVI con su regla_dsl visible.
@@ -281,8 +281,8 @@ hay que cerrarlos antes de demo público o en Sprint D-2.
 - **Bundle 840 KB / gzip 243 KB**: el `index-*.js` excede 500 KB. Implementar
   route-based code splitting con `React.lazy` por página (las 12 páginas Lovable).
   Bajaría el initial a ~300 KB. **Sprint D-2** si no es urgente para el demo.
-- **Seed Demo Genérica XVI**: el seed `01_organization_fiatcoin.sql` usa datos reales
-  de FIATCOIN RAMPLE (autorizado por el representante legal para uso interno y demos
+- **Seed Demo Genérica XVI**: el seed `01_organization_ixim_pay.sql` usa datos reales
+  de Ixim Pay (autorizado por el representante legal para uso interno y demos
   Kawiil). Para demos a terceros sin contexto Kawiil, crear `supabase/seed/01b_demo_generica_xvi.sql`
   con datos sintéticos. **Sprint D-2+**.
 
@@ -309,5 +309,5 @@ hay que cerrarlos antes de demo público o en Sprint D-2.
 - **Patrón de commit**: `D1.Bn: <descripción corta>` (alineado al backlog).
 - **Si encuentras inconsistencias entre `CLAUDE.md` y el código**, levanta la mano
   antes de "corregir" — puede ser intencional.
-- **Si necesitas ver los Excel/docx originales de FIATCOIN**, pídeselos a Polo;
+- **Si necesitas ver los Excel/docx originales de Ixim Pay**, pídeselos a Polo;
   viven en su carpeta de proyectos, no en este repo.

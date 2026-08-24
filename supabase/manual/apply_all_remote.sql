@@ -226,7 +226,7 @@ create or replace view v_user_roles_simple as
 -- =====================================================================
 -- Ikán · Migration 0002 · Metodología EBR (institucional) y matriz de cliente
 -- =====================================================================
--- Generaliza el EBR FIATCOIN. Fuente: "Metodologia EBR - FIATCOIN RAMPLE.xlsx".
+-- Generaliza el EBR Ixim Pay. Fuente: "Metodologia EBR - Ixim Pay.xlsx".
 -- =====================================================================
 
 create table risk_methodology (
@@ -736,13 +736,13 @@ create policy "aviso_update_oc" on aviso
 
 
 -- ============================================================
--- >>> supabase/seed/01_organization_fiatcoin.sql
+-- >>> supabase/seed/01_organization_ixim_pay.sql
 -- ============================================================
 -- =====================================================================
--- Seed · FIATCOIN RAMPLE como organización demo
+-- Seed · Ixim Pay como organización demo
 -- =====================================================================
--- Datos derivados de "Metodologia PLD-FT - FIATCOIN RAMPLE.docx".
--- Uso autorizado por el representante legal de FIATCOIN para demos
+-- Datos derivados de "Metodologia PLD-FT - Ixim Pay.docx".
+-- Uso autorizado por el representante legal de Ixim Pay para demos
 -- Kawiil/Yoltik. Para demos a terceros sin contexto Kawiil, crear seed
 -- paralelo "01b_demo_generica_xvi.sql" con datos sintéticos (Sprint D-2+).
 -- =====================================================================
@@ -752,7 +752,7 @@ insert into organizations (id, rfc, razon_social, sectores, oficio_alta_sat,
 values (
   '11111111-1111-1111-1111-111111111111',
   'FRA250514B41',
-  'FIATCOIN RAMPLE, S.A. DE C.V.',
+  'IXIM PAY, S.A. DE C.V.',
   ARRAY['XVI']::sector_av[],
   '600-07-01-00-2025-2068',
   '2025-12-10',
@@ -768,9 +768,9 @@ on conflict (rfc) do update set
 -- >>> supabase/seed/02_metodologia_ebr_xvi.sql
 -- ============================================================
 -- =====================================================================
--- Seed · Metodología EBR sector XVI (FIATCOIN)
+-- Seed · Metodología EBR sector XVI (Ixim Pay)
 -- =====================================================================
--- Valores exactos del archivo "Metodologia EBR - FIATCOIN RAMPLE.xlsx".
+-- Valores exactos del archivo "Metodologia EBR - Ixim Pay.xlsx".
 -- 5 Elementos con pesos institucionales, sus indicadores con peso interno
 -- y nivel inherente.
 -- =====================================================================
@@ -782,7 +782,7 @@ values (
   '22222222-2222-2222-2222-222222222201',
   '11111111-1111-1111-1111-111111111111',
   'XVI', 1, 'medio', 'anual',
-  'Metodología EBR base FIATCOIN — Activos Virtuales (Art. 17 fr. XVI LFPIORPI).'
+  'Metodología EBR base Ixim Pay — Activos Virtuales (Art. 17 fr. XVI LFPIORPI).'
 )
 on conflict (organization_id, sector, version) do nothing;
 
@@ -895,7 +895,7 @@ on conflict (element_id, codigo) do nothing;
 -- =====================================================================
 -- Seed · Tipologías sector XVI (Activos Virtuales)
 -- =====================================================================
--- 8 tipologías derivadas de la metodología FIATCOIN y de las señales de
+-- 8 tipologías derivadas de la metodología Ixim Pay y de las señales de
 -- alerta UIF para activos virtuales (Anexo D de la metodología PLD-FT).
 -- Cada `regla_dsl` es declarativa: el Motor PLD las interpreta sin código.
 -- =====================================================================
@@ -930,7 +930,7 @@ values
       "secuencia": ["deposito_fiat", "retiro_cripto"],
       "condicion": { "razon_retiro_saldo": { "op": ">=", "valor": 0.9 } }
     }'::jsonb,
-   'alta', 1, 'GAFI Recomendación 15 · Anexo D Metodología FIATCOIN'),
+   'alta', 1, 'GAFI Recomendación 15 · Anexo D Metodología Ixim Pay'),
 
   -- XVI-03 Exposición on-chain
   ('33333333-0000-0000-0000-000000000003',
@@ -994,7 +994,7 @@ values
       "factor": 3.0,
       "comparar": "promedio_historico_mensual"
     }'::jsonb,
-   'alta', 1, 'Metodología FIATCOIN §6 — perfil transaccional'),
+   'alta', 1, 'Metodología Ixim Pay §6 — perfil transaccional'),
 
   -- XVI-08 Privacy coins
   ('33333333-0000-0000-0000-000000000008',
@@ -1145,7 +1145,7 @@ on conflict (organization_id, codigo) do nothing;
 -- =====================================================================
 -- Seed · Plantilla de matriz de riesgo del cliente (sector XVI)
 -- =====================================================================
--- Replica las preguntas de "Matriz de Riesgos Clientes - FIATCOIN RAMPLE.xlsx",
+-- Replica las preguntas de "Matriz de Riesgos Clientes - Ixim Pay.xlsx",
 -- hoja Evaluación Cliente. Escala fija 15–39 (Bajo / Medio / Alto).
 -- =====================================================================
 

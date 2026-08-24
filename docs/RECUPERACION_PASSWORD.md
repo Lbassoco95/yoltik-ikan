@@ -52,7 +52,7 @@ Los mismos valores están espejados en `supabase/config.toml`
 ## Prueba de punta a punta
 
 1. `/login` → "¿Olvidaste tu contraseña?".
-2. Capturar el correo de una cuenta real de FIATCOIN → "Enviar enlace".
+2. Capturar el correo de una cuenta real de Ixim Pay → "Enviar enlace".
 3. Abrir el enlace del correo → debe caer en `/restablecer` del dominio correcto.
 4. Si pide TOTP, capturar el código de la app de autenticación.
 5. Definir la contraseña nueva → acuse → `/login` → entrar con la nueva

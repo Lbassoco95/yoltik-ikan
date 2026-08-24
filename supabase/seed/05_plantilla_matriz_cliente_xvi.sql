@@ -1,7 +1,7 @@
 -- =====================================================================
 -- Seed · Plantilla de matriz de riesgo del cliente (sector XVI)
 -- =====================================================================
--- Replica las preguntas de "Matriz de Riesgos Clientes - FIATCOIN RAMPLE.xlsx",
+-- Replica las preguntas de "Matriz de Riesgos Clientes - Ixim Pay.xlsx",
 -- hoja Evaluación Cliente. Escala fija 15–39 (Bajo / Medio / Alto).
 -- =====================================================================
 

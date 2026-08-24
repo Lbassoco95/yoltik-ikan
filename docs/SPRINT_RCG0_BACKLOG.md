@@ -106,7 +106,7 @@ alta se construye **sin score** por ahora (respuestas en crudo, score pendiente 
   (fórmula de ponderación no está en el repo; seed 06 inconsistente: subtotales 25 vs score 17).
   La matriz captura y muestra respuestas con banner ámbar "DEMO — score pendiente"; no persiste
   el assessment (además `client_risk_assessment` exige score NOT NULL). Se cierra cuando Polo
-  confirme la fórmula (Excel FIATCOIN).
+  confirme la fórmula (Excel Ixim Pay).
 - ⏳ **Pendiente — smoke en vivo:** verificado con `typecheck/lint/build` + tests. El insert real
   contra RLS y la invocación del motor requieren correr contra el Supabase remoto (no hay entorno
   local en esta sesión). Queda para el smoke de RCG0.B6.

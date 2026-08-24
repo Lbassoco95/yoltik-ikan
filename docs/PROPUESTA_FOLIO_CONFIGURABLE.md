@@ -1,8 +1,9 @@
 # Propuesta de esquema · Folio configurable con candado
 
-> **Estado: PROPUESTA. No implementada.** Cierra la decisión #2 del expediente de
-> hallazgos (PR #13): se descarta el folio derivado del UUID.
-> Requiere resolver las 5 preguntas del final antes de escribir la migration.
+> **Estado: APROBADA E IMPLEMENTADA** en `supabase/migrations/0008_folio_configurable.sql`.
+> Cierra la decisión #2 del expediente de hallazgos (PR #13): se descarta el folio
+> derivado del UUID. Las 5 preguntas de la sección 4 quedaron resueltas — las
+> respuestas están anotadas ahí mismo y en la cabecera de la migration.
 
 ## 1. Lo que encontré en el repo (y que cambia la propuesta)
 
@@ -166,23 +167,23 @@ Eso obliga a poner la configuración de folio en el **onboarding**, antes de la
 primera corrida. No es un problema del esquema, pero sí un paso de producto que
 hoy no existe.
 
-Aplica igual a las organizaciones ya vivas: FIATCOIN y la notaría de GDL ya
+Aplica igual a las organizaciones ya vivas: Ixim Pay y la notaría de GDL ya
 tienen hallazgos. Ver pregunta 5.
 
-## 4. Preguntas antes de implementar
+## 4. Preguntas — RESUELTAS
 
-1. **Admin Kawiil.** ¿Va la tabla `platform_admin` como privilegio global? Es un
+1. **Admin Kawiil** → `platform_admin`, aprobado. ¿Va la tabla `platform_admin` como privilegio global? Es un
    nivel de acceso que cruza organizaciones — quiero tu visto bueno explícito
    antes de introducirlo, no darlo por hecho.
-2. **Ámbito del secuencial.** `XII-2026-0001`: ¿reinicia cada año? ¿el contador
+2. **Ámbito del secuencial** → `prefijo_anio` (reinicia cada año). `XII-2026-0001`: ¿reinicia cada año? ¿el contador
    es por sector/tipología o uno solo por organización? Propuesta por defecto:
    por prefijo **y** año (`prefijo_anio`).
-3. **Prefijo.** ¿Sale del sector de la tipología que disparó el hallazgo (XII,
+3. **Prefijo** → derivado del sector de la tipología; `prefijo_fijo` null por default. ¿Sale del sector de la tipología que disparó el hallazgo (XII,
    XVI) o es un texto fijo por organización? El esquema soporta ambos
    (`prefijo_fijo` null = derivar), pero el default importa.
-4. **Momento de emisión.** ¿El folio se asigna al crear el hallazgo (motor) o
+4. **Momento de emisión** → al crear el hallazgo, vía trigger. ¿El folio se asigna al crear el hallazgo (motor) o
    al abrir el expediente por primera vez? Ver sección 3.
-5. **Hallazgos existentes.** Los de FIATCOIN y la notaría, ¿se rellenan con
+5. **Hallazgos existentes** → backfill; cierra el candado de Ixim Pay y la notaría. Los de Ixim Pay y la notaría, ¿se rellenan con
    folio retroactivo — lo que cierra el candado de ambas de inmediato — o se
    quedan sin folio y solo lo llevan los nuevos?
 

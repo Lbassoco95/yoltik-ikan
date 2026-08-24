@@ -190,6 +190,9 @@ export interface Hallazgo {
   regla_payload: Record<string, unknown>;
   estado: EstadoHallazgo;
   clasificacion_urgencia: ClasificacionUrgencia;
+  /** Folio emitido por `emitir_folio_hallazgo` al crear el hallazgo (migration 0008).
+   *  Null solo en hallazgos anteriores al backfill. */
+  folio: string | null;
   asignado_a: string | null;
   resolucion: string | null;
   creado_en: string;

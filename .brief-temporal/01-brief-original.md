@@ -30,7 +30,7 @@ Code propone diff antes de aplicar.
 1. **No commit ni push automáticos.** Polo aprueba cada commit antes del push.
    Code puede `git add` y proponer mensaje, no ejecutar `git commit` ni `git push`.
 2. **No inventar valores.** Si un campo, peso, umbral o SQL no está en este brief
-   ni en metodología FIATCOIN, Code pregunta.
+   ni en metodología Ixim Pay, Code pregunta.
 3. **No instalar libs nuevas** sin avisar. El `package.json` del Chunk 5 lista las
    deps esperadas.
 4. **Mocks visibles** (Moffin, listas tiempo real, SAT real) con banner ámbar
@@ -98,7 +98,7 @@ NO modifiques nada. Solo reporta. Espera mi visto bueno antes del Chunk 2.
 
 **Ikán** es la plataforma de cumplimiento PLD de Yoltik (operada por Kawiil), dirigida
 a sujetos obligados bajo LFPIORPI. El demo arranca con el sector **XVI — Activos
-Virtuales**, usando la metodología EBR de **FIATCOIN RAMPLE** (cliente real Kawiil)
+Virtuales**, usando la metodología EBR de **Ixim Pay** (cliente real Kawiil)
 como seed canónico.
 
 Producto en construcción. Sprint actual: **D-1 — Foundations + onboarding + EBR
@@ -141,7 +141,7 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
 
 1. **Bloque por bloque con checkpoint.** Nunca acumules más de 1 bloque sin
    verificar con el usuario. Cada bloque cierra con build limpio + smoke notes.
-2. **No inventes campos ni valores.** Si algo no está en metodología FIATCOIN, en
+2. **No inventes campos ni valores.** Si algo no está en metodología Ixim Pay, en
    las guías oficiales (UIF/SAT/GAFI), o en el código existente: pregunta. NUNCA
    improvises algoritmos, umbrales o estructuras "razonables".
 3. **Mocks visibles.** Lo que no esté integrado (Moffin, listas tiempo real,
@@ -149,7 +149,7 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
    "DEMO — sin integración real". Nunca silencioso.
 4. **IDs fijos en seeds.** Los seeds usan UUIDs deterministas para que el front
    pueda referenciar sin race conditions. NO los cambies sin razón fuerte:
-   - Organización FIATCOIN: `11111111-1111-1111-1111-111111111111`
+   - Organización Ixim Pay: `11111111-1111-1111-1111-111111111111`
    - Metodología EBR XVI v1: `22222222-2222-2222-2222-222222222201`
    - Tipologías XVI-01..XVI-08: `33333333-0000-0000-0000-00000000000{1..8}`
    - Plantilla matriz cliente XVI: `44444444-0000-0000-0000-000000000001`
@@ -180,7 +180,7 @@ npx supabase db reset             # aplica migrations + corre seeds
 npx supabase db push              # sube migrations al remoto vinculado
 npm run supabase:gen:types        # regenera src/types/database.ts
 
-npm run bootstrap:users           # crea 3 usuarios FIATCOIN (script scripts/bootstrap-users.ts)
+npm run bootstrap:users           # crea 3 usuarios Ixim Pay (script scripts/bootstrap-users.ts)
 ```
 
 ## Estructura
@@ -189,7 +189,7 @@ Ver `README.md` para tree completo. Resumen:
 
 - `src/` — front (App, components, hooks, lib, pages, types, styles)
 - `supabase/migrations/0001..0005` — schema completo con RLS
-- `supabase/seed/` — datos demo FIATCOIN (no inventados; vienen de los Excel/docx originales)
+- `supabase/seed/` — datos demo Ixim Pay (no inventados; vienen de los Excel/docx originales)
 - `supabase/functions/motor-pld/` — Edge Function (stub para Sprint D-3)
 - `scripts/` — utilidades (bootstrap usuarios, etc.)
 - `docs/` — ARCHITECTURE, ROLES, MOTOR_PLD, SPRINT_D1_BACKLOG
@@ -223,7 +223,7 @@ dependencias, cada uno con criterio de aceptación y validación.
 
 Pregunta. No improvises:
 - Si un campo no está en seed ni en docs → pregunta.
-- Si una regla no está en metodología FIATCOIN → pregunta.
+- Si una regla no está en metodología Ixim Pay → pregunta.
 - Si una decisión de UX no está documentada en `docs/` → pregunta.
 - Si dudas sobre la separación de funciones Operador/OC/Admin → relee `docs/ROLES.md`.
 
@@ -232,7 +232,7 @@ Pregunta. No improvises:
 - `Yoltik Desarrollos/Ikan-Arquitectura-Roadmap-v0.1-2026-05-23.docx` — arquitectura general
 - `Yoltik Desarrollos/Ikan-Demo-Decisiones-y-Plan-v0.1-2026-05-23.docx` — decisiones de arranque
 - `Yoltik Desarrollos/Ikan-Demo-Motor-PLD-y-Tipologias-v0.3-2026-05-23.docx` — modelo Motor PLD (vigente)
-- Excel/docx originales de FIATCOIN — la fuente de verdad de la metodología
+- Excel/docx originales de Ixim Pay — la fuente de verdad de la metodología
 
 ## Versiones de documentos
 
@@ -267,7 +267,7 @@ Antes de proponer nada, lee en este orden:
 
 Reglas duras:
   - No inventes campos, valores, umbrales ni algoritmos. Si algo no está en
-    metodología FIATCOIN, en seeds, en docs/ o en código existente: pregunta.
+    metodología Ixim Pay, en seeds, en docs/ o en código existente: pregunta.
   - No instales librerías nuevas sin avisar y justificar.
   - No hagas git commit ni git push automáticamente. Yo decido cuándo se commitea.
   - Bloque por bloque con checkpoint. Al cerrar un bloque, corre:
@@ -279,7 +279,7 @@ Reglas duras:
   - UI en español de México.
 
 Arranquemos con el bloque D1.B1 — Levantar entorno local. Sigue los pasos del
-backlog. Cuando termines (dev server arriba, BD con seeds, 3 usuarios FIATCOIN
+backlog. Cuando termines (dev server arriba, BD con seeds, 3 usuarios Ixim Pay
 creados), reporta y espera mi visto bueno para D1.B2.
 
 Si algo del setup local tropieza, NO intentes "arreglar" tocando código del repo
@@ -323,7 +323,7 @@ npx supabase start                # postgres local
 npx supabase db reset             # aplica migrations + corre seeds (perderás datos locales)
 npm run supabase:gen:types        # cada vez que toques migrations
 
-npm run bootstrap:users           # crear los 3 usuarios FIATCOIN tras db reset
+npm run bootstrap:users           # crear los 3 usuarios Ixim Pay tras db reset
 ```
 
 ### Si el repo crece y necesitas que Code lea menos de inicio
@@ -359,7 +359,7 @@ Recuerda los pilares (en orden de importancia):
 2. **Catálogo unificado** para los 6 sectores AV, pero el demo arranca con XVI.
 3. **3 roles con separación de funciones** y `pending_approvals` para Admin → OC.
 4. **Mocks visibles**, nada silencioso.
-5. **No inventar campos** — la fuente es la metodología FIATCOIN.
+5. **No inventar campos** — la fuente es la metodología Ixim Pay.
 
 Si una propuesta de Code rompe alguno, dile que se detenga y reformule.
 ```
@@ -377,7 +377,7 @@ Si una propuesta de Code rompe alguno, dile que se detenga y reformule.
 ## D1.B1 · Levantar entorno local
 
 **Objetivo**: tener el dev server arriba, BD con migrations + seeds aplicados, y los
-3 usuarios FIATCOIN creados.
+3 usuarios Ixim Pay creados.
 
 **Pasos**:
 1. `npm install`
@@ -395,10 +395,10 @@ Si una propuesta de Code rompe alguno, dile que se detenga y reformule.
 - `select * from v_user_roles_simple` devuelve 3 usuarios con roles asignados.
 
 **Smoke**:
-- Login con `oc@fiatcoin.mx` redirige a `/oc` (Motor PLD dashboard).
-- Login con `operador@fiatcoin.mx` redirige a `/operador`.
-- Login con `admin@fiatcoin.mx` redirige a `/admin`.
-- El selector "Operando como" aparece para `oc@fiatcoin.mx` (tiene oc + admin).
+- Login con `oc@iximpay.mx` redirige a `/oc` (Motor PLD dashboard).
+- Login con `operador@iximpay.mx` redirige a `/operador`.
+- Login con `admin@iximpay.mx` redirige a `/admin`.
+- El selector "Operando como" aparece para `oc@iximpay.mx` (tiene oc + admin).
 
 **Checkpoint con Polo antes de seguir.**
 
@@ -436,7 +436,7 @@ setRoles(roles);
 
 **Criterio de aceptación**:
 - Cada usuario ve el sidebar correcto según sus roles reales.
-- `oc@fiatcoin.mx` puede cambiar entre OC y Admin desde el switcher.
+- `oc@iximpay.mx` puede cambiar entre OC y Admin desde el switcher.
 - Logout funciona y devuelve a `/login`.
 
 **Smoke**:
@@ -467,7 +467,7 @@ en `audit_log` con el rol activo.
 ## D1.B4 · Onboarding wizard de organización (admin-only)
 
 **Objetivo**: pantalla de alta de organización (solo accesible para Admin, que en
-demo es el primer usuario). Aunque FIATCOIN ya está seedada, este wizard sirve para
+demo es el primer usuario). Aunque Ixim Pay ya está seedada, este wizard sirve para
 demos donde se quiere mostrar cómo se onboarda un sujeto obligado nuevo.
 
 **Archivos a crear**:
@@ -485,7 +485,7 @@ demos donde se quiere mostrar cómo se onboarda un sujeto obligado nuevo.
 **Criterio de aceptación**:
 - Admin puede crear una segunda organización en el demo (ej. una org de prueba).
 - La organización queda con metodología EBR auto-importada del sector elegido
-  (si es XVI, clona la plantilla FIATCOIN; si es otro sector, queda vacía con
+  (si es XVI, clona la plantilla Ixim Pay; si es otro sector, queda vacía con
   banner "Configurar metodología").
 
 ---
@@ -509,7 +509,7 @@ indicadores, pesos y mitigantes.
 - Crear `src/lib/risk-engine.ts` con `computeMethodology(tree)`.
 
 **Criterio de aceptación**:
-- Para FIATCOIN, la vista debe mostrar:
+- Para Ixim Pay, la vista debe mostrar:
   - Riesgo institucional inherente y residual calculados.
   - Clasificación final (Bajo / Medio / Alto) coincidente con el archivo Excel original.
 - TypeScript limpio.
@@ -579,7 +579,7 @@ UI, sin tocar el dashboard de Supabase.
   caller tiene rol admin y hace la operación.
 
 **Criterio de aceptación**:
-- Admin invita a `nuevo-operador@fiatcoin.mx` con rol operador.
+- Admin invita a `nuevo-operador@iximpay.mx` con rol operador.
 - El email recibe el link de Supabase y al confirmar entra al sistema.
 - Admin puede desactivar el usuario (RLS lo bloquea de toda lectura).
 
@@ -594,7 +594,7 @@ UI, sin tocar el dashboard de Supabase.
 - [ ] El sidebar muestra solo las opciones de su rol.
 - [ ] El usuario con OC + Admin puede cambiar de rol y la pantalla cambia.
 - [ ] Admin puede crear una nueva organización.
-- [ ] Admin ve la metodología EBR FIATCOIN con cálculos correctos.
+- [ ] Admin ve la metodología EBR Ixim Pay con cálculos correctos.
 - [ ] Admin edita un peso y el cambio queda pendiente de aprobación.
 - [ ] OC aprueba el cambio y la versión sube.
 - [ ] Admin lista las 8 tipologías XVI con su regla_dsl visible.
@@ -629,7 +629,7 @@ UI, sin tocar el dashboard de Supabase.
 - **Patrón de commit sugerido**: `D1.Bn: <descripción corta>` (alineado al backlog).
 - **Si encuentras inconsistencias entre CLAUDE.md y el código**, levanta la mano
   antes de "corregir" — puede ser intencional.
-- **Si necesitas ver los Excel/docx originales de FIATCOIN**, pídeselos a Polo;
+- **Si necesitas ver los Excel/docx originales de Ixim Pay**, pídeselos a Polo;
   viven en su carpeta de proyectos, no en este repo.
 ```
 ---END FILE---
@@ -655,7 +655,7 @@ UI, sin tocar el dashboard de Supabase.
 
 ## Decisiones clave
 
-1. **Sector piloto**: XVI (Activos Virtuales). Seed = FIATCOIN.
+1. **Sector piloto**: XVI (Activos Virtuales). Seed = Ixim Pay.
 2. **Catálogo unificado**: el motor es uno solo; cada AV trae su set de tipologías.
 3. **Fase 1 monolito-funcional**: el front consume Supabase directo. Fase 2 (post-demo) introducirá API REST propia.
 4. **3 roles**: Operador, OC, Admin. Un usuario puede acumular roles. RLS discrimina por rol.
@@ -1248,8 +1248,8 @@ create or replace view v_user_roles_simple as
 -- =====================================================================
 -- Ikán · Migration 0002 · Metodología EBR (institucional) y matriz de cliente
 -- =====================================================================
--- Generaliza el EBR FIATCOIN. Ver memoria [[metodologia-ebr-fiatcoin]] y
--- el archivo Excel "Metodologia EBR - FIATCOIN RAMPLE.xlsx" para la fuente.
+-- Generaliza el EBR Ixim Pay. Ver memoria [[metodologia-ebr-ixim_pay]] y
+-- el archivo Excel "Metodologia EBR - Ixim Pay.xlsx" para la fuente.
 -- =====================================================================
 
 -- Metodología (versionada por organización)
@@ -1427,7 +1427,7 @@ create policy "template_write_admin" on client_risk_template
 -- Ikán · Migration 0003 · Catálogos (países, entidades MX, listas)
 -- =====================================================================
 -- Catálogos versionados por organización. Vienen seedados con los
--- datos de FIATCOIN (Lista negra/gris GAFI 02/2025, OFAC, paraísos, etc.)
+-- datos de Ixim Pay (Lista negra/gris GAFI 02/2025, OFAC, paraísos, etc.)
 -- y son editables por el Admin con aprobación del OC.
 -- =====================================================================
 
@@ -1910,9 +1910,9 @@ export {};
 
 ---
 
-## Chunk 4 — DATA (seeds FIATCOIN)
+## Chunk 4 — DATA (seeds Ixim Pay)
 
-**Objetivo**: seeds con los datos reales de FIATCOIN.
+**Objetivo**: seeds con los datos reales de Ixim Pay.
 
 **Archivos**: todos `[CREATE]`.
 
@@ -1941,7 +1941,7 @@ psql "$DB_URL" -c "select score_total, clasificacion from client_risk_assessment
 --   psql $SUPABASE_DB_URL -f supabase/seed/seed.sql
 --
 -- ORDEN:
---   1. Organización (FIATCOIN)
+--   1. Organización (Ixim Pay)
 --   2. Metodología EBR XVI
 --   3. Tipologías XVI (catálogo del motor)
 --   4. Catálogos auxiliares (países GAFI/OFAC, entidades MX, señales on-chain)
@@ -1949,7 +1949,7 @@ psql "$DB_URL" -c "select score_total, clasificacion from client_risk_assessment
 --   6. Cliente Juan Pérez Ejemplo (demo)
 -- =====================================================================
 
-\i 01_organization_fiatcoin.sql
+\i 01_organization_ixim_pay.sql
 \i 02_metodologia_ebr_xvi.sql
 \i 03_tipologias_xvi.sql
 \i 04_catalogos_paises_entidades.sql
@@ -1958,12 +1958,12 @@ psql "$DB_URL" -c "select score_total, clasificacion from client_risk_assessment
 ```
 ---END FILE---
 
----FILE: supabase/seed/01_organization_fiatcoin.sql---
+---FILE: supabase/seed/01_organization_ixim_pay.sql---
 ```sql
 -- =====================================================================
--- Seed · FIATCOIN RAMPLE como organización demo
+-- Seed · Ixim Pay como organización demo
 -- =====================================================================
--- Datos derivados de "Metodologia PLD-FT - FIATCOIN RAMPLE.docx".
+-- Datos derivados de "Metodologia PLD-FT - Ixim Pay.docx".
 -- Antes de aplicar este seed en producción, obtener consentimiento explícito
 -- del cliente para usar su info como datos demo de Ikán.
 -- =====================================================================
@@ -1973,7 +1973,7 @@ insert into organizations (id, rfc, razon_social, sectores, oficio_alta_sat,
 values (
   '11111111-1111-1111-1111-111111111111',
   'FRA250514B41',
-  'FIATCOIN RAMPLE, S.A. DE C.V.',
+  'IXIM PAY, S.A. DE C.V.',
   ARRAY['XVI']::sector_av[],
   '600-07-01-00-2025-2068',
   '2025-12-10',
@@ -1989,9 +1989,9 @@ on conflict (rfc) do update set
 ---FILE: supabase/seed/02_metodologia_ebr_xvi.sql---
 ```sql
 -- =====================================================================
--- Seed · Metodología EBR sector XVI (FIATCOIN)
+-- Seed · Metodología EBR sector XVI (Ixim Pay)
 -- =====================================================================
--- Valores exactos del archivo "Metodologia EBR - FIATCOIN RAMPLE.xlsx".
+-- Valores exactos del archivo "Metodologia EBR - Ixim Pay.xlsx".
 -- 5 Elementos con pesos institucionales, sus indicadores con peso interno,
 -- nivel inherente y mitigantes (factor de reducción).
 -- =====================================================================
@@ -2003,7 +2003,7 @@ values (
   '22222222-2222-2222-2222-222222222201',
   '11111111-1111-1111-1111-111111111111',
   'XVI', 1, 'medio', 'anual',
-  'Metodología EBR base FIATCOIN — Activos Virtuales (Art. 17 fr. XVI LFPIORPI).'
+  'Metodología EBR base Ixim Pay — Activos Virtuales (Art. 17 fr. XVI LFPIORPI).'
 )
 on conflict (organization_id, sector, version) do nothing;
 
@@ -2116,7 +2116,7 @@ on conflict (element_id, codigo) do nothing;
 -- =====================================================================
 -- Seed · Tipologías sector XVI (Activos Virtuales)
 -- =====================================================================
--- 8 tipologías derivadas de la metodología FIATCOIN y de las señales de
+-- 8 tipologías derivadas de la metodología Ixim Pay y de las señales de
 -- alerta UIF para activos virtuales (Anexo D de la metodología PLD-FT).
 -- Cada `regla_dsl` es declarativa: el Motor PLD las interpreta sin código.
 -- =====================================================================
@@ -2151,7 +2151,7 @@ values
       "secuencia": ["deposito_fiat", "retiro_cripto"],
       "condicion": { "razon_retiro_saldo": { "op": ">=", "valor": 0.9 } }
     }'::jsonb,
-   'alta', 1, 'GAFI Recomendación 15 · Anexo D Metodología FIATCOIN'),
+   'alta', 1, 'GAFI Recomendación 15 · Anexo D Metodología Ixim Pay'),
 
   -- XVI-03 Exposición on-chain
   ('33333333-0000-0000-0000-000000000003',
@@ -2215,7 +2215,7 @@ values
       "factor": 3.0,
       "comparar": "promedio_historico_mensual"
     }'::jsonb,
-   'alta', 1, 'Metodología FIATCOIN §6 — perfil transaccional'),
+   'alta', 1, 'Metodología Ixim Pay §6 — perfil transaccional'),
 
   -- XVI-08 Privacy coins
   ('33333333-0000-0000-0000-000000000008',
@@ -2366,7 +2366,7 @@ on conflict (organization_id, codigo) do nothing;
 -- =====================================================================
 -- Seed · Plantilla de matriz de riesgo del cliente (sector XVI)
 -- =====================================================================
--- Replica las preguntas de "Matriz de Riesgos Clientes - FIATCOIN RAMPLE.xlsx",
+-- Replica las preguntas de "Matriz de Riesgos Clientes - Ixim Pay.xlsx",
 -- hoja Evaluación Cliente. Escala fija 15–39 (Bajo / Medio / Alto).
 -- =====================================================================
 
@@ -2849,7 +2849,7 @@ export default config;
 /**
  * scripts/bootstrap-users.ts
  *
- * Crea los 3 usuarios iniciales de FIATCOIN para el demo Sprint D-1.
+ * Crea los 3 usuarios iniciales de Ixim Pay para el demo Sprint D-1.
  *
  * Requiere las variables de entorno:
  *   - SUPABASE_URL              (proyecto local o remoto)
@@ -2878,7 +2878,7 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
   process.exit(1);
 }
 
-const FIATCOIN_ORG_ID = '11111111-1111-1111-1111-111111111111';
+const IXIM_PAY_ORG_ID = '11111111-1111-1111-1111-111111111111';
 
 interface SeedUser {
   email: string;
@@ -2889,19 +2889,19 @@ interface SeedUser {
 
 const SEED_USERS: SeedUser[] = [
   {
-    email: 'operador@fiatcoin.mx',
+    email: 'operador@iximpay.mx',
     password: 'IkanDemo2026!',
     nombre: 'Mariana Operadora (demo)',
     roles: ['operador'],
   },
   {
-    email: 'oc@fiatcoin.mx',
+    email: 'oc@iximpay.mx',
     password: 'IkanDemo2026!',
     nombre: 'Oficial de Cumplimiento (demo)',
     roles: ['oc', 'admin'],
   },
   {
-    email: 'admin@fiatcoin.mx',
+    email: 'admin@iximpay.mx',
     password: 'IkanDemo2026!',
     nombre: 'Admin delegado (demo)',
     roles: ['admin'],
@@ -2937,7 +2937,7 @@ async function ensureProfileAndRoles(userId: string, u: SeedUser) {
   const { error: profErr } = await supabase.from('user_profile').upsert(
     {
       id: userId,
-      organization_id: FIATCOIN_ORG_ID,
+      organization_id: IXIM_PAY_ORG_ID,
       email: u.email,
       nombre: u.nombre,
       activo: true,
@@ -2951,12 +2951,12 @@ async function ensureProfileAndRoles(userId: string, u: SeedUser) {
     .from('user_roles')
     .delete()
     .eq('user_id', userId)
-    .eq('organization_id', FIATCOIN_ORG_ID);
+    .eq('organization_id', IXIM_PAY_ORG_ID);
   if (delErr) throw delErr;
 
   const rows = u.roles.map((rol) => ({
     user_id: userId,
-    organization_id: FIATCOIN_ORG_ID,
+    organization_id: IXIM_PAY_ORG_ID,
     rol,
   }));
   const { error: rolesErr } = await supabase.from('user_roles').insert(rows);
@@ -2967,18 +2967,18 @@ async function ensureProfileAndRoles(userId: string, u: SeedUser) {
 
 async function main() {
   console.log('[bootstrap-users] Iniciando contra', SUPABASE_URL);
-  console.log('[bootstrap-users] Organización destino:', FIATCOIN_ORG_ID, '(FIATCOIN RAMPLE)');
+  console.log('[bootstrap-users] Organización destino:', IXIM_PAY_ORG_ID, '(Ixim Pay)');
   console.log('');
 
   // Verificar que la organización existe
   const { data: org, error: orgErr } = await supabase
     .from('organizations')
     .select('id, razon_social')
-    .eq('id', FIATCOIN_ORG_ID)
+    .eq('id', IXIM_PAY_ORG_ID)
     .single();
   if (orgErr || !org) {
     console.error(
-      '\n[bootstrap-users] ❌  La organización FIATCOIN no existe en BD.\n' +
+      '\n[bootstrap-users] ❌  La organización Ixim Pay no existe en BD.\n' +
         '   ¿Corriste `npx supabase db reset`? Eso aplica las migrations y los seeds.\n',
     );
     process.exit(2);
@@ -3193,7 +3193,7 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * UMA 2026 — referencia. Verificar al cierre de cada año con INEGI.
- * Ver memoria [[metodologia-ebr-fiatcoin]] para reglas regulatorias.
+ * Ver memoria [[metodologia-ebr-ixim_pay]] para reglas regulatorias.
  */
 export const UMA_MXN = 113.07;
 
@@ -4077,10 +4077,10 @@ npm run dev
 
 **Checks que confirma Polo en el navegador**:
 - [ ] `http://localhost:5173` muestra login Ikán.
-- [ ] Login con `operador@fiatcoin.mx / IkanDemo2026!` → `/operador`, "Mi día".
-- [ ] Login con `oc@fiatcoin.mx / IkanDemo2026!` → panel Motor PLD.
-- [ ] Selector "Operando como" aparece para `oc@fiatcoin.mx` (oc + admin).
-- [ ] Login con `admin@fiatcoin.mx / IkanDemo2026!` → vista Administración.
+- [ ] Login con `operador@iximpay.mx / IkanDemo2026!` → `/operador`, "Mi día".
+- [ ] Login con `oc@iximpay.mx / IkanDemo2026!` → panel Motor PLD.
+- [ ] Selector "Operando como" aparece para `oc@iximpay.mx` (oc + admin).
+- [ ] Login con `admin@iximpay.mx / IkanDemo2026!` → vista Administración.
 
 Si todo OK, Sprint D-1 bootstrap cerrado. Siguiente bloque: **D1.B2** —
 implementar `auth-context.tsx` con query real a `user_profile + user_roles`

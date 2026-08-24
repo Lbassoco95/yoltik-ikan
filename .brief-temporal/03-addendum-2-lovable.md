@@ -290,7 +290,7 @@ export function navEntriesForRole(rol: RolUsuario): NavEntry[] {
 | 1 | Inventory | ✅ Ya hecho. |
 | 2 | Crear CLAUDE.md + docs/ | Sin cambios. Aplica tal cual. |
 | 3 | Schema (migrations + config + edge function) | Sin cambios. |
-| 4 | Seeds FIATCOIN | Sin cambios. |
+| 4 | Seeds Ixim Pay | Sin cambios. |
 | 5 | Configs (package.json, env, tailwind, scripts) | **MERGE conservador**. Quitar lovable-tagger. Eliminar lockfiles bun. Adaptar lint script. Añadir typecheck/supabase:*/bootstrap:users. Tailwind: añadir tokens `ikan.*` sin tocar HSL. Vite: quitar componentTagger, mantener 8080. env: port 8080 en docs. |
 | 6 | Front (auth, layout, dashboards) | **REESCRITO**: solo crear lo que falta. NO crear AppShell ni Sidebar nuevos; adaptar `AppLayout`, `AppSidebar`, `AppHeader` existentes para ser conscientes del rol. Crear `src/lib/role-routes.ts`. Crear `src/pages/auth/Login.tsx`. Envolver rutas en `App.tsx` con `<ProtectedRoute>` por rol. Mover `mockData.ts` a `_legacy_mock.ts` con shim. NO crear dashboards por rol — la DashboardPage existente sirve. |
 | 7 | Smoke | Sin cambios (versión del Addendum #1, contra cibpguwwggwzdhhpdomz). |
@@ -330,7 +330,7 @@ npm run build        # vite build sin tsc previo
 
 Si todo verde, Code propone commit `D1.B0c: front Ikán sobre Lovable (auth + roles + role-routes)`.
 Polo aprueba y push. Vercel deploya. Tú entras a la URL pública con las 3
-cuentas FIATCOIN (después de correr `bootstrap:users` en tu Mac).
+cuentas Ixim Pay (después de correr `bootstrap:users` en tu Mac).
 
 ---
 

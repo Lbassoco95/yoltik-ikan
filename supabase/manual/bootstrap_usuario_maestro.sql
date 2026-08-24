@@ -28,7 +28,7 @@ do $$
 declare
   v_uid_text text := 'PEGA_AQUI_EL_UID';                           -- ← UID de auth.users (paso 2)
   v_uid uuid;
-  v_org uuid := '11111111-1111-1111-1111-111111111111';            -- FIATCOIN RAMPLE (no cambiar)
+  v_org uuid := '11111111-1111-1111-1111-111111111111';            -- Ixim Pay (no cambiar)
 begin
   -- Se valida como texto ANTES de castear a uuid, para dar un mensaje claro
   -- si olvidaste pegar el UID (si casteáramos en el declare, tronaría antes).

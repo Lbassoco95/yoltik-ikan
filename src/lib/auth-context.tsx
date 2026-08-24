@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const rolesFinal = dbRoles.length ? dbRoles : [inferredRol];
 
           // Organización: razón social + perfil de actividad (para "vestir" la UI).
-          let orgNombre = 'FIATCOIN RAMPLE';
+          let orgNombre = 'Ixim Pay';
           let perfil: PerfilActividad = 'generico';
           try {
             const { data: org } = await supabase
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile({
         id: user.id,
         organization_id: 'pending',
-        organization_name: 'FIATCOIN RAMPLE',
+        organization_name: 'Ixim Pay',
         email: user.email ?? '',
         nombre: user.user_metadata?.nombre ?? user.email?.split('@')[0] ?? 'Usuario',
         roles: [inferredRol],
