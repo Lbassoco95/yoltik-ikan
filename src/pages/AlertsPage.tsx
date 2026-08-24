@@ -1,10 +1,19 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import ExpedienteHallazgoDialog from "@/components/hallazgos/ExpedienteHallazgoDialog";
 import { listarHallazgos } from "@/lib/api/hallazgos";
 import { recorrerMotor } from "@/lib/api/operaciones";
-import type { EstadoHallazgo, Hallazgo, SeveridadTipologia } from "@/types/domain";
+import {
+  SEVERIDAD_CLASS,
+  URGENCIA_CLASS,
+  URGENCIA_LABEL,
+  URGENCIA_NOTA,
+  urgenciaValida,
+} from "@/lib/hallazgos-labels";
+import type { EstadoHallazgo, Hallazgo } from "@/types/domain";
 import { formatMxn } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -17,19 +26,13 @@ const columns: { title: string; estados: EstadoHallazgo[]; color: string }[] = [
   { title: "Descartados", estados: ["descartado", "falso_positivo"], color: "border-t-muted-foreground" },
 ];
 
-const severidadClass: Record<SeveridadTipologia, string> = {
-  critica: "bg-destructive/10 text-destructive",
-  alta: "bg-destructive/10 text-destructive",
-  media: "bg-warning/10 text-warning",
-  baja: "bg-muted text-muted-foreground",
-};
-
 function esMock(h: Hallazgo): boolean {
   return h.regla_payload?.fuente_mock === true;
 }
 
 export default function AlertsPage() {
   const queryClient = useQueryClient();
+  const [expedienteId, setExpedienteId] = useState<string | null>(null);
   const { data: hallazgos = [], isLoading, isError, error } = useQuery({
     queryKey: ["hallazgos"],
     queryFn: listarHallazgos,
@@ -105,15 +108,28 @@ export default function AlertsPage() {
                   <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded-full">{items.length}</span>
                 </div>
                 <div className="flex-1 space-y-3 overflow-y-auto">
-                  {items.map((h) => (
-                    <div
+                  {items.map((h) => {
+                    const urgencia = urgenciaValida(h.clasificacion_urgencia);
+                    return (
+                    <button
                       key={h.id}
-                      className="bg-muted/40 rounded-lg p-4 cursor-pointer hover:bg-muted transition-colors"
+                      type="button"
+                      onClick={() => setExpedienteId(h.id)}
+                      aria-label={`Abrir expediente del hallazgo ${h.tipologia_codigo} — ${h.tipologia_nombre}`}
+                      className="w-full text-left bg-muted/40 rounded-lg p-4 cursor-pointer hover:bg-muted transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs font-mono font-bold text-foreground">
                           {h.tipologia_codigo}
                         </span>
+                        {urgencia && (
+                          <span
+                            className={cn("status-badge text-[10px]", URGENCIA_CLASS[urgencia])}
+                            title={URGENCIA_NOTA}
+                          >
+                            {URGENCIA_LABEL[urgencia]}
+                          </span>
+                        )}
                         {esMock(h) && (
                           <span className="status-badge bg-warning/20 text-warning text-[10px]">DEMO</span>
                         )}
@@ -129,15 +145,16 @@ export default function AlertsPage() {
                         </p>
                       )}
                       <div className="flex items-center justify-between mt-3">
-                        <span className={cn("status-badge text-[10px]", severidadClass[h.severidad])}>
+                        <span className={cn("status-badge text-[10px]", SEVERIDAD_CLASS[h.severidad])}>
                           {h.severidad}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
                           {new Date(h.creado_en).toLocaleDateString("es-MX")}
                         </span>
                       </div>
-                    </div>
-                  ))}
+                    </button>
+                    );
+                  })}
                   {items.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-8">Sin hallazgos</p>
                   )}
@@ -147,6 +164,17 @@ export default function AlertsPage() {
           })}
         </div>
       )}
+
+      {/* Expediente del hallazgo: detalle, soporte documental y bitácora.
+          Se lee de `hallazgos` para que el panel refleje el estado ya
+          refrescado tras cada mutación. */}
+      <ExpedienteHallazgoDialog
+        hallazgo={hallazgos.find((h) => h.id === expedienteId) ?? null}
+        open={!!expedienteId}
+        onOpenChange={(abierto) => {
+          if (!abierto) setExpedienteId(null);
+        }}
+      />
     </div>
   );
 }

@@ -103,3 +103,39 @@ select count(*) from tipologia_av where sector = 'XII';       -- 3
 Al entrar con `notaria@demo.mx`, la UI se "viste" de notaría (Comparecientes / Actos). En la
 bandeja del OC, **Recorrer motor** genera los hallazgos de los actos DEMO (compraventa ≥16,000 UMA,
 poder irrevocable, socio en país de riesgo).
+
+## Expediente del hallazgo (migration 0007) — aplicación
+
+Aditiva sobre `hallazgo` (0005). Se puede correr en **un solo envío** del SQL Editor: los enums
+nuevos se crean con `CREATE TYPE` (no `ALTER TYPE ... ADD VALUE`), así que sí pueden usarse en la
+misma transacción.
+
+1. Pega y corre `supabase/migrations/0007_hallazgo_expediente.sql`. Agrega:
+   - `hallazgo.clasificacion_urgencia` (`24_horas` / `por_umbral`), derivada de la regla por el
+     trigger `trg_hallazgo_urgencia` y con backfill de los hallazgos que ya existían.
+   - `hallazgo_documento` y `hallazgo_bitacora` con RLS (lectura oc/admin, escritura del OC).
+   - Triggers que escriben la bitácora solos: cambio de estado, cambio de urgencia y carga de
+     documento.
+   - El bucket privado `hallazgo-documentos` y sus políticas de Storage.
+2. Redespliega la Edge Function del motor para que mande la clasificación explícita:
+   `npx supabase functions deploy motor-pld`. (Si no se redespliega, el trigger de BD la deriva
+   igual; solo se pierde la fuente explícita del motor.)
+
+Verificación:
+
+```sql
+-- XII-01 (umbral 16,000 UMA) → por_umbral;  XII-02 y XII-03 → 24_horas
+select tipologia_codigo, clasificacion_urgencia, estado
+from hallazgo order by tipologia_codigo;
+
+-- El bucket debe existir y ser privado
+select id, public, file_size_limit from storage.buckets where id = 'hallazgo-documentos';
+```
+
+Smoke en la UI, entrando como `notaria@demo.mx` (rol activo **Oficial de Cumplimiento**):
+clic en una tarjeta de `/alertas` → abre "Expediente del hallazgo". En **Detalle**, cambiar el
+estado y verlo aparecer en **Bitácora**. En **Documentos**, subir un PDF y comprobar que el
+propio archivo se abre con liga firmada y que la carga también quedó en la bitácora.
+
+> La clasificación de urgencia es un **SLA operativo interno** para priorizar la bandeja del OC.
+> No es un plazo regulatorio distinto al de la fracción XII.

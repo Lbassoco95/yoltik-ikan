@@ -22,6 +22,17 @@ export type EstadoHallazgo =
   | 'descartado'
   | 'falso_positivo';
 
+/** SLA operativo interno de la bandeja del OC (migration 0007).
+ *  NO es un plazo regulatorio distinto al de la fracción XII: sirve para que
+ *  el OC sepa qué atender primero. */
+export type ClasificacionUrgencia = '24_horas' | 'por_umbral';
+
+export type TipoBitacoraHallazgo =
+  | 'cambio_estado'
+  | 'nota'
+  | 'documento_subido'
+  | 'cambio_urgencia';
+
 export type EstadoAviso = 'borrador' | 'listo_firma' | 'enviado' | 'acusado';
 
 export type TipoAviso = '24h' | 'mensual';
@@ -178,10 +189,46 @@ export interface Hallazgo {
   severidad: SeveridadTipologia;
   regla_payload: Record<string, unknown>;
   estado: EstadoHallazgo;
+  clasificacion_urgencia: ClasificacionUrgencia;
   asignado_a: string | null;
   resolucion: string | null;
   creado_en: string;
   /** Joins de display (no columnas propias de `hallazgo`). */
   client?: { nombre_razon_social: string } | null;
-  operation?: { monto_mxn: number; activo_virtual: string | null; fecha: string } | null;
+  operation?: {
+    monto_mxn: number;
+    activo_virtual: string | null;
+    fecha: string;
+    tipo?: string | null;
+    contraparte?: Record<string, unknown> | null;
+  } | null;
+}
+
+// =====================================================================
+// Expediente del hallazgo (migration 0007)
+// =====================================================================
+export interface HallazgoDocumento {
+  id: string;
+  hallazgo_id: string;
+  storage_path: string;
+  nombre_archivo: string;
+  mime_type: string | null;
+  tamano_bytes: number | null;
+  subido_por: string | null;
+  subido_en: string;
+  /** Resuelto contra `user_profile` (no es columna de la tabla). */
+  subido_por_nombre?: string | null;
+}
+
+export interface HallazgoBitacoraEntrada {
+  id: string;
+  hallazgo_id: string;
+  tipo: TipoBitacoraHallazgo;
+  descripcion: string;
+  estado_anterior: EstadoHallazgo | null;
+  estado_nuevo: EstadoHallazgo | null;
+  usuario: string | null;
+  creado_en: string;
+  /** Resuelto contra `user_profile` (no es columna de la tabla). */
+  usuario_nombre?: string | null;
 }

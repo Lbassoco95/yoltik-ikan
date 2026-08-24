@@ -2,6 +2,7 @@
 // Importa el módulo puro de la Edge Function (sin dependencias de Deno/Supabase).
 import { describe, it, expect } from "vitest";
 import {
+  clasificacionUrgencia,
   correrMotor,
   evaluarTipologia,
   ventanaAMs,
@@ -316,5 +317,80 @@ describe("correrMotor", () => {
     const ops = [op({ id: "x", fecha: "2026-08-19T10:00:00Z", activo_virtual: "XMR" })];
     const res = correrMotor([t], ops, ctx());
     expect(res.candidatos[0].regla_payload.nota_referencia).toBe("Referencia, sujeta a confirmación");
+  });
+});
+
+// ---------------------------------------------------------------------
+// Clasificación de urgencia (SLA operativo de la bandeja del OC, mig. 0007)
+// ---------------------------------------------------------------------
+describe("clasificacionUrgencia", () => {
+  it("clasifica por_umbral una regla con umbral monetario (XII-01)", () => {
+    // Copia literal de la regla sembrada en seed/08_notarias_demo.sql.
+    expect(
+      clasificacionUrgencia({
+        tipo: "agregado",
+        ventana: "1M",
+        agrupar_por: "client_id",
+        condicion: {
+          count: { op: ">=", valor: 1 },
+          suma_monto_uma: { op: ">=", valor: 16000 },
+        },
+      }),
+    ).toBe("por_umbral");
+  });
+
+  it("clasifica 24_horas una regla de aviso siempre (XII-02, poder irrevocable)", () => {
+    expect(
+      clasificacionUrgencia({
+        tipo: "lookup",
+        campo: "contraparte.tipo_acto",
+        valores: ["poder_irrevocable"],
+      }),
+    ).toBe("24_horas");
+  });
+
+  it("clasifica 24_horas un lookup por catálogo de países (XII-03)", () => {
+    expect(
+      clasificacionUrgencia({
+        tipo: "lookup",
+        campo: "contraparte.pais_iso2",
+        fuentes: ["gafi_negra", "ofac_sancionado"],
+      }),
+    ).toBe("24_horas");
+  });
+
+  it("clasifica por_umbral una regla de desviación sobre el perfil declarado", () => {
+    expect(
+      clasificacionUrgencia({ tipo: "desviacion", factor: 3, comparar: "perfil_mensual_uma" }),
+    ).toBe("por_umbral");
+  });
+
+  it("clasifica 24_horas un agregado que solo cuenta operaciones (sin umbral de monto)", () => {
+    expect(
+      clasificacionUrgencia({
+        tipo: "agregado",
+        ventana: "72h",
+        agrupar_por: "client_id",
+        condicion: { count_ip_anonima: { op: ">=", valor: 3 } },
+      }),
+    ).toBe("24_horas");
+  });
+
+  it("fail-safe: regla nula o de tipo desconocido cae en 24_horas", () => {
+    expect(clasificacionUrgencia(null)).toBe("24_horas");
+    expect(
+      clasificacionUrgencia({ tipo: "raro" } as unknown as Parameters<typeof clasificacionUrgencia>[0]),
+    ).toBe("24_horas");
+  });
+
+  it("correrMotor propaga la clasificación al candidato", () => {
+    const t = tip("XII-02", {
+      tipo: "lookup",
+      campo: "activo_virtual",
+      valores: ["XMR"],
+    });
+    const ops = [op({ id: "x", fecha: "2026-08-19T10:00:00Z", activo_virtual: "XMR" })];
+    const res = correrMotor([t], ops, ctx());
+    expect(res.candidatos[0].clasificacion_urgencia).toBe("24_horas");
   });
 });
