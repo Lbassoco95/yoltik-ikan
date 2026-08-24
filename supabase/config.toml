@@ -19,9 +19,13 @@ enabled = true
 # En remoto, Site URL y redirect URLs se configuran en el dashboard.
 # Estos valores son para `supabase start` local opcional.
 site_url = "http://localhost:8080"
+# Debe incluir el destino del correo de recuperación (/restablecer); si falta,
+# el enlace cae al Site URL y el token no llega a la pantalla correcta.
 additional_redirect_urls = [
   "http://localhost:8080",
-  "https://yoltik-regtech-hub.vercel.app"
+  "http://localhost:8080/restablecer",
+  "https://yoltik-regtech-hub.vercel.app",
+  "https://yoltik-regtech-hub.vercel.app/restablecer"
 ]
 jwt_expiry = 3600
 enable_signup = false  # En Ikán solo el Admin invita usuarios.

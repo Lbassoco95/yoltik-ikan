@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
 type LoginStep = 'credentials' | 'otp';
@@ -97,6 +97,12 @@ export function LoginPage() {
             <button type="submit" disabled={busy} className="ikan-btn-primary w-full disabled:opacity-50">
               {busy ? 'Validando…' : 'Continuar'}
             </button>
+            <Link
+              to="/recuperar"
+              className="block text-sm text-muted-foreground hover:text-foreground text-center"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
           </form>
         )}
 
