@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
 import type { Client, ClientRiskTemplate, NuevoClienteInput } from '@/types/domain';
+import { evaluarMatriz, respuestasCompletas, type ResultadoEvaluacion } from '@/lib/riesgo/matriz';
 
 /** Lista los clientes visibles para el usuario (RLS filtra por rol/organización). */
 export async function listarClientes(): Promise<Client[]> {
@@ -39,16 +40,64 @@ export async function crearCliente(input: NuevoClienteInput): Promise<Client> {
   return data as unknown as Client;
 }
 
-/** Plantilla de matriz de riesgo vigente del sector XVI. */
-export async function getPlantillaRiesgoXVI(): Promise<ClientRiskTemplate | null> {
+/** Plantilla de matriz de riesgo vigente de la organización.
+ *
+ *  No filtra por sector a propósito: RLS ya acota a la organización y la
+ *  migration 0010 garantiza una sola versión activa por organización y sector.
+ *  Así sirve igual a Ixim Pay (XVI) que a la notaría (XII) sin condicionales
+ *  por perfil.
+ *  TODO[Sprint D-3]: recibir el sector cuando una organización opere más de uno. */
+export async function getPlantillaRiesgoActiva(): Promise<ClientRiskTemplate | null> {
   const { data, error } = await supabase
     .from('client_risk_template')
     .select('*')
-    .eq('sector', 'XVI')
     .eq('activa', true)
     .order('version', { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
   return (data as unknown as ClientRiskTemplate) ?? null;
+}
+
+export interface EvaluacionGuardada extends ResultadoEvaluacion {
+  id: string;
+}
+
+/**
+ * Calcula y guarda la evaluación de riesgo de un cliente.
+ *
+ * Rechaza la captura incompleta antes de tocar la BD: `client_risk_assessment`
+ * exige `score_total` y `clasificacion` no nulos, y un score parcial sería un
+ * dato falso, no uno provisional.
+ */
+export async function evaluarRiesgoCliente(
+  plantilla: ClientRiskTemplate,
+  cliente: Pick<Client, 'id' | 'tipo_persona'>,
+  respuestas: Record<string, number>,
+): Promise<EvaluacionGuardada> {
+  const cfg = plantilla.configuracion;
+  if (!respuestasCompletas(cfg, cliente.tipo_persona, respuestas)) {
+    throw new Error('La captura está incompleta: responde todas las variables aplicables.');
+  }
+
+  const resultado = evaluarMatriz(cfg, cliente.tipo_persona, respuestas);
+  const uid = (await supabase.auth.getUser()).data.user?.id ?? null;
+
+  const { data, error } = await supabase
+    .from('client_risk_assessment')
+    .insert({
+      client_id: cliente.id,
+      template_id: plantilla.id,
+      respuestas,
+      subtotales: resultado.subtotales,
+      score_total: resultado.score_total,
+      clasificacion: resultado.clasificacion,
+      motivo_alto_de_oficio: resultado.motivo_alto_de_oficio,
+      evaluado_por: uid,
+    })
+    .select('id')
+    .single();
+  if (error) throw error;
+
+  return { ...resultado, id: (data as { id: string }).id };
 }

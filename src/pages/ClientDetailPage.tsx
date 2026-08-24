@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Shield, AlertTriangle, Loader2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Shield, Loader2, Save } from "lucide-react";
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -11,9 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { getCliente, getPlantillaRiesgoXVI } from "@/lib/api/clientes";
+import { evaluarRiesgoCliente, getCliente, getPlantillaRiesgoActiva } from "@/lib/api/clientes";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
-import { elementosAplicables, respuestasCompletas } from "@/lib/riesgo/matriz";
+import { elementosAplicables, evaluarMatriz, respuestasCompletas } from "@/lib/riesgo/matriz";
 import { formatMxn, UMA_MXN } from "@/lib/utils";
 import type { TipoPersona } from "@/types/domain";
 import { useAuth } from "@/lib/auth-context";
@@ -21,10 +22,17 @@ import { LABELS, labelTipoActo } from "@/lib/perfil-actividad";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
+const riesgoClase: Record<"bajo" | "medio" | "alto", string> = {
+  bajo: "text-jade",
+  medio: "text-warning",
+  alto: "text-destructive",
+};
+
 export default function ClientDetailPage() {
   const { id } = useParams();
   const [respuestas, setRespuestas] = useState<Record<string, number>>({});
   const { perfilActividad } = useAuth();
+  const queryClient = useQueryClient();
   const L = LABELS[perfilActividad];
   const esNotarias = perfilActividad === "notarias";
 
@@ -38,9 +46,24 @@ export default function ClientDetailPage() {
     queryFn: () => listarOperacionesDeCliente(id!),
     enabled: !!id,
   });
+  // La plantilla vigente decide si hay matriz, no el perfil de actividad: así
+  // no hay que tocar este archivo cuando entren joyerías, vehículos, etc.
   const { data: plantilla } = useQuery({
-    queryKey: ["plantilla-xvi"],
-    queryFn: getPlantillaRiesgoXVI,
+    queryKey: ["plantilla-activa"],
+    queryFn: getPlantillaRiesgoActiva,
+  });
+
+  const guardar = useMutation({
+    mutationFn: () => evaluarRiesgoCliente(plantilla!, client!, respuestas),
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ["cliente", id] });
+      for (const w of r.warnings) toast.warning(w);
+      toast.success(
+        `Evaluación guardada · score ${r.score_total} · riesgo ${r.clasificacion.toUpperCase()}` +
+          (r.triggers_activados.length ? ` (alto de oficio: ${r.triggers_activados.join(", ")})` : ""),
+      );
+    },
+    onError: (e: Error) => toast.error(`No se pudo guardar la evaluación: ${e.message}`),
   });
 
   if (isLoading) {
@@ -57,6 +80,10 @@ export default function ClientDetailPage() {
   const completa = plantilla
     ? respuestasCompletas(plantilla.configuracion, client.tipo_persona, respuestas)
     : false;
+  // Vista previa en vivo: mismo cálculo que se persistirá al guardar.
+  const preview = completa
+    ? evaluarMatriz(plantilla!.configuracion, client.tipo_persona, respuestas)
+    : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -80,9 +107,10 @@ export default function ClientDetailPage() {
       <Tabs defaultValue="datos" className="space-y-4">
         <TabsList className="bg-muted/50">
           <TabsTrigger value="datos">Datos generales</TabsTrigger>
-          {/* La matriz de riesgo aún no tiene plantilla para sector XII; se oculta
-              en notarías para no mostrar el error de plantilla inexistente. */}
-          {!esNotarias && <TabsTrigger value="matriz">Matriz de riesgo</TabsTrigger>}
+          {/* La pestaña existe si la organización tiene una plantilla vigente
+              para su sector, no según el perfil de actividad. Así no hay que
+              tocar este condicional al entrar joyerías, vehículos, etc. */}
+          {plantilla && <TabsTrigger value="matriz">Matriz de riesgo</TabsTrigger>}
           <TabsTrigger value="operaciones">{esNotarias ? "Actos" : "Operaciones"}</TabsTrigger>
         </TabsList>
 
@@ -110,20 +138,11 @@ export default function ClientDetailPage() {
           </div>
         </TabsContent>
 
-        {!esNotarias && (
+        {plantilla && (
         <TabsContent value="matriz">
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-warning">
-            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-            <p className="text-sm">
-              <strong>DEMO — sin fórmula confirmada.</strong> La captura de respuestas funciona,
-              pero el cálculo de <em>score</em> y clasificación está pendiente de la fórmula oficial
-              de ponderación (Excel Ixim Pay). Por eso la evaluación aún no se guarda.
-            </p>
-          </div>
-
           {!plantilla ? (
             <div className="glass-card p-6 text-sm text-muted-foreground">
-              No se encontró la plantilla de matriz XVI.
+              Esta organización no tiene una matriz de riesgo vigente.
             </div>
           ) : (
             <div className="space-y-4">
@@ -157,13 +176,34 @@ export default function ClientDetailPage() {
                 </div>
               ))}
 
-              <div className="glass-card p-4 flex items-center justify-between">
+              <div className="glass-card p-4 flex items-center justify-between gap-4">
                 <p className="text-sm text-muted-foreground">
-                  {completa ? "Captura completa." : "Captura incompleta."} Score:{" "}
-                  <strong className="text-foreground">pendiente de fórmula</strong>
+                  {completa ? (
+                    <>
+                      Captura completa. Score:{" "}
+                      <strong className="text-foreground">{preview!.score_total}</strong> · Riesgo:{" "}
+                      <strong className={riesgoClase[preview!.clasificacion]}>
+                        {preview!.clasificacion.toUpperCase()}
+                      </strong>
+                      {preview!.triggers_activados.length > 0 && (
+                        <> · alto de oficio por {preview!.triggers_activados.join(", ")}</>
+                      )}
+                    </>
+                  ) : (
+                    "Captura incompleta: responde todas las variables para calcular el riesgo."
+                  )}
                 </p>
-                <Button disabled title="Bloqueado hasta confirmar la fórmula de scoring (RCG-0)">
-                  Guardar evaluación (pendiente)
+                <Button
+                  className="gap-2 shrink-0"
+                  disabled={!completa || guardar.isPending}
+                  onClick={() => guardar.mutate()}
+                >
+                  {guardar.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Guardar evaluación
                 </Button>
               </div>
             </div>
