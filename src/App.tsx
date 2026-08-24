@@ -20,6 +20,7 @@ import RulesEnginePage from "@/pages/RulesEnginePage";
 import VerificationPage from "@/pages/VerificationPage";
 import AuditPage from "@/pages/AuditPage";
 import ConfigPage from "@/pages/ConfigPage";
+import MatrizRiesgoPage from '@/pages/MatrizRiesgoPage';
 import RegistroPage from "@/pages/registro/RegistroPage";
 import NotariosPage from "@/pages/registro/NotariosPage";
 import GraciasPage from "@/pages/registro/GraciasPage";
@@ -121,6 +122,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requireRole="admin">
                     <RulesEnginePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/matriz"
+                element={
+                  <ProtectedRoute requireAnyRole={['oc', 'admin']}>
+                    <MatrizRiesgoPage />
                   </ProtectedRoute>
                 }
               />
