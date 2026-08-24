@@ -1,7 +1,7 @@
 /**
  * scripts/bootstrap-users.ts
  *
- * Crea los usuarios iniciales de FIATCOIN para el demo (3 de rol + 1 maestro).
+ * Crea los usuarios iniciales de Ixim Pay para el demo (3 de rol + 1 maestro).
  * Genera passwords aleatorios seguros y los imprime una sola vez.
  *
  * Requiere las variables de entorno (NO commitear):
@@ -37,7 +37,7 @@ if (!SERVICE_KEY) {
   process.exit(1);
 }
 
-const FIATCOIN_ORG_ID = '11111111-1111-1111-1111-111111111111';
+const IXIM_PAY_ORG_ID = '11111111-1111-1111-1111-111111111111';
 const NOTARIA_ORG_ID = '12121212-1212-1212-1212-121212121212';
 
 /** Genera password de 24 caracteres URL-safe (~144 bits de entropía). */
@@ -49,24 +49,24 @@ interface SeedUser {
   email: string;
   nombre: string;
   roles: Array<'operador' | 'oc' | 'admin'>;
-  /** Organización del usuario. Default: FIATCOIN. La org debe existir en BD
+  /** Organización del usuario. Default: Ixim Pay. La org debe existir en BD
    *  (aplicar seeds) antes de correr el script. */
   organizationId?: string;
 }
 
 const SEED_USERS: SeedUser[] = [
   {
-    email: 'operador@fiatcoin.mx',
+    email: 'operador@iximpay.mx',
     nombre: 'Mariana Operadora (demo)',
     roles: ['operador'],
   },
   {
-    email: 'oc@fiatcoin.mx',
+    email: 'oc@iximpay.mx',
     nombre: 'Oficial de Cumplimiento (demo)',
     roles: ['oc', 'admin'],
   },
   {
-    email: 'admin@fiatcoin.mx',
+    email: 'admin@iximpay.mx',
     nombre: 'Admin delegado (demo)',
     roles: ['admin'],
   },
@@ -120,7 +120,7 @@ async function ensureAuthUser(u: SeedUser): Promise<BootstrapResult> {
 }
 
 async function ensureProfileAndRoles(userId: string, u: SeedUser) {
-  const orgId = u.organizationId ?? FIATCOIN_ORG_ID;
+  const orgId = u.organizationId ?? IXIM_PAY_ORG_ID;
   const { error: profErr } = await supabase.from('user_profile').upsert(
     {
       id: userId,
@@ -153,16 +153,16 @@ async function ensureProfileAndRoles(userId: string, u: SeedUser) {
 
 async function main() {
   console.log('[bootstrap-users] target:', SUPABASE_URL);
-  console.log('[bootstrap-users] organización:', FIATCOIN_ORG_ID, '(FIATCOIN RAMPLE)\n');
+  console.log('[bootstrap-users] organización:', IXIM_PAY_ORG_ID, '(Ixim Pay)\n');
 
   const { data: org, error: orgErr } = await supabase
     .from('organizations')
     .select('id, razon_social')
-    .eq('id', FIATCOIN_ORG_ID)
+    .eq('id', IXIM_PAY_ORG_ID)
     .single();
   if (orgErr || !org) {
     console.error(
-      '\n[bootstrap-users] La organización FIATCOIN no existe en BD.\n' +
+      '\n[bootstrap-users] La organización Ixim Pay no existe en BD.\n' +
         '   ¿Aplicaste migrations y seeds al proyecto remoto?\n' +
         '   Ver docs/SPRINT_D1_BACKLOG.md D1.B1 para el flujo.\n',
     );

@@ -165,7 +165,7 @@ max_enrolled_factors = 1
 /**
  * scripts/bootstrap-users.ts
  *
- * Crea los 3 usuarios iniciales de FIATCOIN para el demo Sprint D-1.
+ * Crea los 3 usuarios iniciales de Ixim Pay para el demo Sprint D-1.
  * Genera passwords aleatorios seguros y los imprime una sola vez.
  *
  * Requiere las variables de entorno (NO commitear):
@@ -201,7 +201,7 @@ if (!SERVICE_KEY) {
   process.exit(1);
 }
 
-const FIATCOIN_ORG_ID = '11111111-1111-1111-1111-111111111111';
+const IXIM_PAY_ORG_ID = '11111111-1111-1111-1111-111111111111';
 
 /** Genera password de 24 caracteres URL-safe (~144 bits de entropía). */
 function generatePassword(): string {
@@ -216,17 +216,17 @@ interface SeedUser {
 
 const SEED_USERS: SeedUser[] = [
   {
-    email: 'operador@fiatcoin.mx',
+    email: 'operador@iximpay.mx',
     nombre: 'Mariana Operadora (demo)',
     roles: ['operador'],
   },
   {
-    email: 'oc@fiatcoin.mx',
+    email: 'oc@iximpay.mx',
     nombre: 'Oficial de Cumplimiento (demo)',
     roles: ['oc', 'admin'],
   },
   {
-    email: 'admin@fiatcoin.mx',
+    email: 'admin@iximpay.mx',
     nombre: 'Admin delegado (demo)',
     roles: ['admin'],
   },
@@ -269,7 +269,7 @@ async function ensureProfileAndRoles(userId: string, u: SeedUser) {
   const { error: profErr } = await supabase.from('user_profile').upsert(
     {
       id: userId,
-      organization_id: FIATCOIN_ORG_ID,
+      organization_id: IXIM_PAY_ORG_ID,
       email: u.email,
       nombre: u.nombre,
       activo: true,
@@ -282,12 +282,12 @@ async function ensureProfileAndRoles(userId: string, u: SeedUser) {
     .from('user_roles')
     .delete()
     .eq('user_id', userId)
-    .eq('organization_id', FIATCOIN_ORG_ID);
+    .eq('organization_id', IXIM_PAY_ORG_ID);
   if (delErr) throw delErr;
 
   const rows = u.roles.map((rol) => ({
     user_id: userId,
-    organization_id: FIATCOIN_ORG_ID,
+    organization_id: IXIM_PAY_ORG_ID,
     rol,
   }));
   const { error: rolesErr } = await supabase.from('user_roles').insert(rows);
@@ -298,16 +298,16 @@ async function ensureProfileAndRoles(userId: string, u: SeedUser) {
 
 async function main() {
   console.log('[bootstrap-users] target:', SUPABASE_URL);
-  console.log('[bootstrap-users] organización:', FIATCOIN_ORG_ID, '(FIATCOIN RAMPLE)\n');
+  console.log('[bootstrap-users] organización:', IXIM_PAY_ORG_ID, '(Ixim Pay)\n');
 
   const { data: org, error: orgErr } = await supabase
     .from('organizations')
     .select('id, razon_social')
-    .eq('id', FIATCOIN_ORG_ID)
+    .eq('id', IXIM_PAY_ORG_ID)
     .single();
   if (orgErr || !org) {
     console.error(
-      '\n[bootstrap-users] ❌  La organización FIATCOIN no existe en BD.\n' +
+      '\n[bootstrap-users] ❌  La organización Ixim Pay no existe en BD.\n' +
         '   ¿Aplicaste migrations y seeds al proyecto remoto?\n' +
         '   Ver "Aplicar migrations + seeds a remoto" en el addendum.\n',
     );
@@ -393,7 +393,7 @@ npx supabase db push
 #    https://supabase.com/dashboard/project/cibpguwwggwzdhhpdomz/settings/database
 #    Selecciona el modo "URI" con la contraseña que pusiste al crear el proyecto.
 export DB_URL='postgresql://postgres.cibpguwwggwzdhhpdomz:<DB_PASSWORD>@aws-0-us-east-1.pooler.supabase.com:5432/postgres'
-psql "$DB_URL" -f supabase/seed/01_organization_fiatcoin.sql
+psql "$DB_URL" -f supabase/seed/01_organization_ixim_pay.sql
 psql "$DB_URL" -f supabase/seed/02_metodologia_ebr_xvi.sql
 psql "$DB_URL" -f supabase/seed/03_tipologias_xvi.sql
 psql "$DB_URL" -f supabase/seed/04_catalogos_paises_entidades.sql
@@ -424,9 +424,9 @@ npm run dev
 1. Después del último commit, espera ~1 minuto a que Vercel termine el deploy.
 2. Abre https://yoltik-regtech-hub.vercel.app — debe mostrar el login Ikán
    (no el scaffold Lovable viejo).
-3. Login con `operador@fiatcoin.mx` + password generado → `/operador`.
-4. Login con `oc@fiatcoin.mx` → panel Motor PLD; el selector de rol aparece.
-5. Login con `admin@fiatcoin.mx` → vista Administración.
+3. Login con `operador@iximpay.mx` + password generado → `/operador`.
+4. Login con `oc@iximpay.mx` → panel Motor PLD; el selector de rol aparece.
+5. Login con `admin@iximpay.mx` → vista Administración.
 
 Si los 3 entran y ven sus dashboards desde la URL pública de Vercel,
 **Sprint D-1 bootstrap cerrado**.
@@ -519,5 +519,5 @@ Por eso lo dejé en `deny` de las settings de Claude Code en el brief original.
   redeploy.
 - **El login en Vercel preview redirige y rompe**: revisa que los redirect URLs
   en Supabase Auth incluyen `https://*.vercel.app`.
-- **Bootstrap-users dice "FIATCOIN no existe"**: aplicaste migrations pero no
+- **Bootstrap-users dice "Ixim Pay no existe"**: aplicaste migrations pero no
   seeds. Corre los `psql -f` del paso 3 del Chunk 7.

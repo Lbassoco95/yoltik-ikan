@@ -20,7 +20,7 @@ Antes de proponer nada, lee en este orden:
 
 Reglas duras:
   - No inventes campos, valores, umbrales ni algoritmos. Si algo no está en
-    metodología FIATCOIN, en seeds, en docs/ o en código existente: pregunta.
+    metodología Ixim Pay, en seeds, en docs/ o en código existente: pregunta.
   - No instales librerías nuevas sin avisar y justificar.
   - Commit + push a la rama de trabajo (claude/magical-davinci-Md6ls) está OK
     sin aprobación previa, formato "D1.Bn: descripción", al cierre de cada chunk
@@ -81,7 +81,7 @@ npx supabase link --project-ref cibpguwwggwzdhhpdomz
 npx supabase db push              # aplica migrations al remoto
 npm run supabase:gen:types        # cada vez que toques migrations
 
-npm run bootstrap:users           # crear los 3 usuarios FIATCOIN
+npm run bootstrap:users           # crear los 3 usuarios Ixim Pay
 ```
 
 ### Si el repo crece y necesitas que Code lea menos de inicio
@@ -118,6 +118,6 @@ Recuerda los pilares (en orden de importancia):
 2. **Catálogo unificado** para los 6 sectores AV, pero el demo arranca con XVI.
 3. **3 roles con separación de funciones** y `pending_approvals` para Admin → OC.
 4. **Mocks visibles**, nada silencioso.
-5. **No inventar campos** — la fuente es la metodología FIATCOIN.
+5. **No inventar campos** — la fuente es la metodología Ixim Pay.
 
 Si una propuesta de Code rompe alguno, dile que se detenga y reformule.

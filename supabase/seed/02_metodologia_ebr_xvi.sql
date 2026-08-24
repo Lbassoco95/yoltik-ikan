@@ -1,7 +1,7 @@
 -- =====================================================================
--- Seed · Metodología EBR sector XVI (FIATCOIN)
+-- Seed · Metodología EBR sector XVI (Ixim Pay)
 -- =====================================================================
--- Valores exactos del archivo "Metodologia EBR - FIATCOIN RAMPLE.xlsx".
+-- Valores exactos del archivo "Metodologia EBR - Ixim Pay.xlsx".
 -- 5 Elementos con pesos institucionales, sus indicadores con peso interno
 -- y nivel inherente.
 -- =====================================================================
@@ -13,7 +13,7 @@ values (
   '22222222-2222-2222-2222-222222222201',
   '11111111-1111-1111-1111-111111111111',
   'XVI', 1, 'medio', 'anual',
-  'Metodología EBR base FIATCOIN — Activos Virtuales (Art. 17 fr. XVI LFPIORPI).'
+  'Metodología EBR base Ixim Pay — Activos Virtuales (Art. 17 fr. XVI LFPIORPI).'
 )
 on conflict (organization_id, sector, version) do nothing;
 

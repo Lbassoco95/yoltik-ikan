@@ -68,11 +68,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-/** Folio legible del expediente. `hallazgo` no tiene columna de folio: se usa
- *  el prefijo del UUID, que es estable y suficiente para referirse a un
- *  expediente en voz alta. */
-function folio(id: string): string {
-  return id.slice(0, 8).toUpperCase();
+/** Folio del expediente. Lo emite la BD al crear el hallazgo con el formato
+ *  configurado por la organización (migration 0008). Los hallazgos previos al
+ *  backfill pueden no tenerlo; en ese caso no se inventa uno. */
+function folio(h: Hallazgo): string {
+  return h.folio ?? 'Sin folio';
 }
 
 function fechaHora(iso: string): string {
@@ -231,7 +231,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
           <DialogTitle className="flex flex-wrap items-center gap-2">
             <span>Expediente del hallazgo</span>
             <span className="font-mono text-xs text-muted-foreground">
-              {folio(hallazgo.id)}
+              {folio(hallazgo)}
             </span>
             <span className={cn('status-badge text-[10px]', ESTADO_CLASS[hallazgo.estado])}>
               {ESTADO_LABEL[hallazgo.estado]}
@@ -270,7 +270,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
           <TabsContent value="detalle" className="space-y-4 pt-4">
             <div className="grid grid-cols-2 gap-4">
               <Campo label="Folio">
-                <span className="font-mono">{folio(hallazgo.id)}</span>
+                <span className="font-mono">{folio(hallazgo)}</span>
               </Campo>
               <Campo label="Tipología">
                 <span className="font-mono">{hallazgo.tipologia_codigo}</span> ·{' '}

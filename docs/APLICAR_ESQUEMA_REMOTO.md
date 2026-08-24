@@ -48,7 +48,7 @@ un proyecto vacío. Los seeds sí son idempotentes (`on conflict do nothing`).
 supabase link --project-ref cibpguwwggwzdhhpdomz
 supabase db push                       # aplica migrations/0001..0005
 # seeds (uno por uno, o el runner con \i desde psql):
-psql "$DB_URL" -f supabase/seed/01_organization_fiatcoin.sql   # ...y 02..07 en orden
+psql "$DB_URL" -f supabase/seed/01_organization_ixim_pay.sql   # ...y 02..07 en orden
 ```
 
 ## 3. Crear el usuario maestro
@@ -60,7 +60,7 @@ usuario maestro:
 2. Copia su UID.
 3. Corre `supabase/manual/bootstrap_usuario_maestro.sql` reemplazando `PEGA_AQUI_EL_UID`.
 
-Para reconstruir los 3 usuarios demo (operador@/oc@/admin@fiatcoin.mx) + el maestro de forma
+Para reconstruir los 3 usuarios demo (operador@/oc@/admin@iximpay.mx) + el maestro de forma
 automatizada: `npm run bootstrap:users` (requiere `SUPABASE_SERVICE_ROLE_KEY`; ver
 `scripts/bootstrap-users.ts`).
 

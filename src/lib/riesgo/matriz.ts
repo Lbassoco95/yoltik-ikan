@@ -4,8 +4,8 @@ import type { MatrizConfig, MatrizElemento, MatrizVariable, TipoPersona } from '
  * Helpers puros de la matriz de riesgo del cliente.
  *
  * NOTA[RCG-0]: el cálculo de `score_total`/`clasificacion` NO está aquí a
- * propósito. La fórmula de ponderación vive en el Excel original de FIATCOIN
- * ("Matriz de Riesgos Clientes - FIATCOIN RAMPLE.xlsx") y el seed de Juan Pérez
+ * propósito. La fórmula de ponderación vive en el Excel original de Ixim Pay
+ * ("Matriz de Riesgos Clientes - Ixim Pay.xlsx") y el seed de Juan Pérez
  * es inconsistente con una suma simple (subtotales suman 25 pero declara 17).
  * Por la regla "no inventar algoritmos", el score queda PENDIENTE hasta que
  * Kawiil-Cumplimiento confirme la fórmula. Estos helpers solo resuelven qué

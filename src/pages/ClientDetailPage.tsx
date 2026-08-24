@@ -117,7 +117,7 @@ export default function ClientDetailPage() {
             <p className="text-sm">
               <strong>DEMO — sin fórmula confirmada.</strong> La captura de respuestas funciona,
               pero el cálculo de <em>score</em> y clasificación está pendiente de la fórmula oficial
-              de ponderación (Excel FIATCOIN). Por eso la evaluación aún no se guarda.
+              de ponderación (Excel Ixim Pay). Por eso la evaluación aún no se guarda.
             </p>
           </div>
 

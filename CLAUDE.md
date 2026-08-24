@@ -9,7 +9,7 @@
 
 **Ikán** es la plataforma de cumplimiento PLD de Yoltik (operada por Kawiil), dirigida
 a sujetos obligados bajo LFPIORPI. El demo arranca con el sector **XVI — Activos
-Virtuales**, usando la metodología EBR de **FIATCOIN RAMPLE** (cliente real Kawiil)
+Virtuales**, usando la metodología EBR de **Ixim Pay** (cliente real Kawiil)
 como seed canónico.
 
 Producto en construcción. Sprint actual: **D-1 — Foundations + onboarding + EBR
@@ -61,7 +61,7 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
 
 1. **Bloque por bloque con checkpoint.** Nunca acumules más de 1 bloque sin
    verificar con el usuario. Cada bloque cierra con build limpio + smoke notes.
-2. **No inventes campos ni valores.** Si algo no está en metodología FIATCOIN, en
+2. **No inventes campos ni valores.** Si algo no está en metodología Ixim Pay, en
    las guías oficiales (UIF/SAT/GAFI), o en el código existente: pregunta. NUNCA
    improvises algoritmos, umbrales o estructuras "razonables".
 3. **Mocks visibles.** Lo que no esté integrado (Moffin, listas tiempo real,
@@ -69,7 +69,7 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
    "DEMO — sin integración real". Nunca silencioso.
 4. **IDs fijos en seeds.** Los seeds usan UUIDs deterministas para que el front
    pueda referenciar sin race conditions. NO los cambies sin razón fuerte:
-   - Organización FIATCOIN: `11111111-1111-1111-1111-111111111111`
+   - Organización Ixim Pay: `11111111-1111-1111-1111-111111111111`
    - Metodología EBR XVI v1: `22222222-2222-2222-2222-222222222201`
    - Tipologías XVI-01..XVI-08: `33333333-0000-0000-0000-00000000000{1..8}`
    - Plantilla matriz cliente XVI: `44444444-0000-0000-0000-000000000001`
@@ -106,7 +106,7 @@ npx supabase link --project-ref cibpguwwggwzdhhpdomz
 npx supabase db push              # aplica migrations al remoto
 npm run supabase:gen:types        # regenera src/types/database.ts
 
-npm run bootstrap:users           # crea 3 usuarios FIATCOIN (scripts/bootstrap-users.ts)
+npm run bootstrap:users           # crea 3 usuarios Ixim Pay (scripts/bootstrap-users.ts)
 ```
 
 ## Estructura
@@ -117,7 +117,7 @@ Ver `README.md` para tree completo. Resumen:
   (`lib/auth-context.tsx`, `lib/supabase.ts`, `lib/role-routes.ts`, `hooks/`,
   `components/auth/`, `components/layout/RoleSwitcher.tsx`, `pages/auth/`)
 - `supabase/migrations/0001..0005` — schema completo con RLS
-- `supabase/seed/` — datos demo FIATCOIN (no inventados; vienen de los Excel/docx originales)
+- `supabase/seed/` — datos demo Ixim Pay (no inventados; vienen de los Excel/docx originales)
 - `supabase/functions/motor-pld/` — Edge Function (stub para Sprint D-3)
 - `scripts/` — utilidades (bootstrap usuarios, etc.)
 - `docs/` — ARCHITECTURE, ROLES, MOTOR_PLD, SPRINT_D1_BACKLOG, CODE_BRIEF, claude-code-settings
@@ -131,7 +131,7 @@ dependencias, cada uno con criterio de aceptación y validación.
 - ✅ D1.B0a — pre-trabajo sobre scaffold Lovable (lockfiles, lovable-tagger, tokens `ikan.*`).
 - 🟡 D1.B0b — contexto persistente y docs (este chunk).
 - ⏳ D1.B0c — schema (migrations + config + edge function stub).
-- ⏳ D1.B0d — seeds FIATCOIN.
+- ⏳ D1.B0d — seeds Ixim Pay.
 - ⏳ D1.B0e — configs (package.json, env, scripts).
 - ⏳ D1.B0f — front Ikán sobre Lovable (auth + roles + role-routes).
 - ⏳ D1.B1 — smoke test contra Supabase remoto.
@@ -158,7 +158,7 @@ dependencias, cada uno con criterio de aceptación y validación.
 
 Pregunta. No improvises:
 - Si un campo no está en seed ni en docs → pregunta.
-- Si una regla no está en metodología FIATCOIN → pregunta.
+- Si una regla no está en metodología Ixim Pay → pregunta.
 - Si una decisión de UX no está documentada en `docs/` → pregunta.
 - Si dudas sobre la separación de funciones Operador/OC/Admin → relee `docs/ROLES.md`.
 
@@ -167,7 +167,7 @@ Pregunta. No improvises:
 - `Yoltik Desarrollos/Ikan-Arquitectura-Roadmap-v0.1-2026-05-23.docx` — arquitectura general
 - `Yoltik Desarrollos/Ikan-Demo-Decisiones-y-Plan-v0.1-2026-05-23.docx` — decisiones de arranque
 - `Yoltik Desarrollos/Ikan-Demo-Motor-PLD-y-Tipologias-v0.3-2026-05-23.docx` — modelo Motor PLD (vigente)
-- Excel/docx originales de FIATCOIN — la fuente de verdad de la metodología
+- Excel/docx originales de Ixim Pay — la fuente de verdad de la metodología
 
 Mientras dure el Sprint D-1, los 3 documentos clave del plan viven en `.brief-temporal/`
 del repo:

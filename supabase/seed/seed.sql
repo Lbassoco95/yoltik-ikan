@@ -5,14 +5,14 @@
 --
 -- Contra el remoto cibpguwwggwzdhhpdomz:
 --   export DB_URL='postgresql://postgres.cibpguwwggwzdhhpdomz:<PW>@aws-0-us-east-1.pooler.supabase.com:5432/postgres'
---   psql "$DB_URL" -f supabase/seed/01_organization_fiatcoin.sql
+--   psql "$DB_URL" -f supabase/seed/01_organization_ixim_pay.sql
 --   ... (y los otros 5 en orden)
 --
 -- Localmente con `supabase start` (opcional):
 --   psql "$SUPABASE_DB_URL" -f supabase/seed/seed.sql
 --
 -- ORDEN:
---   1. Organización (FIATCOIN)
+--   1. Organización (Ixim Pay)
 --   2. Metodología EBR XVI
 --   3. Tipologías XVI (catálogo del motor)
 --   4. Catálogos auxiliares (países GAFI/OFAC, entidades MX, señales on-chain)
@@ -22,7 +22,7 @@
 --   8. Demo Notarías (org XII, comparecientes, actos, tipologías XII)
 -- =====================================================================
 
-\i 01_organization_fiatcoin.sql
+\i 01_organization_ixim_pay.sql
 \i 02_metodologia_ebr_xvi.sql
 \i 03_tipologias_xvi.sql
 \i 04_catalogos_paises_entidades.sql
