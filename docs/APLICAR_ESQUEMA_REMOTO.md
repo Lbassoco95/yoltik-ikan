@@ -121,16 +121,15 @@ misma transacción.
    `npx supabase functions deploy motor-pld`. (Si no se redespliega, el trigger de BD la deriva
    igual; solo se pierde la fuente explícita del motor.)
 
-Verificación:
+Al correrla, el SQL Editor responde **"Success. No rows returned"**: es DDL puro y la última
+sentencia es un `create policy`. Como el editor envuelve el script en una transacción, ese
+"Success" significa que pasó completo, políticas de Storage incluidas.
 
-```sql
--- XII-01 (umbral 16,000 UMA) → por_umbral;  XII-02 y XII-03 → 24_horas
-select tipologia_codigo, clasificacion_urgencia, estado
-from hallazgo order by tipologia_codigo;
-
--- El bucket debe existir y ser privado
-select id, public, file_size_limit from storage.buckets where id = 'hallazgo-documentos';
-```
+Verificación (devuelve un checklist con filas): pega y corre
+`supabase/manual/verificar_0007.sql`. Las 7 primeras filas deben decir `OK`; las últimas listan
+los hallazgos con su clasificación — XII-01 (umbral 16,000 UMA) → `por_umbral`, XII-02 y XII-03
+→ `24_horas`. Si la lista de hallazgos sale vacía, es que el motor no ha corrido todavía: entra
+a `/alertas` y usa **Recorrer motor**.
 
 Smoke en la UI, entrando como `notaria@demo.mx` (rol activo **Oficial de Cumplimiento**):
 clic en una tarjeta de `/alertas` → abre "Expediente del hallazgo". En **Detalle**, cambiar el
