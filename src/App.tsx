@@ -7,6 +7,8 @@ import AppLayout from "@/components/AppLayout";
 import { AuthProvider } from "@/lib/auth-context";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoginPage } from "@/pages/auth/Login";
+import { RecuperarPasswordPage } from "@/pages/auth/RecuperarPassword";
+import { RestablecerPasswordPage } from "@/pages/auth/RestablecerPassword";
 import DashboardPage from "@/pages/DashboardPage";
 import ClientsPage from "@/pages/ClientsPage";
 import ClientDetailPage from "@/pages/ClientDetailPage";
@@ -38,6 +40,8 @@ const App = () => (
             <Route path="/registro/notarios" element={<NotariosPage />} />
             <Route path="/registro/gracias" element={<GraciasPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/recuperar" element={<RecuperarPasswordPage />} />
+            <Route path="/restablecer" element={<RestablecerPasswordPage />} />
 
             {/* Rutas protegidas */}
             <Route
