@@ -4,7 +4,8 @@
  * generadas con `npm run supabase:gen:types` después de aplicar migrations.
  */
 
-export type SectorAV = 'IV' | 'V' | 'VII' | 'VIII' | 'XV' | 'XVI';
+// 'XII' (fe pública / notarías) entró en la migration 0006 y faltaba aquí.
+export type SectorAV = 'IV' | 'V' | 'VII' | 'VIII' | 'XII' | 'XV' | 'XVI';
 
 export type RolUsuario = 'operador' | 'oc' | 'admin';
 
@@ -165,6 +166,8 @@ export interface MatrizConfig {
   };
   triggers_alto_de_oficio: { codigo: string; descripcion: string }[];
 }
+export type EstadoPlantilla = 'borrador' | 'publicada';
+
 export interface ClientRiskTemplate {
   id: string;
   organization_id: string;
@@ -172,6 +175,13 @@ export interface ClientRiskTemplate {
   version: number;
   configuracion: MatrizConfig;
   activa: boolean;
+  /** migration 0010. Un borrador nunca está activo; una publicada es inmutable. */
+  estado: EstadoPlantilla;
+  creada_en: string;
+  creada_por: string | null;
+  publicada_por: string | null;
+  publicada_en: string | null;
+  notas_version: string | null;
 }
 
 // =====================================================================

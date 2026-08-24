@@ -77,8 +77,11 @@ const prospectSchema = z.object({
   contacto_email: z.string().email("Email inválido"),
   contacto_telefono: z.string().optional(),
   notas: z.string().max(500).optional(),
-  consentimiento_privacidad: z.literal(true, { errorMap: () => ({ message: "Debe aceptar el aviso de privacidad" }) }),
-  consentimiento_contacto: z.literal(true, { errorMap: () => ({ message: "Debe aceptar el contacto" }) }),
+  // `boolean().refine` y no `literal(true)`: valida lo mismo (hay que marcarlo
+  // para enviar) pero tipa el campo como boolean, que es lo que necesita
+  // `defaultValues` al arrancar sin marcar.
+  consentimiento_privacidad: z.boolean().refine((v) => v === true, { message: "Debe aceptar el aviso de privacidad" }),
+  consentimiento_contacto: z.boolean().refine((v) => v === true, { message: "Debe aceptar el contacto" }),
 });
 
 type ProspectFormValues = z.infer<typeof prospectSchema>;

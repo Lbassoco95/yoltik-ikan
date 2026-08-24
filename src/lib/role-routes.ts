@@ -7,6 +7,7 @@ import {
   FileText,
   Shield,
   SlidersHorizontal,
+  Grid3x3,
   ClipboardCheck,
   Settings,
   type LucideIcon,
@@ -37,6 +38,7 @@ export const NAV_ENTRIES: NavEntry[] = [
   { to: '/reportes',     label: 'Reportes',        icon: FileText,           roles: ['oc', 'admin'],             section: 'main' },
   { to: '/listas',       label: 'Listas',          icon: Shield,             roles: ['admin'],                   section: 'main' },
   { to: '/reglas',       label: 'Motor de Reglas', icon: SlidersHorizontal,  roles: ['admin'],                   section: 'main' },
+  { to: '/matriz',       label: 'Matriz de riesgo', icon: Grid3x3,           roles: ['oc', 'admin'],             section: 'main' },
   // "ID No Presencial" (/verificacion) es maqueta del scaffold Lovable, sin
   // integración (Moffin/KYC es mock hasta post-demo). Se oculta del menú para no
   // confundir en pruebas; la ruta sigue existiendo en App.tsx. Reactivar cuando
