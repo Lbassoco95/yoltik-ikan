@@ -170,6 +170,10 @@ Deno.serve(async (req: Request) => {
       severidad: c.severidad,
       regla_payload: c.regla_payload,
       estado: 'abierto',
+      // SLA operativo de la bandeja del OC, derivado de la forma de la regla
+      // (migration 0007). El trigger de BD lo recalcularía igual si llegara
+      // nulo; se manda explícito para que el motor sea la fuente visible.
+      clasificacion_urgencia: c.clasificacion_urgencia,
     }));
     const { data: insertados, error: errIns } = await supabase.from('hallazgo').insert(filas).select('id');
     if (errIns) {

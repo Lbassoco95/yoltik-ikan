@@ -67,6 +67,37 @@ export type ReglaDsl =
       comparar: string;
     };
 
+/** SLA operativo interno de la bandeja del OC (columna
+ *  `hallazgo.clasificacion_urgencia`). NO es un plazo regulatorio. */
+export type ClasificacionUrgencia = '24_horas' | 'por_umbral';
+
+/** Métricas de `condicion` que representan un umbral de MONTO (no de conteo). */
+const METRICAS_MONTO = ['suma_monto_uma', 'suma_monto_mxn', 'monto_uma', 'monto_mxn'];
+
+/** Deriva el SLA operativo del hallazgo a partir de la forma de la regla que
+ *  lo generó. Espejo exacto de `public.urgencia_de_regla(jsonb)` en la
+ *  migration 0007 — si cambia una, cambia la otra.
+ *
+ *  · `desviacion` compara contra el perfil transaccional declarado: umbral
+ *    monetario → `por_umbral`.
+ *  · Una `condicion` sobre una métrica de monto es un umbral monetario
+ *    → `por_umbral` (caso XII-01, transmisión de inmueble ≥ 16,000 UMA).
+ *  · El resto (`lookup`, `score`, `duplicado`, `secuencia`, y `agregado` que
+ *    solo cuenta operaciones) es una regla de "aviso siempre", sin umbral de
+ *    monto → `24_horas` (caso XII-02, poder irrevocable).
+ *
+ *  Fail-safe: regla nula o desconocida cae en `24_horas`, la atención más
+ *  inmediata. */
+export function clasificacionUrgencia(regla: ReglaDsl | null | undefined): ClasificacionUrgencia {
+  if (!regla) return '24_horas';
+  if (regla.tipo === 'desviacion') return 'por_umbral';
+  const condicion = (regla as { condicion?: Record<string, unknown> }).condicion;
+  if (condicion && typeof condicion === 'object') {
+    if (METRICAS_MONTO.some((m) => m in condicion)) return 'por_umbral';
+  }
+  return '24_horas';
+}
+
 /** Subconjunto de `operation` (+ contexto) que el motor necesita. */
 export interface OperacionEval {
   id: string;
@@ -110,6 +141,9 @@ export interface HallazgoCandidato {
   tipologia_version: number;
   severidad: string;
   regla_payload: Record<string, unknown>;
+  /** SLA operativo derivado de la regla. El trigger de BD lo recalcula si
+   *  llega nulo, pero el motor lo manda explícito. */
+  clasificacion_urgencia: ClasificacionUrgencia;
 }
 
 // ---------------------------------------------------------------------
@@ -212,6 +246,7 @@ function candidato(
     tipologia_version: tip.version,
     severidad: tip.severidad,
     regla_payload: { evaluado_en: 'motor-pld', ...payload },
+    clasificacion_urgencia: clasificacionUrgencia(tip.regla_dsl),
   };
 }
 
