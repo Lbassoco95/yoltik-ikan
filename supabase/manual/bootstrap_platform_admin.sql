@@ -1,5 +1,5 @@
 -- =====================================================================
--- Ikán · Alta de un administrador de plataforma (Kawiil)
+-- Ikán · Administradores de plataforma (Kawiil)
 -- =====================================================================
 -- `platform_admin` (migration 0008) es un privilegio GLOBAL que cruza
 -- organizaciones. No vive en `user_roles`, que es por organización: un admin
@@ -10,54 +10,77 @@
 -- propósito: el privilegio se otorga a mano, nunca por registro automático.
 --
 -- CÓMO USARLO
---   1. Corre SOLO la primera consulta (la de abajo) para ver qué correos
---      existen en Authentication → Users. El correo tiene que existir ya: este
---      script otorga un privilegio, no crea usuarios.
---   2. Cambia el correo del bloque por el que salga en esa lista.
---   3. Corre el bloque completo.
---   4. Verifica con la consulta del final.
+--   Pega el archivo completo y córrelo. Es seguro correrlo siempre:
+--     · Te dice quién tiene el privilegio hoy y qué correos existen.
+--     · Si YA hay al menos un administrador, no toca nada y te lo dice.
+--     · Sólo otorga cuando la tabla está vacía, o cuando pones `true` en
+--       `v_forzar` para agregar a alguien más.
 --
---   Si el correo que quieres no aparece: Dashboard → Authentication → Users →
---   Add user, marcando "Auto Confirm User". Luego vuelve aquí.
+--   La versión anterior traía un correo fijo y reventaba si ese correo no
+--   existía, aunque ya hubiera un administrador dado de alta. Un script de
+--   diagnóstico no debería fallar por lo que ya está bien.
 --
--- Para revocar el privilegio:
+-- Para revocar:
 --   delete from platform_admin where user_id = (
---     select id from auth.users where email = 'correo@kawiil.mx');
+--     select id from auth.users where lower(email) = lower('correo@kawiil.mx'));
 -- =====================================================================
 
--- PASO 1 · Qué correos existen, y cuáles ya son admin de plataforma.
+-- ---------------------------------------------------------------------
+-- 1. Quién puede entrar hoy, y qué correos existen
+-- ---------------------------------------------------------------------
 select u.email,
        u.created_at,
-       case when pa.user_id is null then 'no' else 'SÍ' end as ya_es_admin_plataforma
+       case when pa.user_id is null then 'no' else 'SÍ — entra a la consola' end
+         as admin_de_plataforma,
+       pa.nombre
 from auth.users u
 left join platform_admin pa on pa.user_id = u.id
-order by u.created_at;
+order by (pa.user_id is null), u.created_at;
 
--- PASO 2 · Otorgar el privilegio. Pon arriba el correo exacto del paso 1.
+-- ---------------------------------------------------------------------
+-- 2. Otorgar el privilegio
+-- ---------------------------------------------------------------------
 do $$
 declare
-  v_email text := 'lbassoco@kawiil.mx';      -- ← el correo EXACTO del paso 1
-  v_nombre text := 'Administrador Kawiil';   -- ← nombre para la bitácora
+  -- Correo de quien va a administrar la plataforma. Tiene que existir ya en
+  -- Authentication → Users: esto otorga un privilegio, no crea usuarios.
+  v_email  text := 'leo.bassoco@kawiil.mx';
+  v_nombre text := 'Administrador Kawiil';
+  -- Ponlo en true SÓLO para agregar a otra persona cuando ya hay admins.
+  v_forzar boolean := false;
   v_uid uuid;
+  v_ya  int;
 begin
+  select count(*) into v_ya from platform_admin;
+
+  if v_ya > 0 and not v_forzar then
+    raise notice 'Ya hay % administrador(es) de plataforma. No se tocó nada.', v_ya;
+    raise notice 'Para agregar a alguien más, pon v_forzar := true y su correo en v_email.';
+    return;
+  end if;
+
   select id into v_uid from auth.users where lower(email) = lower(v_email);
 
   if v_uid is null then
     raise exception
-      'No existe un usuario con el correo %. Corre primero la consulta del paso 1 para ver los correos que sí existen, o créalo en Authentication → Users.',
+      'El correo % no existe en auth.users. Mira la lista de arriba y usa uno de ésos, o créalo en Authentication → Users con "Auto Confirm User".',
       v_email;
   end if;
 
   insert into platform_admin (user_id, nombre, otorgado_por)
   values (v_uid, v_nombre, v_uid)
   on conflict (user_id) do update set nombre = excluded.nombre;
-end
-$$;
 
--- Verificación: debe devolver una fila con tu correo.
+  raise notice 'Privilegio otorgado a %.', v_email;
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 3. Estado final
+-- ---------------------------------------------------------------------
 select pa.nombre,
        u.email,
        pa.otorgado_en,
-       'Ya puedes entrar a la consola de administración' as nota
+       'Entra a la consola con este correo y su contraseña de Supabase' as nota
 from platform_admin pa
-join auth.users u on u.id = pa.user_id;
+join auth.users u on u.id = pa.user_id
+order by pa.otorgado_en;

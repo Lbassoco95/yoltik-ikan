@@ -189,6 +189,19 @@ error. Calcular umbrales sin UMA vigente produciría hallazgos falsos.
 
 ---
 
+## Quién entra a la consola de plataforma
+
+La consola de Kawiil **no tiene usuarios propios**: usa el mismo usuario de Supabase Auth,
+pero exige una fila en `platform_admin` (migration 0008). Es un privilegio **global**,
+distinto de los roles por organización de `user_roles`.
+
+Confirmado el 29 de agosto de 2026 contra el remoto: **`leo.bassoco@kawiil.mx`** ya lo tiene,
+otorgado ese mismo día. No hace falta correr nada; se entra a la consola con ese correo y su
+contraseña de Supabase.
+
+Para ver el estado o agregar a alguien más: `supabase/manual/bootstrap_platform_admin.sql`.
+El script es seguro de correr siempre — si ya hay administradores, lo dice y no toca nada.
+
 ## Por qué esto no lo corre Claude directamente
 
 La pregunta salió en la sesión del 29 de agosto de 2026 y la respuesta no es de credenciales:
