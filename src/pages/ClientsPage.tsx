@@ -29,6 +29,8 @@ import { useAuth } from "@/lib/auth-context";
 import { LABELS } from "@/lib/perfil-actividad";
 import { PendientesAviso } from "@/components/aviso/PendientesAviso";
 import { SIN_APELLIDO, pendientesCompareciente } from "@/lib/aviso/completitud";
+import { SelectCatalogo } from "@/components/aviso/SelectCatalogo";
+import { useCatalogo } from "@/hooks/useCatalogo";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
@@ -58,6 +60,7 @@ const FORM_INICIAL = {
   actividad_economica_clave: "",
   nacionalidad: "Mexicana",
   entidad_federativa: "",
+  entidad_federativa_clave: "",
   pais_residencia_iso2: "MX",
   email: "",
   telefono: "",
@@ -101,6 +104,9 @@ export default function ClientsPage() {
   });
 
   const esFisica = form.tipo_persona === "fisica";
+  // La etiqueta legible del estado se saca del catálogo, no se escribe a mano:
+  // así `entidad_federativa` y `entidad_federativa_clave` no se contradicen.
+  const catEntidades = useCatalogo("entidad_federativa");
 
   /** Lo que ya se capturó, en la forma que espera el evaluador del layout. */
   const comparecienteEnCurso = {
@@ -147,7 +153,10 @@ export default function ClientsPage() {
       rfc: form.rfc.trim() || undefined,
       curp: esFisica ? form.curp.trim() || undefined : undefined,
       nacionalidad: form.nacionalidad.trim() || undefined,
-      entidad_federativa: form.entidad_federativa.trim() || undefined,
+      entidad_federativa:
+        catEntidades.descripcionDe(form.entidad_federativa_clave) ??
+        (form.entidad_federativa.trim() || undefined),
+      entidad_federativa_clave: form.entidad_federativa_clave.trim() || undefined,
       pais_residencia_iso2: form.pais_residencia_iso2.trim() || undefined,
       datos_kyc,
     });
@@ -354,39 +363,18 @@ export default function ClientsPage() {
               />
             </div>
 
-            <div>
-              <Label>Clave de país de nacionalidad</Label>
-              <Input
-                value={form.pais_nacionalidad_clave}
-                maxLength={2}
-                onChange={(e) =>
-                  setForm({ ...form, pais_nacionalidad_clave: e.target.value.toUpperCase() })
-                }
-              />
-            </div>
-            <div>
-              <Label>
-                {esFisica ? "Clave de actividad económica" : "Clave de giro mercantil"}
-              </Label>
-              <Input
-                value={form.actividad_economica_clave}
-                maxLength={7}
-                placeholder="7 dígitos"
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    actividad_economica_clave: e.target.value.replace(/\D/g, ""),
-                  })
-                }
-              />
-            </div>
-            <div className="col-span-2 rounded-lg bg-warning/10 p-2">
-              <p className="text-[11px] text-warning">
-                DEMO — sin integración real: los catálogos de la UIF (país, actividad económica)
-                todavía no están cargados en Ikán, así que las claves se capturan a mano. Se
-                cargarán desde la consola de plataforma.
-              </p>
-            </div>
+            <SelectCatalogo
+              catalogo="pais"
+              etiqueta="País de nacionalidad"
+              valor={form.pais_nacionalidad_clave}
+              onChange={(v) => setForm({ ...form, pais_nacionalidad_clave: v })}
+            />
+            <SelectCatalogo
+              catalogo={esFisica ? "actividad_economica" : "giro_mercantil"}
+              etiqueta={esFisica ? "Actividad económica" : "Giro mercantil"}
+              valor={form.actividad_economica_clave}
+              onChange={(v) => setForm({ ...form, actividad_economica_clave: v })}
+            />
 
             <div>
               <Label>Nacionalidad</Label>
@@ -395,13 +383,12 @@ export default function ClientsPage() {
                 onChange={(e) => setForm({ ...form, nacionalidad: e.target.value })}
               />
             </div>
-            <div>
-              <Label>Entidad federativa</Label>
-              <Input
-                value={form.entidad_federativa}
-                onChange={(e) => setForm({ ...form, entidad_federativa: e.target.value })}
-              />
-            </div>
+            <SelectCatalogo
+              catalogo="entidad_federativa"
+              etiqueta="Entidad federativa"
+              valor={form.entidad_federativa_clave}
+              onChange={(v) => setForm({ ...form, entidad_federativa_clave: v })}
+            />
             <div>
               <Label>País de residencia (ISO2)</Label>
               <Input

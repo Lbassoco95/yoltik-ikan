@@ -23,6 +23,7 @@
 | RCG0.B5 | Desarrollo Inmobiliario (V Bis) | ⛔ condicional — sin arrancar |
 | RCG0.B6 | Smoke test de Fase RCG-0 | ⏳ pendiente |
 | **RCG0.B3f** | **Expediente del acto: la captura alimenta el aviso** | ✅ **hecho** |
+| **RCG0.B3g** | **Catálogos del layout: la lista sale de la base** | ✅ **hecho · 1 de 25 cargado** |
 | **RCG0.B7** | **Consola de plataforma completa (admin de Ikán)** | ⏳ **nuevo — después de cerrar el demo** |
 
 Decisiones confirmadas con Polo (2026-08-20):
@@ -261,3 +262,26 @@ nacimiento, RFC y CURP. Faltando eso, el día 17 hay que volver al protocolo.
 **Lo que deja abierto (siguiente bloque):** captura del subárbol de cada tipo de
 acto (grupos repetidos de intervinientes) y carga de los catálogos de la UIF.
 Ambos con banner ámbar visible, no en silencio.
+
+---
+
+## RCG0.B3g · Catálogos del layout — ✅ hecho (registro completo, carga pendiente de archivos)
+
+**Por qué existe:** donde el aviso pide una clave de catálogo, la captura era
+texto libre. Quien captura no se sabe de memoria el número de su estado, y el
+portal rechaza el aviso completo si la clave no existe.
+
+**Qué entró:** `catalogo_sat` + `catalogo_valor` con vigencias (reemplazar cierra,
+no borra), `reemplazar_valores_catalogo()` restringida a Kawiil, RLS de sólo
+lectura para los clientes, `<SelectCatalogo>` que guarda la clave y degrada a
+captura manual con banner ámbar cuando el catálogo no está cargado, y pantalla de
+carga en la consola de plataforma con previo y validación de formato.
+
+**Estado real:** 25 catálogos **registrados**, 1 **cargado** (`prioridad`, el
+único cuyos valores enumera el instructivo). Los archivos de la UIF no vienen en
+el instructivo y no se inventan.
+
+**Lo que desbloquea la carga de dos archivos:** `entidad_federativa` y `pais` son
+los que la notaría toca en cada alta.
+
+**Detalle:** `docs/CATALOGOS_LAYOUT.md`.

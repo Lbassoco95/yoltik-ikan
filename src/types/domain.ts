@@ -97,6 +97,9 @@ export interface Client {
   pais_nacionalidad_clave: string | null;
   /** 7 dígitos: <actividad_economica> en persona física, <giro_mercantil> en moral. */
   actividad_economica_clave: string | null;
+  /** Clave del catálogo ENTIDAD FEDERATIVA. La etiqueta legible sigue en
+   *  `entidad_federativa`. */
+  entidad_federativa_clave: string | null;
   curp: string | null;
   rfc: string | null;
   nacionalidad: string | null;
@@ -123,6 +126,7 @@ export interface NuevoClienteInput {
   fecha_constitucion?: string;
   pais_nacionalidad_clave?: string;
   actividad_economica_clave?: string;
+  entidad_federativa_clave?: string;
   rfc?: string;
   curp?: string;
   nacionalidad?: string;

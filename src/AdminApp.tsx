@@ -11,6 +11,7 @@ import { RecuperarPasswordPage } from "@/pages/auth/RecuperarPassword";
 import { RestablecerPasswordPage } from "@/pages/auth/RestablecerPassword";
 import AdminListasPage from "@/pages/admin/AdminListasPage";
 import AdminParametrosPage from "@/pages/admin/AdminParametrosPage";
+import AdminCatalogosPage from "@/pages/admin/AdminCatalogosPage";
 
 /**
  * Consola de plataforma de Kawiil.
@@ -48,6 +49,7 @@ const AdminApp = () => (
               <Route path="/" element={<Navigate to="/listas" replace />} />
               <Route path="/listas" element={<AdminListasPage />} />
               <Route path="/parametros" element={<AdminParametrosPage />} />
+              <Route path="/catalogos" element={<AdminCatalogosPage />} />
             </Route>
 
             {/* La consola no tiene página de "no encontrado" propia: cualquier

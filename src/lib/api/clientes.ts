@@ -37,6 +37,7 @@ export async function crearCliente(input: NuevoClienteInput): Promise<Client> {
     fecha_constitucion: input.fecha_constitucion ?? null,
     pais_nacionalidad_clave: input.pais_nacionalidad_clave ?? null,
     actividad_economica_clave: input.actividad_economica_clave ?? null,
+    entidad_federativa_clave: input.entidad_federativa_clave ?? null,
     rfc: input.rfc ?? null,
     curp: input.curp ?? null,
     nacionalidad: input.nacionalidad ?? null,
