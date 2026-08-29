@@ -74,6 +74,28 @@ El corredor público no otorga poderes irrevocables ni transmite inmuebles; el
 notario no realiza avalúos como actividad vulnerable. `TIPOS_ACTO_NOTARIA`
 marca cada acto con quién lo puede instrumentar.
 
+## Los dos canales del notario
+
+Un notario **no reporta por un solo sistema**. Confundirlos hace que crea que ya
+cumplió cuando no lo hizo.
+
+| | SPPLD · aviso PLD | DeclaraNOT |
+|---|---|---|
+| **Qué** | Los 10 actos del layout de fe pública | Transmisión o constitución de derechos reales sobre inmuebles |
+| **Formato** | XML contra el layout `fep` | **TXT delimitado por pipe, UTF-8, CRLF** |
+| **Plazo** | Día 17 del mes siguiente | **15 días naturales tras la firma** |
+| **Periodicidad** | Mensual, agregado | **Por acto** |
+| **Fundamento** | LFPIORPI art. 17 fr. XII | **CFF art. 27 fr. V** |
+| **Tipos** | 10 etiquetas XML | 24 enajenación · 25 adquisición · 26 omisión PM · 27 socios |
+
+La diferencia de plazo es la que muerde: DeclaraNOT corre **por acto y a 15
+días**, así que un notario puede estar al corriente en el SPPLD y vencido en
+DeclaraNOT sin enterarse. El aviso mensual del SPPLD **no** reporta esas
+operaciones, y la plataforma tiene que decirlo cuando las haya.
+
+`PENDIENTE`: el generador de DeclaraNOT necesita el «Manual para la creación de
+archivos TXT» del SAT. Es otro formato y otro bloque.
+
 ## Informe en ceros
 
 `0InformeEnCeros.xlsm` es una plantilla aparte: cuando el fedatario **no tuvo
