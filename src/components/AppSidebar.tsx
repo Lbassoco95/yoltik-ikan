@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Heart, ShieldCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { contarHallazgosAbiertos } from "@/lib/api/hallazgos";
@@ -7,7 +7,6 @@ import { useActiveRole } from "@/hooks/useActiveRole";
 import { useAuth } from "@/lib/auth-context";
 import { navEntriesForRole } from "@/lib/role-routes";
 import { NAV_LABEL_OVERRIDES } from "@/lib/perfil-actividad";
-import { useAdminPlataforma } from "@/hooks/useAdminPlataforma";
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -18,7 +17,6 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
   const location = useLocation();
   const { activeRole } = useActiveRole();
   const { perfilActividad } = useAuth();
-  const { esAdmin: esAdminPlataforma } = useAdminPlataforma();
   const navOverrides = NAV_LABEL_OVERRIDES[perfilActividad] ?? {};
 
   // Si todavía no hay rol activo (cargando), no renderizamos nada en el nav.
@@ -103,29 +101,6 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               </NavLink>
             );
           })}
-        </div>
-      )}
-
-      {/* Plataforma (Kawiil) — privilegio global, no un rol de organización */}
-      {esAdminPlataforma && (
-        <div className="border-t border-sidebar-border py-4 px-3 space-y-1">
-          {!collapsed && (
-            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
-              Plataforma
-            </p>
-          )}
-          <NavLink
-            to="/admin/listas"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-              location.pathname.startsWith("/admin")
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-            )}
-          >
-            <ShieldCheck className="w-5 h-5 shrink-0" />
-            {!collapsed && <span>Listas restrictivas</span>}
-          </NavLink>
         </div>
       )}
 
