@@ -7,7 +7,6 @@ import {
   evaluarTipologia,
   ventanaAMs,
   valorEnCampo,
-  UMA_MXN,
   type Tipologia,
   type OperacionEval,
   type MotorContext,
@@ -34,7 +33,7 @@ function op(over: Partial<OperacionEval> & { id: string; fecha: string }): Opera
 
 function ctx(over: Partial<MotorContext> = {}): MotorContext {
   return {
-    umaMxn: UMA_MXN,
+    umaMxn: UMA_PRUEBA,
     ahora: new Date("2026-08-20T12:00:00Z"),
     paisPorFuente: {
       gafi_negra: new Set(["IR", "KP", "MM"]),
@@ -59,7 +58,12 @@ function tip(codigo: string, regla: Tipologia["regla_dsl"], over: Partial<Tipolo
 }
 
 // 645 UMA en MXN (umbral de identificación).
-const UMBRAL_MXN = 645 * UMA_MXN;
+// Valor de UMA propio de la prueba. A propósito NO se importa el de
+// producción: un test que se mueve cuando cambia la UMA no prueba el motor,
+// prueba la UMA. El motor recibe el valor por contexto, así que fijarlo aquí
+// es lo correcto.
+const UMA_PRUEBA = 100;
+const UMBRAL_MXN = 645 * UMA_PRUEBA;
 
 // ---------------------------------------------------------------------
 // Utilidades
@@ -279,8 +283,8 @@ describe("desviacion (XVI-07 fuera de perfil)", () => {
 
   it("dispara cuando el volumen del mes supera 3x el perfil declarado", () => {
     const ops = [
-      op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 200 * UMA_MXN }),
-      op({ id: "b", fecha: "2026-08-15T10:00:00Z", monto_mxn: 200 * UMA_MXN }),
+      op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 200 * UMA_PRUEBA }),
+      op({ id: "b", fecha: "2026-08-15T10:00:00Z", monto_mxn: 200 * UMA_PRUEBA }),
     ];
     const r = evaluarTipologia(t, ops, ctx({ perfilMensualUmaPorCliente: { [CLIENTE]: 100 } }));
     expect(r).toHaveLength(1); // 400 UMA > 3 * 100

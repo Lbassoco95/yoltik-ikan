@@ -15,7 +15,9 @@ import { Button } from "@/components/ui/button";
 import { evaluarRiesgoCliente, getCliente, getPlantillaRiesgoActiva } from "@/lib/api/clientes";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import { elementosAplicables, evaluarMatriz, respuestasCompletas } from "@/lib/riesgo/matriz";
-import { formatMxn, UMA_MXN } from "@/lib/utils";
+import { formatMxn } from "@/lib/utils";
+import { useParametros } from "@/hooks/useParametros";
+import { PARAM } from "@/lib/parametros";
 import type { TipoPersona } from "@/types/domain";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS, labelTipoActo } from "@/lib/perfil-actividad";
@@ -35,6 +37,10 @@ export default function ClientDetailPage() {
   const queryClient = useQueryClient();
   const L = LABELS[perfilActividad];
   const esNotarias = perfilActividad === "notarias";
+
+  // UMA vigente desde `parametro_regulatorio`, no desde una constante.
+  const { valor: valorParam } = useParametros();
+  const umaMxn = valorParam(PARAM.UMA_DIARIA);
 
   const { data: client, isLoading } = useQuery({
     queryKey: ["cliente", id],
@@ -244,7 +250,9 @@ export default function ClientDetailPage() {
                     <td className="px-4 py-3 text-sm font-medium">{formatMxn(op.monto_mxn)}</td>
                     <td className="px-4 py-3 text-sm">
                       {esNotarias
-                        ? `${Math.round(op.monto_mxn / UMA_MXN).toLocaleString("es-MX")} UMA`
+                        ? umaMxn != null
+                          ? `${Math.round(op.monto_mxn / umaMxn).toLocaleString("es-MX")} UMA`
+                          : "—"
                         : (op.activo_virtual ?? "—")}
                     </td>
                     <td className="px-4 py-3">

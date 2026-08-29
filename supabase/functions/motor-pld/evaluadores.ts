@@ -10,16 +10,15 @@
 // documentados en docs/MOTOR_PLD.md más las dos variantes realmente
 // sembradas (lookup por `valores`, agregado con `count_ip_anonima`).
 //
-// NO inventa umbrales: cada valor viene de la tipología (regla_dsl) o de la
-// operación. El valor de la UMA es la única constante y se toma de la misma
-// referencia que el front (src/lib/utils.ts).
+// NO inventa umbrales: cada valor viene de la tipología (regla_dsl), de la
+// operación, o del contexto que recibe. Este módulo no declara ninguna cifra
+// regulatoria propia.
 // =====================================================================
 
-// UMA 2026 — referencia. Espejo de src/lib/utils.ts (UMA_MXN). Verificar al
-// cierre de cada año con INEGI.
-// TODO[RCG-0]: unificar esta constante con el front en una sola fuente de verdad
-// cuando el motor y el front compartan un paquete común.
-export const UMA_MXN = 113.07;
+// La UMA ya NO se declara aquí. Este módulo es puro: recibe el valor vigente
+// en `MotorContext.umaMxn`, y quien lo invoca (index.ts) lo lee de
+// `parametro_regulatorio` (migration 0011). Así el motor y el front no pueden
+// volver a desincronizarse, que es exactamente lo que pasaba antes.
 
 // ---------------------------------------------------------------------
 // Tipos de dominio

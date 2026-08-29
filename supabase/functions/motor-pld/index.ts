@@ -19,7 +19,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   correrMotor,
-  UMA_MXN,
   type HallazgoCandidato,
   type MotorContext,
   type OperacionEval,
@@ -91,6 +90,33 @@ Deno.serve(async (req: Request) => {
     return json({ error: errOps.message }, 500);
   }
 
+  // --- 3. UMA vigente ------------------------------------------------
+  // Antes era una constante en este archivo (113.07), duplicada en el front y
+  // contradicha por el mock que veía el usuario (132.59). Ahora sale de
+  // `parametro_regulatorio` (migration 0011), con la vigencia que corresponde.
+  //
+  // Se resuelve a la fecha de HOY, no a la del acto: el motor evalúa
+  // operaciones al momento de correr. Recalcular un acto viejo con la UMA que
+  // le tocaba es un caso aparte, y para eso está `parametro_vigente(codigo, fecha)`.
+  //
+  // Sin UMA vigente el motor NO corre. Fallar es correcto: calcular umbrales
+  // con un valor inventado produciría hallazgos falsos o los ocultaría.
+  const { data: umaRow, error: errUma } = await supabase
+    .rpc('parametro_vigente', { p_codigo: 'uma_diaria' });
+  if (errUma) {
+    return json({ error: `No se pudo leer la UMA vigente: ${errUma.message}` }, 500);
+  }
+  const umaMxn = Number(umaRow);
+  if (!Number.isFinite(umaMxn) || umaMxn <= 0) {
+    return json(
+      {
+        error:
+          'No hay una UMA vigente en parametro_regulatorio. El motor no puede calcular umbrales sin ella.',
+      },
+      422,
+    );
+  }
+
   // --- 3. Catálogo de países por fuente (para lookup XVI-04) ----------
   const { data: paises, error: errPaises } = await supabase
     .from('country_risk_list')
@@ -128,7 +154,7 @@ Deno.serve(async (req: Request) => {
   const tipologias = (tipologiasRaw ?? []) as unknown as Tipologia[];
 
   const ctx: MotorContext = {
-    umaMxn: UMA_MXN,
+    umaMxn,
     ahora: new Date(),
     paisPorFuente,
     perfilMensualUmaPorCliente,

@@ -23,12 +23,12 @@ import {
 import { listarClientes } from "@/lib/api/clientes";
 import { listarOperaciones, crearOperacion, invocarMotor } from "@/lib/api/operaciones";
 import type { NuevaOperacionInput, TipoOperacion } from "@/types/domain";
-import { UMA_MXN, UMBRAL_IDENTIFICACION_UMA, formatMxn, cn } from "@/lib/utils";
+import { formatMxn, cn } from "@/lib/utils";
+import { useParametros } from "@/hooks/useParametros";
+import { PARAM } from "@/lib/parametros";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS, TIPOS_ACTO_NOTARIA, UMBRALES_XII_REFERENCIA, labelTipoActo } from "@/lib/perfil-actividad";
 
-const threshold645 = UMBRAL_IDENTIFICACION_UMA * UMA_MXN;
-const threshold3210 = 3210 * UMA_MXN;
 
 const TIPOS: { value: TipoOperacion; label: string }[] = [
   { value: "compra_fiat_cripto", label: "Compra fiat → cripto" },
@@ -55,6 +55,18 @@ export default function OperationsPage() {
   const { perfilActividad } = useAuth();
   const L = LABELS[perfilActividad];
   const esNotarias = perfilActividad === "notarias";
+
+  // Umbrales y UMA vienen de `parametro_regulatorio` (migration 0011), no de
+  // constantes. Si un parámetro no está vigente, `valor()` devuelve undefined
+  // y la UI muestra un guion en vez de inventar una cifra.
+  const { valor: valorParam } = useParametros();
+  const umaMxn = valorParam(PARAM.UMA_DIARIA);
+  const umbral645Uma = valorParam(PARAM.UMBRAL_IDENTIFICACION);
+  const umbral3210Uma = valorParam(PARAM.UMBRAL_RESTRICCION);
+  const threshold645 =
+    umaMxn != null && umbral645Uma != null ? umbral645Uma * umaMxn : undefined;
+  const threshold3210 =
+    umaMxn != null && umbral3210Uma != null ? umbral3210Uma * umaMxn : undefined;
 
   const { data: operaciones = [], isLoading, isError, error } = useQuery({
     queryKey: ["operaciones"],
@@ -160,10 +172,12 @@ export default function OperationsPage() {
       ) : (
         <div className="text-xs text-muted-foreground flex gap-6">
           <span>
-            Umbral identificación (645 UMA): <strong>{formatMxn(threshold645)}</strong>
+            Umbral identificación ({umbral645Uma?.toLocaleString("es-MX") ?? "—"} UMA):{" "}
+            <strong>{threshold645 != null ? formatMxn(threshold645) : "—"}</strong>
           </span>
           <span>
-            Umbral restricción (3,210 UMA): <strong>{formatMxn(threshold3210)}</strong>
+            Umbral restricción ({umbral3210Uma?.toLocaleString("es-MX") ?? "—"} UMA):{" "}
+            <strong>{threshold3210 != null ? formatMxn(threshold3210) : "—"}</strong>
           </span>
         </div>
       )}
@@ -204,9 +218,9 @@ export default function OperationsPage() {
                   key={op.id}
                   className={cn(
                     "border-b border-border last:border-0 transition-colors",
-                    op.monto_mxn >= threshold3210
+                    threshold3210 != null && op.monto_mxn >= threshold3210
                       ? "bg-destructive/5"
-                      : op.monto_mxn >= threshold645
+                      : threshold645 != null && op.monto_mxn >= threshold645
                         ? "bg-warning/5"
                         : "hover:bg-muted/30",
                   )}
@@ -224,7 +238,9 @@ export default function OperationsPage() {
                   <td className="px-4 py-3">
                     {esNotarias ? (
                       <span className="text-sm text-muted-foreground">
-                        {Math.round(op.monto_mxn / UMA_MXN).toLocaleString("es-MX")} UMA
+                        {umaMxn != null
+                          ? `${Math.round(op.monto_mxn / umaMxn).toLocaleString("es-MX")} UMA`
+                          : "—"}
                       </span>
                     ) : (
                       <span className="status-badge bg-vulnerable/10 text-vulnerable">

@@ -138,3 +138,38 @@ propio archivo se abre con liga firmada y que la carga también quedó en la bit
 
 > La clasificación de urgencia es un **SLA operativo interno** para priorizar la bandeja del OC.
 > No es un plazo regulatorio distinto al de la fracción XII.
+
+---
+
+## 5. El bundle NO cubre todo (léelo antes de dar por aplicado el esquema)
+
+`supabase/manual/apply_all_remote.sql` sólo contiene **migrations 0001–0005 + seeds 01–07**.
+Todo lo posterior quedó fuera y hay que aplicarlo aparte. Si el remoto no lo tiene, el demo
+de notarías **no existe**: sin `perfil_actividad`, sin la organización notaría, sin tipologías
+XII, sin expediente de hallazgo, sin folio, sin matriz configurable, sin parámetros.
+
+| Qué falta | Qué habilita | Cómo aplicarlo |
+|---|---|---|
+| `0006` | enum `XII` + `organizations.perfil_actividad` | Un envío **solo** (regla de `alter type ... add value`) |
+| seed `08` | organización Notaría Demo GDL, comparecientes, actos, tipologías XII | Envío posterior al de 0006 |
+| `0007` | expediente del hallazgo: documentos, bitácora, urgencia | Envío normal |
+| `0008` | folio configurable + `platform_admin` + `es_admin_kawiil()` | Envío normal |
+| `0009` | lectura de `audit_log` para admins de Kawiil | Envío normal |
+| `0010` | matriz de riesgo configurable (borrador / publicada) | Envío normal |
+| seed `09` | plantilla de matriz XII | Requiere 0010 |
+| `0011` + seed `10` | parámetros regulatorios (UMA, umbrales) | `supabase/manual/apply_0011_parametros.sql` — idempotente |
+
+### Verificación rápida de lo posterior a 0005
+
+```sql
+select
+  to_regclass('public.hallazgo_documento')      as m0007,
+  to_regclass('public.platform_admin')          as m0008,
+  to_regclass('public.parametro_regulatorio')   as m0011,
+  (select count(*) from organizations where perfil_actividad = 'notarias') as org_notaria,
+  (select count(*) from tipologia_av where sector = 'XII')                 as tipologias_xii,
+  public.parametro_vigente('uma_diaria')        as uma_vigente;
+```
+
+Si `uma_vigente` sale `null`, **el Motor PLD devuelve 422 y no corre**: es a propósito, no un
+error. Calcular umbrales sin UMA vigente produciría hallazgos falsos.
