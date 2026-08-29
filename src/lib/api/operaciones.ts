@@ -33,6 +33,8 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
     activo_virtual: input.activo_virtual ?? null,
     contraparte: input.contraparte ?? null,
     fecha: input.fecha ?? new Date().toISOString(),
+    instrumento_publico: input.instrumento_publico ?? null,
+    datos_acto: input.datos_acto ?? {},
     capturado_por: uid,
   };
   const { data, error } = await supabase.from('operation').insert(fila).select('*').single();

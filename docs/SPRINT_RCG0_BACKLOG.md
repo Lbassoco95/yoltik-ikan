@@ -22,6 +22,7 @@
 | RCG0.B4 | Rol "Representante Encargado de Cumplimiento" | ⏳ pendiente |
 | RCG0.B5 | Desarrollo Inmobiliario (V Bis) | ⛔ condicional — sin arrancar |
 | RCG0.B6 | Smoke test de Fase RCG-0 | ⏳ pendiente |
+| **RCG0.B3f** | **Expediente del acto: la captura alimenta el aviso** | ✅ **hecho** |
 | **RCG0.B7** | **Consola de plataforma completa (admin de Ikán)** | ⏳ **nuevo — después de cerrar el demo** |
 
 Decisiones confirmadas con Polo (2026-08-20):
@@ -231,3 +232,32 @@ rol de organización.
 **Relación con Didit (RCG0.B8, pendiente):** la consola es también donde se
 verá el consumo de verificaciones y su costo, así que conviene diseñar las dos
 cosas sabiendo que comparten pantalla.
+
+---
+
+## RCG0.B3f · El expediente del acto se arma mientras el notario trabaja — ✅ hecho
+
+**Por qué existe:** el aviso se arma el mes siguiente; el notario captura el día
+que firma. El alta de un acto guardaba compareciente, monto, tipo de acto y país;
+el layout de fe pública pide además número de instrumento, fecha del acto y la
+persona que solicita la formalización con apellidos por separado, fecha de
+nacimiento, RFC y CURP. Faltando eso, el día 17 hay que volver al protocolo.
+
+**Qué entró:**
+- Migration `0019`: claves del padrón SAT en `organizations`; nombre en partes,
+  fechas de nacimiento y constitución, clave de país y clave de actividad
+  económica en `client`; `instrumento_publico` y `datos_acto` en `operation`.
+  Trigger que recompone el nombre de despliegue desde las partes.
+- Diccionario **generado** desde el instructivo del SAT (518 campos) —
+  `scripts/generar-campos-fep.mjs`, para no transcribir a mano.
+- `src/lib/aviso/completitud.ts`: qué falta, con qué gravedad y en qué momento,
+  citando el número de campo del instructivo.
+- Panel de pendientes en el alta de compareciente, en el alta de acto y columna
+  "Expediente" en la lista de actos.
+- Claves del padrón visibles (sólo lectura) en Configuración.
+
+**Detalle y decisiones:** `docs/EXPEDIENTE_DEL_ACTO.md`.
+
+**Lo que deja abierto (siguiente bloque):** captura del subárbol de cada tipo de
+acto (grupos repetidos de intervinientes) y carga de los catálogos de la UIF.
+Ambos con banner ámbar visible, no en silencio.

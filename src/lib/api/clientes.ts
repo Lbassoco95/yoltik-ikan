@@ -27,6 +27,16 @@ export async function crearCliente(input: NuevoClienteInput): Promise<Client> {
     organization_id: organizationId,
     tipo_persona: input.tipo_persona,
     nombre_razon_social: input.nombre_razon_social,
+    // Campos que el aviso pide por separado (layout fep 3.5.x, migration 0019).
+    // Se mandan siempre, incluso en null, para que un alta corregida borre lo
+    // que ya no aplica en vez de arrastrarlo.
+    nombre: input.nombre ?? null,
+    apellido_paterno: input.apellido_paterno ?? null,
+    apellido_materno: input.apellido_materno ?? null,
+    fecha_nacimiento: input.fecha_nacimiento ?? null,
+    fecha_constitucion: input.fecha_constitucion ?? null,
+    pais_nacionalidad_clave: input.pais_nacionalidad_clave ?? null,
+    actividad_economica_clave: input.actividad_economica_clave ?? null,
     rfc: input.rfc ?? null,
     curp: input.curp ?? null,
     nacionalidad: input.nacionalidad ?? null,

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2 } from "lucide-react";
-import { getOrganizacion, listarUsuariosOrganizacion } from "@/lib/api/organizacion";
+import { getClavesPadron, getOrganizacion, listarUsuariosOrganizacion } from "@/lib/api/organizacion";
 import { ACTIVIDADES_VULNERABLES } from "@/lib/actividades-vulnerables";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,9 @@ import { cn } from "@/lib/utils";
 export default function ConfigPage() {
   const org = useQuery({ queryKey: ["organizacion"], queryFn: getOrganizacion });
   const usuarios = useQuery({ queryKey: ["organizacion", "usuarios"], queryFn: listarUsuariosOrganizacion });
+  // Claves del padrón: sin ellas el aviso mensual no se puede generar, así que
+  // aquí se ven aunque no se editen. Se cargan desde la consola de Kawiil.
+  const claves = useQuery({ queryKey: ["claves-padron"], queryFn: getClavesPadron });
 
   const sectores = org.data?.sectores ?? [];
 
@@ -61,6 +64,21 @@ export default function ConfigPage() {
                     : null,
                 },
                 { label: "Domicilio fiscal", value: org.data.domicilio_fiscal, ancho: true },
+                {
+                  label: "Clave del sujeto obligado (padrón SAT)",
+                  value: claves.data?.clave_sujeto_obligado,
+                  mono: true,
+                },
+                {
+                  label: "Clave de actividad vulnerable",
+                  value: claves.data?.clave_actividad,
+                  mono: true,
+                },
+                {
+                  label: "Clave de entidad colegiada",
+                  value: claves.data?.clave_entidad_colegiada,
+                  mono: true,
+                },
               ].map((f) => (
                 <div key={f.label} className={cn(f.ancho && "sm:col-span-2")}>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">

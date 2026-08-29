@@ -53,3 +53,37 @@ export async function listarUsuariosOrganizacion(): Promise<UsuarioOrganizacion[
     roles: porUsuario.get(p.id) ?? [],
   }));
 }
+
+// =====================================================================
+// Claves del padrón SAT — rama 2 del layout de fe pública
+// =====================================================================
+
+/** Las tres claves que el aviso exige y que no se derivan de nada: el SAT las
+ *  asigna al inscribirse en el padrón de actividades vulnerables. */
+export interface ClavesPadron {
+  clave_sujeto_obligado: string | null;
+  clave_entidad_colegiada: string | null;
+  clave_actividad: string | null;
+}
+
+const CLAVES_VACIAS: ClavesPadron = {
+  clave_sujeto_obligado: null,
+  clave_entidad_colegiada: null,
+  clave_actividad: null,
+};
+
+/**
+ * Claves del padrón de la organización de la sesión.
+ *
+ * Devuelve las tres en null si el remoto todavía no tiene la migration 0019:
+ * la pantalla de pendientes debe poder decir "falta capturarlas" en vez de
+ * romperse.
+ */
+export async function getClavesPadron(): Promise<ClavesPadron> {
+  const { data, error } = await supabase
+    .from('organizations')
+    .select('clave_sujeto_obligado, clave_entidad_colegiada, clave_actividad')
+    .maybeSingle();
+  if (error) return CLAVES_VACIAS;
+  return { ...CLAVES_VACIAS, ...((data ?? {}) as Partial<ClavesPadron>) };
+}

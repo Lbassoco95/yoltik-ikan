@@ -27,7 +27,22 @@ import { formatMxn, cn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
 import { useAuth } from "@/lib/auth-context";
-import { LABELS, TIPOS_ACTO_NOTARIA, UMBRALES_XII_REFERENCIA, labelTipoActo } from "@/lib/perfil-actividad";
+import {
+  LABELS,
+  NOTA_CANALES,
+  TIPOS_ACTO_NOTARIA,
+  UMBRALES_XII_REFERENCIA,
+  canalDeActo,
+  labelTipoActo,
+} from "@/lib/perfil-actividad";
+import { getClavesPadron } from "@/lib/api/organizacion";
+import { PendientesAviso } from "@/components/aviso/PendientesAviso";
+import {
+  catalogosPendientes,
+  pendientesActo,
+  pendientesCompareciente,
+  pendientesSujetoObligado,
+} from "@/lib/aviso/completitud";
 
 
 const TIPOS: { value: TipoOperacion; label: string }[] = [
@@ -38,6 +53,16 @@ const TIPOS: { value: TipoOperacion; label: string }[] = [
   { value: "otro", label: "Otro" },
 ];
 
+/** Hoy, en AAAA-MM-DD local. El acto se firma hoy en la inmensa mayoría de los
+ *  casos; que venga precargada evita que el notario lo deje en la fecha de
+ *  captura sin darse cuenta cuando sí difiere. */
+function hoyISO() {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
 const FORM_INICIAL = {
   client_id: "",
   tipo: "compra_fiat_cripto" as TipoOperacion,
@@ -45,6 +70,8 @@ const FORM_INICIAL = {
   activo_virtual: "",
   pais_iso2: "",
   tipo_acto: "",
+  fecha: hoyISO(),
+  instrumento_publico: "",
 };
 
 export default function OperationsPage() {
@@ -73,8 +100,32 @@ export default function OperationsPage() {
     queryFn: listarOperaciones,
   });
   const { data: clientes = [] } = useQuery({ queryKey: ["clientes"], queryFn: listarClientes });
+  // Las claves del padrón se revisan una vez, no acto por acto: si faltan,
+  // ningún aviso de la organización se puede generar.
+  const { data: clavesPadron } = useQuery({
+    queryKey: ["claves-padron"],
+    queryFn: getClavesPadron,
+    enabled: esNotarias,
+  });
 
   const nombrePorCliente = new Map(clientes.map((c) => [c.id, c.nombre_razon_social]));
+  const clientePorId = new Map(clientes.map((c) => [c.id, c]));
+
+  /** Cuántos datos le faltan a un acto ya registrado para entrar al aviso.
+   *  Se calcula en la lista para que el rezago se vea sin abrir nada. */
+  function bloqueosDelActo(op: (typeof operaciones)[number]): number {
+    const cli = clientePorId.get(op.client_id);
+    return [
+      ...pendientesSujetoObligado(clavesPadron ?? {}),
+      ...(cli ? pendientesCompareciente(cli) : []),
+      ...pendientesActo({
+        fecha: op.fecha,
+        instrumento_publico: op.instrumento_publico,
+        tipo_acto: (op.contraparte as Record<string, unknown> | null)?.tipo_acto as string,
+        datos_acto: op.datos_acto,
+      }),
+    ].filter((p) => p.gravedad === "bloquea_aviso").length;
+  }
 
   const alta = useMutation({
     mutationFn: async (input: NuevaOperacionInput) => {
@@ -109,6 +160,20 @@ export default function OperationsPage() {
       toast.error("Selecciona el tipo de acto");
       return;
     }
+    if (!form.fecha) {
+      toast.error(esNotarias ? "Captura la fecha del acto" : "Captura la fecha de la operación");
+      return;
+    }
+    // El único rechazo de captura que se permite: un número de instrumento con
+    // coma o punto hace que el portal tire el aviso completo el día 17, y
+    // corregirlo entonces significa volver al protocolo. Se ataja aquí.
+    const instrumento = form.instrumento_publico.trim().toUpperCase();
+    if (instrumento && !/^[0-9A-Z_-]{1,20}$/.test(instrumento)) {
+      toast.error(
+        "El número de instrumento sólo admite letras, dígitos, guion medio y guion bajo",
+      );
+      return;
+    }
 
     // Las señales (país, tipo de acto) viajan en contraparte (jsonb).
     const contraparte: Record<string, unknown> = {};
@@ -123,8 +188,33 @@ export default function OperationsPage() {
       monto_mxn: monto,
       activo_virtual: esNotarias ? undefined : form.activo_virtual.trim() || undefined,
       contraparte: Object.keys(contraparte).length ? contraparte : undefined,
+      // Mediodía local: la fecha del acto es un día, no un instante, y guardarla
+      // a las 00:00 la corre al día anterior en husos al oeste de UTC.
+      fecha: new Date(`${form.fecha}T12:00:00`).toISOString(),
+      instrumento_publico: instrumento || undefined,
     });
   }
+
+  // Lo que le faltaría a este acto para entrar al aviso, calculado mientras se
+  // captura. El subárbol del tipo de acto todavía no se captura aquí: ver
+  // el aviso ámbar del diálogo.
+  const comparecienteSeleccionado = clientes.find((c) => c.id === form.client_id);
+  const pendientesDelAlta = esNotarias
+    ? [
+        ...pendientesSujetoObligado(clavesPadron ?? {}),
+        ...(comparecienteSeleccionado
+          ? pendientesCompareciente(comparecienteSeleccionado)
+          : []),
+        ...pendientesActo({
+          fecha: form.fecha,
+          instrumento_publico: form.instrumento_publico,
+          tipo_acto: form.tipo_acto,
+          datos_acto: {},
+        }),
+      ]
+    : [];
+  const catalogosDelActo = form.tipo_acto ? catalogosPendientes(form.tipo_acto) : [];
+  const canal = form.tipo_acto ? canalDeActo(form.tipo_acto) : undefined;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -198,10 +288,12 @@ export default function OperationsPage() {
                 {[
                   "Fecha",
                   esNotarias ? "Compareciente" : "Cliente",
+                  ...(esNotarias ? ["Instrumento"] : []),
                   "Monto",
                   esNotarias ? "Tipo de acto" : "Tipo",
                   esNotarias ? "Valor (UMA)" : "Activo",
                   "Requiere aviso",
+                  ...(esNotarias ? ["Expediente"] : []),
                 ].map((h) => (
                   <th
                     key={h}
@@ -231,6 +323,13 @@ export default function OperationsPage() {
                   <td className="px-4 py-3 text-sm font-medium text-foreground">
                     {nombrePorCliente.get(op.client_id) ?? op.client_id}
                   </td>
+                  {esNotarias && (
+                    <td className="px-4 py-3 text-sm">
+                      {op.instrumento_publico ?? (
+                        <span className="text-muted-foreground">sin capturar</span>
+                      )}
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-sm font-semibold">{formatMxn(op.monto_mxn)}</td>
                   <td className="px-4 py-3 text-sm">
                     {esNotarias ? labelTipoActo((op.contraparte as Record<string, unknown>)?.tipo_acto) : op.tipo}
@@ -255,11 +354,29 @@ export default function OperationsPage() {
                       <span className="text-sm text-muted-foreground">No</span>
                     )}
                   </td>
+                  {esNotarias &&
+                    (() => {
+                      const faltan = bloqueosDelActo(op);
+                      return (
+                        <td className="px-4 py-3">
+                          {faltan === 0 ? (
+                            <span className="status-badge bg-success/10 text-success">Completo</span>
+                          ) : (
+                            <span className="status-badge bg-warning/10 text-warning">
+                              Faltan {faltan}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })()}
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                  <td
+                    colSpan={esNotarias ? 8 : 6}
+                    className="px-4 py-8 text-center text-muted-foreground text-sm"
+                  >
                     {L.operacionesVacio}
                   </td>
                 </tr>
@@ -270,7 +387,7 @@ export default function OperationsPage() {
       </div>
 
       <Dialog open={dialogAbierto} onOpenChange={setDialogAbierto}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{L.operacionAltaTitulo}</DialogTitle>
             <DialogDescription>{L.operacionAltaDesc}</DialogDescription>
@@ -346,6 +463,35 @@ export default function OperationsPage() {
                   onChange={(e) => setForm({ ...form, monto_mxn: e.target.value })}
                 />
               </div>
+              <div>
+                <Label>{esNotarias ? "Fecha del acto" : "Fecha de la operación"}</Label>
+                <Input
+                  type="date"
+                  value={form.fecha}
+                  onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+                />
+                {esNotarias && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    La de la firma del instrumento, no la de captura.
+                  </p>
+                )}
+              </div>
+              {esNotarias && (
+                <div>
+                  <Label>Número de instrumento</Label>
+                  <Input
+                    placeholder="45321"
+                    maxLength={20}
+                    value={form.instrumento_publico}
+                    onChange={(e) =>
+                      setForm({ ...form, instrumento_publico: e.target.value.toUpperCase() })
+                    }
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Sin comas ni puntos. Acepta ceros a la izquierda y guiones.
+                  </p>
+                </div>
+              )}
               {!esNotarias && (
                 <div>
                   <Label>Activo virtual</Label>
@@ -369,6 +515,31 @@ export default function OperationsPage() {
               </div>
             </div>
           </div>
+
+          {esNotarias && (
+            <div className="space-y-3">
+              {canal === "declaranot" && (
+                <div className="rounded-lg bg-warning/10 p-3">
+                  <p className="text-xs font-semibold text-foreground">
+                    Este acto se presenta por DeclaraNOT, no por el SPPLD
+                  </p>
+                  <p className="text-[11px] text-warning mt-1">{NOTA_CANALES}</p>
+                </div>
+              )}
+
+              {catalogosDelActo.length > 0 && (
+                <div className="rounded-lg bg-warning/10 p-3">
+                  <p className="text-[11px] text-warning">
+                    DEMO — sin integración real: el detalle de esta rama del layout todavía no se
+                    captura aquí y sus catálogos de la UIF no están cargados (
+                    {catalogosDelActo.join(", ")}). Se completa desde el expediente del acto.
+                  </p>
+                </div>
+              )}
+
+              <PendientesAviso pendientes={pendientesDelAlta} compacto />
+            </div>
+          )}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogAbierto(false)}>

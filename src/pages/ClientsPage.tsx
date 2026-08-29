@@ -27,14 +27,35 @@ import type { NuevoClienteInput, TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS } from "@/lib/perfil-actividad";
+import { PendientesAviso } from "@/components/aviso/PendientesAviso";
+import { SIN_APELLIDO, pendientesCompareciente } from "@/lib/aviso/completitud";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
+/** Nombre de despliegue de una persona física: el mismo orden que arma la BD.
+ *  Se calcula aquí sólo para mostrarlo y para no mandar la columna vacía. */
+function nombreCompuesto(f: { nombre: string; apellido_paterno: string; apellido_materno: string }) {
+  return [f.nombre, f.apellido_paterno, f.apellido_materno]
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
 const FORM_INICIAL = {
   tipo_persona: "fisica" as TipoPersona,
-  nombre_razon_social: "",
+  // Persona física: el aviso pide las partes por separado (layout fep 3.5.1-3.5.3).
+  // `nombre_razon_social` deja de capturarse a mano en física: lo compone la BD.
+  nombre: "",
+  apellido_paterno: "",
+  apellido_materno: "",
+  fecha_nacimiento: "",
+  // Persona moral
+  razon_social: "",
+  fecha_constitucion: "",
   rfc: "",
   curp: "",
+  pais_nacionalidad_clave: "MX",
+  actividad_economica_clave: "",
   nacionalidad: "Mexicana",
   entidad_federativa: "",
   pais_residencia_iso2: "MX",
@@ -79,9 +100,30 @@ export default function ClientsPage() {
     return matchSearch && matchType;
   });
 
+  const esFisica = form.tipo_persona === "fisica";
+
+  /** Lo que ya se capturó, en la forma que espera el evaluador del layout. */
+  const comparecienteEnCurso = {
+    tipo_persona: form.tipo_persona,
+    nombre_razon_social: esFisica ? nombreCompuesto(form) : form.razon_social,
+    nombre: form.nombre,
+    apellido_paterno: form.apellido_paterno,
+    apellido_materno: form.apellido_materno,
+    fecha_nacimiento: form.fecha_nacimiento,
+    fecha_constitucion: form.fecha_constitucion,
+    rfc: form.rfc,
+    curp: form.curp,
+    pais_nacionalidad_clave: form.pais_nacionalidad_clave,
+    actividad_economica_clave: form.actividad_economica_clave,
+  };
+  const pendientes = pendientesCompareciente(comparecienteEnCurso);
+
   function enviar() {
-    if (!form.nombre_razon_social.trim()) {
-      toast.error("El nombre o razón social es obligatorio");
+    const nombreFinal = esFisica ? nombreCompuesto(form) : form.razon_social.trim();
+    if (!nombreFinal) {
+      toast.error(
+        esFisica ? "Captura al menos nombre y apellido paterno" : "La razón social es obligatoria",
+      );
       return;
     }
     const datos_kyc: Record<string, unknown> = {};
@@ -92,9 +134,18 @@ export default function ClientsPage() {
 
     alta.mutate({
       tipo_persona: form.tipo_persona,
-      nombre_razon_social: form.nombre_razon_social.trim(),
+      // La BD lo recompone desde las partes en persona física (migration 0019);
+      // se manda igual para que el insert nunca vaya con la columna vacía.
+      nombre_razon_social: nombreFinal,
+      nombre: esFisica ? form.nombre.trim() || undefined : undefined,
+      apellido_paterno: esFisica ? form.apellido_paterno.trim() || undefined : undefined,
+      apellido_materno: esFisica ? form.apellido_materno.trim() || undefined : undefined,
+      fecha_nacimiento: esFisica ? form.fecha_nacimiento || undefined : undefined,
+      fecha_constitucion: esFisica ? undefined : form.fecha_constitucion || undefined,
+      pais_nacionalidad_clave: form.pais_nacionalidad_clave.trim() || undefined,
+      actividad_economica_clave: form.actividad_economica_clave.trim() || undefined,
       rfc: form.rfc.trim() || undefined,
-      curp: form.tipo_persona === "fisica" ? form.curp.trim() || undefined : undefined,
+      curp: esFisica ? form.curp.trim() || undefined : undefined,
       nacionalidad: form.nacionalidad.trim() || undefined,
       entidad_federativa: form.entidad_federativa.trim() || undefined,
       pais_residencia_iso2: form.pais_residencia_iso2.trim() || undefined,
@@ -202,7 +253,7 @@ export default function ClientsPage() {
       </div>
 
       <Dialog open={dialogAbierto} onOpenChange={setDialogAbierto}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{L.clienteAltaTitulo}</DialogTitle>
             <DialogDescription>
@@ -228,27 +279,114 @@ export default function ClientsPage() {
               </Select>
             </div>
 
-            <div className="col-span-2">
-              <Label>{form.tipo_persona === "fisica" ? "Nombre completo" : "Razón social"}</Label>
+            {esFisica ? (
+              <>
+                <div className="col-span-2">
+                  <Label>Nombre(s)</Label>
+                  <Input
+                    value={form.nombre}
+                    onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Apellido paterno</Label>
+                  <Input
+                    value={form.apellido_paterno}
+                    onChange={(e) => setForm({ ...form, apellido_paterno: e.target.value })}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Si no tiene, captura {SIN_APELLIDO}.
+                  </p>
+                </div>
+                <div>
+                  <Label>Apellido materno</Label>
+                  <Input
+                    value={form.apellido_materno}
+                    onChange={(e) => setForm({ ...form, apellido_materno: e.target.value })}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Si no tiene, captura {SIN_APELLIDO}.
+                  </p>
+                </div>
+                <div>
+                  <Label>Fecha de nacimiento</Label>
+                  <Input
+                    type="date"
+                    value={form.fecha_nacimiento}
+                    onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>CURP</Label>
+                  <Input
+                    value={form.curp}
+                    maxLength={18}
+                    onChange={(e) => setForm({ ...form, curp: e.target.value.toUpperCase() })}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="col-span-2">
+                  <Label>Razón social</Label>
+                  <Input
+                    value={form.razon_social}
+                    onChange={(e) => setForm({ ...form, razon_social: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Fecha de constitución</Label>
+                  <Input
+                    type="date"
+                    value={form.fecha_constitucion}
+                    onChange={(e) => setForm({ ...form, fecha_constitucion: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
+
+            <div>
+              <Label>RFC</Label>
               <Input
-                value={form.nombre_razon_social}
-                onChange={(e) => setForm({ ...form, nombre_razon_social: e.target.value })}
+                value={form.rfc}
+                maxLength={13}
+                onChange={(e) => setForm({ ...form, rfc: e.target.value.toUpperCase() })}
               />
             </div>
 
             <div>
-              <Label>RFC</Label>
-              <Input value={form.rfc} onChange={(e) => setForm({ ...form, rfc: e.target.value })} />
+              <Label>Clave de país de nacionalidad</Label>
+              <Input
+                value={form.pais_nacionalidad_clave}
+                maxLength={2}
+                onChange={(e) =>
+                  setForm({ ...form, pais_nacionalidad_clave: e.target.value.toUpperCase() })
+                }
+              />
             </div>
-            {form.tipo_persona === "fisica" && (
-              <div>
-                <Label>CURP</Label>
-                <Input
-                  value={form.curp}
-                  onChange={(e) => setForm({ ...form, curp: e.target.value })}
-                />
-              </div>
-            )}
+            <div>
+              <Label>
+                {esFisica ? "Clave de actividad económica" : "Clave de giro mercantil"}
+              </Label>
+              <Input
+                value={form.actividad_economica_clave}
+                maxLength={7}
+                placeholder="7 dígitos"
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    actividad_economica_clave: e.target.value.replace(/\D/g, ""),
+                  })
+                }
+              />
+            </div>
+            <div className="col-span-2 rounded-lg bg-warning/10 p-2">
+              <p className="text-[11px] text-warning">
+                DEMO — sin integración real: los catálogos de la UIF (país, actividad económica)
+                todavía no están cargados en Ikán, así que las claves se capturan a mano. Se
+                cargarán desde la consola de plataforma.
+              </p>
+            </div>
 
             <div>
               <Label>Nacionalidad</Label>
@@ -304,6 +442,8 @@ export default function ClientsPage() {
               />
             </div>
           </div>
+
+          <PendientesAviso pendientes={pendientes} compacto />
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogAbierto(false)}>
