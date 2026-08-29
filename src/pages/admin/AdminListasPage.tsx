@@ -26,10 +26,12 @@ import {
   type AccionMovimiento, type MovimientoCaptura,
 } from "@/lib/listas";
 import { cn } from "@/lib/utils";
+import { CargarArchivoListaDialog } from "@/components/admin/CargarArchivoListaDialog";
 
 export default function AdminListasPage() {
   const queryClient = useQueryClient();
   const [dialogo, setDialogo] = useState(false);
+  const [dialogoArchivo, setDialogoArchivo] = useState(false);
   const [fuenteFiltro, setFuenteFiltro] = useState<string>("todas");
   const [busqueda, setBusqueda] = useState("");
   const [aRevertir, setARevertir] = useState<{ id: string; notas: string | null } | null>(null);
@@ -123,9 +125,14 @@ export default function AdminListasPage() {
             organizaciones al instante, sin importar su actividad: nadie guarda copias.
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setDialogo(true)} disabled={capturables.length === 0}>
-          <Plus className="w-4 h-4" /> Registrar movimientos
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setDialogoArchivo(true)}>
+            <Upload className="w-4 h-4" /> Cargar archivo
+          </Button>
+          <Button className="gap-2" onClick={() => setDialogo(true)} disabled={capturables.length === 0}>
+            <Plus className="w-4 h-4" /> Registrar movimientos
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="vigentes" className="space-y-4">
@@ -294,10 +301,9 @@ export default function AdminListasPage() {
           <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
             <span>
-              <strong>Carga de archivo pendiente.</strong> Las fuentes de tipo «Archivo completo»
-              (OFAC, ONU, UE, 69-B) todavía no tienen ingesta: falta una muestra real de cada
-              archivo para escribir el parser sin inventar el formato. Hoy sólo se puede capturar
-              por oficio.
+              <strong>Los listados del SAT ya se pueden cargar</strong> (69-B y 69-B Bis), con
+              vista previa antes de aplicar. OFAC, ONU y UE todavía no: su formato es XML y su
+              lector es un trabajo aparte.
             </span>
           </div>
 
@@ -484,6 +490,12 @@ export default function AdminListasPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CargarArchivoListaDialog
+        abierto={dialogoArchivo}
+        onOpenChange={setDialogoArchivo}
+        fuentes={fuentes.data ?? []}
+      />
 
       {/* ---------------- Confirmar reversión ---------------- */}
       <AlertDialog open={aRevertir != null} onOpenChange={(o) => { if (!o) { setARevertir(null); setMotivoReversion(""); } }}>

@@ -157,3 +157,149 @@ export async function listarMovimientosDeCarga(cargaId: string) {
   if (error) throw new Error(`No se pudieron leer los movimientos: ${error.message}`);
   return data ?? [];
 }
+
+// =====================================================================
+// Carga de archivo (fuentes de snapshot)
+// =====================================================================
+
+/** Filas por petición. 14,761 registros en una sola llamada excede el límite
+ *  del gateway; de uno en uno serían 14,761 viajes. 500 es el punto donde
+ *  cada lote pesa poco y el total cabe en ~30 peticiones. */
+const TAMANO_LOTE = 500;
+
+export interface RegistroParaCarga {
+  nombre: string;
+  rfc?: string | null;
+  tipo_entidad?: string;
+  situacion?: string | null;
+  pais?: string | null;
+}
+
+export interface CargaArchivoInput {
+  fuente_id: string;
+  archivo: File;
+  /** 'completa' aplica la diferencia y da de baja lo ausente. 'parcial' sólo
+   *  agrega y actualiza. Ante la duda, parcial. */
+  alcance: 'completa' | 'parcial';
+  fecha_publicacion_fuente: string | null;
+  notas?: string;
+  registros: RegistroParaCarga[];
+  /** Progreso, para que una carga de 30 lotes no parezca colgada. */
+  onProgreso?: (hechos: number, total: number) => void;
+}
+
+export interface ResultadoCargaArchivo {
+  carga_id: string;
+  insertados: number;
+  desactivados: number;
+  archivo_hash: string;
+}
+
+/** SHA-256 del archivo original, para poder demostrar después que lo que se
+ *  cargó es lo que la autoridad publicó. */
+export async function hashArchivo(archivo: File): Promise<string> {
+  const buf = await archivo.arrayBuffer();
+  const digest = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/**
+ * Sube el archivo, registra la carga e inserta sus movimientos por lotes.
+ *
+ * El archivo original se guarda ANTES de tocar la base: sin evidencia de qué
+ * se cargó, los registros son afirmaciones sin respaldo. Si la subida falla,
+ * no se registra nada.
+ *
+ * Si un lote falla a la mitad, se revierte la carga completa. Media lista
+ * aplicada es peor que ninguna: nadie sabría qué quedó dentro.
+ */
+export async function registrarCargaArchivo(
+  input: CargaArchivoInput,
+): Promise<ResultadoCargaArchivo> {
+  const { data: userData } = await supabase.auth.getUser();
+  const uid = userData?.user?.id ?? null;
+
+  const hash = await hashArchivo(input.archivo);
+  const ruta = `${input.fuente_id}/${Date.now()}-${input.archivo.name}`;
+
+  const { error: errSubida } = await supabase.storage
+    .from('listas-archivos')
+    .upload(ruta, input.archivo, { upsert: false });
+  if (errSubida) {
+    throw new Error(
+      `No se pudo guardar el archivo original: ${errSubida.message}. ` +
+        'No se registró ninguna carga: sin evidencia del archivo, los registros no tendrían respaldo.',
+    );
+  }
+
+  const { data: carga, error: errCarga } = await supabase
+    .from('lista_carga')
+    .insert({
+      fuente_id: input.fuente_id,
+      tipo: 'archivo',
+      estado: 'aplicada',
+      alcance: input.alcance,
+      fecha_publicacion_fuente: input.fecha_publicacion_fuente,
+      archivo_path: ruta,
+      archivo_hash: hash,
+      archivo_nombre: input.archivo.name,
+      notas: input.notas || null,
+      cargada_por: uid,
+    })
+    .select('id')
+    .single();
+
+  if (errCarga || !carga) {
+    throw new Error(`No se pudo crear la carga: ${errCarga?.message ?? 'sin detalle'}`);
+  }
+  const cargaId = (carga as { id: string }).id;
+
+  let insertados = 0;
+  try {
+    for (let i = 0; i < input.registros.length; i += TAMANO_LOTE) {
+      const lote = input.registros.slice(i, i + TAMANO_LOTE).map((r) => ({
+        carga_id: cargaId,
+        accion: 'alta',
+        tipo_entidad: r.tipo_entidad ?? 'empresa',
+        nombre: r.nombre,
+        rfc: r.rfc ? normalizarRfc(r.rfc) : null,
+        situacion: r.situacion ?? null,
+        pais: r.pais ?? null,
+      }));
+      const { error } = await supabase.from('lista_movimiento').insert(lote);
+      if (error) {
+        throw new Error(
+          `Falló el lote que empieza en el registro ${i + 1} («${lote[0]?.nombre}»): ${error.message}`,
+        );
+      }
+      insertados += lote.length;
+      input.onProgreso?.(insertados, input.registros.length);
+    }
+  } catch (e) {
+    await revertirCarga(cargaId, `Revertida automáticamente: ${(e as Error).message}`).catch(() => {
+      /* Si la reversión falla, gana el error original: es el que explica qué pasó. */
+    });
+    throw e;
+  }
+
+  // La diferencia se aplica al final: hasta aquí no se sabía si el archivo
+  // había terminado. En una carga parcial devuelve cero y no da de baja a nadie.
+  const { data: desactivados, error: errCierre } = await supabase.rpc('cerrar_carga_completa', {
+    p_carga_id: cargaId,
+  });
+  if (errCierre) {
+    throw new Error(
+      `Los ${insertados} registros se cargaron, pero no se pudo aplicar la diferencia: ${errCierre.message}. ` +
+        'La carga quedó registrada; revísala antes de dar por buena la lista.',
+    );
+  }
+
+  return {
+    carga_id: cargaId,
+    insertados,
+    desactivados: Number(desactivados ?? 0),
+    archivo_hash: hash,
+  };
+}
