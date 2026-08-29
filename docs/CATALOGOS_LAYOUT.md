@@ -19,31 +19,45 @@ aviso completo si la clave no existe en el catálogo de la UIF.
   (migration 0012). Que un cliente pudiera editarlos significaría que puede
   fabricar la clave con la que reporta.
 
-## Qué está cargado y qué no
+## Qué está cargado
 
-El instructivo del SAT **referencia** los catálogos pero **no incluye sus
-valores**: son archivos aparte de la UIF. Por eso esta entrega **registra 25
-catálogos y carga uno**.
+El instructivo referencia los catálogos pero no incluye sus valores. **Estaban
+en otro lado**: el SAT publica sus plantillas de captura de fe pública
+(`Fedatario*.xlsm`) con una hoja **oculta** llamada `Combos` que contiene, tal
+cual, las listas contra las que valida el portal. De ahí salen.
 
 | | |
 |---|---|
-| **Cargado** | `prioridad` — el único cuyos valores enumera el propio instructivo (campo 3.3: `1` Normal, `2` 24 hrs. con operaciones) |
-| **Registrados, vacíos** | Los otros 24, con su nombre tal como lo cita el instructivo, los campos del layout que los usan y el formato de su clave |
+| **Cargados** | 25 catálogos, 924 claves — de `Fedatario*.xlsm` y `0InformeEnCeros.xlsm` |
+| **Aparte** | `codigos_postales_de_sepomex`, 32,353 claves — se carga desde la consola con `docs/catalogos-uif/codigos_postales.csv` |
 
-Inventar los valores de `entidad_federativa` o `pais` habría sido más vistoso y
-menos honesto: una clave equivocada no falla en la pantalla, falla en el portal
-el día 17, con el aviso completo.
+Ninguna clave es inventada. `docs/catalogos-uif/catalogos_fep.json` guarda, para
+cada catálogo, **de qué archivo y de qué columna salió**; sin esa procedencia,
+dentro de un año nadie podría decir si una clave es del SAT o de nuestra
+cosecha. `src/test/catalogos-uif.test.ts` fija cuentas, patrones y los valores
+que la notaría ve a diario, para que una edición a mano del JSON no pase
+inadvertida.
 
-**Un catálogo vacío es un estado explícito, no un silencio.** La lista cae a
-captura manual de la clave, con banner ámbar que dice por qué. Un select vacío
-sin explicación es peor que un campo de texto: parece que la aplicación está rota
-y no hay manera de avanzar.
+Dos hallazgos que valen por sí solos:
 
-## Los dos primeros que conviene cargar
+- **`FEP` es la clave de actividad vulnerable de una notaría** (`AVI` la de un
+  exchange). Era uno de los tres campos que impedían generar cualquier aviso, y
+  no había que adivinarlo: está en el catálogo de `0InformeEnCeros.xlsm`. Ya
+  quedó sembrado en las dos organizaciones demo.
+- **La columna de códigos postales de la plantilla del SAT perdió los ceros a la
+  izquierda** al abrirse en Excel: trae `1000` donde debe decir `01000`, en 907
+  casos. Por eso el catálogo de CP se toma del archivo SEPOMEX, que los conserva
+  como texto. El archivo SEPOMEX es de 2015 y le faltan 223 CP que la plantilla
+  sí trae; no se mezclan las fuentes, porque para esos 223 habría que inventar la
+  descripción.
 
-`entidad_federativa` y `pais` son los que la notaría toca en cada alta. En cuanto
-existan los archivos, se cargan desde **Consola de plataforma → Catálogos del
-layout** y todas las organizaciones los ven al instante.
+### Lo que sí sigue faltando
+
+- `clave_sujeto_obligado` y `clave_entidad_colegiada` de cada organización: el
+  SAT las asigna al inscribirse en el padrón. No se derivan de nada y ponerles un
+  valor plausible sería fabricar la identidad con la que se reporta. La pantalla
+  de pendientes las reclama.
+- Los códigos postales, hasta que se cargue el CSV desde la consola.
 
 ## Reglas de la carga
 
@@ -57,6 +71,10 @@ layout** y todas las organizaciones los ven al instante.
   y qué claves no cumplen el formato. Una carga con una clave mal formada se
   rechaza **entera**: una carga a medias deja el catálogo en un estado que nadie
   pidió.
+- **Rendimiento medido.** El catálogo de códigos postales —32,353 valores— se
+  carga en unos 3 s. El costo está en el índice de la restricción de no
+  traslape, no en la validación (unos 50 ms). Se deja así: la restricción es lo
+  que garantiza que una clave no pueda estar vigente dos veces.
 - **Reemplazar no borra.** Cierra la vigencia de los valores anteriores con la
   fecha de hoy y abre la de los nuevos. Un aviso presentado el año pasado se armó
   con el catálogo de entonces, y auditarlo exige poder reconstruirlo:
@@ -86,11 +104,17 @@ inválida de la noche a la mañana.
 | Archivo | Qué es |
 |---|---|
 | `supabase/migrations/0020_catalogos_layout.sql` | `catalogo_sat`, `catalogo_valor`, vistas, `reemplazar_valores_catalogo()`, RLS |
-| `supabase/seed/13_catalogos_fep.sql` | Registro de los 25 catálogos — **generado** |
-| `scripts/generar-catalogos-fep.mjs` | Lo genera desde el diccionario del instructivo |
+| `supabase/seed/13_catalogos_fep.sql` | Registro de los 26 catálogos — **generado** |
+| `supabase/seed/14_catalogos_uif.sql` | Los 924 valores — **generado** |
+| `supabase/seed/15_clave_actividad_demos.sql` | `FEP` y `AVI` para las organizaciones demo |
+| `docs/catalogos-uif/catalogos_fep.json` | Los datos y su procedencia |
+| `docs/catalogos-uif/codigos_postales.csv` | Los 32,353 CP, para cargar desde la consola |
+| `scripts/generar-catalogos-fep.mjs` | Genera el registro desde el diccionario del instructivo |
+| `scripts/generar-seed-catalogos-uif.mjs` | Genera el seed de valores desde el JSON, validando patrones |
 | `supabase/manual/apply_0020_catalogos.sql` | Bundle para el SQL Editor, con 10 verificaciones |
 | `supabase/manual/probar_0020_catalogos.sql` | 16 pruebas de comportamiento (Postgres desechable) |
 | `src/lib/catalogos.ts` | Parseo del archivo y validación. Módulo puro |
 | `src/components/aviso/SelectCatalogo.tsx` | La lista, con su degradación explícita |
 | `src/pages/admin/AdminCatalogosPage.tsx` | Carga desde la consola de plataforma |
-| `src/test/catalogos.test.ts` | 14 pruebas |
+| `src/test/catalogos.test.ts` | 14 pruebas del parser |
+| `src/test/catalogos-uif.test.ts` | 8 pruebas de integridad de los datos extraídos |

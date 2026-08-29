@@ -23,7 +23,7 @@
 | RCG0.B5 | Desarrollo Inmobiliario (V Bis) | ⛔ condicional — sin arrancar |
 | RCG0.B6 | Smoke test de Fase RCG-0 | ⏳ pendiente |
 | **RCG0.B3f** | **Expediente del acto: la captura alimenta el aviso** | ✅ **hecho** |
-| **RCG0.B3g** | **Catálogos del layout: la lista sale de la base** | ✅ **hecho · 1 de 25 cargado** |
+| **RCG0.B3g** | **Catálogos del layout: la lista sale de la base** | ✅ **hecho · 25 de 26 cargados** |
 | **RCG0.B7** | **Consola de plataforma completa (admin de Ikán)** | ⏳ **nuevo — después de cerrar el demo** |
 
 Decisiones confirmadas con Polo (2026-08-20):
@@ -277,11 +277,14 @@ lectura para los clientes, `<SelectCatalogo>` que guarda la clave y degrada a
 captura manual con banner ámbar cuando el catálogo no está cargado, y pantalla de
 carga en la consola de plataforma con previo y validación de formato.
 
-**Estado real:** 25 catálogos **registrados**, 1 **cargado** (`prioridad`, el
-único cuyos valores enumera el instructivo). Los archivos de la UIF no vienen en
-el instructivo y no se inventan.
+**Estado real:** 26 catálogos registrados, **25 cargados con 924 claves reales**.
+Salieron de la hoja oculta `Combos` de las plantillas de captura que publica el
+propio SAT (`Fedatario*.xlsm`), no de fuentes secundarias. Falta sólo el de
+códigos postales (32,353 valores), que se carga desde la consola con
+`docs/catalogos-uif/codigos_postales.csv`.
 
-**Lo que desbloquea la carga de dos archivos:** `entidad_federativa` y `pais` son
-los que la notaría toca en cada alta.
+**De paso:** apareció `FEP` como clave de actividad vulnerable de una notaría
+(`AVI` para un exchange), uno de los tres campos que impedían generar cualquier
+aviso. Sembrado en las dos organizaciones demo.
 
 **Detalle:** `docs/CATALOGOS_LAYOUT.md`.

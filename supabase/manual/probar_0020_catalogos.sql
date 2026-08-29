@@ -154,8 +154,10 @@ begin
   end if;
   v_ok := v_ok + 1;
 
-  -- 13. un catálogo sin cargar no valida nada (no se puede afirmar contra lo que no se tiene)
-  if public.clave_valida_en_catalogo('tipo_de_poder', '1') then
+  -- 13. un catálogo sin cargar no valida nada (no se puede afirmar contra lo
+  -- que no se tiene). Se usa el de códigos postales porque es el único que el
+  -- seed deja vacío a propósito: se carga desde la consola.
+  if public.clave_valida_en_catalogo('codigos_postales_de_sepomex', '44100') then
     raise exception 'FALLA 13: validó contra un catálogo vacío';
   end if;
   v_ok := v_ok + 1;

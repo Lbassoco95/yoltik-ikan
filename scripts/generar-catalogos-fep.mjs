@@ -36,13 +36,22 @@ const slug = (s) =>
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
 
-/** El patrón de la clave sale del par (tipo de dato, longitud) del instructivo. */
+/**
+ * El patrón de la clave sale del par (tipo de dato, longitud) del instructivo.
+ *
+ * Ojo con el orden: "Alfanumérico" contiene "numérico", así que hay que
+ * descartarlo ANTES de preguntar por numérico. Al revés, la clave de actividad
+ * vulnerable —"FEP", "AVI"— quedaba con patrón de sólo dígitos y ningún valor
+ * real la habría pasado.
+ */
 function patronClave(tipo, longitudes) {
-  const clase = /Numérico/i.test(tipo)
-    ? '0-9'
-    : /Alfabético/i.test(tipo)
-      ? 'A-Z'
-      : 'A-Z0-9';
+  const clase = /Alfanum[eé]rico/i.test(tipo)
+    ? 'A-Z0-9'
+    : /Num[eé]rico/i.test(tipo)
+      ? '0-9'
+      : /Alfab[eé]tico/i.test(tipo)
+        ? 'A-Z'
+        : 'A-Z0-9';
   let min = Infinity;
   let max = 0;
   for (const l of longitudes) {

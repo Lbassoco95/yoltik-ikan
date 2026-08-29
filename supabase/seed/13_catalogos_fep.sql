@@ -16,9 +16,9 @@
 insert into catalogo_sat (codigo, nombre, layout, etiquetas_layout, clave_patron, fuente, notas)
 values
   ('actividad_economica', 'ACTIVIDAD ECONÓMICA', 'fep', array['actividad_economica']::text[], '^[0-9]{7}$', 'uif', 'Referenciado por 7 campo(s) del instructivo.'),
-  ('actividades_vulnerables', 'actividades vulnerables', 'fep', array['clave_actividad']::text[], '^[0-9]{3}$', 'uif', 'Referenciado por 1 campo(s) del instructivo.'),
+  ('actividades_vulnerables', 'actividades vulnerables', 'fep', array['clave_actividad']::text[], '^[A-Z0-9]{3}$', 'uif', 'Referenciado por 1 campo(s) del instructivo.'),
   ('cargo_de_accionista', 'CARGO DE ACCIONISTA', 'fep', array['cargo_accionista']::text[], '^[0-9]{1}$', 'uif', 'Referenciado por 1 campo(s) del instructivo.'),
-  ('codigos_postales_de_sepomex', 'Códigos Postales de SEPOMEX', 'fep', array['codigo_postal']::text[], '^[0-9]{5}$', 'uif', 'Referenciado por 2 campo(s) del instructivo.'),
+  ('codigos_postales_de_sepomex', 'Códigos Postales de SEPOMEX', 'fep', array['codigo_postal']::text[], '^[A-Z0-9]{5}$', 'uif', 'Referenciado por 2 campo(s) del instructivo.'),
   ('entidad_federativa', 'ENTIDAD FEDERATIVA', 'fep', array['entidad_federativa']::text[], '^[0-9]{1,2}$', 'uif', 'Referenciado por 1 campo(s) del instructivo.'),
   ('giro_mercantil', 'GIRO MERCANTIL', 'fep', array['giro_mercantil']::text[], '^[0-9]{7}$', 'uif', 'Referenciado por 13 campo(s) del instructivo.'),
   ('instrumentos_monetarios', 'Instrumentos Monetarios', 'fep', array['instrumento_monetario']::text[], '^[0-9]{1,2}$', 'uif', 'Referenciado por 1 campo(s) del instructivo.'),

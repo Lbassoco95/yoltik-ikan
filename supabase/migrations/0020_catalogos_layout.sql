@@ -185,9 +185,7 @@ declare
   v_cat catalogo_sat;
   v_patron text;
   v_insertados int := 0;
-  v_item jsonb;
   v_clave text;
-  v_i int := 0;
 begin
   if not public.es_admin_kawiil() then
     raise exception 'Sólo un administrador de plataforma puede cargar catálogos';
@@ -205,18 +203,27 @@ begin
   -- Se valida TODO antes de tocar nada: una carga a medias deja el catálogo en
   -- un estado que nadie pidió.
   v_patron := v_cat.clave_patron;
-  for v_item in select * from jsonb_array_elements(p_valores) loop
-    v_clave := btrim(coalesce(v_item->>'clave', ''));
-    if v_clave = '' then
-      raise exception 'Hay un valor sin clave en la carga de %', p_codigo;
-    end if;
-    if btrim(coalesce(v_item->>'descripcion', '')) = '' then
-      raise exception 'La clave % viene sin descripción', v_clave;
-    end if;
-    if v_patron is not null and v_clave !~ v_patron then
+
+  if exists (select 1 from jsonb_array_elements(p_valores) x
+              where btrim(coalesce(x->>'clave', '')) = '') then
+    raise exception 'Hay un valor sin clave en la carga de %', p_codigo;
+  end if;
+
+  select btrim(x->>'clave') into v_clave
+    from jsonb_array_elements(p_valores) x
+   where btrim(coalesce(x->>'descripcion', '')) = '' limit 1;
+  if v_clave is not null then
+    raise exception 'La clave % viene sin descripción', v_clave;
+  end if;
+
+  if v_patron is not null then
+    select btrim(x->>'clave') into v_clave
+      from jsonb_array_elements(p_valores) x
+     where btrim(x->>'clave') !~ v_patron limit 1;
+    if v_clave is not null then
       raise exception 'La clave % no cumple el formato del catálogo % (%)', v_clave, p_codigo, v_patron;
     end if;
-  end loop;
+  end if;
 
   if (select count(distinct btrim(x->>'clave')) from jsonb_array_elements(p_valores) x)
      <> jsonb_array_length(p_valores) then
@@ -229,20 +236,21 @@ begin
    where catalogo_id = v_cat.id
      and (vigente_hasta is null or vigente_hasta > current_date);
 
-  -- Abre lo nuevo.
-  for v_item in select * from jsonb_array_elements(p_valores) loop
-    v_i := v_i + 1;
-    insert into catalogo_valor (catalogo_id, clave, descripcion, orden, vigente_desde, version_carga)
-    values (
-      v_cat.id,
-      btrim(v_item->>'clave'),
-      btrim(v_item->>'descripcion'),
-      coalesce((v_item->>'orden')::int, v_i),
-      current_date,
-      v_cat.version + 1
-    );
-    v_insertados := v_insertados + 1;
-  end loop;
+  -- Abre lo nuevo. En un solo INSERT, no fila por fila: el catálogo de códigos
+  -- postales trae 32 mil valores y el ciclo tardaba segundos, lo bastante para
+  -- rozar el tiempo máximo de sentencia de la conexión del cliente.
+  with entrada as (
+    select
+      btrim(x.clave) as clave,
+      btrim(x.descripcion) as descripcion,
+      coalesce(x.orden, row_number() over ())::int as orden
+    from jsonb_to_recordset(p_valores)
+      as x(clave text, descripcion text, orden int)
+  )
+  insert into catalogo_valor (catalogo_id, clave, descripcion, orden, vigente_desde, version_carga)
+  select v_cat.id, e.clave, e.descripcion, e.orden, current_date, v_cat.version + 1
+  from entrada e;
+  get diagnostics v_insertados = row_count;
 
   update catalogo_sat
      set version = version + 1,
