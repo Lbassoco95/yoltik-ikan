@@ -173,10 +173,19 @@ Deno.serve(async (req: Request) => {
   // Qué clientes tienen su matriz de riesgo evaluada. Un hallazgo sobre un
   // cliente sin clasificar le dice al OC que la debida diligencia va
   // incompleta, y eso cambia cómo lo atiende.
+  // La calificación del onboarding es la línea base que SÍ existe desde el día
+  // uno: el historial transaccional tarda en formarse, pero la matriz está
+  // desde que se integra el expediente. Se toma la evaluación más reciente.
   const { data: evaluados } = await supabase
     .from('client_risk_assessment')
-    .select('client_id');
-  const conMatriz = new Set((evaluados ?? []).map((e: Record<string, unknown>) => String(e.client_id)));
+    .select('client_id, clasificacion, evaluado_en')
+    .order('evaluado_en', { ascending: false });
+  const clasificacionPorCliente: Record<string, string> = {};
+  for (const e of (evaluados ?? []) as Record<string, unknown>[]) {
+    const cid = String(e.client_id);
+    if (!(cid in clasificacionPorCliente)) clasificacionPorCliente[cid] = String(e.clasificacion);
+  }
+  const conMatriz = new Set(Object.keys(clasificacionPorCliente));
 
   const idsEvaluadas = new Set((operacionesRaw ?? []).map((o: Record<string, unknown>) => String(o.id)));
   const porCliente: Record<string, { fechas: number[]; montos: number[] }> = {};
@@ -200,6 +209,9 @@ Deno.serve(async (req: Request) => {
         return `${d.getFullYear()}-${d.getMonth()}`;
       }),
     );
+    // Días distintos con actividad. Es la medida fina: un patrón puede armarse
+    // en una semana, y exigir meses lo volvería invisible.
+    const dias = new Set(fechasPrevias.map((f) => new Date(f).toISOString().slice(0, 10)));
     const sumaPrevia = datos.fechas.reduce(
       (s, f, i) => (f < inicioMesActual ? s + datos.montos[i] : s), 0,
     );
@@ -218,6 +230,9 @@ Deno.serve(async (req: Request) => {
       tieneMatrizEvaluada: conMatriz.has(cid),
       promedioMensualUmaHistorico:
         meses.size > 0 ? sumaPrevia / umaMxn / meses.size : 0,
+      diasConActividad: dias.size,
+      clasificacionRiesgo:
+        (clasificacionPorCliente[cid] as HistorialCliente['clasificacionRiesgo']) ?? null,
     };
   }
 

@@ -313,6 +313,7 @@ describe("desviacion · contra el promedio histórico del propio cliente", () =>
       historialPorCliente: {
         [CLIENTE]: {
           operacionesPrevias: 40, diasDeHistorial: 400, mesesConActividad: 12,
+          diasConActividad: 35, clasificacionRiesgo: "bajo",
           tienePerfilDeclarado: true, tieneMatrizEvaluada: true,
           promedioMensualUmaHistorico: 100,
         },
@@ -380,6 +381,36 @@ describe("línea base: una regla de comportamiento sobre un cliente nuevo", () =
   });
 });
 
+describe("línea base en días · el patrón que se forma en una semana", () => {
+  // El caso que motivó el cambio: alguien que otorga varios poderes en días
+  // para tomar el control de una sociedad, o que compra joyas cada tres días.
+  // Exigir meses de historial vuelve invisible justo ese comportamiento.
+  const porDias = tip("XII-PODERES", {
+    tipo: "desviacion", factor: 2.0, comparar: "perfil_declarado",
+    min_dias_historial: 3,
+  });
+
+  const h = (over: Partial<HistorialCliente> = {}): HistorialCliente => ({
+    ...HISTORIAL_VACIO, tienePerfilDeclarado: true, ...over,
+  });
+
+  it("con tres días de actividad ya hay línea base, sin esperar un mes", () => {
+    const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 999999 })];
+    expect(evaluarTipologia(porDias, ops, ctx({
+      perfilMensualUmaPorCliente: { [CLIENTE]: 1 },
+      historialPorCliente: { [CLIENTE]: h({ diasConActividad: 3, mesesConActividad: 0 }) },
+    }))).toHaveLength(1);
+  });
+
+  it("con un solo día todavía no dispara", () => {
+    const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 999999 })];
+    expect(evaluarTipologia(porDias, ops, ctx({
+      perfilMensualUmaPorCliente: { [CLIENTE]: 1 },
+      historialPorCliente: { [CLIENTE]: h({ diasConActividad: 1 }) },
+    }))).toHaveLength(0);
+  });
+});
+
 describe("contexto del cliente en el hallazgo", () => {
   it("todo hallazgo lleva la trayectoria del cliente al momento de evaluar", () => {
     const umbral = tip("XVI-01", {
@@ -391,6 +422,7 @@ describe("contexto del cliente en el hallazgo", () => {
       historialPorCliente: {
         [CLIENTE]: {
           operacionesPrevias: 0, diasDeHistorial: 0, mesesConActividad: 0,
+          diasConActividad: 0, clasificacionRiesgo: null,
           tienePerfilDeclarado: false, tieneMatrizEvaluada: false,
           promedioMensualUmaHistorico: 0,
         },
@@ -402,6 +434,9 @@ describe("contexto del cliente en el hallazgo", () => {
     expect(c.sin_linea_base).toBe(true);
     expect(c.operaciones_previas).toBe(0);
     expect(c.matriz_evaluada).toBe(false);
+    // La calificación del onboarding viaja en el hallazgo: es la línea base
+    // que existe desde el día uno, aunque no haya historial transaccional.
+    expect(c).toHaveProperty("clasificacion_riesgo");
   });
 });
 

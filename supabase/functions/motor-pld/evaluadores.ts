@@ -71,8 +71,12 @@ export type ReglaDsl =
       comparar: string;
       /** Madurez exigida antes de que la regla signifique algo. Sin esto, una
        *  regla de comportamiento dispara en la primera operación de cualquier
-       *  cliente, cuando todavía no hay patrón del cual desviarse. */
+       *  cliente, cuando todavía no hay patrón del cual desviarse.
+       *
+       *  `min_dias_historial` es la unidad preferida: un patrón puede formarse
+       *  en días y exigir meses lo vuelve invisible. */
       min_operaciones?: number;
+      min_dias_historial?: number;
       min_meses_historial?: number;
     };
 
@@ -160,9 +164,15 @@ export interface HistorialCliente {
   operacionesPrevias: number;
   /** Días desde la primera operación. 0 si es cliente nuevo. */
   diasDeHistorial: number;
-  /** Meses con al menos una operación. Es la medida honesta de historial:
-   *  cincuenta operaciones en una semana no son cinco meses de patrón. */
+  /** Meses con al menos una operación. Sigue siendo útil para reglas de
+   *  volumen mensual, pero NO es la unidad por omisión: un patrón puede
+   *  formarse en días. Alguien que otorga varios poderes en una semana para
+   *  tomar el control de una sociedad, o que compra joyas cada tres días,
+   *  arma un patrón que esperar al mes vuelve invisible. */
   mesesConActividad: number;
+  /** Días distintos con actividad. Es la medida fina, y la que permite exigir
+   *  trayectoria sin obligar a esperar un mes. */
+  diasConActividad: number;
   /** Si declaró un perfil transaccional al darse de alta. */
   tienePerfilDeclarado: boolean;
   /** Si tiene la matriz de riesgo evaluada. Un hallazgo sobre un cliente sin
@@ -172,6 +182,14 @@ export interface HistorialCliente {
    *  en curso a propósito: incluirlo haría que la operación bajo examen
    *  inflara su propia referencia y la regla nunca dispararía. */
   promedioMensualUmaHistorico: number;
+  /** Clasificación de la matriz de riesgo del cliente.
+   *
+   *  Es la LÍNEA BASE QUE SÍ EXISTE DESDE EL DÍA UNO. El historial
+   *  transaccional tarda en formarse, pero la calificación del onboarding
+   *  está desde que se integra el expediente, y es lo que permite juzgar una
+   *  primera operación sin inventar un patrón: la misma operación no significa
+   *  lo mismo en un cliente de riesgo bajo que en uno de riesgo alto. */
+  clasificacionRiesgo: 'bajo' | 'medio' | 'alto' | 'alto_oficio' | null;
 }
 
 export const HISTORIAL_VACIO: HistorialCliente = {
@@ -181,6 +199,8 @@ export const HISTORIAL_VACIO: HistorialCliente = {
   tienePerfilDeclarado: false,
   tieneMatrizEvaluada: false,
   promedioMensualUmaHistorico: 0,
+  diasConActividad: 0,
+  clasificacionRiesgo: null,
 };
 
 /**
@@ -192,14 +212,18 @@ export const HISTORIAL_VACIO: HistorialCliente = {
  * siempre pasa: 645 UMA son 645 UMA en la primera operación y en la mil.
  */
 export function faltaLineaBase(
-  regla: { min_operaciones?: number; min_meses_historial?: number },
+  regla: { min_operaciones?: number; min_dias_historial?: number; min_meses_historial?: number },
   h: HistorialCliente,
 ): string | null {
   const minOps = regla.min_operaciones ?? 0;
+  const minDias = regla.min_dias_historial ?? 0;
   const minMeses = regla.min_meses_historial ?? 0;
 
   if (minOps > 0 && h.operacionesPrevias < minOps) {
     return `El cliente tiene ${h.operacionesPrevias} operaciones previas y la regla exige al menos ${minOps}.`;
+  }
+  if (minDias > 0 && h.diasConActividad < minDias) {
+    return `El cliente tiene ${h.diasConActividad} días con actividad y la regla exige al menos ${minDias}.`;
   }
   if (minMeses > 0 && h.mesesConActividad < minMeses) {
     return `El cliente tiene ${h.mesesConActividad} meses con actividad y la regla exige al menos ${minMeses}.`;
@@ -322,7 +346,12 @@ function candidato(
         contexto_cliente: {
           operaciones_previas: h.operacionesPrevias,
           dias_de_historial: h.diasDeHistorial,
+          dias_con_actividad: h.diasConActividad,
           meses_con_actividad: h.mesesConActividad,
+          // La calificación del onboarding es la línea base que sí existe
+          // desde el día uno: la misma operación no significa lo mismo en un
+          // cliente de riesgo bajo que en uno de riesgo alto.
+          clasificacion_riesgo: h.clasificacionRiesgo,
           perfil_declarado: h.tienePerfilDeclarado,
           matriz_evaluada: h.tieneMatrizEvaluada,
           sin_linea_base: h.operacionesPrevias === 0,
