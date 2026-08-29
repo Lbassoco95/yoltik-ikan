@@ -158,3 +158,27 @@ comment on view v_hallazgos_rezagados is
   'Hallazgos abiertos con su situación. El rezago se mide por SILENCIO (90 días sin actividad en la bitácora), no por antigüedad: un expediente que se está trabajando no es rezago aunque lleve meses.';
 
 commit;
+
+-- =====================================================================
+-- Verificación
+-- =====================================================================
+-- Se agregó después: este bundle terminaba sin decir nada. Una sola tabla,
+-- porque el SQL Editor de Supabase sólo muestra la última consulta.
+select 'columnas del plan de trabajo' as objeto,
+       (select count(*) from information_schema.columns
+         where table_schema = 'public' and table_name = 'hallazgo'
+           and column_name in ('fecha_compromiso','plan_trabajo',
+                               'compromiso_fijado_por','compromiso_fijado_en'))::text
+         || ' de 4' as estado,
+       'el OC fija cuándo cierra cada hallazgo' as para_que
+union all
+select 'regla de los 15 días',
+       case when public.fecha_compromiso_propuesta(date '2026-08-16') = date '2026-08-31'
+             and public.fecha_compromiso_propuesta(date '2026-08-17') = date '2026-09-30'
+            then 'correcta' else 'REVISAR' end,
+       'con 15 días o más de margen el compromiso cae este mes; si no, el siguiente'
+union all
+select 'vista de rezago',
+       case when to_regclass('public.v_hallazgos_rezagados') is not null
+            then 'creada' else 'FALTA' end,
+       'el rezago se mide por silencio, no por antigüedad';

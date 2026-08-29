@@ -76,3 +76,19 @@ comment on view v_listas_estado is
 grant select on v_listas_estado to authenticated;
 
 commit;
+
+-- =====================================================================
+-- Verificación
+-- =====================================================================
+-- Se agregó después: este bundle terminaba sin decir nada y no había forma de
+-- saber si había corrido. Devuelve UNA tabla, porque el SQL Editor de Supabase
+-- sólo muestra el resultado de la última consulta.
+select 'v_listas_estado' as objeto,
+       case when to_regclass('public.v_listas_estado') is not null
+            then 'creada' else 'FALTA' end as estado,
+       'el cliente ve la fecha de actualización sin ver las cargas' as para_que
+union all
+select 'permiso de lectura',
+       case when has_table_privilege('authenticated', 'public.v_listas_estado', 'select')
+            then 'otorgado' else 'FALTA' end,
+       'sin esto la pantalla de Listas del cliente se queda en blanco';
