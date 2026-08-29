@@ -129,6 +129,55 @@ Por eso esta capa no es opcional ni sustituible: es el núcleo del cumplimiento
 mexicano. Al proveedor se le compra identidad y listas globales; **lo mexicano
 lo sostiene Kawiil**.
 
+## Consola de administración
+
+Ruta `/admin/listas`, protegida por `requirePlatformAdmin`, que resuelve contra
+`platform_admin` (migration 0008). **El privilegio es global y cruza
+organizaciones**: un admin de Kawiil no administra una notaría, administra la
+plataforma. Por eso no vive en `user_roles` ni en `activeRole`, y la entrada del
+menú va en su propia sección «Plataforma», no en el nav por rol.
+
+La tabla `platform_admin` nace vacía a propósito. Sin una fila, la consola no
+deja entrar y `revertir_carga_lista()` rechaza la llamada:
+
+```
+supabase/manual/bootstrap_platform_admin.sql   ← cambia el correo y córrelo
+```
+
+### Qué hace la consola
+
+**Personas y entidades listadas** — el estado vigente, con búsqueda por nombre y
+filtro por fuente. Lee de `v_listas_vigentes`.
+
+**Cargas** — el historial, con su estado y el botón de revertir. La confirmación
+explica la diferencia entre revertir y registrar el movimiento contrario, porque
+es la decisión que más fácil se equivoca, y exige un motivo que queda como
+constancia permanente.
+
+**Fuentes** — el catálogo, con su naturaleza y su modo de actualización. Las de
+tipo archivo llevan banner ámbar: todavía no tienen ingesta.
+
+### Captura por oficio
+
+Un oficio puede traer varias personas, así que el formulario captura **varias
+líneas y las registra como una sola carga**. Por línea: movimiento (alta o
+baja), nombre, RFC, número de oficio, fecha del oficio y motivo.
+
+Dos decisiones que conviene conocer:
+
+- **El número de oficio es obligatorio en el formulario** aunque el esquema lo
+  permita nulo. En la lista de la UIF es lo que justifica por qué alguien entró
+  o salió; una baja sin oficio no es defendible ante una revisión. Mejor frenarlo
+  en la captura que descubrirlo en una verificación.
+- **Si un movimiento falla, se revierte la carga completa.** Media carga aplicada
+  es peor que ninguna: nadie sabría cuál sí entró. El mensaje de error de la base
+  se muestra íntegro, porque es el que dice qué corregir (por ejemplo, una baja
+  de alguien que nunca fue dado de alta).
+
+El RFC se valida sólo en su **forma** (4+6+3 para física, 3+6+3 para moral). No
+se valida el dígito verificador ni que exista ante el SAT: eso no se puede hacer
+sin consultar.
+
 ## Estado y qué falta
 
 Aplicado en esta migration:
@@ -140,9 +189,11 @@ Aplicado en esta migration:
   alguien de una lista restrictiva.
 - `v_listas_vigentes` con `security_invoker` (sin eso la vista saltaría la RLS).
 
+- Consola de administración con captura por oficio y reversión de cargas.
+
 Pendiente:
 
-1. **Consola de Kawiil** para capturar movimientos y subir archivos.
+1. **Subida de archivo** para las fuentes de tipo snapshot.
 2. **Jurisdicciones** (GAFI) y migración de `country_risk_list` al catálogo global.
 3. **Parsers de archivo** para OFAC y 69-B. Van como núcleo puro con fixtures
    (probable en CI) más el `fetch` en una Edge Function, porque el entorno de

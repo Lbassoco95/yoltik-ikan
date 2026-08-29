@@ -21,6 +21,7 @@ import VerificationPage from "@/pages/VerificationPage";
 import AuditPage from "@/pages/AuditPage";
 import ConfigPage from "@/pages/ConfigPage";
 import MatrizRiesgoPage from '@/pages/MatrizRiesgoPage';
+import AdminListasPage from '@/pages/admin/AdminListasPage';
 import RegistroPage from "@/pages/registro/RegistroPage";
 import NotariosPage from "@/pages/registro/NotariosPage";
 import GraciasPage from "@/pages/registro/GraciasPage";
@@ -130,6 +131,16 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAnyRole={['oc', 'admin']}>
                     <MatrizRiesgoPage />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Consola de plataforma (Kawiil). El privilegio cruza
+                  organizaciones, por eso no se pide un rol sino platform_admin. */}
+              <Route
+                path="/admin/listas"
+                element={
+                  <ProtectedRoute requirePlatformAdmin>
+                    <AdminListasPage />
                   </ProtectedRoute>
                 }
               />
