@@ -59,6 +59,15 @@ on conflict (id) do nothing;
 
 -- =================== Actos / instrumentos DEMO ===================
 -- tipo='otro' (no es operación cripto); el detalle va en contraparte.tipo_acto.
+--
+-- Los valores de `tipo_acto` son los OFICIALES del layout de fe pública del
+-- SAT (rama 3.6.1.3 del instructivo), no etiquetas propias: un aviso armado
+-- con nombres inventados falla la validación en el portal, el día 17.
+-- Ver docs/layouts-sat/.
+--
+-- Ojo con el canal: la transmisión de inmuebles se presenta por DeclaraNOT,
+-- NO por el SPPLD, y por eso no tiene etiqueta en el layout. Son dos sistemas
+-- distintos y confundirlos hace que un notario crea que ya reportó.
 insert into operation (id, organization_id, client_id, tipo, monto_mxn, moneda_origen,
                        activo_virtual, contraparte, fecha)
 values
@@ -66,28 +75,28 @@ values
   ('88888888-0000-0000-0000-000000000001',
    '12121212-1212-1212-1212-121212121212', '77777777-0000-0000-0000-000000000001',
    'otro', 2000000.00, 'MXN', null,
-   '{"tipo_acto": "compraventa_inmueble", "pais_iso2": "MX", "nota_demo": "compraventa inmueble > umbral referencia"}'::jsonb,
+   '{"tipo_acto": "transmision_inmueble", "pais_iso2": "MX", "canal": "declaranot", "nota_demo": "transmision de inmueble; se presenta por DeclaraNOT, no por el SPPLD"}'::jsonb,
    '2026-08-18T10:00:00Z'),
 
   -- XII-02 · Poder irrevocable (aviso "siempre", sin umbral de monto)
   ('88888888-0000-0000-0000-000000000002',
    '12121212-1212-1212-1212-121212121212', '77777777-0000-0000-0000-000000000001',
    'otro', 0.00, 'MXN', null,
-   '{"tipo_acto": "poder_irrevocable", "pais_iso2": "MX", "nota_demo": "poder irrevocable"}'::jsonb,
+   '{"tipo_acto": "otorgamiento_poder", "pais_iso2": "MX", "nota_demo": "poder irrevocable"}'::jsonb,
    '2026-08-18T12:00:00Z'),
 
   -- XII-03 · Constitución de sociedad con socio en país de riesgo (IR)
   ('88888888-0000-0000-0000-000000000003',
    '12121212-1212-1212-1212-121212121212', '77777777-0000-0000-0000-000000000002',
    'otro', 1000000.00, 'MXN', null,
-   '{"tipo_acto": "constitucion_sociedad", "pais_iso2": "IR", "socio_demo": "Socio extranjero (DEMO)", "nota_demo": "socio en pais de alto riesgo"}'::jsonb,
+   '{"tipo_acto": "constitucion_personas_morales", "pais_iso2": "IR", "socio_demo": "Socio extranjero (DEMO)", "nota_demo": "socio en pais de alto riesgo"}'::jsonb,
    '2026-08-19T09:00:00Z'),
 
   -- Acto benigno (no dispara ninguna tipología) — muestra que el motor es selectivo
   ('88888888-0000-0000-0000-000000000004',
    '12121212-1212-1212-1212-121212121212', '77777777-0000-0000-0000-000000000001',
    'otro', 300000.00, 'MXN', null,
-   '{"tipo_acto": "fideicomiso", "pais_iso2": "MX", "nota_demo": "fideicomiso ordinario"}'::jsonb,
+   '{"tipo_acto": "constitucion_modificacion_fideicomiso", "pais_iso2": "MX", "nota_demo": "fideicomiso ordinario"}'::jsonb,
    '2026-08-19T15:00:00Z')
 on conflict (id) do nothing;
 
@@ -120,7 +129,7 @@ values
    '{
       "tipo": "lookup",
       "campo": "contraparte.tipo_acto",
-      "valores": ["poder_irrevocable"],
+      "valores": ["otorgamiento_poder"],
       "nota": "Aviso siempre (sin umbral), de referencia, sujeto a confirmación con Kawiil-Cumplimiento."
     }'::jsonb,
    'alta', 1, 'Art. 17 fr. XII LFPIORPI (referencia, sin confirmar)'),

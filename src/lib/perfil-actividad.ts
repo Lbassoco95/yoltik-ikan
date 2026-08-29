@@ -81,35 +81,54 @@ export interface TipoActoNotaria {
    *  irrevocables ni transmite inmuebles; el notario no hace avalúos como
    *  actividad vulnerable. */
   fedatario: 'notario' | 'corredor' | 'ambos';
+  /**
+   * Por dónde se presenta. NO es un detalle técnico: son dos sistemas
+   * distintos, con formatos distintos y plazos propios.
+   *
+   *   'sppld'      Portal de PLD del SAT, en XML contra el layout de fe
+   *                pública. Son los diez tipos de acto del instructivo.
+   *   'declaranot' Declaración Informativa de Notarios. Por aquí va la
+   *                transmisión o constitución de derechos reales sobre
+   *                inmuebles (inciso a del artículo 17 fracción XII), y por
+   *                eso ese acto NO aparece en el layout del SPPLD.
+   *
+   * Confundirlos hace que un notario crea que ya reportó cuando no lo hizo.
+   */
+  canal: 'sppld' | 'declaranot';
 }
 
 export const TIPOS_ACTO_NOTARIA: TipoActoNotaria[] = [
-  { value: 'otorgamiento_poder', fedatario: 'notario',
+  // Por DeclaraNOT, no por el SPPLD. Va primero porque es el acto más común
+  // de una notaría y el que más fácil se reporta por el canal equivocado.
+  { value: 'transmision_inmueble', fedatario: 'notario', canal: 'declaranot',
+    label: 'Transmisión o constitución de derechos reales sobre inmuebles' },
+
+  { value: 'otorgamiento_poder', fedatario: 'notario', canal: 'sppld',
     label: 'Otorgamiento de poder irrevocable' },
-  { value: 'constitucion_personas_morales', fedatario: 'ambos',
+  { value: 'constitucion_personas_morales', fedatario: 'ambos', canal: 'sppld',
     label: 'Constitución de personas morales' },
-  { value: 'modificacion_patrimonial', fedatario: 'ambos',
+  { value: 'modificacion_patrimonial', fedatario: 'ambos', canal: 'sppld',
     label: 'Modificación patrimonial (aumento o disminución de capital)' },
-  { value: 'fusion', fedatario: 'ambos', label: 'Fusión' },
-  { value: 'escision', fedatario: 'ambos', label: 'Escisión' },
-  { value: 'compra_venta_acciones', fedatario: 'ambos',
+  { value: 'fusion', fedatario: 'ambos', canal: 'sppld', label: 'Fusión' },
+  { value: 'escision', fedatario: 'ambos', canal: 'sppld', label: 'Escisión' },
+  { value: 'compra_venta_acciones', fedatario: 'ambos', canal: 'sppld',
     label: 'Compra o venta de acciones o partes sociales' },
-  { value: 'constitucion_modificacion_fideicomiso', fedatario: 'notario',
+  { value: 'constitucion_modificacion_fideicomiso', fedatario: 'notario', canal: 'sppld',
     label: 'Constitución o modificación de fideicomiso traslativo de dominio o garantía' },
-  { value: 'cesion_derechos_fideicomitente_fideicomisario', fedatario: 'corredor',
+  { value: 'cesion_derechos_fideicomitente_fideicomisario', fedatario: 'corredor', canal: 'sppld',
     label: 'Cesión de derechos de fideicomitente o fideicomisario' },
-  { value: 'contrato_mutuo_credito', fedatario: 'ambos',
+  { value: 'contrato_mutuo_credito', fedatario: 'ambos', canal: 'sppld',
     label: 'Contrato de mutuo o crédito, con o sin garantía' },
-  { value: 'avaluo', fedatario: 'corredor', label: 'Realización de avalúos' },
+  { value: 'avaluo', fedatario: 'corredor', canal: 'sppld', label: 'Realización de avalúos' },
 ];
 
-/** La transmisión de inmuebles NO tiene etiqueta propia en el layout: se
- *  reporta según el acto que la instrumenta. Se deja escrito porque es el
- *  error más fácil de cometer al leer el artículo 17 fracción XII. */
-export const NOTA_TRANSMISION_INMUEBLES =
-  'La transmisión o constitución de derechos reales sobre inmuebles se reporta a través del ' +
-  'acto que la instrumenta (compraventa de acciones, fideicomiso, mutuo con garantía), no como ' +
-  'un tipo de acto propio: el layout del SAT no tiene una etiqueta para ella.';
+/** Por qué la transmisión de inmuebles no está en el layout del SPPLD. Se deja
+ *  escrito porque es el error más fácil de cometer al leer el artículo. */
+export const NOTA_CANALES =
+  'La transmisión o constitución de derechos reales sobre inmuebles se presenta por DeclaraNOT, ' +
+  'no por el SPPLD, y por eso no tiene etiqueta en el layout de fe pública. Los demás actos van ' +
+  'por el SPPLD en XML. Son dos sistemas distintos: confundirlos hace que un notario crea que ya ' +
+  'reportó cuando no lo hizo.';
 
 /** Umbrales de referencia de la fracción XII (fe pública). FIJOS, no calculados. */
 export const UMBRALES_XII_REFERENCIA = {
@@ -148,4 +167,15 @@ export function labelTipoActo(value: unknown): string {
 /** Los actos que puede instrumentar un tipo de fedatario. */
 export function actosDe(fedatario: 'notario' | 'corredor'): TipoActoNotaria[] {
   return TIPOS_ACTO_NOTARIA.filter((t) => t.fedatario === fedatario || t.fedatario === 'ambos');
+}
+
+/** Por dónde se presenta un acto. `undefined` si el tipo no está en el catálogo. */
+export function canalDeActo(value: unknown): 'sppld' | 'declaranot' | undefined {
+  return TIPOS_ACTO_NOTARIA.find((t) => t.value === String(value ?? ''))?.canal;
+}
+
+/** Los actos que sí van en el aviso XML del SPPLD. El generador sólo debe
+ *  considerar éstos: incluir uno de DeclaraNOT produciría un XML inválido. */
+export function actosDelSppld(): TipoActoNotaria[] {
+  return TIPOS_ACTO_NOTARIA.filter((t) => t.canal === 'sppld');
 }

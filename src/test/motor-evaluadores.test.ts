@@ -492,7 +492,7 @@ describe("clasificacionUrgencia", () => {
       clasificacionUrgencia({
         tipo: "lookup",
         campo: "contraparte.tipo_acto",
-        valores: ["poder_irrevocable"],
+        valores: ["otorgamiento_poder"],
       }),
     ).toBe("24_horas");
   });
