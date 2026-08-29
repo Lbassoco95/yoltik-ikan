@@ -3,6 +3,7 @@ import { Search, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockAudit } from "@/data/mockData";
+import { IntegridadBitacora } from "@/components/bitacora/IntegridadBitacora";
 
 export default function AuditPage() {
   const [search, setSearch] = useState("");
@@ -20,9 +21,31 @@ export default function AuditPage() {
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-2xl font-bold text-foreground">Auditoría</h1>
 
-      <div className="bg-primary/5 border border-primary/20 rounded-lg px-4 py-3 flex items-center gap-3">
-        <Shield className="w-4 h-4 text-primary shrink-0" />
-        <p className="text-sm text-foreground">Los registros de auditoría son inmutables y se conservan por 10 años conforme a las disposiciones regulatorias.</p>
+      <IntegridadBitacora />
+
+      {/* El texto anterior afirmaba diez años de conservación, cifra que no
+          sale de la LFPIORPI —su artículo 18 habla de cinco— y que además
+          acompañaba a una tabla de datos de ejemplo. Se corrige y se marca
+          como referencia, igual que el resto de cifras regulatorias del repo,
+          hasta que Kawiil-Cumplimiento la confirme. */}
+      <div className="bg-primary/5 border border-primary/20 rounded-lg px-4 py-3 flex items-start gap-3">
+        <Shield className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+        <p className="text-sm text-foreground">
+          La bitácora encadenada es inmutable: un registro no se modifica ni se borra, y una
+          corrección entra como registro nuevo.{" "}
+          <span className="text-warning">
+            El plazo de conservación de cinco años (LFPIORPI artículo 18) está pendiente de
+            confirmar con Kawiil-Cumplimiento.
+          </span>
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
+        <p className="text-xs text-warning">
+          DEMO — sin integración real: la tabla de abajo sigue mostrando datos de ejemplo del
+          andamiaje original. Los eventos reales ya se están registrando en la bitácora
+          encadenada de arriba; conectar esta vista a ellos es el siguiente paso.
+        </p>
       </div>
 
       <div className="glass-card p-4 flex items-center gap-4">

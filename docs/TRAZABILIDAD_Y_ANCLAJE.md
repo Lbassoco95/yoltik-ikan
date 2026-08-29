@@ -159,8 +159,14 @@ B8.1 y B8.2 no dependen de ninguna decisión comercial y entregan lo esencial:
 detección de cualquier alteración y prueba verificable por terceros. B8.3 es la
 que da peso ante la autoridad mexicana y necesita proveedor. B8.4 es presentación.
 
-## Decisiones pendientes de Polo
+## Decisiones tomadas (2026-08-29, Polo)
 
-1. **Ancla**: OpenTimestamps, L2, o ambas.
-2. **NOM-151**: ¿se contrata un PSC ahora o queda para después del demo?
-3. **Cadencia**: anclaje diario, o uno por periodo de aviso cerrado.
+1. **Ancla: OpenTimestamps.** Gratis, sobre Bitcoin, sin llave ni saldo que
+   custodiar. Sin espejo en L2 por ahora; si más adelante hace falta el enlace de
+   explorador para una demo, se suma como B8.4 sin rediseñar nada.
+2. **NOM-151: después del demo.** B8.1 y B8.2 no dependen de ningún proveedor y
+   ya entregan detección y verificación por terceros. La constancia se suma
+   cuando haya cliente firmado.
+3. **Cadencia:** queda por definir en B8.2. Propuesta: anclaje diario, más uno
+   forzado al cerrar cada periodo de aviso, para que el aviso enviado quede
+   anclado sin esperar al día siguiente. **PENDIENTE_CONFIRMAR.**

@@ -25,6 +25,9 @@
 | **RCG0.B3f** | **Expediente del acto: la captura alimenta el aviso** | ✅ **hecho** |
 | **RCG0.B3g** | **Catálogos del layout: la lista sale de la base** | ✅ **hecho · 25 de 26 cargados** |
 | **RCG0.B7** | **Consola de plataforma completa (admin de Ikán)** | ⏳ **nuevo — después de cerrar el demo** |
+| **RCG0.B8.1** | **Bitácora encadenada** | ✅ **hecho** |
+| **RCG0.B8.2** | **Anclaje en Bitcoin (OpenTimestamps)** | ⏳ **siguiente** |
+| **RCG0.B8.3** | **Constancia NOM-151 (requiere PSC)** | ⛔ después del demo |
 
 Decisiones confirmadas con Polo (2026-08-20):
 - **B1**: el contador de 24h basta con que sea **visible** en el panel del OC (contador
@@ -288,3 +291,29 @@ códigos postales (32,353 valores), que se carga desde la consola con
 aviso. Sembrado en las dos organizaciones demo.
 
 **Detalle:** `docs/CATALOGOS_LAYOUT.md`.
+
+---
+
+## RCG0.B8 · Trazabilidad y anclaje
+
+Diseño completo en `docs/TRAZABILIDAD_Y_ANCLAJE.md`. Decisiones de Polo
+(2026-08-29): ancla con **OpenTimestamps**, NOM-151 **después del demo**.
+
+### B8.1 · Bitácora encadenada — ✅ hecho
+
+Un solo flujo de eventos encadenado por hashes, emitido por triggers para que
+ninguna ruta se lo salte. Detecta alteración, borrado y truncamiento; se
+verifica dos veces (base y navegador) y se exporta para que un tercero
+recalcule sin nuestra API. Deja escrito —y probado— su propio límite: la cadena
+sola no detecta que se reescriba entera, y para eso es B8.2.
+
+De paso cerró dos funciones `SECURITY DEFINER` que PostgreSQL había dejado
+abiertas a `PUBLIC`: `registrar_evento` y `emitir_folio_hallazgo`.
+
+Detalle: `docs/BITACORA_ENCADENADA.md`.
+
+### B8.2 · Anclaje con OpenTimestamps — ⏳ siguiente
+
+Raíz Merkle diaria sobre los eventos nuevos, sellada en Bitcoin. Sin datos
+personales: sólo la raíz. Paquete de verificación con el `.ots`.
+Cadencia **PENDIENTE_CONFIRMAR**.
