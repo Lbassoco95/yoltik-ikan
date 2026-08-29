@@ -1,67 +1,136 @@
 -- ============================================================
--- Prueba · Ciclo de altas y bajas (migration 0012)
+-- Prueba · Ciclo de altas y bajas (migrations 0012 + 0013)
 -- ============================================================
--- Seguro de correr en el SQL Editor: TODO va dentro de una transacción que
--- termina en ROLLBACK. No deja ni una fila. Datos ficticios.
+-- SQL puro, sin meta-comandos: corre tal cual en el SQL Editor de Supabase.
+-- (La versión anterior usaba \echo, que es de psql y el editor no entiende.)
 --
--- Comprueba lo que pediste: cargar personas con nombre, RFC y número de
--- oficio, y poder darlas de baja después.
+-- Se limpia sola: no deja ninguna fila. Datos ficticios.
+--
+-- Si TODO pasa, devuelve una fila diciéndolo. Si algo falla, devuelve un
+-- ERROR con la prueba exacta que no se cumplió. No hay resultado ambiguo.
 -- ============================================================
-begin;
+do $$
+declare
+  v_fuente uuid;
+  v_carga1 uuid := 'aaaaaaaa-0000-0000-0000-00000000f001';
+  v_carga2 uuid := 'aaaaaaaa-0000-0000-0000-00000000f002';
+  v_activo boolean;
+  v_baja text;
+  v_alta text;
+  v_n int;
+begin
+  select id into v_fuente from lista_fuente where codigo = 'uif_bloqueadas';
+  if v_fuente is null then
+    raise exception 'FALLA: no existe la fuente uif_bloqueadas. ¿Corriste el seed 11?';
+  end if;
 
--- --- Carga 1: oficio de bloqueo ---
-insert into lista_carga (id, fuente_id, tipo, estado, fecha_publicacion_fuente, notas)
-select 'aaaaaaaa-0000-0000-0000-000000000001', id, 'captura_manual', 'aplicada',
-       date '2026-03-10', 'PRUEBA — oficio de bloqueo'
-from lista_fuente where codigo = 'uif_bloqueadas';
+  -- ---------- Carga 1: oficio de bloqueo ----------
+  insert into lista_carga (id, fuente_id, tipo, estado, fecha_publicacion_fuente, notas)
+  values (v_carga1, v_fuente, 'captura_manual', 'aplicada', date '2026-03-10', 'PRUEBA — bloqueo');
 
-insert into lista_movimiento (carga_id, accion, nombre, rfc, oficio_numero, oficio_fecha, motivo)
-values
-  ('aaaaaaaa-0000-0000-0000-000000000001', 'alta',
-   'Juan Ramírez Peña (PRUEBA)', 'rapj800101ab1', '110-05/2026-0341', date '2026-03-10', 'Bloqueo'),
-  ('aaaaaaaa-0000-0000-0000-000000000001', 'alta',
-   'María de la Cruz Sánchez (PRUEBA)', null, '110-05/2026-0342', date '2026-03-10', 'Bloqueo');
+  insert into lista_movimiento (carga_id, accion, nombre, rfc, oficio_numero, oficio_fecha, motivo)
+  values
+    (v_carga1, 'alta', 'Juan Ramírez Peña (PRUEBA)', 'rapj800101ab1',
+     '110-05/2026-0341', date '2026-03-10', 'Bloqueo'),
+    (v_carga1, 'alta', 'María de la Cruz Sánchez (PRUEBA)', null,
+     '110-05/2026-0342', date '2026-03-10', 'Bloqueo');
 
-\echo '1. Dos altas · el RFC se normaliza a mayúsculas'
-select nombre, rfc, activo, alta_oficio from lista_registro where nombre like '%(PRUEBA)%' order by nombre;
+  -- 1. El RFC se guarda normalizado a mayúsculas
+  select rfc into v_alta from lista_registro where nombre like 'Juan Ramírez%(PRUEBA)';
+  if v_alta is distinct from 'RAPJ800101AB1' then
+    raise exception 'FALLA 1: el RFC no se normalizó a mayúsculas (quedó %)', v_alta;
+  end if;
 
--- --- Carga 2: oficio de desbloqueo ---
--- El nombre va SIN acentos y el RFC en mayúsculas, a propósito: debe cotejar igual.
-insert into lista_carga (id, fuente_id, tipo, estado, fecha_publicacion_fuente, notas)
-select 'aaaaaaaa-0000-0000-0000-000000000002', id, 'captura_manual', 'aplicada',
-       date '2026-06-20', 'PRUEBA — oficio de desbloqueo'
-from lista_fuente where codigo = 'uif_bloqueadas';
+  -- 2. Ambas quedan vigentes
+  select count(*) into v_n from v_listas_vigentes where nombre like '%(PRUEBA)%';
+  if v_n <> 2 then
+    raise exception 'FALLA 2: se esperaban 2 personas vigentes, hay %', v_n;
+  end if;
 
-insert into lista_movimiento (carga_id, accion, nombre, rfc, oficio_numero, oficio_fecha, motivo)
-values ('aaaaaaaa-0000-0000-0000-000000000002', 'baja',
-        'Juan Ramirez Pena (PRUEBA)', 'RAPJ800101AB1', '110-05/2026-0899', date '2026-06-20', 'Desbloqueo');
+  -- ---------- Carga 2: oficio de desbloqueo ----------
+  -- Nombre SIN acentos y RFC en mayúsculas a propósito: debe cotejar igual.
+  insert into lista_carga (id, fuente_id, tipo, estado, fecha_publicacion_fuente, notas)
+  values (v_carga2, v_fuente, 'captura_manual', 'aplicada', date '2026-06-20', 'PRUEBA — desbloqueo');
 
-\echo '2. Baja aplicada · la fila se conserva, sale de vigentes'
-select nombre, activo, alta_oficio, baja_oficio, baja_fecha
-from lista_registro where nombre like '%(PRUEBA)%' order by nombre;
+  insert into lista_movimiento (carga_id, accion, nombre, rfc, oficio_numero, oficio_fecha, motivo)
+  values (v_carga2, 'baja', 'Juan Ramirez Pena (PRUEBA)', 'RAPJ800101AB1',
+          '110-05/2026-0899', date '2026-06-20', 'Desbloqueo');
 
-\echo '3. La evidencia histórica: alta 10/mar, baja 20/jun'
-select public.listado_en_fecha('uif_bloqueadas', date '2026-02-01', 'RAPJ800101AB1') as "01/feb (antes)",
-       public.listado_en_fecha('uif_bloqueadas', date '2026-04-15', 'RAPJ800101AB1') as "15/abr (bloqueado)",
-       public.listado_en_fecha('uif_bloqueadas', date '2026-07-01', 'RAPJ800101AB1') as "01/jul (liberado)";
+  -- 3. La baja cotejó pese a los acentos y quedó desactivado, no borrado
+  select activo, baja_oficio into v_activo, v_baja
+  from lista_registro where rfc = 'RAPJ800101AB1';
+  if v_activo is not false then
+    raise exception 'FALLA 3: la baja no se aplicó (el cotejo sin acentos no funcionó)';
+  end if;
+  if v_baja is distinct from '110-05/2026-0899' then
+    raise exception 'FALLA 3b: no se guardó el oficio de baja (quedó %)', v_baja;
+  end if;
 
-\echo '4. Bitácora con los oficios que respaldan cada movimiento'
-select m.accion, m.oficio_numero, m.oficio_fecha
-from lista_movimiento m join lista_registro r on r.id = m.registro_id
-where r.rfc = 'RAPJ800101AB1' order by m.oficio_fecha;
+  -- 4. Sale de vigentes pero la fila se conserva
+  select count(*) into v_n from v_listas_vigentes where nombre like '%(PRUEBA)%';
+  if v_n <> 1 then
+    raise exception 'FALLA 4: se esperaba 1 vigente tras la baja, hay %', v_n;
+  end if;
+  select count(*) into v_n from lista_registro where nombre like '%(PRUEBA)%';
+  if v_n <> 2 then
+    raise exception 'FALLA 4b: la baja borró la fila en vez de desactivarla';
+  end if;
 
-\echo '5. Una baja sin alta previa se rechaza (debe salir ERROR abajo)'
-savepoint s1;
-insert into lista_movimiento (carga_id, accion, nombre, oficio_numero)
-values ('aaaaaaaa-0000-0000-0000-000000000002', 'baja', 'Nadie Inexistente', 'X-1');
-rollback to savepoint s1;
+  -- 5. Evidencia histórica: bloqueada entre marzo y junio, no antes ni después
+  if public.listado_en_fecha('uif_bloqueadas', date '2026-02-01', 'RAPJ800101AB1') then
+    raise exception 'FALLA 5: aparece bloqueada ANTES de su oficio de alta';
+  end if;
+  if not public.listado_en_fecha('uif_bloqueadas', date '2026-04-15', 'RAPJ800101AB1') then
+    raise exception 'FALLA 5b: NO aparece bloqueada el 15/abr, cuando sí lo estaba';
+  end if;
+  if public.listado_en_fecha('uif_bloqueadas', date '2026-07-01', 'RAPJ800101AB1') then
+    raise exception 'FALLA 5c: sigue apareciendo bloqueada después de su baja';
+  end if;
 
-\echo '6. La bitácora no se puede alterar (debe salir ERROR abajo)'
-savepoint s2;
-update lista_movimiento set oficio_numero = 'ALTERADO' where oficio_numero = '110-05/2026-0341';
-rollback to savepoint s2;
+  -- 6. Cotejo por nombre, sin RFC, con y sin acentos
+  if not public.listado_en_fecha('uif_bloqueadas', date '2026-05-01', null, 'MARIA DE LA CRUZ SANCHEZ (PRUEBA)') then
+    raise exception 'FALLA 6: el cotejo por nombre sin acentos no encontró a la persona';
+  end if;
 
-rollback;
+  -- 7. Una baja sin alta previa se rechaza
+  begin
+    insert into lista_movimiento (carga_id, accion, nombre, oficio_numero)
+    values (v_carga2, 'baja', 'Nadie Inexistente (PRUEBA)', 'X-1');
+    raise exception 'FALLA 7: se aceptó una baja de alguien que nunca fue dado de alta';
+  exception when others then
+    if sqlerrm like 'FALLA 7%' then raise; end if;
+  end;
 
-\echo '=== ROLLBACK hecho · no quedó ninguna fila de prueba ==='
-select count(*) as filas_de_prueba_restantes from lista_registro where nombre like '%(PRUEBA)%';
+  -- 8. La bitácora no se puede editar
+  begin
+    update lista_movimiento set oficio_numero = 'ALTERADO' where carga_id = v_carga1;
+    raise exception 'FALLA 8: se pudo editar un movimiento de la bitácora';
+  exception when others then
+    if sqlerrm like 'FALLA 8%' then raise; end if;
+  end;
+
+  -- 9. Un movimiento suelto no se puede borrar
+  begin
+    delete from lista_movimiento where carga_id = v_carga1;
+    raise exception 'FALLA 9: se pudo borrar un movimiento suelto';
+  exception when others then
+    if sqlerrm like 'FALLA 9%' then raise; end if;
+  end;
+
+  -- ---------- Limpieza: revertir las dos cargas ----------
+  -- Marca 'revertida' primero, que es lo que autoriza el borrado (0013).
+  update lista_carga set estado = 'revertida' where id in (v_carga1, v_carga2);
+  delete from lista_movimiento where carga_id in (v_carga1, v_carga2);
+  delete from lista_registro where nombre like '%(PRUEBA)%';
+  delete from lista_carga where id in (v_carga1, v_carga2);
+
+  -- 10. No quedó rastro
+  select count(*) into v_n from lista_registro where nombre like '%(PRUEBA)%';
+  if v_n <> 0 then
+    raise exception 'FALLA 10: quedaron % filas de prueba sin limpiar', v_n;
+  end if;
+end
+$$;
+
+select 'OK · 10 pruebas pasaron: alta, baja por oficio, cotejo sin acentos, '
+       'evidencia histórica, bitácora inmutable y limpieza sin rastro' as resultado;

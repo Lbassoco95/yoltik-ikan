@@ -83,6 +83,35 @@ en silencio un movimiento que no aplica a nadie.
 Un **alta sobre alguien dado de baja lo reactiva** y limpia el rastro de baja
 del estado vigente; el movimiento anterior sigue en la bitácora.
 
+## Corregir frente a revertir (migration 0013)
+
+Son cosas distintas y el sistema las trata distinto:
+
+| | Cuándo | Qué hace |
+|---|---|---|
+| **Movimiento contrario** | El hecho fue real y cambió | La persona estuvo listada y dejó de estarlo. Las dos cosas pasaron y las dos se conservan en la bitácora. |
+| **Revertir la carga** | La carga nunca debió existir | Archivo equivocado, RFC mal capturado. No hay hecho que conservar: hay un error que borrar, dejando constancia de que se revirtió. |
+
+La 0012 dejó `lista_movimiento` inmutable ante UPDATE **y** ante DELETE. La
+inmutabilidad es correcta, pero se pasó de largo: dejaba sin salida la carga
+equivocada, y una consola de administración se topa con eso el primer día.
+
+La 0013 afina la regla:
+
+- **UPDATE: prohibido siempre**, sin excepción.
+- **DELETE: sólo** si la carga ya está marcada `revertida`, que es lo que hace
+  `revertir_carga_lista()` antes de borrar. Nadie borra un movimiento suelto.
+
+```sql
+select * from public.revertir_carga_lista('<carga_id>', 'RFC capturado por error');
+-- registros_recalculados | registros_eliminados | movimientos_borrados
+```
+
+**Recalcula, no sólo desactiva.** Si la carga equivocada dio de baja a alguien
+que seguía bloqueado, revertirla lo devuelve a bloqueado con su oficio original.
+Un registro que sólo existía por la carga revertida se elimina: nunca debió
+estar ahí. La carga queda marcada `revertida` con la constancia y el motivo.
+
 ## Naturaleza de la fuente
 
 `lista_fuente.naturaleza` distingue `sancion_aml`, `fiscal`, `jurisdiccion`,
@@ -128,13 +157,20 @@ Pendiente:
 ## Aplicar y probar
 
 ```
-1. supabase/manual/apply_0012_listas.sql          ← aplica (transaccional, idempotente)
-2. supabase/manual/verificar_0012.sql             ← comprueba estructura y catálogo
-3. supabase/manual/probar_0012_movimientos.sql    ← ejercita alta/baja; termina en ROLLBACK
+1. supabase/manual/apply_0012_listas.sql          ← aplica el esquema y el catálogo
+2. supabase/manual/apply_0013_revertir.sql        ← añade revertir_carga_lista
+3. supabase/manual/verificar_0012.sql             ← comprueba 0012 y 0013
+4. supabase/manual/probar_0012_movimientos.sql    ← ejercita el ciclo completo
 ```
 
-El tercero es seguro de correr en el SQL Editor: va dentro de una transacción
-que revierte, así que no deja ni una fila.
+Los cuatro son **SQL puro**: corren tal cual en el SQL Editor de Supabase, sin
+meta-comandos de psql. (La primera versión del script de prueba usaba `\echo`,
+que es de psql y el editor rechaza con `syntax error at or near "\"`.)
+
+El cuarto se limpia solo: hace el ciclo completo con datos ficticios y borra
+todo al terminar. Devuelve una fila si las diez pruebas pasan, o un `ERROR` que
+nombra la prueba exacta que falló. No hay resultado ambiguo, y se puede correr
+las veces que quieras.
 
 Verificado contra PostgreSQL 16 real (ver `docs/PARAMETROS_REGULATORIOS.md` para
 levantar el Postgres desechable): 12 escenarios, incluyendo alta, baja, re-alta,

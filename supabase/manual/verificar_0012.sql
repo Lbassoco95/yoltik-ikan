@@ -1,5 +1,5 @@
 -- ============================================================
--- Verificación · Migration 0012 + seed 11 (Listas de plataforma)
+-- Verificación · Migrations 0012 y 0013 + seed 11 (Listas de plataforma)
 -- ============================================================
 -- Pégalo en el SQL Editor después de correr apply_0012_listas.sql.
 -- Todo debe decir OK. Cualquier ❌ es un problema real.
@@ -41,9 +41,12 @@ with chequeos as (
                    from information_schema.columns
                    where table_name='lista_registro' and column_name='nombre_normalizado'), '❌ FALTA')
 
-  union all select 8, '── catálogo de fuentes ──', ''
+  union all select 8, 'función revertir_carga_lista (0013)',
+         coalesce((select 'OK' from pg_proc where proname='revertir_carga_lista'), '❌ FALTA — aplica la 0013')
 
-  union all select 8 + row_number() over (order by codigo),
+  union all select 9, '── catálogo de fuentes ──', ''
+
+  union all select 9 + row_number() over (order by codigo),
          '   ' || codigo,
          naturaleza::text || ' · ' || modo_actualizacion::text
          || case when obligatoria then ' · obligatoria' else '' end
@@ -61,7 +64,11 @@ with chequeos as (
                       then 'OK · altas y bajas por oficio, no por archivo'
                       else '❌ está como snapshot' end
           from lista_fuente where codigo='uif_bloqueadas')
-  union all select 104, '   el 69-B va marcado como fiscal',
+  union all select 104, '   se puede deshacer una carga equivocada',
+         (select case when count(*)=1 then 'OK · revertir_carga_lista disponible'
+                      else '❌ sin salida para una captura errónea' end
+          from pg_proc where proname='revertir_carga_lista')
+  union all select 105, '   el 69-B va marcado como fiscal',
          (select case when naturaleza='fiscal'
                       then 'OK · no se confunde con una sanción AML'
                       else '❌ mal clasificado' end
