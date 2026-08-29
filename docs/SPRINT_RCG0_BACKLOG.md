@@ -22,6 +22,7 @@
 | RCG0.B4 | Rol "Representante Encargado de Cumplimiento" | ⏳ pendiente |
 | RCG0.B5 | Desarrollo Inmobiliario (V Bis) | ⛔ condicional — sin arrancar |
 | RCG0.B6 | Smoke test de Fase RCG-0 | ⏳ pendiente |
+| **RCG0.B7** | **Consola de plataforma completa (admin de Ikán)** | ⏳ **nuevo — después de cerrar el demo** |
 
 Decisiones confirmadas con Polo (2026-08-20):
 - **B1**: el contador de 24h basta con que sea **visible** en el panel del OC (contador
@@ -195,3 +196,38 @@ El detalle de B1–B6 vive en la nota de backlog original de esta fase (mensaje 
 Sprint RCG-0) y en `Ikan-Nota-Tecnica-Arquitectura-RCG2026-v1.0-2026-08-10.docx`. Resumen de
 cada uno arriba en la tabla de estado. Cada bloque se detalla aquí a medida que se arranca,
 para no duplicar la fuente regulatoria.
+
+
+---
+
+## RCG0.B7 · Consola de plataforma completa — NUEVO
+
+**Decisión de Polo (2026-08-29):** es un **bloque propio**, no un apéndice de las
+listas, y se toma **cuando el demo esté cerrado**. Queda anotado aquí para que
+no dependa de la memoria de nadie.
+
+Hoy la consola de Kawiil (`/admin`, despliegue aparte) tiene dos secciones:
+listas restrictivas y parámetros regulatorios. Para ser lo que Polo describe
+—«un sistema para administrar y revisar las aplicaciones de todos los usuarios
+y sistemas Ikán en uso»— le falta:
+
+- **Organizaciones.** Alta, estado, qué fracciones opera, perfil de actividad.
+  Hoy sólo se crean por SQL.
+- **Usuarios por organización.** Alta, roles, desactivación. Hoy es
+  `bootstrap_usuario_*.sql` a mano.
+- **Prospectos.** Los del formulario público caen en `prospect_intake`, que
+  además **no tiene migration** y que nadie mira. Es el embudo roto que se
+  documentó en el primer diagnóstico.
+- **Uso por organización.** Operaciones, hallazgos, verificaciones consumidas y
+  su costo. Es lo que permite cobrar y dimensionar.
+- **Salud de la plataforma.** Corridas del job, errores sin atender, últimas
+  cargas por fuente, migrations aplicadas por proyecto.
+
+**Regla que ya rige y que este bloque debe respetar:** las organizaciones
+cliente **consumen**; sólo Kawiil escribe. La RLS lo impone desde la 0012, y
+`platform_admin` (0008) es el privilegio, que cruza organizaciones y no es un
+rol de organización.
+
+**Relación con Didit (RCG0.B8, pendiente):** la consola es también donde se
+verá el consumo de verificaciones y su costo, así que conviene diseñar las dos
+cosas sabiendo que comparten pantalla.

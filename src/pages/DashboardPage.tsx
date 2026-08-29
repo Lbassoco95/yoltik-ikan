@@ -1,178 +1,272 @@
-import { Users, AlertTriangle, FileCheck, Clock, TrendingDown, TrendingUp } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { mockAlerts, mockClients, mockDailyOperations, mockRiskDistribution, recentActivity } from "@/data/mockData";
-import { cn } from "@/lib/utils";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { AlertTriangle, ArrowLeftRight, Clock, Loader2, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { metricasTablero } from "@/lib/api/dashboard";
+import { useParametros } from "@/hooks/useParametros";
+import { PARAM } from "@/lib/parametros";
+import { formatMxn, cn } from "@/lib/utils";
+import { ESTADO_LABEL } from "@/lib/hallazgos-labels";
+import type { ClasificacionRiesgo, EstadoHallazgo } from "@/types/domain";
 
-const metrics = [
-  { label: "Clientes activos", value: mockClients.filter(c => c.status === "Activo").length, change: "+12%", positive: true, icon: Users, color: "bg-accent" },
-  { label: "Alertas pendientes", value: mockAlerts.filter(a => ["Nueva", "En análisis"].includes(a.status)).length, change: "", positive: false, icon: AlertTriangle, color: "bg-destructive" },
-  { label: "Reportes enviados", value: 2, change: "este mes", positive: true, icon: FileCheck, color: "bg-success" },
-  { label: "Expedientes por vencer", value: 3, change: "próximos 30 días", positive: false, icon: Clock, color: "bg-warning" },
-  { label: "Falsos positivos", value: "18%", change: "-3%", positive: true, icon: TrendingDown, color: "bg-secondary" },
+/**
+ * Tablero del sujeto obligado.
+ *
+ * Todo lo que se muestra sale de la base. Antes era `mockData` completo
+ * —clientes, alertas, operaciones por día y distribución de riesgo, todo
+ * inventado— y era la primera pantalla que veía un notario.
+ *
+ * Regla que se sigue aquí: lo que no se puede calcular, no se muestra. No hay
+ * variaciones porcentuales porque no hay histórico contra el cual compararlas;
+ * inventar una tendencia es peor que omitirla.
+ */
+
+/** Las columnas del tablero de hallazgos. El orden es el del trabajo del OC:
+ *  lo que llega, lo que está en sus manos, y lo ya resuelto. */
+const COLUMNAS: { estados: EstadoHallazgo[]; titulo: string }[] = [
+  { estados: ["abierto"], titulo: "Nuevos" },
+  { estados: ["en_revision"], titulo: "En análisis" },
+  { estados: ["confirmado_inusual", "confirmado_preocupante"], titulo: "Confirmados" },
+  { estados: ["descartado", "falso_positivo"], titulo: "Cerrados" },
 ];
 
-const kanbanColumns = [
-  { title: "Nuevas", status: "Nueva" as const, color: "border-t-destructive" },
-  { title: "En análisis", status: "En análisis" as const, color: "border-t-warning" },
-  { title: "Escaladas", status: "Escalada" as const, color: "border-t-vulnerable" },
-  { title: "Reportadas / Descartadas", status: null, color: "border-t-success" },
-];
+/** Niveles de riesgo con su color semántico. NO es una paleta categórica: son
+ *  estados, y por eso usan los tokens de estado del sistema. Cada barra lleva
+ *  su etiqueta y su número —nunca sólo color— porque el ámbar no alcanza 3:1
+ *  contra el fondo y ámbar y verde quedan cerca para daltonismo protán. */
+const RIESGO: Record<ClasificacionRiesgo, { label: string; barra: string; texto: string }> = {
+  bajo:        { label: "Bajo",           barra: "bg-success",     texto: "text-success" },
+  medio:       { label: "Medio",          barra: "bg-warning",     texto: "text-warning" },
+  alto:        { label: "Alto",           barra: "bg-destructive", texto: "text-destructive" },
+  alto_oficio: { label: "Alto de oficio", barra: "bg-destructive", texto: "text-destructive" },
+};
 
 export default function DashboardPage() {
-  const today = new Date().toLocaleDateString("es-MX", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
   const { profile, perfilActividad } = useAuth();
   const esNotarias = perfilActividad === "notarias";
-  const nombre = profile?.nombre ?? "";
-  // Ajustes mínimos de copy por perfil (los datos siguen siendo mock por ahora).
-  const metricsView = metrics.map((m) =>
-    m.label === "Clientes activos" && esNotarias
-      ? { ...m, label: "Comparecientes activos" }
-      : m,
+  const { valor: valorParam } = useParametros();
+  const umaMxn = valorParam(PARAM.UMA_DIARIA);
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["tablero"],
+    queryFn: metricasTablero,
+  });
+
+  const maxOps = useMemo(
+    () => Math.max(1, ...(data?.operacionesPorDia ?? []).map((d) => d.total)),
+    [data],
   );
+  const totalRiesgo = useMemo(
+    () => (data?.riesgoPorNivel ?? []).reduce((n, r) => n + r.total, 0),
+    [data],
+  );
+
+  const tiles = [
+    {
+      label: esNotarias ? "Comparecientes activos" : "Clientes activos",
+      valor: data?.clientesActivos,
+      icono: Users,
+      to: "/clientes",
+    },
+    {
+      label: esNotarias ? "Actos este mes" : "Operaciones este mes",
+      valor: data?.operacionesDelMes,
+      icono: ArrowLeftRight,
+      to: "/operaciones",
+    },
+    {
+      label: "Hallazgos por atender",
+      valor: data?.hallazgosAbiertos,
+      icono: AlertTriangle,
+      to: "/alertas",
+      alerta: (data?.hallazgosAbiertos ?? 0) > 0,
+    },
+    {
+      label: "Con atención inmediata",
+      valor: data?.hallazgosUrgentes,
+      icono: Clock,
+      to: "/alertas",
+      alerta: (data?.hallazgosUrgentes ?? 0) > 0,
+      nota: "SLA interno de 24 h",
+    },
+  ];
+
+  if (isError) {
+    return (
+      <div className="glass-card p-6 text-sm text-destructive">
+        {(error as Error).message}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Deadline banner */}
-      <div className="bg-warning/10 border border-warning/30 rounded-lg px-4 py-3 flex items-center gap-3">
-        <Clock className="w-5 h-5 text-warning shrink-0" />
-        <p className="text-sm text-foreground">
-          <strong>Recordatorio:</strong> Faltan 3 días para el plazo de presentación de Avisos (día 17). Consulta obligatoria del SPPLD pendiente (día 15 del mes).
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">
+          Hola, {profile?.nombre ?? ""}
+        </h1>
+        <p className="text-sm text-muted-foreground capitalize">
+          {new Date().toLocaleDateString("es-MX", {
+            weekday: "long", day: "numeric", month: "long", year: "numeric",
+          })}
+          {umaMxn != null && (
+            <span className="normal-case"> · UMA vigente {formatMxn(umaMxn)}</span>
+          )}
         </p>
       </div>
 
-      {/* Greeting */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Hola, {nombre}</h1>
-        <p className="text-sm text-muted-foreground capitalize">{today}</p>
-      </div>
-
-      {/* Metric Cards */}
-      <div className="grid grid-cols-5 gap-4">
-        {metricsView.map((m) => (
-          <div key={m.label} className="metric-card">
-            <div className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-xl", m.color)} />
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{m.label}</p>
-                <p className="text-3xl font-bold text-foreground mt-1">{m.value}</p>
-                {m.change && (
-                  <div className="flex items-center gap-1 mt-1">
-                    {m.positive ? (
-                      <TrendingUp className="w-3 h-3 text-success" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3 text-warning" />
-                    )}
-                    <span className={cn("text-xs font-medium", m.positive ? "text-success" : "text-warning")}>{m.change}</span>
-                  </div>
-                )}
-              </div>
-              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", m.color + "/10")}>
-                <m.icon className={cn("w-5 h-5", m.color.replace("bg-", "text-"))} />
-              </div>
+      {/* Cifras. Sin variación porcentual: no hay histórico que la sostenga. */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {tiles.map((t) => (
+          <Link
+            key={t.label}
+            to={t.to}
+            className={cn(
+              "glass-card p-5 transition-colors hover:border-accent/40",
+              t.alerta && "border-destructive/30",
+            )}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {t.label}
+              </span>
+              <t.icono className={cn("w-4 h-4 shrink-0", t.alerta ? "text-destructive" : "text-muted-foreground")} />
             </div>
-          </div>
+            <span className={cn(
+              "block text-3xl font-bold tabular-nums mt-2",
+              t.alerta ? "text-destructive" : "text-foreground",
+            )}>
+              {isLoading ? "—" : (t.valor ?? 0).toLocaleString("es-MX")}
+            </span>
+            {t.nota && <span className="block text-[11px] text-muted-foreground mt-0.5">{t.nota}</span>}
+          </Link>
         ))}
       </div>
 
-      {/* Kanban + Charts */}
-      <div className="grid grid-cols-5 gap-6">
-        {/* Kanban */}
-        <div className="col-span-3 space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Tablero de Alertas</h2>
-          <div className="grid grid-cols-4 gap-3">
-            {kanbanColumns.map((col) => {
-              const alerts = col.status
-                ? mockAlerts.filter(a => a.status === col.status)
-                : mockAlerts.filter(a => ["Reportada", "Descartada"].includes(a.status));
-              return (
-                <div key={col.title} className={cn("glass-card border-t-4 p-3", col.color)}>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase">{col.title}</h3>
-                    <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded-full">{alerts.length}</span>
-                  </div>
-                  <div className="space-y-2">
-                    {alerts.map((alert) => (
-                      <div key={alert.id} className="bg-muted/50 rounded-lg p-3 cursor-pointer hover:bg-muted transition-colors">
-                        <p className="text-sm font-medium text-foreground truncate">{alert.clientName}</p>
-                        <p className="text-xs text-muted-foreground mt-1 truncate">{alert.rule}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className={cn(
-                            "status-badge text-[10px]",
-                            alert.priority === "Alta" ? "bg-destructive/10 text-destructive" :
-                            alert.priority === "Media" ? "bg-warning/10 text-warning" :
-                            "bg-muted text-muted-foreground"
-                          )}>
-                            {alert.priority}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">{alert.daysInQueue}d</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {isLoading ? (
+        <div className="glass-card p-10 flex items-center justify-center gap-2 text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" /> Cargando el tablero…
         </div>
-
-        {/* Right Panel */}
-        <div className="col-span-2 space-y-4">
-          {/* Bar Chart */}
-          <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-4">{esNotarias ? "Actos por día" : "Operaciones por día"}</h3>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={mockDailyOperations.slice(-14)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 20%, 90%)" />
-                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(215, 14%, 46%)" }} />
-                <YAxis tick={{ fontSize: 10, fill: "hsl(215, 14%, 46%)" }} />
-                <Tooltip
-                  contentStyle={{ borderRadius: "8px", border: "1px solid hsl(214,20%,90%)", fontSize: "12px" }}
-                />
-                <Bar dataKey="count" fill="hsl(155, 100%, 33%)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+      ) : (
+        <>
+          {/* Tablero de hallazgos */}
+          <div className="glass-card p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Hallazgos del Motor PLD
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {COLUMNAS.map((col) => {
+                const total = col.estados.reduce(
+                  (n, e) => n + (data?.hallazgosPorEstado[e] ?? 0), 0,
+                );
+                return (
+                  <div key={col.titulo} className="rounded-lg border border-border bg-muted/20 p-4">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {col.titulo}
+                      </span>
+                      <span className="text-xl font-bold tabular-nums">{total}</span>
+                    </div>
+                    <ul className="mt-2 space-y-0.5">
+                      {col.estados.map((e) => (
+                        <li key={e} className="text-xs text-muted-foreground flex justify-between">
+                          <span>{ESTADO_LABEL[e]}</span>
+                          <span className="tabular-nums">{data?.hallazgosPorEstado[e] ?? 0}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+            {(data?.hallazgosAbiertos ?? 0) === 0 && (
+              <p className="text-sm text-muted-foreground mt-4">
+                No hay hallazgos por atender. Si esperabas alguno, corre el motor desde Alertas.
+              </p>
+            )}
           </div>
 
-          {/* Pie Chart */}
-          <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Distribución por nivel de riesgo</h3>
-            <div className="flex items-center gap-6">
-              <ResponsiveContainer width={120} height={120}>
-                <PieChart>
-                  <Pie data={mockRiskDistribution} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} strokeWidth={2}>
-                    {mockRiskDistribution.map((entry, i) => (
-                      <Cell key={i} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-2">
-                {mockRiskDistribution.map((r) => (
-                  <div key={r.name} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: r.fill }} />
-                    <span className="text-sm text-foreground">{r.name}: <strong>{r.value}</strong></span>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {/* Actividad de 14 días. Una sola serie: el título la nombra y no
+                necesita leyenda. */}
+            <div className="glass-card p-6">
+              <h2 className="text-lg font-semibold text-foreground">
+                {esNotarias ? "Actos por día" : "Operaciones por día"}
+              </h2>
+              <p className="text-xs text-muted-foreground mb-4">Últimos 14 días</p>
+              <div className="flex items-end gap-1.5 h-40">
+                {(data?.operacionesPorDia ?? []).map((d) => (
+                  <div key={d.fecha} className="flex-1 flex flex-col items-center gap-1.5 group">
+                    <span className="text-[10px] tabular-nums text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                      {d.total}
+                    </span>
+                    <div
+                      className="w-full rounded-t bg-accent transition-colors group-hover:bg-accent/80"
+                      style={{ height: `${Math.max((d.total / maxOps) * 100, d.total > 0 ? 6 : 2)}%` }}
+                      title={`${new Date(d.fecha + "T12:00:00").toLocaleDateString("es-MX")}: ${d.total}`}
+                    />
                   </div>
                 ))}
               </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-2">
+                <span>
+                  {new Date((data?.operacionesPorDia?.[0]?.fecha ?? "") + "T12:00:00")
+                    .toLocaleDateString("es-MX", { day: "numeric", month: "short" })}
+                </span>
+                <span>hoy</span>
+              </div>
             </div>
-          </div>
 
-          {/* Recent Activity */}
-          <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Actividad reciente</h3>
-            <div className="space-y-3">
-              {recentActivity.map((a, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <span className="text-xs text-muted-foreground w-12 shrink-0 pt-0.5">{a.time}</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
-                  <p className="text-sm text-foreground">{a.text}</p>
+            {/* Riesgo por nivel. Barras etiquetadas: el color acompaña, no
+                sustituye. */}
+            <div className="glass-card p-6">
+              <h2 className="text-lg font-semibold text-foreground">
+                Nivel de riesgo de {esNotarias ? "los comparecientes" : "los clientes"}
+              </h2>
+              <p className="text-xs text-muted-foreground mb-4">
+                Según su matriz más reciente
+              </p>
+
+              {totalRiesgo === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Todavía no se ha evaluado la matriz de ningún{" "}
+                  {esNotarias ? "compareciente" : "cliente"}. Se evalúa desde su ficha.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {(data?.riesgoPorNivel ?? []).map((r) => {
+                    const cfg = RIESGO[r.nivel];
+                    const pct = Math.round((r.total / totalRiesgo) * 100);
+                    return (
+                      <div key={r.nivel}>
+                        <div className="flex items-baseline justify-between text-sm mb-1">
+                          <span className="font-medium text-foreground">{cfg.label}</span>
+                          <span className="text-muted-foreground tabular-nums">
+                            <strong className={cn("font-semibold", cfg.texto)}>{r.total}</strong>
+                            <span className="text-xs"> · {pct}%</span>
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className={cn("h-full rounded-full", cfg.barra)} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
+
+              {(data?.clientesSinEvaluar ?? 0) > 0 && (
+                <p className="text-xs text-warning mt-4 pt-3 border-t border-border">
+                  {data!.clientesSinEvaluar}{" "}
+                  {esNotarias ? "comparecientes" : "clientes"} sin matriz evaluada. La
+                  clasificación de riesgo es un requisito de la debida diligencia.
+                </p>
+              )}
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
