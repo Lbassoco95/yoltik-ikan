@@ -21,7 +21,7 @@ import {
   listarCargas, listarFuentes, listarVigentes, registrarCarga, revertirCarga,
 } from "@/lib/api/listas";
 import {
-  admiteCapturaManual, ESTADO_CARGA_LABEL, MODO_LABEL, movimientoVacio,
+  admiteCapturaManual, ESTADO_CARGA_LABEL, labelSituacion, MODO_LABEL, movimientoVacio,
   NATURALEZA_LABEL, validarMovimiento,
   type AccionMovimiento, type MovimientoCaptura,
 } from "@/lib/listas";
@@ -53,9 +53,14 @@ export default function AdminListasPage() {
     [fuentes.data],
   );
 
+  const fuenteSeleccionada = useMemo(
+    () => (fuentes.data ?? []).find((f) => f.id === fuenteId),
+    [fuentes.data, fuenteId],
+  );
+
   const errores = useMemo(
-    () => lineas.map(validarMovimiento),
-    [lineas],
+    () => lineas.map((l) => validarMovimiento(l, fuenteSeleccionada)),
+    [lineas, fuenteSeleccionada],
   );
   const hayErrores = errores.some((e) => e.length > 0);
 
@@ -165,7 +170,7 @@ export default function AdminListasPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
-                      {["Nombre", "RFC", "Fuente", "Oficio de alta", "Desde"].map((h) => (
+                      {["Nombre", "RFC", "Fuente", "Situación", "Oficio de alta", "Desde"].map((h) => (
                         <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">
                           {h}
                         </th>
@@ -187,6 +192,21 @@ export default function AdminListasPage() {
                             {r.fuente_nombre}
                           </span>
                         </td>
+                        <td className="px-4 py-3">
+                          {r.situacion ? (
+                            <span className={cn(
+                              "status-badge",
+                              r.bloqueante
+                                ? "bg-destructive/10 text-destructive"
+                                : "bg-muted text-muted-foreground",
+                            )}>
+                              {labelSituacion(r.situacion)}
+                              {!r.bloqueante && " · informativo"}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-sm font-mono">{r.alta_oficio ?? "—"}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">
                           {r.alta_fecha ? new Date(r.alta_fecha).toLocaleDateString("es-MX") : "—"}
@@ -195,7 +215,7 @@ export default function AdminListasPage() {
                     ))}
                     {(vigentes.data ?? []).length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                        <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
                           No hay personas ni entidades listadas todavía. Registra el primer oficio
                           con «Registrar movimientos».
                         </td>
@@ -409,6 +429,27 @@ export default function AdminListasPage() {
                     <Label className="text-xs">Fecha del oficio</Label>
                     <Input type="date" value={l.oficio_fecha} onChange={(e) => actualizarLinea(i, "oficio_fecha", e.target.value)} />
                   </div>
+                  {fuenteSeleccionada?.situaciones && (
+                    <div>
+                      <Label className="text-xs">Situación</Label>
+                      <Select
+                        value={l.situacion}
+                        onValueChange={(v) => actualizarLinea(i, "situacion", v)}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+                        <SelectContent>
+                          {fuenteSeleccionada.situaciones.map((sit) => (
+                            <SelectItem key={sit} value={sit}>
+                              {labelSituacion(sit)}
+                              {fuenteSeleccionada.situaciones_bloqueantes?.includes(sit)
+                                ? " · genera hallazgo"
+                                : " · sólo informativo"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div>
                     <Label className="text-xs">Motivo</Label>
                     <Input value={l.motivo} onChange={(e) => actualizarLinea(i, "motivo", e.target.value)} placeholder="Opcional" />

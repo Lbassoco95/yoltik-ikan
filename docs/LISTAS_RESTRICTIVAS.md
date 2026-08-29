@@ -112,6 +112,71 @@ que seguía bloqueado, revertirla lo devuelve a bloqueado con su oficio original
 Un registro que sólo existía por la carga revertida se elimina: nunca debió
 estar ahí. La carga queda marcada `revertida` con la constancia y el motivo.
 
+## Situaciones dentro de una lista · migration 0014
+
+El 69-B del SAT no es una lista plana. El SAT publica **listados diferenciados
+por situación jurídica**:
+
+| Situación | Qué significa | ¿Genera hallazgo? |
+|---|---|---|
+| `presunto` | El SAT presume comprobantes sin operaciones reales. **Tiene plazo legal para desvirtuar** | No |
+| `definitivo` | El SAT confirmó la inexistencia de las operaciones | **Sí** |
+| `desvirtuado` | El contribuyente demostró que sus operaciones eran reales | No |
+| `sentencia_favorable` | Un tribunal ordenó sacarlo del listado | No |
+
+**Se ingieren las cuatro, no sólo los definitivos.** Guardar sólo definitivos
+parece más limpio y es peor: los desvirtuados y las sentencias favorables son la
+*prueba* de que alguien no es EFOS. Sin ellos, el día que un definitivo gana una
+sentencia simplemente desaparece de la lista y no hay forma de explicar por qué
+antes marcaba y ahora no. Y el presunto es información legítima para debida
+diligencia reforzada, siempre que **nunca** se presente como hallazgo
+confirmado: tratarlo como EFOS es factualmente falso.
+
+Qué situación bloquea **no vive en el código**: está en
+`lista_fuente.situaciones_bloqueantes`, para que Kawiil-Cumplimiento lo cambie
+sin tocar una línea. Misma regla que los parámetros de la 0011.
+
+La vista expone `bloqueante`, que es lo que separa un hallazgo de una señal.
+
+### Cambio de situación
+
+Un alta con una situación distinta a la vigente **es** el cambio de situación:
+actualiza el registro y la bitácora conserva las dos entradas. Así el recorrido
+de un contribuyente queda completo:
+
+```
+presunto            15/abr/2026   →  informativo
+definitivo          20/jul/2026   →  genera hallazgo
+sentencia_favorable 05/oct/2026   →  informativo
+```
+
+No se agregó un valor al enum `accion_movimiento_lista` a propósito:
+`alter type ... add value` no puede usarse en la misma transacción en que se
+agrega, y eso obligaría a partir la migration en dos envíos, que es el problema
+que ya documenta la 0006. El par `(accion, situacion)` expresa lo mismo sin la
+trampa.
+
+### Validación
+
+La situación se valida contra `lista_fuente.situaciones` **en la base**, no sólo
+en el formulario: una etiqueta inventada se rechaza con un error que enumera las
+válidas. Y una fuente que no maneja situaciones (la UIF, OFAC, ONU) rechaza
+cualquiera: estar en la lista es su único estado.
+
+### Sobre la ingesta
+
+**El SAT no publica el 69-B por API.** Es descarga de CSV desde su portal de
+Datos Abiertos:
+
+```
+omawww.sat.gob.mx/tramitesyservicios/Paginas/datos_abiertos_articulo69b.htm
+```
+
+Se actualiza periódicamente, en general trimestral, aunque puede ser más seguido
+cuando hay resoluciones nuevas. Es automatizable desde una Edge Function, pero
+es descarga de archivo, no consulta. **Falta una muestra real del CSV** para
+escribir el parser sin inventar los nombres de columna.
+
 ## Naturaleza de la fuente
 
 `lista_fuente.naturaleza` distingue `sancion_aml`, `fiscal`, `jurisdiccion`,

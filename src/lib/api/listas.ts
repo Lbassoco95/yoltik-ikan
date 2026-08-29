@@ -111,6 +111,7 @@ export async function registrarCarga(input: NuevaCargaInput): Promise<{ carga_id
       oficio_numero: m.oficio_numero.trim() || null,
       oficio_fecha: m.oficio_fecha || null,
       motivo: m.motivo.trim() || null,
+      situacion: m.situacion || null,
     });
 
     if (error) {

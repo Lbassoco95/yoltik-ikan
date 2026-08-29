@@ -1,5 +1,5 @@
 -- ============================================================
--- Verificación · Migrations 0012 y 0013 + seed 11 (Listas de plataforma)
+-- Verificación · Migrations 0012, 0013 y 0014 + seeds 11 y 12 (Listas)
 -- ============================================================
 -- Pégalo en el SQL Editor después de correr apply_0012_listas.sql.
 -- Todo debe decir OK. Cualquier ❌ es un problema real.
@@ -44,9 +44,17 @@ with chequeos as (
   union all select 8, 'función revertir_carga_lista (0013)',
          coalesce((select 'OK' from pg_proc where proname='revertir_carga_lista'), '❌ FALTA — aplica la 0013')
 
-  union all select 9, '── catálogo de fuentes ──', ''
+  union all select 9, 'columna situacion (0014)',
+         coalesce((select 'OK' from information_schema.columns
+                   where table_name='lista_registro' and column_name='situacion'), '❌ falta — aplica la 0014')
 
-  union all select 9 + row_number() over (order by codigo),
+  union all select 10, 'columna bloqueante en la vista (0014)',
+         coalesce((select 'OK' from information_schema.columns
+                   where table_name='v_listas_vigentes' and column_name='bloqueante'), '❌ falta — aplica la 0014')
+
+  union all select 11, '── catálogo de fuentes ──', ''
+
+  union all select 11 + row_number() over (order by codigo),
          '   ' || codigo,
          naturaleza::text || ' · ' || modo_actualizacion::text
          || case when obligatoria then ' · obligatoria' else '' end
@@ -68,7 +76,13 @@ with chequeos as (
          (select case when count(*)=1 then 'OK · revertir_carga_lista disponible'
                       else '❌ sin salida para una captura errónea' end
           from pg_proc where proname='revertir_carga_lista')
-  union all select 105, '   el 69-B va marcado como fiscal',
+  union all select 105, '   el 69-B ingiere las 4 situaciones',
+         coalesce((select case when array_length(situaciones,1) = 4
+                                and situaciones_bloqueantes = array['definitivo']
+                               then 'OK · sólo definitivo genera hallazgo'
+                               else '❌ ' || coalesce(situaciones::text,'sin situaciones') end
+                   from lista_fuente where codigo='sat_69b'), '❌ falta el seed 12')
+  union all select 106, '   el 69-B va marcado como fiscal',
          (select case when naturaleza='fiscal'
                       then 'OK · no se confunde con una sanción AML'
                       else '❌ mal clasificado' end

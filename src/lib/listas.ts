@@ -23,6 +23,12 @@ export interface ListaFuente {
   obligatoria: boolean;
   activa: boolean;
   notas: string | null;
+  /** Situaciones posibles en esta fuente. Null = no las maneja (OFAC, ONU:
+   *  estar en la lista es el único estado). */
+  situaciones: string[] | null;
+  /** Cuáles cuentan como coincidencia que exige acción. Null = todas.
+   *  En el 69-B sólo 'definitivo': un presunto tiene plazo para desvirtuar. */
+  situaciones_bloqueantes: string[] | null;
 }
 
 export interface ListaCarga {
@@ -50,6 +56,11 @@ export interface RegistroVigente {
   alta_oficio: string | null;
   alta_fecha: string | null;
   actualizado_en: string;
+  situacion: string | null;
+  /** false = aparece en la lista pero NO exige acción (ej. un presunto del
+   *  69-B, o alguien con sentencia favorable). Es contexto para debida
+   *  diligencia reforzada, nunca un hallazgo confirmado. */
+  bloqueante: boolean;
 }
 
 /** Una línea de captura antes de mandarse a la base. */
@@ -62,6 +73,8 @@ export interface MovimientoCaptura {
   oficio_numero: string;
   oficio_fecha: string;
   motivo: string;
+  /** Sólo en fuentes que manejan situaciones. Cadena vacía = ninguna. */
+  situacion: string;
 }
 
 export function movimientoVacio(accion: AccionMovimiento = 'alta'): MovimientoCaptura {
@@ -74,6 +87,7 @@ export function movimientoVacio(accion: AccionMovimiento = 'alta'): MovimientoCa
     oficio_numero: '',
     oficio_fecha: '',
     motivo: '',
+    situacion: '',
   };
 }
 
@@ -85,7 +99,7 @@ export function movimientoVacio(accion: AccionMovimiento = 'alta'): MovimientoCa
  * baja sin oficio no es defendible ante una revisión. Mejor frenarlo en el
  * formulario que descubrirlo en una verificación.
  */
-export function validarMovimiento(m: MovimientoCaptura): string[] {
+export function validarMovimiento(m: MovimientoCaptura, fuente?: ListaFuente): string[] {
   const errores: string[] = [];
 
   if (!m.nombre.trim()) {
@@ -104,7 +118,35 @@ export function validarMovimiento(m: MovimientoCaptura): string[] {
     errores.push('La fecha del oficio está en el futuro.');
   }
 
+  // La situación se valida también en la base, pero atajarla aquí evita
+  // mandar una carga completa que va a fallar a la mitad.
+  if (fuente) {
+    const situaciones = fuente.situaciones;
+    if (m.situacion && !situaciones) {
+      errores.push(`«${fuente.nombre}» no maneja situaciones; deja ese campo vacío.`);
+    } else if (m.situacion && situaciones && !situaciones.includes(m.situacion)) {
+      errores.push(`Situación no válida. Las de esta fuente: ${situaciones.join(', ')}.`);
+    } else if (!m.situacion && situaciones) {
+      errores.push(`«${fuente.nombre}» exige una situación: ${situaciones.join(', ')}.`);
+    }
+  }
+
   return errores;
+}
+
+/** Etiquetas legibles de las situaciones del 69-B. Otras fuentes que
+ *  incorporen situaciones caen al valor crudo, que es preferible a inventar
+ *  una traducción. */
+export const SITUACION_LABEL: Record<string, string> = {
+  presunto: 'Presunto',
+  definitivo: 'Definitivo',
+  desvirtuado: 'Desvirtuado',
+  sentencia_favorable: 'Sentencia favorable',
+};
+
+export function labelSituacion(s: string | null): string {
+  if (!s) return '—';
+  return SITUACION_LABEL[s] ?? s;
 }
 
 /**
