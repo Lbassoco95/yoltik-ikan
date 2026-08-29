@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
-import type { Client, ClientRiskTemplate, NuevoClienteInput } from '@/types/domain';
+import type { Client, ClientRiskTemplate, NuevoClienteInput, SectorAV } from '@/types/domain';
 import { evaluarMatriz, respuestasCompletas, type ResultadoEvaluacion } from '@/lib/riesgo/matriz';
 
 /** Lista los clientes visibles para el usuario (RLS filtra por rol/organización). */
@@ -47,11 +47,23 @@ export async function crearCliente(input: NuevoClienteInput): Promise<Client> {
  *  Así sirve igual a Ixim Pay (XVI) que a la notaría (XII) sin condicionales
  *  por perfil.
  *  TODO[Sprint D-3]: recibir el sector cuando una organización opere más de uno. */
-export async function getPlantillaRiesgoActiva(): Promise<ClientRiskTemplate | null> {
+/**
+ * Plantilla vigente para un sector.
+ *
+ * El sector es OBLIGATORIO. Antes esta función tomaba cualquier plantilla
+ * activa de la organización, pero el índice único de la 0010 es
+ * `(organization_id, sector) where activa`: una organización puede tener una
+ * matriz activa POR SECTOR. Sin filtrar, una notaría con una plantilla XVI
+ * espuria podía evaluar a un compareciente con la matriz de un exchange.
+ */
+export async function getPlantillaRiesgoActiva(
+  sector: SectorAV,
+): Promise<ClientRiskTemplate | null> {
   const { data, error } = await supabase
     .from('client_risk_template')
     .select('*')
     .eq('activa', true)
+    .eq('sector', sector)
     .order('version', { ascending: false })
     .limit(1)
     .maybeSingle();

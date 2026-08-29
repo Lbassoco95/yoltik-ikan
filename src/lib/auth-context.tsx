@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
-import type { RolUsuario, UserProfile } from '@/types/domain';
+import type { RolUsuario, SectorAV, UserProfile } from '@/types/domain';
 import { type PerfilActividad, resolverPerfil } from './perfil-actividad';
 
 const ACTIVE_ROLE_STORAGE_KEY = 'ikan.activeRole';
@@ -71,16 +71,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Organización: razón social + perfil de actividad (para "vestir" la UI).
           let orgNombre = 'Ixim Pay';
           let perfil: PerfilActividad = 'generico';
+          let sectores: SectorAV[] = [];
           try {
             const { data: org } = await supabase
               .from('organizations')
-              .select('razon_social, perfil_actividad')
+              .select('razon_social, perfil_actividad, sectores')
               .eq('id', p.organization_id)
               .maybeSingle();
             if (org) {
-              const o = org as { razon_social: string | null; perfil_actividad: string | null };
+              const o = org as {
+                razon_social: string | null;
+                perfil_actividad: string | null;
+                sectores: SectorAV[] | null;
+              };
               orgNombre = o.razon_social ?? orgNombre;
               perfil = resolverPerfil(o.perfil_actividad);
+              sectores = o.sectores ?? [];
             }
           } catch {
             // La columna perfil_actividad puede no existir en un remoto sin migrar.
@@ -91,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: user.id,
             organization_id: p.organization_id,
             organization_name: orgNombre,
+            organization_sectores: sectores,
             email: p.email ?? user.email ?? '',
             nombre: p.nombre ?? user.email?.split('@')[0] ?? 'Usuario',
             roles: rolesFinal,

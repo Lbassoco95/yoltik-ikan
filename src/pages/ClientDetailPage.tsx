@@ -18,7 +18,7 @@ import { elementosAplicables, evaluarMatriz, respuestasCompletas } from "@/lib/r
 import { formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
-import type { TipoPersona } from "@/types/domain";
+import type { SectorAV, TipoPersona } from "@/types/domain";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS, labelTipoActo } from "@/lib/perfil-actividad";
 
@@ -33,7 +33,7 @@ const riesgoClase: Record<"bajo" | "medio" | "alto", string> = {
 export default function ClientDetailPage() {
   const { id } = useParams();
   const [respuestas, setRespuestas] = useState<Record<string, number>>({});
-  const { perfilActividad } = useAuth();
+  const { perfilActividad, profile } = useAuth();
   const queryClient = useQueryClient();
   const L = LABELS[perfilActividad];
   const esNotarias = perfilActividad === "notarias";
@@ -54,9 +54,15 @@ export default function ClientDetailPage() {
   });
   // La plantilla vigente decide si hay matriz, no el perfil de actividad: así
   // no hay que tocar este archivo cuando entren joyerías, vehículos, etc.
+  //
+  // El sector viene de la ORGANIZACIÓN. Sin él, la consulta traía cualquier
+  // plantilla activa, y como puede haber una activa por sector, un
+  // compareciente de notaría podía evaluarse con la matriz de un exchange.
+  const sectorOrg = profile?.organization_sectores?.[0] ?? null;
   const { data: plantilla } = useQuery({
-    queryKey: ["plantilla-activa"],
-    queryFn: getPlantillaRiesgoActiva,
+    queryKey: ["plantilla-activa", sectorOrg],
+    queryFn: () => getPlantillaRiesgoActiva(sectorOrg as SectorAV),
+    enabled: sectorOrg != null,
   });
 
   const guardar = useMutation({

@@ -55,6 +55,10 @@ export interface UserProfile {
   id: string;
   organization_id: string;
   organization_name?: string;
+  /** Fracciones que opera la organización. Decide, entre otras cosas, qué
+   *  matriz de riesgo se muestra: una notaría (XII) no ve la de un exchange
+   *  (XVI). Vacío si el remoto todavía no tiene la columna. */
+  organization_sectores?: SectorAV[];
   email: string;
   nombre: string;
   roles: RolUsuario[];
