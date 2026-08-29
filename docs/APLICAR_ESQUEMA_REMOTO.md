@@ -4,6 +4,13 @@
 > Supabase remoto (`cibpguwwggwzdhhpdomz`) tenga el esquema aplicado.** Ya nos pasó dos veces.
 > Aquí queda cómo aplicarlo y cómo verificar que siga aplicado.
 
+## Antes que nada: el SQL Editor sólo muestra la ÚLTIMA consulta
+
+Nos costó tres vueltas. Si pegas un script con varios `SELECT`, el editor del dashboard
+enseña **únicamente el resultado del último** y parece que lo demás no corrió. Por eso todos
+los scripts de diagnóstico de `supabase/manual/` devuelven **una sola tabla**, armada en una
+tabla temporal. Si escribes uno nuevo, respeta esa regla.
+
 ## 0. Lo primero: ¿qué falta correr?
 
 Desde la migration 0011 en adelante hay un diagnóstico que lo responde solo. Pega

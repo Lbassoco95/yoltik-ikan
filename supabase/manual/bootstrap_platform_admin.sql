@@ -16,30 +16,18 @@
 --     · Sólo otorga cuando la tabla está vacía, o cuando pones `true` en
 --       `v_forzar` para agregar a alguien más.
 --
---   La versión anterior traía un correo fijo y reventaba si ese correo no
---   existía, aunque ya hubiera un administrador dado de alta. Un script de
---   diagnóstico no debería fallar por lo que ya está bien.
+--   Nunca lanza excepción: si el correo no existe o ya hay administradores,
+--   lo dice en un aviso y devuelve la tabla igual. Un script de diagnóstico no
+--   debería fallar por lo que ya está bien.
 --
 -- Para revocar:
 --   delete from platform_admin where user_id = (
 --     select id from auth.users where lower(email) = lower('correo@kawiil.mx'));
 -- =====================================================================
 
--- ---------------------------------------------------------------------
--- 1. Quién puede entrar hoy, y qué correos existen
--- ---------------------------------------------------------------------
-select u.email,
-       u.created_at,
-       case when pa.user_id is null then 'no' else 'SÍ — entra a la consola' end
-         as admin_de_plataforma,
-       pa.nombre
-from auth.users u
-left join platform_admin pa on pa.user_id = u.id
-order by (pa.user_id is null), u.created_at;
+-- El SQL Editor de Supabase muestra SÓLO el resultado de la última consulta,
+-- así que todo el diagnóstico sale en una sola tabla al final.
 
--- ---------------------------------------------------------------------
--- 2. Otorgar el privilegio
--- ---------------------------------------------------------------------
 do $$
 declare
   -- Correo de quien va a administrar la plataforma. Tiene que existir ya en
@@ -55,16 +43,14 @@ begin
 
   if v_ya > 0 and not v_forzar then
     raise notice 'Ya hay % administrador(es) de plataforma. No se tocó nada.', v_ya;
-    raise notice 'Para agregar a alguien más, pon v_forzar := true y su correo en v_email.';
     return;
   end if;
 
   select id into v_uid from auth.users where lower(email) = lower(v_email);
 
   if v_uid is null then
-    raise exception
-      'El correo % no existe en auth.users. Mira la lista de arriba y usa uno de ésos, o créalo en Authentication → Users con "Auto Confirm User".',
-      v_email;
+    raise notice 'El correo % no existe en auth.users. Mira la tabla de abajo y usa uno de ésos, o créalo en Authentication → Users con "Auto Confirm User".', v_email;
+    return;
   end if;
 
   insert into platform_admin (user_id, nombre, otorgado_por)
@@ -74,13 +60,14 @@ begin
   raise notice 'Privilegio otorgado a %.', v_email;
 end $$;
 
--- ---------------------------------------------------------------------
--- 3. Estado final
--- ---------------------------------------------------------------------
-select pa.nombre,
-       u.email,
+-- Resultado único: quién existe y quién entra a la consola.
+select u.email,
+       case when pa.user_id is null then 'no'
+            else 'SÍ — entra con este correo y su contraseña de Supabase' end
+         as admin_de_plataforma,
+       pa.nombre,
        pa.otorgado_en,
-       'Entra a la consola con este correo y su contraseña de Supabase' as nota
-from platform_admin pa
-join auth.users u on u.id = pa.user_id
-order by pa.otorgado_en;
+       u.created_at as usuario_creado
+from auth.users u
+left join platform_admin pa on pa.user_id = u.id
+order by (pa.user_id is null), u.created_at;
