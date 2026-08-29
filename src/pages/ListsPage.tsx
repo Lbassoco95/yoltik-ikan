@@ -1,51 +1,213 @@
-import { Shield, Search, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, Loader2, Search, Shield, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { estadoDeListas, listarVigentes } from "@/lib/api/listas";
+import { labelSituacion, NATURALEZA_LABEL } from "@/lib/listas";
 import { cn } from "@/lib/utils";
 
-const lists = [
-  { name: "OFAC — SDN List", source: "EE.UU. — Dept. del Tesoro", lastUpdate: "2026-03-28", entries: "12,456", status: "Actualizada" },
-  { name: "ONU — Lista consolidada", source: "Consejo de Seguridad ONU", lastUpdate: "2026-03-27", entries: "1,823", status: "Actualizada" },
-  { name: "UIF — Lista de personas bloqueadas", source: "Unidad de Inteligencia Financiera", lastUpdate: "2026-03-25", entries: "342", status: "Actualizada" },
-  { name: "PEPs — Personas Políticamente Expuestas", source: "Catálogo nacional", lastUpdate: "2026-03-20", entries: "8,901", status: "Actualizada" },
-  { name: "UE — Lista de sanciones", source: "Unión Europea", lastUpdate: "2026-03-26", entries: "3,567", status: "Actualizada" },
-  { name: "GAFI — Países de alto riesgo", source: "Grupo de Acción Financiera", lastUpdate: "2026-03-15", entries: "24", status: "Actualizada" },
-];
-
+/**
+ * Listas restrictivas, vista del sujeto obligado.
+ *
+ * SÓLO LECTURA por diseño: las listas las mantiene Kawiil desde su consola de
+ * plataforma, y la RLS lo impone —esta pantalla no tiene botón de actualizar
+ * porque la organización no puede actualizarlas aunque quisiera.
+ *
+ * Antes esta pantalla mostraba seis listas con conteos y fechas inventados,
+ * incluida «UIF — 342 entradas — Actualizada». Afirmaba una capacidad que no
+ * existía, frente a un cliente que compra cumplimiento. Ahora muestra lo que
+ * hay, y cuando no hay nada lo dice.
+ */
 export default function ListsPage() {
+  const [busqueda, setBusqueda] = useState("");
+
+  const estado = useQuery({ queryKey: ["listas", "estado"], queryFn: estadoDeListas });
+  const resultados = useQuery({
+    queryKey: ["listas", "busqueda", busqueda],
+    queryFn: () => listarVigentes(undefined, busqueda),
+    enabled: busqueda.trim().length >= 3,
+  });
+
+  const sinCargar = (estado.data ?? []).filter((l) => l.actualizada_al == null);
+  const totalVigentes = (estado.data ?? []).reduce((n, l) => n + l.registros_vigentes, 0);
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Listas Restrictivas</h1>
-        <Button variant="outline" className="gap-2"><RefreshCw className="w-4 h-4" /> Actualizar todas</Button>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Listas restrictivas</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Las mantiene Kawiil y se actualizan para todas las organizaciones a la vez. Tu
+          organización las consulta; no las edita.
+        </p>
       </div>
 
+      {/* Buscador */}
       <div className="glass-card p-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar persona o entidad en listas…" className="pl-10" />
+          <Input
+            placeholder="Buscar una persona o empresa en todas las listas…"
+            className="pl-10"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
         </div>
+
+        {busqueda.trim().length > 0 && busqueda.trim().length < 3 && (
+          <p className="text-xs text-muted-foreground mt-2">Escribe al menos tres letras.</p>
+        )}
+
+        {busqueda.trim().length >= 3 && (
+          <div className="mt-4">
+            {resultados.isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Buscando…
+              </div>
+            ) : resultados.isError ? (
+              <p className="text-sm text-destructive">{(resultados.error as Error).message}</p>
+            ) : (resultados.data ?? []).length === 0 ? (
+              <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
+                <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
+                <span>
+                  Sin coincidencias para «{busqueda.trim()}» en las listas cargadas.
+                  {totalVigentes === 0 && (
+                    <strong className="block mt-1 text-warning">
+                      Cuidado: todavía no hay ninguna lista cargada, así que este resultado no
+                      significa que la persona esté limpia.
+                    </strong>
+                  )}
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(resultados.data ?? []).map((r) => (
+                  <div
+                    key={r.registro_id}
+                    className={cn(
+                      "flex items-start gap-3 rounded-lg border px-4 py-3",
+                      r.bloqueante
+                        ? "border-destructive/40 bg-destructive/10"
+                        : "border-warning/40 bg-warning/10",
+                    )}
+                  >
+                    <AlertTriangle
+                      className={cn("w-4 h-4 mt-0.5 shrink-0", r.bloqueante ? "text-destructive" : "text-warning")}
+                    />
+                    <div className="text-sm flex-1">
+                      <p className="font-semibold">{r.nombre}</p>
+                      <p className="text-muted-foreground text-xs mt-0.5">
+                        {r.fuente_nombre}
+                        {r.rfc && <span className="font-mono"> · {r.rfc}</span>}
+                        {r.situacion && <> · {labelSituacion(r.situacion)}</>}
+                        {r.alta_fecha && (
+                          <> · desde el {new Date(r.alta_fecha).toLocaleDateString("es-MX")}</>
+                        )}
+                      </p>
+                      <p className={cn("text-xs mt-1 font-medium", r.bloqueante ? "text-destructive" : "text-warning")}>
+                        {r.bloqueante
+                          ? "Coincidencia que exige acción antes de continuar con la operación."
+                          : "Señal informativa: no confirma nada por sí sola, pero justifica debida diligencia reforzada."}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        {lists.map(list => (
-          <div key={list.name} className="glass-card p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Shield className="w-5 h-5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-foreground">{list.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">{list.source}</p>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">{list.entries} registros</span>
-              <span className={cn("status-badge bg-success/10 text-success")}>{list.status}</span>
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-2">Última actualización: {list.lastUpdate}</p>
+      {/* Aviso cuando faltan listas por cargar */}
+      {sinCargar.length > 0 && !estado.isLoading && (
+        <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+          <span>
+            <strong>
+              {sinCargar.length === 1
+                ? "Una lista todavía no tiene datos cargados"
+                : `${sinCargar.length} listas todavía no tienen datos cargados`}
+              :
+            </strong>{" "}
+            {sinCargar.map((l) => l.nombre).join(", ")}. Un barrido sin coincidencias contra una
+            lista vacía no acredita nada.
+          </span>
+        </div>
+      )}
+
+      {/* Estado por lista */}
+      <div className="grid gap-3 md:grid-cols-2">
+        {estado.isLoading ? (
+          <div className="glass-card p-8 flex items-center justify-center gap-2 text-muted-foreground md:col-span-2">
+            <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
           </div>
-        ))}
+        ) : estado.isError ? (
+          <p className="glass-card p-6 text-sm text-destructive md:col-span-2">
+            {(estado.error as Error).message}
+          </p>
+        ) : (
+          (estado.data ?? []).map((l) => (
+            <div key={l.codigo} className="glass-card p-5 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <Shield
+                    className={cn(
+                      "w-5 h-5 mt-0.5 shrink-0",
+                      l.registros_vigentes > 0 ? "text-accent" : "text-muted-foreground",
+                    )}
+                  />
+                  <div>
+                    <h3 className="font-semibold text-foreground leading-tight">{l.nombre}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{l.autoridad}</p>
+                  </div>
+                </div>
+                {l.obligatoria && (
+                  <span className="status-badge bg-accent/10 text-accent text-[10px] shrink-0">
+                    Obligatoria
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <span
+                  className={cn(
+                    "status-badge text-[10px]",
+                    l.naturaleza === "fiscal"
+                      ? "bg-vulnerable/10 text-vulnerable"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {NATURALEZA_LABEL[l.naturaleza]}
+                </span>
+                {l.actualizada_al ? (
+                  <span className="status-badge bg-success/10 text-success text-[10px]">
+                    Actualizada al {new Date(l.actualizada_al + "T12:00:00").toLocaleDateString("es-MX")}
+                  </span>
+                ) : (
+                  <span className="status-badge bg-warning/10 text-warning text-[10px]">
+                    Sin datos cargados
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-baseline gap-4 pt-1 border-t border-border">
+                <div>
+                  <span className="block text-xl font-bold tabular-nums text-foreground">
+                    {l.registros_vigentes.toLocaleString("es-MX")}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">registros vigentes</span>
+                </div>
+                {l.registros_bloqueantes !== l.registros_vigentes && (
+                  <div>
+                    <span className="block text-xl font-bold tabular-nums text-destructive">
+                      {l.registros_bloqueantes.toLocaleString("es-MX")}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">exigen acción</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

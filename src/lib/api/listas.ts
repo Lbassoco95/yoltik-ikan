@@ -3,7 +3,9 @@ import {
   normalizarRfc,
   type ListaCarga,
   type ListaFuente,
+  type ModoActualizacion,
   type MovimientoCaptura,
+  type NaturalezaLista,
   type RegistroVigente,
 } from '@/lib/listas';
 
@@ -392,4 +394,38 @@ export async function descartarCargaBorrador(cargaId: string, motivo: string): P
     p_motivo: motivo,
   });
   if (error) throw new Error(`No se pudo descartar la carga: ${error.message}`);
+}
+
+// =====================================================================
+// Estado de listas para la organización cliente (migration 0017)
+// =====================================================================
+
+export interface EstadoLista {
+  codigo: string;
+  nombre: string;
+  autoridad: string;
+  naturaleza: NaturalezaLista;
+  modo_actualizacion: ModoActualizacion;
+  url_oficial: string | null;
+  obligatoria: boolean;
+  situaciones: string[] | null;
+  situaciones_bloqueantes: string[] | null;
+  /** Fecha de la FUENTE, no de cuándo Kawiil la cargó. Null = nunca se ha
+   *  aplicado una carga, y la pantalla debe decirlo así de claro. */
+  actualizada_al: string | null;
+  registros_vigentes: number;
+  /** Los que exigen acción. Un presunto del 69-B cuenta en el total pero no aquí. */
+  registros_bloqueantes: number;
+}
+
+/** Lo que ve el sujeto obligado: qué listas se consultan y desde cuándo.
+ *  Sólo lectura — un cliente no actualiza listas, las consume. */
+export async function estadoDeListas(): Promise<EstadoLista[]> {
+  const { data, error } = await supabase
+    .from('v_listas_estado')
+    .select('*')
+    .order('obligatoria', { ascending: false })
+    .order('nombre');
+  if (error) throw new Error(`No se pudo leer el estado de las listas: ${error.message}`);
+  return (data ?? []) as unknown as EstadoLista[];
 }
