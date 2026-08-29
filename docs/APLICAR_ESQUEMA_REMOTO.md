@@ -4,7 +4,19 @@
 > Supabase remoto (`cibpguwwggwzdhhpdomz`) tenga el esquema aplicado.** Ya nos pasó dos veces.
 > Aquí queda cómo aplicarlo y cómo verificar que siga aplicado.
 
-## 1. Verificar si el remoto ya tiene el esquema
+## 0. Lo primero: ¿qué falta correr?
+
+Desde la migration 0011 en adelante hay un diagnóstico que lo responde solo. Pega
+`supabase/manual/00_estado_migraciones.sql` en el SQL Editor: **no escribe nada**, sólo
+mira el esquema y devuelve dos tablas —una con cada migration marcada `ya está` o `FALTA`
+con el bundle que hay que correr, y otra con lo que puede estar a medias aunque la tabla
+exista (catálogos sin valores, códigos postales sin cargar, funciones `SECURITY DEFINER`
+abiertas).
+
+Corre los pendientes en el orden de la columna `orden`. Todos los bundles son idempotentes:
+si uno ya estaba, volver a correrlo no hace daño.
+
+## 1. Verificar si el remoto ya tiene el esquema (0001–0010)
 
 En el SQL Editor del dashboard:
 
@@ -173,3 +185,31 @@ select
 
 Si `uma_vigente` sale `null`, **el Motor PLD devuelve 422 y no corre**: es a propósito, no un
 error. Calcular umbrales sin UMA vigente produciría hallazgos falsos.
+
+
+---
+
+## Por qué esto no lo corre Claude directamente
+
+La pregunta salió en la sesión del 29 de agosto de 2026 y la respuesta no es de credenciales:
+**el entorno remoto donde corre Claude Code bloquea `supabase.com` y `*.supabase.co` en su
+política de red** (el proxy responde 403 al CONNECT), y además sólo deja salir HTTP(S), no
+TCP crudo, así que `psql` al puerto 5432 tampoco funcionaría aunque el dominio estuviera
+permitido.
+
+Un token de acceso de Supabase, por sí solo, **no arregla nada**. Para que Claude pudiera
+aplicar migrations sin intermediario harían falta las dos cosas:
+
+1. Permitir `api.supabase.com` en la política de red del entorno de Claude Code
+   (se elige al crear el entorno; ver
+   https://code.claude.com/docs/en/claude-code-on-the-web).
+2. Un **personal access token** de Supabase, para usar
+   `POST https://api.supabase.com/v1/projects/{ref}/database/query`, que sí ejecuta SQL
+   sobre HTTPS.
+
+Sobre el token, dos cosas que conviene saber antes de crear uno: los de Supabase son de
+**cuenta**, no de proyecto —quien lo tenga alcanza todos los proyectos de la organización—,
+y se revocan en https://supabase.com/dashboard/account/tokens cuando ya no haga falta.
+
+Mientras eso no exista, el camino es el de arriba: el diagnóstico dice qué falta y los
+bundles se pegan en el SQL Editor. Con el diagnóstico son un par de minutos, no una tarde.

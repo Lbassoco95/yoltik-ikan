@@ -167,6 +167,18 @@ que da peso ante la autoridad mexicana y necesita proveedor. B8.4 es presentaci�
 2. **NOM-151: después del demo.** B8.1 y B8.2 no dependen de ningún proveedor y
    ya entregan detección y verificación por terceros. La constancia se suma
    cuando haya cliente firmado.
-3. **Cadencia:** queda por definir en B8.2. Propuesta: anclaje diario, más uno
-   forzado al cerrar cada periodo de aviso, para que el aviso enviado quede
-   anclado sin esperar al día siguiente. **PENDIENTE_CONFIRMAR.**
+3. **Cadencia: diaria, más un anclaje forzado al cerrar cada periodo de aviso.**
+   El diario acota a 24 horas la ventana en que una manipulación no tendría
+   ancla que la contradiga. El forzado existe porque el aviso es el documento
+   que se defiende ante la autoridad: dejarlo sin anclar hasta el día siguiente
+   sería justo el momento en que más falta hace.
+
+### Nota de entorno (2026-08-29)
+
+La sesión de Claude Code corre detrás de un proxy que **bloquea los calendarios
+de OpenTimestamps** igual que bloquea Supabase. No es un problema: el anclaje no
+debe correr desde una sesión de desarrollo, sino desde una Edge Function
+programada, que tiene su propia salida a internet. B8.2 se construye con la
+llamada de red aislada tras una interfaz, para poder probar toda la lógica
+—construcción del árbol, selección de eventos, guardado del `.ots`— sin
+depender de que el calendario responda, y se prueba en vivo al desplegarla.

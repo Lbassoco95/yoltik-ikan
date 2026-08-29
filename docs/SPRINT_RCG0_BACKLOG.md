@@ -316,4 +316,14 @@ Detalle: `docs/BITACORA_ENCADENADA.md`.
 
 Raíz Merkle diaria sobre los eventos nuevos, sellada en Bitcoin. Sin datos
 personales: sólo la raíz. Paquete de verificación con el `.ots`.
-Cadencia **PENDIENTE_CONFIRMAR**.
+
+**Cadencia decidida (2026-08-29):** diaria, más un anclaje **forzado al cerrar
+cada periodo de aviso**. El diario acota a 24 horas la ventana sin ancla; el
+forzado existe porque el aviso es el documento que se defiende ante la
+autoridad, y dejarlo sin anclar hasta el día siguiente sería justo el momento en
+que más falta hace.
+
+El anclaje corre en una Edge Function programada, no en la sesión de desarrollo:
+el proxy del entorno de Claude Code bloquea los calendarios de OpenTimestamps.
+La llamada de red va aislada tras una interfaz para poder probar toda la lógica
+sin depender del calendario.
