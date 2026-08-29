@@ -194,6 +194,48 @@ Por eso esta capa no es opcional ni sustituible: es el núcleo del cumplimiento
 mexicano. Al proveedor se le compra identidad y listas globales; **lo mexicano
 lo sostiene Kawiil**.
 
+## Quién puede actualizar una lista
+
+**Sólo Kawiil.** Las organizaciones cliente **consumen** las listas; nunca las
+escriben. No es una regla de la interfaz: está en la RLS.
+
+| Tabla | Organización cliente | Kawiil |
+|---|---|---|
+| `lista_carga`, `lista_movimiento`, `lista_carga_fila` | **ni las ve** | todo |
+| `lista_fuente`, `lista_registro` | **sólo lectura** | escritura |
+
+Un cliente que llamara directo a la API tampoco podría: la base se lo niega.
+
+## El job propone, una persona dispone · migration 0016
+
+Un job que descarga y aplica sin que nadie mire es un riesgo mal entendido como
+automatización. Si el SAT cambia una columna, o publica un archivo truncado, la
+lista queda corrupta y nadie se entera **hasta que un notario firma una
+escritura con un barrido equivocado**.
+
+```
+1. El job descarga, valida y deja una carga en 'borrador',
+   con sus filas en lista_carga_fila.   →  NO toca lista_registro
+2. Si algo falla, queda en lista_job_ejecucion con su error
+   y aparece como aviso en la consola.  →  nunca falla en silencio
+3. Un responsable ve la diferencia: cuántos entran, cuántos
+   cambian de situación, cuántos saldrían.
+4. Sólo al aprobar se promueven las filas a movimientos y
+   el estado vigente cambia.
+```
+
+`diferencia_carga_borrador()` calcula la diferencia **al vuelo**, no la guarda:
+el estado puede haber cambiado desde que el job corrió, y lo que importa es la
+diferencia de hoy.
+
+`promover_carga_borrador()` es el **único camino** por el que un job llega a
+afectar lo que ven las organizaciones. Registra quién aprobó y cuándo.
+`descartar_carga_borrador()` exige un motivo, que queda como constancia.
+
+La **carga manual** desde la consola no pasa por aquí: ahí la persona ya está
+viendo la vista previa y su clic *es* la aprobación. Pedirle que apruebe dos
+veces sería ceremonia, no control.
+
 ## Consola de administración
 
 Ruta `/admin/listas`, protegida por `requirePlatformAdmin`, que resuelve contra

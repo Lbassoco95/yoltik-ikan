@@ -27,6 +27,7 @@ import {
 } from "@/lib/listas";
 import { cn } from "@/lib/utils";
 import { CargarArchivoListaDialog } from "@/components/admin/CargarArchivoListaDialog";
+import { PendientesDelJob } from "@/components/admin/PendientesDelJob";
 
 export default function AdminListasPage() {
   const queryClient = useQueryClient();
@@ -121,8 +122,9 @@ export default function AdminListasPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Listas restrictivas</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Catálogo de plataforma. Lo que se registre aquí queda vigente para todas las
-            organizaciones al instante, sin importar su actividad: nadie guarda copias.
+            Catálogo de plataforma. Sólo Kawiil actualiza estas listas; las organizaciones
+            cliente las consumen y no pueden escribirlas. Lo que se apruebe aquí queda vigente
+            para todas al instante, sin importar su actividad.
           </p>
         </div>
         <div className="flex gap-2">
@@ -134,6 +136,10 @@ export default function AdminListasPage() {
           </Button>
         </div>
       </div>
+
+      {/* Lo que espera decisión va arriba de todo: una lista desactualizada
+          no avisa por su cuenta. */}
+      <PendientesDelJob />
 
       <Tabs defaultValue="vigentes" className="space-y-4">
         <TabsList className="bg-muted/50">

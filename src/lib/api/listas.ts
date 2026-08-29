@@ -303,3 +303,93 @@ export async function registrarCargaArchivo(
     archivo_hash: hash,
   };
 }
+
+// =====================================================================
+// Job de listas: propuestas y avisos (migration 0016)
+// =====================================================================
+
+export interface JobEjecucion {
+  id: string;
+  fuente_id: string;
+  iniciado_en: string;
+  terminado_en: string | null;
+  resultado: 'exito' | 'sin_cambios' | 'error' | null;
+  carga_id: string | null;
+  registros_leidos: number | null;
+  filas_descartadas: number | null;
+  error_mensaje: string | null;
+  detalle: Record<string, unknown>;
+  atendido_en: string | null;
+  fuente_nombre?: string;
+}
+
+export interface DiferenciaCarga {
+  concepto: string;
+  cantidad: number;
+  nota: string;
+}
+
+/** Errores del job que nadie ha revisado. Es lo que la consola muestra como
+ *  aviso: un job que falla en silencio es peor que no tener job. */
+export async function listarErroresJobPendientes(): Promise<JobEjecucion[]> {
+  const { data, error } = await supabase
+    .from('lista_job_ejecucion')
+    .select('*, lista_fuente(nombre)')
+    .eq('resultado', 'error')
+    .is('atendido_en', null)
+    .order('iniciado_en', { ascending: false });
+  if (error) throw new Error(`No se pudieron leer los avisos del job: ${error.message}`);
+  return (data ?? []).map((j: Record<string, unknown>) => ({
+    ...(j as unknown as JobEjecucion),
+    fuente_nombre: (j.lista_fuente as { nombre?: string } | null)?.nombre,
+  }));
+}
+
+export async function marcarErrorAtendido(id: string): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from('lista_job_ejecucion')
+    .update({ atendido_en: new Date().toISOString(), atendido_por: userData?.user?.id ?? null })
+    .eq('id', id);
+  if (error) throw new Error(`No se pudo marcar el aviso: ${error.message}`);
+}
+
+/** Cargas que el job dejó propuestas y esperan que alguien decida. */
+export async function listarCargasPendientes(): Promise<ListaCarga[]> {
+  const { data, error } = await supabase
+    .from('lista_carga')
+    .select('*, lista_fuente(codigo, nombre)')
+    .eq('estado', 'borrador')
+    .order('cargada_en', { ascending: false });
+  if (error) throw new Error(`No se pudieron leer las cargas pendientes: ${error.message}`);
+  return (data ?? []).map((c: Record<string, unknown>) => ({
+    ...(c as unknown as ListaCarga),
+    fuente_codigo: (c.lista_fuente as { codigo?: string } | null)?.codigo,
+  }));
+}
+
+/** La diferencia propuesta, calculada al vuelo contra el estado vigente. */
+export async function diferenciaCargaBorrador(cargaId: string): Promise<DiferenciaCarga[]> {
+  const { data, error } = await supabase.rpc('diferencia_carga_borrador', { p_carga_id: cargaId });
+  if (error) throw new Error(`No se pudo calcular la diferencia: ${error.message}`);
+  return (data ?? []) as DiferenciaCarga[];
+}
+
+/** Acepta la propuesta. Es el único camino por el que un job llega a afectar
+ *  el estado vigente que consumen las organizaciones. */
+export async function aprobarCargaBorrador(
+  cargaId: string,
+): Promise<{ promovidos: number; desactivados: number }> {
+  const { data, error } = await supabase.rpc('promover_carga_borrador', { p_carga_id: cargaId });
+  if (error) throw new Error(`No se pudo aprobar la carga: ${error.message}`);
+  const fila = Array.isArray(data) ? data[0] : data;
+  return (fila ?? { promovidos: 0, desactivados: 0 }) as { promovidos: number; desactivados: number };
+}
+
+export async function descartarCargaBorrador(cargaId: string, motivo: string): Promise<void> {
+  const { error } = await supabase.rpc('descartar_carga_borrador', {
+    p_carga_id: cargaId,
+    p_motivo: motivo,
+  });
+  if (error) throw new Error(`No se pudo descartar la carga: ${error.message}`);
+}
