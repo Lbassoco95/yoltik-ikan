@@ -219,6 +219,20 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
   }, [hallazgo]);
 
   const esMock = hallazgo?.regla_payload?.fuente_mock === true;
+
+  /** La trayectoria del cliente al momento de evaluar, que el motor guarda
+   *  dentro del hallazgo. Es lo que distingue «cambió su patrón» de «es su
+   *  primera operación», y sin ella el OC no puede juzgar el hallazgo. */
+  const contexto = hallazgo?.regla_payload?.contexto_cliente as
+    | {
+        operaciones_previas?: number;
+        dias_de_historial?: number;
+        meses_con_actividad?: number;
+        perfil_declarado?: boolean;
+        matriz_evaluada?: boolean;
+        sin_linea_base?: boolean;
+      }
+    | undefined;
   const urgencia = urgenciaValida(hallazgo?.clasificacion_urgencia);
   const tipoActo = hallazgo?.operation?.contraparte?.tipo_acto;
 
@@ -268,6 +282,68 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
 
           {/* ---------------------------- Detalle ---------------------------- */}
           <TabsContent value="detalle" className="space-y-4 pt-4">
+            {contexto && (
+              <div
+                className={cn(
+                  'rounded-lg border px-4 py-3 text-sm',
+                  contexto.sin_linea_base
+                    ? 'border-warning/40 bg-warning/10'
+                    : 'border-border bg-muted/30',
+                )}
+              >
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  Trayectoria del cliente al detectarse
+                </p>
+
+                {contexto.sin_linea_base ? (
+                  <p className="mb-2">
+                    <strong>Es de sus primeras operaciones.</strong> No hay historial contra el
+                    cual comparar su comportamiento, así que este hallazgo viene de una regla de
+                    umbral, no de un patrón que haya cambiado.
+                  </p>
+                ) : (
+                  <p className="mb-2 text-muted-foreground">
+                    {contexto.operaciones_previas} operaciones previas ·{' '}
+                    {contexto.meses_con_actividad} meses con actividad ·{' '}
+                    {contexto.dias_de_historial} días como cliente
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <span
+                    className={cn(
+                      'status-badge text-[10px]',
+                      contexto.matriz_evaluada
+                        ? 'bg-success/10 text-success'
+                        : 'bg-warning/10 text-warning',
+                    )}
+                  >
+                    {contexto.matriz_evaluada
+                      ? 'Matriz de riesgo evaluada'
+                      : 'Sin matriz de riesgo evaluada'}
+                  </span>
+                  <span
+                    className={cn(
+                      'status-badge text-[10px]',
+                      contexto.perfil_declarado
+                        ? 'bg-muted text-muted-foreground'
+                        : 'bg-warning/10 text-warning',
+                    )}
+                  >
+                    {contexto.perfil_declarado
+                      ? 'Perfil transaccional declarado'
+                      : 'Sin perfil transaccional declarado'}
+                  </span>
+                </div>
+
+                {!contexto.matriz_evaluada && (
+                  <p className="text-xs text-warning mt-2">
+                    La debida diligencia está incompleta: evalúa su matriz antes de resolver.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <Campo label="Folio">
                 <span className="font-mono">{folio(hallazgo)}</span>

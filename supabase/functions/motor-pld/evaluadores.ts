@@ -63,7 +63,17 @@ export type ReglaDsl =
   | {
       tipo: 'desviacion';
       factor: number;
+      /** Contra qué se compara:
+       *    'perfil_declarado'            el que el cliente declaró al alta.
+       *    'promedio_historico_mensual'  el suyo propio, calculado.
+       *  Cualquier otro valor cae al perfil declarado, que es el
+       *  comportamiento conservador. */
       comparar: string;
+      /** Madurez exigida antes de que la regla signifique algo. Sin esto, una
+       *  regla de comportamiento dispara en la primera operación de cualquier
+       *  cliente, cuando todavía no hay patrón del cual desviarse. */
+      min_operaciones?: number;
+      min_meses_historial?: number;
     };
 
 /** SLA operativo interno de la bandeja del OC (columna
@@ -77,7 +87,8 @@ const METRICAS_MONTO = ['suma_monto_uma', 'suma_monto_mxn', 'monto_uma', 'monto_
  *  lo generó. Espejo exacto de `public.urgencia_de_regla(jsonb)` en la
  *  migration 0007 — si cambia una, cambia la otra.
  *
- *  · `desviacion` compara contra el perfil transaccional declarado: umbral
+ *  · `desviacion` compara contra una referencia monetaria (perfil declarado
+ *    o promedio histórico del propio cliente): umbral
  *    monetario → `por_umbral`.
  *  · Una `condicion` sobre una métrica de monto es un umbral monetario
  *    → `por_umbral` (caso XII-01, transmisión de inmueble ≥ 16,000 UMA).
@@ -129,6 +140,71 @@ export interface MotorContext {
   paisPorFuente: Record<string, Set<string>>;
   /** Perfil transaccional mensual declarado por cliente, en UMA (para `desviacion`). */
   perfilMensualUmaPorCliente: Record<string, number>;
+  /** Trayectoria de cada cliente ANTES de las operaciones que se evalúan.
+   *  Sin esto el motor no puede distinguir un patrón anómalo de una primera
+   *  operación, que es la diferencia entre un hallazgo y un falso positivo. */
+  historialPorCliente: Record<string, HistorialCliente>;
+}
+
+/**
+ * Lo que el motor sabe del cliente antes de juzgar sus operaciones.
+ *
+ * Existe porque una regla de comportamiento no significa nada sin una línea
+ * base: si un cliente lleva tres operaciones en su vida, «se desvió de su
+ * patrón» es una afirmación sin sustento. Con esto, una regla puede exigir
+ * madurez antes de disparar, y todo hallazgo lleva el contexto para que el OC
+ * sepa si nació de una trayectoria o de un primer día.
+ */
+export interface HistorialCliente {
+  /** Operaciones registradas antes de la ventana que se evalúa. */
+  operacionesPrevias: number;
+  /** Días desde la primera operación. 0 si es cliente nuevo. */
+  diasDeHistorial: number;
+  /** Meses con al menos una operación. Es la medida honesta de historial:
+   *  cincuenta operaciones en una semana no son cinco meses de patrón. */
+  mesesConActividad: number;
+  /** Si declaró un perfil transaccional al darse de alta. */
+  tienePerfilDeclarado: boolean;
+  /** Si tiene la matriz de riesgo evaluada. Un hallazgo sobre un cliente sin
+   *  clasificar le dice al OC que la debida diligencia va incompleta. */
+  tieneMatrizEvaluada: boolean;
+  /** Promedio mensual en UMA de los meses ANTERIORES al actual. Excluye el mes
+   *  en curso a propósito: incluirlo haría que la operación bajo examen
+   *  inflara su propia referencia y la regla nunca dispararía. */
+  promedioMensualUmaHistorico: number;
+}
+
+export const HISTORIAL_VACIO: HistorialCliente = {
+  operacionesPrevias: 0,
+  diasDeHistorial: 0,
+  mesesConActividad: 0,
+  tienePerfilDeclarado: false,
+  tieneMatrizEvaluada: false,
+  promedioMensualUmaHistorico: 0,
+};
+
+/**
+ * ¿El cliente tiene suficiente trayectoria para que una regla de
+ * comportamiento signifique algo?
+ *
+ * Devuelve el motivo cuando NO la tiene, para poder decirlo en vez de callar.
+ * Una regla que no exige línea base (los umbrales de ley, por ejemplo)
+ * siempre pasa: 645 UMA son 645 UMA en la primera operación y en la mil.
+ */
+export function faltaLineaBase(
+  regla: { min_operaciones?: number; min_meses_historial?: number },
+  h: HistorialCliente,
+): string | null {
+  const minOps = regla.min_operaciones ?? 0;
+  const minMeses = regla.min_meses_historial ?? 0;
+
+  if (minOps > 0 && h.operacionesPrevias < minOps) {
+    return `El cliente tiene ${h.operacionesPrevias} operaciones previas y la regla exige al menos ${minOps}.`;
+  }
+  if (minMeses > 0 && h.mesesConActividad < minMeses) {
+    return `El cliente tiene ${h.mesesConActividad} meses con actividad y la regla exige al menos ${minMeses}.`;
+  }
+  return null;
 }
 
 export interface HallazgoCandidato {
@@ -235,7 +311,25 @@ function candidato(
   tip: Tipologia,
   clientId: string | null,
   payload: Record<string, unknown>,
+  ctx?: MotorContext,
 ): HallazgoCandidato {
+  // El contexto del cliente viaja DENTRO del hallazgo, no se consulta después:
+  // es el estado al momento de evaluar, y es lo que permite al OC distinguir
+  // «cambió su patrón» de «es su primera operación».
+  const h = clientId ? ctx?.historialPorCliente[clientId] : undefined;
+  const contexto = h
+    ? {
+        contexto_cliente: {
+          operaciones_previas: h.operacionesPrevias,
+          dias_de_historial: h.diasDeHistorial,
+          meses_con_actividad: h.mesesConActividad,
+          perfil_declarado: h.tienePerfilDeclarado,
+          matriz_evaluada: h.tieneMatrizEvaluada,
+          sin_linea_base: h.operacionesPrevias === 0,
+        },
+      }
+    : {};
+
   return {
     operation_id: op?.id ?? null,
     client_id: clientId,
@@ -244,7 +338,7 @@ function candidato(
     tipologia_nombre: tip.nombre,
     tipologia_version: tip.version,
     severidad: tip.severidad,
-    regla_payload: { evaluado_en: 'motor-pld', ...payload },
+    regla_payload: { evaluado_en: 'motor-pld', ...contexto, ...payload },
     clasificacion_urgencia: clasificacionUrgencia(tip.regla_dsl),
   };
 }
@@ -289,7 +383,7 @@ function evalAgregado(
             grupo: clave,
             metricas: met,
             operaciones: enVentana.map((o) => o.id),
-          }),
+          }, ctx),
         );
         break; // un hallazgo por grupo (primera ventana que dispara)
       }
@@ -302,6 +396,7 @@ function evalSecuencia(
   tip: Tipologia,
   regla: Extract<ReglaDsl, { tipo: 'secuencia' }>,
   ops: OperacionEval[],
+  ctx: MotorContext,
 ): HallazgoCandidato[] {
   const win = ventanaAMs(regla.ventana);
   const grupos = agrupar(ops, (o) => o.client_id);
@@ -336,7 +431,7 @@ function evalSecuencia(
               secuencia,
               metricas,
               operacion_inicial: sorted[i].id,
-            }),
+            }, ctx),
           );
           break; // un hallazgo por grupo
         }
@@ -350,6 +445,7 @@ function evalScore(
   tip: Tipologia,
   regla: Extract<ReglaDsl, { tipo: 'score' }>,
   ops: OperacionEval[],
+  ctx: MotorContext,
 ): HallazgoCandidato[] {
   const out: HallazgoCandidato[] = [];
   const condExp = regla.condicion.exposicion_pct;
@@ -373,7 +469,7 @@ function evalScore(
           nota: 'DEMO — analítica on-chain simulada, sin proveedor real',
           exposicion_pct: Number.isNaN(exposicion) ? null : exposicion,
           categorias,
-        }),
+        }, ctx),
       );
     }
   }
@@ -395,7 +491,7 @@ function evalLookup(
       // Variante por lista de valores (ej. XVI-08 privacy coins sobre activo_virtual).
       if (regla.valores.includes(String(valor))) {
         out.push(
-          candidato(o, tip, o.client_id, { campo: regla.campo, valor: String(valor), match: 'valores' }),
+          candidato(o, tip, o.client_id, { campo: regla.campo, valor: String(valor), match: 'valores' }, ctx),
         );
       }
     } else if (regla.fuentes && regla.fuentes.length) {
@@ -410,7 +506,7 @@ function evalLookup(
             fuentes: fuentesMatch,
             fuente_mock: true, // DEMO — listas como snapshot versionado en BD, no en tiempo real
             nota: 'DEMO — listas OFAC/GAFI como snapshot en BD, sin consulta en tiempo real',
-          }),
+          }, ctx),
         );
       }
     }
@@ -422,6 +518,7 @@ function evalDuplicado(
   tip: Tipologia,
   regla: Extract<ReglaDsl, { tipo: 'duplicado' }>,
   ops: OperacionEval[],
+  ctx: MotorContext,
 ): HallazgoCandidato[] {
   const out: HallazgoCandidato[] = [];
   // campo → valor → { clientes, operaciones }
@@ -453,7 +550,7 @@ function evalDuplicado(
               valor,
               cuentas: [...bucket.clientes],
               umbral_cuentas: regla.umbral_cuentas,
-            }),
+            }, ctx),
           );
         }
       }
@@ -474,8 +571,33 @@ function evalDesviacion(
   const grupos = agrupar(ops, (o) => o.client_id);
 
   for (const [clientId, lista] of grupos) {
-    const base = ctx.perfilMensualUmaPorCliente[clientId];
-    if (base == null || base <= 0) continue; // sin perfil declarado → no dispara (fail-closed)
+    const h = ctx.historialPorCliente[clientId] ?? HISTORIAL_VACIO;
+
+    // Una regla de comportamiento sobre un cliente sin trayectoria no mide
+    // nada: «se desvió de su patrón» exige que exista un patrón. Si la regla
+    // pide madurez y el cliente no la tiene, no dispara.
+    if (faltaLineaBase(regla, h)) continue;
+
+    // Contra qué se compara. Antes el DSL decía `promedio_historico_mensual`
+    // pero el código usaba el perfil DECLARADO: la regla decía una cosa y
+    // hacía otra. Ahora cada modo hace lo que su nombre dice.
+    let base: number | undefined;
+    let origenBase: string;
+
+    if (regla.comparar === 'promedio_historico_mensual') {
+      // Promedio real del cliente, excluyendo el mes en curso: incluirlo haría
+      // que la operación bajo examen inflara su propia referencia.
+      if (h.mesesConActividad < 1) continue;
+      base = h.promedioMensualUmaHistorico;
+      origenBase = 'promedio histórico del cliente';
+    } else {
+      base = ctx.perfilMensualUmaPorCliente[clientId];
+      origenBase = 'perfil transaccional declarado';
+    }
+
+    // Fail-closed: sin referencia no se inventa una. No disparar es correcto;
+    // lo que no sería correcto es compararlo contra cero.
+    if (base == null || base <= 0) continue;
 
     const delMes = lista.filter((o) => ms(o.fecha) >= inicioMes && ms(o.fecha) <= finRef);
     if (delMes.length === 0) continue;
@@ -486,11 +608,12 @@ function evalDesviacion(
       out.push(
         candidato(rep, tip, clientId, {
           comparar: regla.comparar,
+          origen_base: origenBase,
           factor: regla.factor,
           base_uma: base,
           suma_mes_uma: sumaUma,
           operaciones: delMes.map((o) => o.id),
-        }),
+        }, ctx),
       );
     }
   }
@@ -512,13 +635,13 @@ export function evaluarTipologia(
     case 'agregado':
       return evalAgregado(tip, regla, ops, ctx);
     case 'secuencia':
-      return evalSecuencia(tip, regla, ops);
+      return evalSecuencia(tip, regla, ops, ctx);
     case 'score':
-      return evalScore(tip, regla, ops);
+      return evalScore(tip, regla, ops, ctx);
     case 'lookup':
       return evalLookup(tip, regla, ops, ctx);
     case 'duplicado':
-      return evalDuplicado(tip, regla, ops);
+      return evalDuplicado(tip, regla, ops, ctx);
     case 'desviacion':
       return evalDesviacion(tip, regla, ops, ctx);
     default:

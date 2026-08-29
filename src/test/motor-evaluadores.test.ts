@@ -3,6 +3,8 @@
 import { describe, it, expect } from "vitest";
 import {
   clasificacionUrgencia,
+  HISTORIAL_VACIO,
+  type HistorialCliente,
   correrMotor,
   evaluarTipologia,
   ventanaAMs,
@@ -40,6 +42,7 @@ function ctx(over: Partial<MotorContext> = {}): MotorContext {
       ofac_sancionado: new Set(["CU", "IR", "KP", "SY", "BY", "VE"]),
     },
     perfilMensualUmaPorCliente: {},
+    historialPorCliente: {},
     ...over,
   };
 }
@@ -278,8 +281,8 @@ describe("duplicado (XVI-05 smurfing)", () => {
 // ---------------------------------------------------------------------
 // XVI-07 desviacion (fuera de perfil)
 // ---------------------------------------------------------------------
-describe("desviacion (XVI-07 fuera de perfil)", () => {
-  const t = tip("XVI-07", { tipo: "desviacion", factor: 3.0, comparar: "promedio_historico_mensual" });
+describe("desviacion · contra el perfil declarado", () => {
+  const t = tip("XVI-07", { tipo: "desviacion", factor: 3.0, comparar: "perfil_declarado" });
 
   it("dispara cuando el volumen del mes supera 3x el perfil declarado", () => {
     const ops = [
@@ -288,11 +291,117 @@ describe("desviacion (XVI-07 fuera de perfil)", () => {
     ];
     const r = evaluarTipologia(t, ops, ctx({ perfilMensualUmaPorCliente: { [CLIENTE]: 100 } }));
     expect(r).toHaveLength(1); // 400 UMA > 3 * 100
+    expect(r[0].regla_payload.origen_base).toBe("perfil transaccional declarado");
   });
 
-  it("no dispara sin perfil declarado (fail-closed)", () => {
+  it("no dispara sin perfil declarado: sin referencia no se inventa una", () => {
     const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 999999 })];
     expect(evaluarTipologia(t, ops, ctx())).toHaveLength(0);
+  });
+});
+
+describe("desviacion · contra el promedio histórico del propio cliente", () => {
+  const t = tip("XVI-07b", {
+    tipo: "desviacion", factor: 3.0, comparar: "promedio_historico_mensual",
+  });
+
+  it("usa el promedio del cliente, no el perfil declarado", () => {
+    const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 400 * UMA_PRUEBA })];
+    const r = evaluarTipologia(t, ops, ctx({
+      // El perfil declarado es alto a propósito: si lo usara, no dispararía.
+      perfilMensualUmaPorCliente: { [CLIENTE]: 10000 },
+      historialPorCliente: {
+        [CLIENTE]: {
+          operacionesPrevias: 40, diasDeHistorial: 400, mesesConActividad: 12,
+          tienePerfilDeclarado: true, tieneMatrizEvaluada: true,
+          promedioMensualUmaHistorico: 100,
+        },
+      },
+    }));
+    expect(r).toHaveLength(1); // 400 UMA > 3 * 100
+    expect(r[0].regla_payload.origen_base).toBe("promedio histórico del cliente");
+  });
+
+  it("no dispara si el cliente no tiene ningún mes de actividad previa", () => {
+    // El caso de fondo: un cliente nuevo no tiene patrón del cual desviarse.
+    const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 999999 })];
+    expect(evaluarTipologia(t, ops, ctx({
+      historialPorCliente: { [CLIENTE]: HISTORIAL_VACIO },
+    }))).toHaveLength(0);
+  });
+});
+
+describe("línea base: una regla de comportamiento sobre un cliente nuevo", () => {
+  const conMadurez = tip("XVI-07c", {
+    tipo: "desviacion", factor: 3.0, comparar: "perfil_declarado",
+    min_operaciones: 10, min_meses_historial: 3,
+  });
+
+  const historial = (over: Partial<HistorialCliente> = {}): HistorialCliente => ({
+    ...HISTORIAL_VACIO, tienePerfilDeclarado: true, ...over,
+  });
+
+  it("no dispara si el cliente no alcanza el mínimo de operaciones", () => {
+    const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 999999 })];
+    expect(evaluarTipologia(conMadurez, ops, ctx({
+      perfilMensualUmaPorCliente: { [CLIENTE]: 1 },
+      historialPorCliente: { [CLIENTE]: historial({ operacionesPrevias: 4, mesesConActividad: 6 }) },
+    }))).toHaveLength(0);
+  });
+
+  it("no dispara si no alcanza el mínimo de meses, aunque tenga muchas operaciones", () => {
+    // Cincuenta operaciones en una semana no son tres meses de patrón.
+    const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 999999 })];
+    expect(evaluarTipologia(conMadurez, ops, ctx({
+      perfilMensualUmaPorCliente: { [CLIENTE]: 1 },
+      historialPorCliente: { [CLIENTE]: historial({ operacionesPrevias: 50, mesesConActividad: 1 }) },
+    }))).toHaveLength(0);
+  });
+
+  it("dispara cuando el cliente ya tiene trayectoria suficiente", () => {
+    const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 999999 })];
+    expect(evaluarTipologia(conMadurez, ops, ctx({
+      perfilMensualUmaPorCliente: { [CLIENTE]: 1 },
+      historialPorCliente: { [CLIENTE]: historial({ operacionesPrevias: 20, mesesConActividad: 6 }) },
+    }))).toHaveLength(1);
+  });
+
+  it("una regla SIN exigencia de madurez sigue disparando en la primera operación", () => {
+    // Los umbrales de ley no dependen de trayectoria: 645 UMA son 645 UMA en
+    // la primera operación y en la mil.
+    const umbral = tip("XVI-01", {
+      tipo: "agregado", ventana: "72h", agrupar_por: "client_id",
+      condicion: { suma_monto_uma: { op: ">=", valor: 645 } },
+    });
+    const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 700 * UMA_PRUEBA })];
+    expect(evaluarTipologia(umbral, ops, ctx({
+      historialPorCliente: { [CLIENTE]: HISTORIAL_VACIO },
+    }))).toHaveLength(1);
+  });
+});
+
+describe("contexto del cliente en el hallazgo", () => {
+  it("todo hallazgo lleva la trayectoria del cliente al momento de evaluar", () => {
+    const umbral = tip("XVI-01", {
+      tipo: "agregado", ventana: "72h", agrupar_por: "client_id",
+      condicion: { suma_monto_uma: { op: ">=", valor: 645 } },
+    });
+    const ops = [op({ id: "a", fecha: "2026-08-05T10:00:00Z", monto_mxn: 700 * UMA_PRUEBA })];
+    const r = evaluarTipologia(umbral, ops, ctx({
+      historialPorCliente: {
+        [CLIENTE]: {
+          operacionesPrevias: 0, diasDeHistorial: 0, mesesConActividad: 0,
+          tienePerfilDeclarado: false, tieneMatrizEvaluada: false,
+          promedioMensualUmaHistorico: 0,
+        },
+      },
+    }));
+    const c = r[0].regla_payload.contexto_cliente as Record<string, unknown>;
+    // Es lo que le dice al OC que esto nació de una primera operación, no de
+    // un patrón que cambió.
+    expect(c.sin_linea_base).toBe(true);
+    expect(c.operaciones_previas).toBe(0);
+    expect(c.matriz_evaluada).toBe(false);
   });
 });
 

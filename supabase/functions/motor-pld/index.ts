@@ -19,6 +19,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   correrMotor,
+  type HistorialCliente,
   type HallazgoCandidato,
   type MotorContext,
   type OperacionEval,
@@ -151,6 +152,75 @@ Deno.serve(async (req: Request) => {
     };
   });
 
+  // --- Historial de cada cliente ------------------------------------
+  // Una regla de comportamiento sobre un cliente sin trayectoria no mide nada:
+  // «se desvió de su patrón» exige que exista un patrón. Sin esto, las reglas
+  // dispararían en las primeras operaciones de todo cliente nuevo, que es
+  // justo el falso positivo que hay que evitar.
+  //
+  // Se consultan TODAS las operaciones de la organización, no sólo las que se
+  // están evaluando: el historial es precisamente lo que queda fuera de la
+  // ventana bajo examen.
+  // TODO[Sprint D-3]: mover a una vista materializada cuando el volumen lo pida.
+  const { data: historialRaw, error: errHist } = await supabase
+    .from('operation')
+    .select('client_id, fecha, monto_mxn')
+    .eq('organization_id', input.organization_id);
+  if (errHist) {
+    return json({ error: `No se pudo leer el historial: ${errHist.message}` }, 500);
+  }
+
+  // Qué clientes tienen su matriz de riesgo evaluada. Un hallazgo sobre un
+  // cliente sin clasificar le dice al OC que la debida diligencia va
+  // incompleta, y eso cambia cómo lo atiende.
+  const { data: evaluados } = await supabase
+    .from('client_risk_assessment')
+    .select('client_id');
+  const conMatriz = new Set((evaluados ?? []).map((e: Record<string, unknown>) => String(e.client_id)));
+
+  const idsEvaluadas = new Set((operacionesRaw ?? []).map((o: Record<string, unknown>) => String(o.id)));
+  const porCliente: Record<string, { fechas: number[]; montos: number[] }> = {};
+  for (const h of (historialRaw ?? []) as Record<string, unknown>[]) {
+    const cid = String(h.client_id);
+    (porCliente[cid] ??= { fechas: [], montos: [] });
+    porCliente[cid].fechas.push(new Date(String(h.fecha)).getTime());
+    porCliente[cid].montos.push(Number(h.monto_mxn));
+  }
+
+  const inicioMesActual = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+  const historialPorCliente: Record<string, HistorialCliente> = {};
+
+  for (const [cid, datos] of Object.entries(porCliente)) {
+    const fechasPrevias = datos.fechas.filter((f) => f < inicioMesActual);
+    // Meses distintos con actividad: cincuenta operaciones en una semana no
+    // son cinco meses de patrón.
+    const meses = new Set(
+      fechasPrevias.map((f) => {
+        const d = new Date(f);
+        return `${d.getFullYear()}-${d.getMonth()}`;
+      }),
+    );
+    const sumaPrevia = datos.fechas.reduce(
+      (s, f, i) => (f < inicioMesActual ? s + datos.montos[i] : s), 0,
+    );
+    const primera = datos.fechas.length ? Math.min(...datos.fechas) : Date.now();
+
+    historialPorCliente[cid] = {
+      // «Previas» = todo lo que no está en el lote que se evalúa ahora.
+      operacionesPrevias: datos.fechas.length - (
+        (operacionesRaw ?? []).filter(
+          (o: Record<string, unknown>) => String(o.client_id) === cid && idsEvaluadas.has(String(o.id)),
+        ).length
+      ),
+      diasDeHistorial: Math.max(0, Math.floor((Date.now() - primera) / 86400000)),
+      mesesConActividad: meses.size,
+      tienePerfilDeclarado: perfilMensualUmaPorCliente[cid] != null,
+      tieneMatrizEvaluada: conMatriz.has(cid),
+      promedioMensualUmaHistorico:
+        meses.size > 0 ? sumaPrevia / umaMxn / meses.size : 0,
+    };
+  }
+
   const tipologias = (tipologiasRaw ?? []) as unknown as Tipologia[];
 
   const ctx: MotorContext = {
@@ -158,6 +228,7 @@ Deno.serve(async (req: Request) => {
     ahora: new Date(),
     paisPorFuente,
     perfilMensualUmaPorCliente,
+    historialPorCliente,
   };
 
   // --- 4. Correr el motor --------------------------------------------

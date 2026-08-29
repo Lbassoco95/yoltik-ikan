@@ -98,7 +98,7 @@ values
    '{
       "tipo": "desviacion",
       "factor": 3.0,
-      "comparar": "promedio_historico_mensual"
+      "comparar": "perfil_declarado"
     }'::jsonb,
    'alta', 1, 'Metodología Ixim Pay §6 — perfil transaccional'),
 
