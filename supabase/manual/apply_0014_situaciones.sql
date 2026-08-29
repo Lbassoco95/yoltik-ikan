@@ -263,4 +263,45 @@ update lista_fuente
        situaciones_bloqueantes = null
  where codigo in ('uif_bloqueadas', 'ofac_sdn', 'onu_consolidada', 'ue_sanciones');
 
+-- =====================================================================
+-- 69-B Bis · fuente SEPARADA, no una situación más del 69-B
+-- =====================================================================
+-- Son artículos DISTINTOS del Código Fiscal y mezclarlos sería un error de
+-- fondo, no de forma:
+--
+--   69-B      operaciones inexistentes (EFOS). El contribuyente expidió
+--             comprobantes sin activos, personal o infraestructura.
+--   69-B Bis  transmisión indebida de pérdidas fiscales. Otro supuesto,
+--             otro procedimiento y otras consecuencias.
+--
+-- El listado del Bis sólo contempla DOS situaciones —definitivo y sentencia
+-- favorable—: su procedimiento no publica presuntos ni desvirtuados, como se
+-- ve en las columnas del propio archivo del SAT.
+--
+-- Es una lista muy corta (unidades, no miles) pero eso no la hace menos
+-- relevante: quien aparece ahí lo hace por transmitir pérdidas indebidamente.
+insert into lista_fuente
+  (codigo, nombre, autoridad, naturaleza, modo_actualizacion, url_oficial,
+   frecuencia_objetivo, obligatoria, activa, situaciones, situaciones_bloqueantes, notas)
+values
+  ('sat_69b_bis', 'SAT · Listado 69-B Bis (transmisión indebida de pérdidas fiscales)',
+   'Servicio de Administración Tributaria',
+   'fiscal', 'snapshot',
+   'http://omawww.sat.gob.mx/tramitesyservicios/Paginas/datos_abiertos_articulo69b.htm',
+   'PENDIENTE_CONFIRMAR (el SAT publica sin periodicidad fija)',
+   true, true,
+   array['definitivo', 'sentencia_favorable'],
+   array['definitivo'],
+   'Artículo 69-B Bis del CFF: transmisión indebida de pérdidas fiscales. NO es lo mismo que el 69-B '
+   '(operaciones inexistentes) y por eso es una fuente aparte. Su procedimiento sólo publica definitivos '
+   'y sentencias favorables. Mismo formato de archivo que el 69-B: CSV en latin-1 con extensión .xls.')
+on conflict (codigo) do update set
+  nombre = excluded.nombre,
+  naturaleza = excluded.naturaleza,
+  modo_actualizacion = excluded.modo_actualizacion,
+  url_oficial = excluded.url_oficial,
+  situaciones = excluded.situaciones,
+  situaciones_bloqueantes = excluded.situaciones_bloqueantes,
+  notas = excluded.notas;
+
 commit;
