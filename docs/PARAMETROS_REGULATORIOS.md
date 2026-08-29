@@ -147,7 +147,43 @@ y no se inventa.
 ## Aplicar en el remoto
 
 ```
-supabase/manual/apply_0011_parametros.sql
+1. supabase/manual/apply_0011_parametros.sql   ← aplica
+2. supabase/manual/verificar_0011.sql          ← comprueba
 ```
 
-Idempotente y transaccional. Requiere la migration 0008 aplicada.
+Idempotente y transaccional. Requiere la migration 0008 aplicada (de ahí sale
+`es_admin_kawiil()`). La verificación no sólo revisa que las tablas existan:
+comprueba que `parametro_vigente()` **resuelva los valores correctos**, que es
+donde estaba el error original.
+
+### Nota para quien escriba seeds
+
+El primer intento de aplicar este seed falló con:
+
+```
+ERROR: column "confirmado_en" is of type date but expression is of type text
+```
+
+En una lista `VALUES`, PostgreSQL infiere el tipo de cada columna a partir de
+las filas. Si **todas** las filas traen `NULL` sin tipo, lo infiere como `text`,
+y el insert truena contra una columna `date` o `numeric`. Por eso en este seed
+**todos los NULL van casteados** (`null::date`, `null::text`), incluso donde la
+inferencia acertaría: así reordenar una fila no vuelve a romperlo.
+
+Se puede reproducir sin tocar el remoto levantando un Postgres desechable:
+
+```bash
+mkdir -p /tmp/ikanpg && chown postgres:postgres /tmp/ikanpg
+su postgres -c "/usr/lib/postgresql/16/bin/initdb -D /tmp/ikanpg -U postgres --auth=trust"
+su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D /tmp/ikanpg -o '-p 55432 -k /tmp -c listen_addresses=' -l /tmp/ikanpg/server.log start"
+# Arnés mínimo: la 0011 sólo necesita esto de Supabase
+psql -h /tmp -p 55432 -U postgres -c "create schema auth;
+  create table auth.users (id uuid primary key default gen_random_uuid());
+  create function auth.uid() returns uuid language sql stable as \$\$ select null::uuid \$\$;
+  create function public.es_admin_kawiil() returns boolean language sql stable as \$\$ select false \$\$;"
+psql -h /tmp -p 55432 -U postgres -f supabase/manual/apply_0011_parametros.sql
+psql -h /tmp -p 55432 -U postgres -f supabase/manual/verificar_0011.sql
+```
+
+`npm run typecheck/lint/test/build` **no** ejecuta SQL. Cualquier migration o
+seed nuevo se prueba así antes de mandarlo al remoto.
