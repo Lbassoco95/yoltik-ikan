@@ -10,18 +10,33 @@
 -- propósito: el privilegio se otorga a mano, nunca por registro automático.
 --
 -- CÓMO USARLO
---   1. Cambia el correo de abajo por el tuyo (el de auth.users).
---   2. Corre el bloque completo.
---   3. Verifica con la consulta del final.
+--   1. Corre SOLO la primera consulta (la de abajo) para ver qué correos
+--      existen en Authentication → Users. El correo tiene que existir ya: este
+--      script otorga un privilegio, no crea usuarios.
+--   2. Cambia el correo del bloque por el que salga en esa lista.
+--   3. Corre el bloque completo.
+--   4. Verifica con la consulta del final.
+--
+--   Si el correo que quieres no aparece: Dashboard → Authentication → Users →
+--   Add user, marcando "Auto Confirm User". Luego vuelve aquí.
 --
 -- Para revocar el privilegio:
 --   delete from platform_admin where user_id = (
 --     select id from auth.users where email = 'correo@kawiil.mx');
 -- =====================================================================
 
+-- PASO 1 · Qué correos existen, y cuáles ya son admin de plataforma.
+select u.email,
+       u.created_at,
+       case when pa.user_id is null then 'no' else 'SÍ' end as ya_es_admin_plataforma
+from auth.users u
+left join platform_admin pa on pa.user_id = u.id
+order by u.created_at;
+
+-- PASO 2 · Otorgar el privilegio. Pon arriba el correo exacto del paso 1.
 do $$
 declare
-  v_email text := 'leo.bassoco@kawiil.mx';   -- ← cámbialo si es otro
+  v_email text := 'lbassoco@kawiil.mx';      -- ← el correo EXACTO del paso 1
   v_nombre text := 'Administrador Kawiil';   -- ← nombre para la bitácora
   v_uid uuid;
 begin
@@ -29,7 +44,7 @@ begin
 
   if v_uid is null then
     raise exception
-      'No existe un usuario con el correo %. Créalo primero en Authentication → Users, o corrige el correo en este script.',
+      'No existe un usuario con el correo %. Corre primero la consulta del paso 1 para ver los correos que sí existen, o créalo en Authentication → Users.',
       v_email;
   end if;
 
