@@ -22,7 +22,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { listarClientes, crearCliente } from "@/lib/api/clientes";
+import { listarClientes, crearCliente, ultimasEvaluaciones } from "@/lib/api/clientes";
+import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import type { NuevoClienteInput, TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -81,6 +82,14 @@ export default function ClientsPage() {
   const { data: clientes = [], isLoading, isError, error } = useQuery({
     queryKey: ["clientes"],
     queryFn: listarClientes,
+  });
+
+  // La calificación vigente de cada compareciente. Se escribía y no se leía:
+  // la lista mostraba a todos igual, evaluados o no.
+  const { data: evaluaciones } = useQuery({
+    queryKey: ["evaluaciones", clientes.map((c) => c.id).join(",")],
+    queryFn: () => ultimasEvaluaciones(clientes.map((c) => c.id)),
+    enabled: clientes.length > 0,
   });
 
   const alta = useMutation({
@@ -210,7 +219,7 @@ export default function ClientsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                {["Nombre / Razón Social", "Tipo", "RFC", "Nivel KYC", "Alto de oficio", ""].map((h) => (
+                {["Nombre / Razón Social", "Tipo", "RFC", "Riesgo", "Nivel KYC", "Alto de oficio", ""].map((h) => (
                   <th
                     key={h}
                     className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3"
@@ -238,6 +247,12 @@ export default function ClientsPage() {
                   <td className="px-4 py-3 text-sm font-mono text-muted-foreground">
                     {client.rfc ?? "—"}
                   </td>
+                  <td className="px-4 py-3">
+                    <BadgeRiesgo
+                      clasificacion={evaluaciones?.get(client.id)?.clasificacion}
+                      score={evaluaciones?.get(client.id)?.score_total}
+                    />
+                  </td>
                   <td className="px-4 py-3 text-sm">{client.nivel_kyc}</td>
                   <td className="px-4 py-3">
                     {client.alto_de_oficio ? (
@@ -251,7 +266,7 @@ export default function ClientsPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground text-sm">
                     {L.clientesVacio}
                   </td>
                 </tr>

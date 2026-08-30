@@ -15,7 +15,7 @@
 |--------|-------------|--------|
 | RCG0.B0 | Evaluadores reales del Motor PLD (deuda D-3) | ✅ hecho |
 | **RCG0.B0.1** | **Ingesta propia de listas abiertas (OFAC + GAFI + 69-B)** | ⏳ **nuevo — intercalar según dependencias** |
-| **RCG0.B0b** | **Alta de cliente final por el Operador (Nivel 1)** | 🟡 captura hecha · matriz-score pendiente de fórmula |
+| **RCG0.B0b** | **Alta de cliente final por el Operador (Nivel 1)** | ✅ hecho · matriz con score, guardada y visible |
 | RCG0.B1 | SLA de 24h sobre hallazgos | ⏳ pendiente |
 | RCG0.B2 | Ajustes al piloto XVI (jurisdicción + comisión) | ⏳ pendiente |
 | RCG0.B3 | Modelo de datos para fideicomisos (solo modelo) | ⏳ pendiente |
@@ -95,8 +95,14 @@ en paralelo si hiciera falta.
   PLD la evalúa (produce hallazgo si dispara alguna tipología).
 - Lo no integrado (Moffin/KYC externo) va con banner ámbar "DEMO — sin integración real".
 
-**Decisión de Polo (2026-08-20):** la matriz es **acción separada, no forzada** en el alta; y el
-alta se construye **sin score** por ahora (respuestas en crudo, score pendiente de fórmula).
+**Decisión de Polo (2026-08-20):** la matriz es **acción separada, no forzada** en el alta.
+
+**Cerrado (2026-08-30):** la fórmula entró en `864ec92` (`evaluarMatriz`, `clasificarPorBanda`,
+`triggersActivados`) y la evaluación se persiste en `client_risk_assessment`. Faltaba lo que
+cerró este bloque: la evaluación **se escribía y nunca se leía**. Al reabrir un expediente la
+matriz salía en blanco, como si nadie hubiera calificado a ese compareciente, y la lista los
+mostraba a todos igual. Ahora la lista trae una columna de riesgo —una consulta para todos, no
+una por fila— y el detalle abre con las respuestas de la última evaluación, su score y su fecha.
 
 **Estado real de lo entregado:**
 - ✅ Capa de API: `src/lib/api/{contexto,clientes,operaciones}.ts` (crear/listar clientes y
@@ -109,11 +115,7 @@ alta se construye **sin score** por ahora (respuestas en crudo, score pendiente 
   registrada"), `ClientDetailPage` (datos + operaciones reales + captura de matriz).
 - ✅ Helper puro `src/lib/riesgo/matriz.ts` + 5 tests (qué elementos/variables aplican por tipo
   de persona, captura completa).
-- ⏳ **Pendiente — score de matriz:** el cálculo `score_total`/`clasificacion` NO se implementó
-  (fórmula de ponderación no está en el repo; seed 06 inconsistente: subtotales 25 vs score 17).
-  La matriz captura y muestra respuestas con banner ámbar "DEMO — score pendiente"; no persiste
-  el assessment (además `client_risk_assessment` exige score NOT NULL). Se cierra cuando Polo
-  confirme la fórmula (Excel Ixim Pay).
+- ✅ **Score de matriz:** implementado y persistido. Ver la nota de cierre arriba.
 - ⏳ **Pendiente — smoke en vivo:** verificado con `typecheck/lint/build` + tests. El insert real
   contra RLS y la invocación del motor requieren correr contra el Supabase remoto (no hay entorno
   local en esta sesión). Queda para el smoke de RCG0.B6.

@@ -1,6 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
-import type { Client, ClientRiskTemplate, NuevoClienteInput, SectorAV } from '@/types/domain';
+import type {
+  ClasificacionRiesgo,
+  Client,
+  ClientRiskTemplate,
+  NuevoClienteInput,
+  SectorAV,
+} from '@/types/domain';
 import { evaluarMatriz, respuestasCompletas, type ResultadoEvaluacion } from '@/lib/riesgo/matriz';
 
 /** Lista los clientes visibles para el usuario (RLS filtra por rol/organización). */
@@ -84,6 +90,62 @@ export async function getPlantillaRiesgoActiva(
 
 export interface EvaluacionGuardada extends ResultadoEvaluacion {
   id: string;
+}
+
+/** Una evaluación tal como quedó guardada. */
+export interface EvaluacionPersistida {
+  id: string;
+  client_id: string;
+  template_id: string;
+  respuestas: Record<string, number>;
+  score_total: number;
+  clasificacion: ClasificacionRiesgo;
+  motivo_alto_de_oficio: string | null;
+  evaluado_en: string;
+}
+
+/**
+ * La última evaluación de un compareciente.
+ *
+ * Se escribía y nunca se leía: al reabrir el expediente la matriz salía en
+ * blanco, como si nadie lo hubiera evaluado. Un expediente de PLD que no
+ * muestra la calificación vigente de su cliente no sirve de mucho.
+ */
+export async function ultimaEvaluacion(clientId: string): Promise<EvaluacionPersistida | null> {
+  const { data, error } = await supabase
+    .from('client_risk_assessment')
+    .select('id, client_id, template_id, respuestas, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
+    .eq('client_id', clientId)
+    .order('evaluado_en', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as unknown as EvaluacionPersistida) ?? null;
+}
+
+/**
+ * La última evaluación de varios comparecientes, para la lista.
+ *
+ * Una consulta y no una por fila: con doscientos clientes, doscientas consultas
+ * hacen la pantalla inusable. Se traen las evaluaciones ordenadas y se queda la
+ * primera de cada cliente.
+ */
+export async function ultimasEvaluaciones(
+  clientIds: string[],
+): Promise<Map<string, EvaluacionPersistida>> {
+  if (clientIds.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from('client_risk_assessment')
+    .select('id, client_id, template_id, respuestas, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
+    .in('client_id', clientIds)
+    .order('evaluado_en', { ascending: false });
+  if (error) throw error;
+
+  const porCliente = new Map<string, EvaluacionPersistida>();
+  for (const e of (data ?? []) as unknown as EvaluacionPersistida[]) {
+    if (!porCliente.has(e.client_id)) porCliente.set(e.client_id, e);
+  }
+  return porCliente;
 }
 
 /**
