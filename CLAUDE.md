@@ -87,8 +87,11 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
    para que sean rastreables con `rg "TODO\[Sprint"`.
 9. **Preservar Lovable.** Las 12 páginas existentes (Clientes, Operaciones, Alertas,
    Reportes, Listas, RulesEngine, Verificacion, Auditoria, Configuracion, etc.) se
-   reaprovechan tal cual. NO se reescriben en Sprint D-1. La conexión a queries
-   reales en Supabase entra en Sprint D-2/D-3.
+   reaprovechan. Su diseño se conserva; sus DATOS ya salen de Supabase. `src/data/`
+   se borró cuando la última página dejó de usarlo: un archivo de datos inventados
+   vivo en el repo es un accidente esperando pasar. Lo único que sigue siendo
+   maqueta declarada son las dos secciones de reglas de `RulesEnginePage` y el
+   flujo previsto de `VerificationPage`, ambas con banner ámbar.
 
 ## Comandos
 
