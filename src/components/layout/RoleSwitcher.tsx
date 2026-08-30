@@ -16,19 +16,24 @@ interface Props {
 export function RoleSwitcher({ roles, activeRole, onChange }: Props) {
   if (roles.length <= 1) {
     return (
-      <span className="text-sm text-muted-foreground">
-        Rol: <strong className="text-foreground">{ROLE_LABEL[activeRole]}</strong>
+      <span className="text-sm text-muted-foreground truncate">
+        <span className="hidden lg:inline">Rol: </span>
+        <strong className="text-foreground">{ROLE_LABEL[activeRole]}</strong>
       </span>
     );
   }
+  // «Operando como» sólo cuando hay sitio: con el rótulo y «Oficial de
+  // Cumplimiento» dentro, este control medía por sí solo más de la mitad de
+  // una pantalla de teléfono y empujaba el encabezado —hasta el punto de
+  // taparle el clic al botón de menú—. El select solo ya dice el rol.
   return (
-    <label className="flex items-center gap-2 text-sm text-muted-foreground">
-      <span>Operando como</span>
-      <span className="relative">
+    <label className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+      <span className="hidden lg:inline shrink-0">Operando como</span>
+      <span className="relative min-w-0">
         <select
           value={activeRole}
           onChange={(e) => onChange(e.target.value as RolUsuario)}
-          className="appearance-none border border-border rounded-md pl-3 pr-8 py-1 bg-card text-foreground font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full max-w-[10rem] sm:max-w-none appearance-none truncate border border-border rounded-md pl-3 pr-8 py-1 bg-card text-foreground font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
         >
           {roles.map((r) => (
             <option key={r} value={r}>

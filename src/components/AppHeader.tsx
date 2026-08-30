@@ -60,7 +60,7 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         <span className="hidden md:inline text-sm font-medium text-muted-foreground truncate max-w-[14rem]">
           {profile?.organization_name ?? '—'}
         </span>
@@ -76,7 +76,7 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="relative"
+            className="relative shrink-0"
             aria-label={
               abiertos === 0
                 ? "Sin hallazgos abiertos"
@@ -93,7 +93,7 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
           </Button>
         )}
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg">
+        <div className="flex items-center gap-2 sm:px-3 py-1.5 rounded-lg shrink-0">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
             {getInitials(profile?.nombre)}
           </div>
@@ -110,6 +110,7 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
         <Button
           variant="ghost"
           size="icon"
+          className="shrink-0"
           onClick={() => void signOut()}
           aria-label="Cerrar sesión"
         >

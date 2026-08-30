@@ -23,12 +23,16 @@ export function AdminLayout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
-        <div className="flex items-center gap-4 px-6 h-16">
+        {/* La navegación no colapsaba ni se desplazaba: cuatro secciones con
+            nombres largos daban 759 px de documento en una pantalla de 390.
+            Ahora la fila entera se desplaza en horizontal y el rótulo cede
+            sitio en vez de empujar. */}
+        <div className="flex items-center gap-4 px-4 sm:px-6 h-16 min-w-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
               <ShieldCheck className="w-4 h-4 text-accent-foreground" />
             </div>
-            <div className="leading-tight">
+            <div className="leading-tight hidden sm:block">
               <span className="block text-sm font-bold tracking-tight text-sidebar-accent-foreground">
                 Ikán · Plataforma
               </span>
@@ -38,7 +42,7 @@ export function AdminLayout() {
             </div>
           </div>
 
-          <nav className="flex items-center gap-1 ml-6">
+          <nav className="flex items-center gap-1 ml-2 sm:ml-6 min-w-0 overflow-x-auto">
             {SECCIONES.map((s) => {
               const activo = location.pathname.startsWith(s.to);
               return (
@@ -52,8 +56,8 @@ export function AdminLayout() {
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
                   )}
                 >
-                  <s.icon className="w-4 h-4" />
-                  {s.label}
+                  <s.icon className="w-4 h-4 shrink-0" />
+                  <span className="whitespace-nowrap">{s.label}</span>
                 </NavLink>
               );
             })}
