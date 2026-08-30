@@ -11,6 +11,8 @@
  * script de un auditor.
  */
 
+import { raizMerkle } from '../../../supabase/functions/_shared/merkle';
+
 /** Hash de la cadena vacía: 64 ceros. */
 export const HASH_GENESIS = '0'.repeat(64);
 
@@ -29,6 +31,22 @@ export interface EventoBitacora {
   registrado_en?: string;
 }
 
+/** Un anclaje tal como viaja en el paquete. El `.ots` no va aquí: son bytes y
+ *  se descargan aparte, uno por anclaje. */
+export interface AnclajeDelPaquete {
+  id: string;
+  desde_secuencia: number;
+  hasta_secuencia: number;
+  raiz_merkle: string;
+  cadena_hash_final: string;
+  estado: 'pendiente' | 'confirmado' | 'fallido';
+  motivo: string;
+  calendarios: string[];
+  bloque_btc: number | null;
+  fecha_bloque: string | null;
+  creado_en: string;
+}
+
 export interface PaqueteVerificacion {
   organization_id: string;
   generado_en: string;
@@ -36,6 +54,21 @@ export interface PaqueteVerificacion {
   ultima_secuencia: number;
   ultimo_hash: string;
   eventos: EventoBitacora[];
+  /** Raíces publicadas en Bitcoin. Sin ellas, verificar sólo comprueba que la
+   *  cadena es consistente consigo misma —que es exactamente lo que no basta. */
+  anclajes?: AnclajeDelPaquete[];
+}
+
+/** Qué pasó al contrastar un anclaje contra los eventos del paquete. */
+export interface RevisionAnclaje {
+  id: string;
+  desde_secuencia: number;
+  hasta_secuencia: number;
+  estado: AnclajeDelPaquete['estado'];
+  bloque_btc: number | null;
+  /** La raíz recalculada desde los eventos coincide con la publicada. */
+  coincide: boolean;
+  motivo?: string;
 }
 
 export interface Rotura {
@@ -49,6 +82,11 @@ export interface ResultadoVerificacion {
   roturas: Rotura[];
   /** Último eslabón calculado. Es lo que se compara contra el ancla externa. */
   hashFinal: string;
+  /** Una por anclaje del paquete. Vacío si el paquete no trae anclajes. */
+  anclajes: RevisionAnclaje[];
+  /** Hasta qué secuencia hay una raíz publicada en Bitcoin que la respalde.
+   *  Los eventos por encima de esta línea son la ventana sin cobertura. */
+  cubiertoHasta: number;
 }
 
 const hex = (buf: ArrayBuffer) =>
@@ -137,25 +175,108 @@ export async function verificarPaquete(
     });
   }
 
+  const anclajes = await revisarAnclajes(paquete, eventos);
+
   return {
     integra: roturas.length === 0,
     eventosVerificados: eventos.length,
     roturas,
     hashFinal: anterior,
+    anclajes,
+    cubiertoHasta: anclajes
+      .filter((a) => a.coincide && a.estado === 'confirmado')
+      .reduce((n, a) => Math.max(n, a.hasta_secuencia), 0),
   };
 }
 
 /**
- * Advertencia que la pantalla DEBE mostrar junto a cualquier verificación
- * exitosa mientras no haya anclaje externo.
+ * Contrasta cada anclaje contra los eventos del paquete.
  *
- * Una cadena dentro de la base que administra Ikán prueba que nadie alteró un
- * evento suelto. No prueba que Ikán no la reescribiera entera. Decir
- * "verificado" a secas, sin ancla, sería exagerar lo que el resultado
- * significa.
+ * Es la parte que convierte "la cadena es consistente" en "esta historia
+ * existía antes de este bloque de Bitcoin". Se recalcula la raíz Merkle del
+ * tramo desde los eventos que están aquí: si coincide con la que se publicó,
+ * esos eventos son los que se anclaron y ninguno cambió desde entonces.
+ *
+ * Un anclaje que no coincide es la señal más grave de todo el verificador: la
+ * cadena puede estar perfectamente encadenada y aun así no ser la que se
+ * publicó, que es exactamente la manipulación que el ancla existe para
+ * detectar.
+ */
+async function revisarAnclajes(
+  paquete: PaqueteVerificacion,
+  eventos: EventoBitacora[],
+): Promise<RevisionAnclaje[]> {
+  const porSecuencia = new Map(eventos.map((e) => [e.secuencia, e]));
+
+  return await Promise.all(
+    (paquete.anclajes ?? []).map(async (a): Promise<RevisionAnclaje> => {
+      const base = {
+        id: a.id,
+        desde_secuencia: a.desde_secuencia,
+        hasta_secuencia: a.hasta_secuencia,
+        estado: a.estado,
+        bloque_btc: a.bloque_btc,
+      };
+
+      if (a.estado === 'fallido')
+        return { ...base, coincide: false, motivo: 'el anclaje no llegó a publicarse' };
+
+      const hojas: string[] = [];
+      for (let s = a.desde_secuencia; s <= a.hasta_secuencia; s++) {
+        const e = porSecuencia.get(s);
+        if (!e)
+          return {
+            ...base,
+            coincide: false,
+            motivo: `el paquete no trae el evento ${s}, que este anclaje certifica`,
+          };
+        hojas.push(e.cadena_hash);
+      }
+
+      const raiz = await raizMerkle(hojas);
+      if (raiz !== a.raiz_merkle.trim().toLowerCase())
+        return {
+          ...base,
+          coincide: false,
+          motivo:
+            'la raíz recalculada no es la que se publicó: estos eventos NO son los que se ' +
+            'anclaron',
+        };
+
+      const ultimo = porSecuencia.get(a.hasta_secuencia)!;
+      if (ultimo.cadena_hash.toLowerCase() !== a.cadena_hash_final.trim().toLowerCase())
+        return { ...base, coincide: false, motivo: 'el eslabón final no es el que se ancló' };
+
+      return { ...base, coincide: true };
+    }),
+  );
+}
+
+/**
+ * Lo que la pantalla DEBE decir junto a una verificación exitosa, según hasta
+ * dónde llegue el respaldo externo.
+ *
+ * Nunca se dice "verificado" a secas. Una cadena dentro de la base que
+ * administra Ikán prueba que nadie alteró un evento suelto; no prueba que Ikán
+ * no la reescribiera entera. Sólo el ancla en Bitcoin cierra esa puerta, y
+ * sólo hasta donde llega.
  */
 export const ADVERTENCIA_SIN_ANCLA =
   'Verificación interna: comprueba que ningún evento fue alterado ni borrado dentro de la ' +
-  'bitácora. Todavía NO hay anclaje externo, así que no prueba por sí sola que la cadena ' +
-  'completa no haya sido reescrita. El anclaje en Bitcoin (OpenTimestamps) entra en el ' +
-  'siguiente bloque.';
+  'bitácora. Todavía NO hay una raíz publicada en Bitcoin, así que no prueba por sí sola que ' +
+  'la cadena completa no haya sido reescrita.';
+
+export function advertenciaDeAlcance(r: Pick<ResultadoVerificacion, 'cubiertoHasta' | 'eventosVerificados'>): string {
+  if (r.cubiertoHasta === 0) return ADVERTENCIA_SIN_ANCLA;
+  if (r.cubiertoHasta >= r.eventosVerificados)
+    return (
+      'Los eventos verificados están respaldados por una raíz publicada en Bitcoin: cualquier ' +
+      'alteración, incluso reescribir la cadena entera, es detectable por un tercero sin ' +
+      'depender de Ikán.'
+    );
+  return (
+    `Los primeros ${r.cubiertoHasta.toLocaleString('es-MX')} eventos están respaldados por una ` +
+    'raíz publicada en Bitcoin. Los posteriores sólo tienen la verificación interna hasta el ' +
+    'siguiente anclaje.'
+  );
+}

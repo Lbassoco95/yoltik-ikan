@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { raizMerkle } from '../../supabase/functions/_shared/merkle';
 import {
   HASH_GENESIS,
   hashDeEslabon,
@@ -165,5 +166,88 @@ describe('verificación de la bitácora', () => {
     const r = await verificarPaquete(p);
     expect(r.hashFinal).toBe(p.ultimo_hash);
     expect(r.hashFinal).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe("anclajes dentro del paquete", () => {
+  /** Un paquete con su tramo anclado de verdad. */
+  async function paqueteAnclado(n: number, hasta = n) {
+    const p = await cadena(Array.from({ length: n }, (_, i) => `{"n":${i + 1}}`));
+    const hojas = p.eventos
+      .filter((e) => e.secuencia <= hasta)
+      .map((e) => e.cadena_hash);
+    p.anclajes = [
+      {
+        id: "anc-1",
+        desde_secuencia: 1,
+        hasta_secuencia: hasta,
+        raiz_merkle: await raizMerkle(hojas),
+        cadena_hash_final: p.eventos[hasta - 1].cadena_hash,
+        estado: "confirmado",
+        motivo: "diario",
+        calendarios: ["https://a.pool.opentimestamps.org"],
+        bloque_btc: 900123,
+        fecha_bloque: "2026-08-30T00:00:00.000Z",
+        creado_en: "2026-08-30T00:00:00.000Z",
+      },
+    ];
+    return p;
+  }
+
+  it("un anclaje que corresponde a los eventos coincide", async () => {
+    const r = await verificarPaquete(await paqueteAnclado(8));
+    expect(r.integra).toBe(true);
+    expect(r.anclajes).toHaveLength(1);
+    expect(r.anclajes[0].coincide).toBe(true);
+    expect(r.cubiertoHasta).toBe(8);
+  });
+
+  it("los eventos posteriores al último anclaje quedan sin cobertura", async () => {
+    // Es la ventana en la que una manipulación no tendría nada que la
+    // contradiga, y la pantalla tiene que poder decirlo.
+    const r = await verificarPaquete(await paqueteAnclado(10, 6));
+    expect(r.cubiertoHasta).toBe(6);
+  });
+
+  it("si un evento anclado cambió, la raíz deja de coincidir", async () => {
+    // La cadena puede seguir perfectamente encadenada y aun así no ser la que
+    // se publicó: es justo la manipulación que el ancla existe para detectar.
+    const p = await paqueteAnclado(8);
+    p.anclajes![0].raiz_merkle = "f".repeat(64);
+    const r = await verificarPaquete(p);
+    expect(r.anclajes[0].coincide).toBe(false);
+    expect(r.anclajes[0].motivo).toContain("NO son los que se anclaron");
+    expect(r.cubiertoHasta).toBe(0);
+  });
+
+  it("un anclaje sobre eventos que el paquete no trae se reporta, no se ignora", async () => {
+    const p = await paqueteAnclado(8);
+    p.anclajes![0].hasta_secuencia = 20;
+    const r = await verificarPaquete(p);
+    expect(r.anclajes[0].coincide).toBe(false);
+    expect(r.anclajes[0].motivo).toContain("no trae el evento");
+  });
+
+  it("un anclaje fallido no cuenta como cobertura", async () => {
+    const p = await paqueteAnclado(8);
+    p.anclajes![0].estado = "fallido";
+    const r = await verificarPaquete(p);
+    expect(r.anclajes[0].coincide).toBe(false);
+    expect(r.cubiertoHasta).toBe(0);
+  });
+
+  it("uno pendiente tampoco: Bitcoin todavía no lo confirmó", async () => {
+    const p = await paqueteAnclado(8);
+    p.anclajes![0].estado = "pendiente";
+    const r = await verificarPaquete(p);
+    expect(r.anclajes[0].coincide).toBe(true); // la raíz sí cuadra
+    expect(r.cubiertoHasta).toBe(0); // pero no hay bloque todavía
+  });
+
+  it("un paquete sin anclajes verifica igual, sin cobertura externa", async () => {
+    const r = await verificarPaquete(await cadena(['{"a":1}', '{"b":2}', '{"c":3}']));
+    expect(r.integra).toBe(true);
+    expect(r.anclajes).toEqual([]);
+    expect(r.cubiertoHasta).toBe(0);
   });
 });

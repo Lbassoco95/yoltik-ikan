@@ -112,6 +112,69 @@ export async function facetasEventos(): Promise<{ entidades: string[]; tipos: st
   };
 }
 
+export interface AnclajeListado {
+  id: string;
+  desde_secuencia: number;
+  hasta_secuencia: number;
+  raiz_merkle: string;
+  cadena_hash_final: string;
+  motivo: 'diario' | 'cierre_periodo' | 'manual';
+  estado: 'pendiente' | 'confirmado' | 'fallido';
+  calendarios: string[];
+  bloque_btc: number | null;
+  fecha_bloque: string | null;
+  detalle: string | null;
+  creado_en: string;
+}
+
+export interface EstadoAnclaje {
+  organization_id: string;
+  ultima_secuencia: number;
+  anclado_hasta: number | null;
+  raiz_merkle: string | null;
+  estado: AnclajeListado['estado'] | null;
+  motivo: AnclajeListado['motivo'] | null;
+  bloque_btc: number | null;
+  fecha_bloque: string | null;
+  anclado_en: string | null;
+  /** Eventos sin cobertura externa: la ventana en la que una manipulación no
+   *  tendría nada que la contradiga. */
+  eventos_sin_anclar: number;
+}
+
+/** Cabeza de la cadena frente al último anclaje. Null si la organización
+ *  todavía no registró ningún evento. */
+export async function estadoAnclaje(organizationId?: string): Promise<EstadoAnclaje | null> {
+  const id = organizationId ?? (await contextoSesion()).organizationId;
+  const { data, error } = await supabase
+    .from('v_anclaje_estado')
+    .select('*')
+    .eq('organization_id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as unknown as EstadoAnclaje) ?? null;
+}
+
+/** Los anclajes de la organización, del más reciente al más antiguo. El `ots`
+ *  no viaja aquí: son bytes y sólo hacen falta al descargar la prueba. */
+export async function listarAnclajes(
+  organizationId?: string,
+  limite = 20,
+): Promise<AnclajeListado[]> {
+  const id = organizationId ?? (await contextoSesion()).organizationId;
+  const { data, error } = await supabase
+    .from('anclaje')
+    .select(
+      'id, desde_secuencia, hasta_secuencia, raiz_merkle, cadena_hash_final, motivo, estado, ' +
+        'calendarios, bloque_btc, fecha_bloque, detalle, creado_en',
+    )
+    .eq('organization_id', id)
+    .order('hasta_secuencia', { ascending: false })
+    .limit(limite);
+  if (error) throw error;
+  return (data ?? []) as unknown as AnclajeListado[];
+}
+
 /** Verificación hecha por la base. Devuelve las roturas; vacío = íntegra. */
 export async function verificarEnBase(
   organizationId?: string,
@@ -149,11 +212,18 @@ export async function exportarPaquete(organizationId?: string): Promise<PaqueteV
     if (desde + TAMANO > cabeza.ultima_secuencia) break;
   }
 
+  // Los anclajes viajan con el paquete: sin ellos, quien verifica sólo puede
+  // comprobar que la cadena es consistente consigo misma, que es justo lo que
+  // no basta. Con ellos puede recalcular la raíz de cada tramo y contrastarla
+  // contra lo publicado en Bitcoin, sin preguntarnos nada.
+  const anclajes = await listarAnclajes(id, 1000).catch(() => []);
+
   return {
     organization_id: id,
     generado_en: new Date().toISOString(),
     ultima_secuencia: cabeza.ultima_secuencia,
     ultimo_hash: cabeza.ultimo_hash,
     eventos,
+    anclajes,
   };
 }

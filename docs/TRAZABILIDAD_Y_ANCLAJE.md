@@ -1,7 +1,9 @@
 # Trazabilidad, certificación y anclaje — diseño
 
-> Documento de decisión. Bloque propuesto **RCG0.B8**. Nada de esto está
-> construido todavía: aquí se decide qué se construye y en qué orden.
+> Documento de decisión y estado. **B8.1 construido** (migration 0021).
+> **B8.2 construido** (migration 0026 + Edge Function `anclar-bitacora`), con
+> una reserva importante: ver «Lo que falta comprobar en vivo» al final.
+> B8.3 y B8.4 siguen sin construir.
 
 ## Qué se está pidiendo, dicho con precisión
 
@@ -182,3 +184,70 @@ programada, que tiene su propia salida a internet. B8.2 se construye con la
 llamada de red aislada tras una interfaz, para poder probar toda la lógica
 —construcción del árbol, selección de eventos, guardado del `.ots`— sin
 depender de que el calendario responda, y se prueba en vivo al desplegarla.
+
+---
+
+## Estado de B8.2 · anclaje con OpenTimestamps (30/ago/2026)
+
+### Lo construido
+
+| Pieza | Qué hace |
+|---|---|
+| `supabase/migrations/0026_anclaje_bitacora.sql` | Tabla `anclaje`, vista `v_anclaje_estado`, función `rango_por_anclar` |
+| `supabase/functions/_shared/merkle.ts` | Árbol Merkle. Compartido entre la Edge Function y el verificador del navegador |
+| `supabase/functions/_shared/opentimestamps.ts` | Cliente de los calendarios y armado del `.ots`, con la red tras una interfaz |
+| `supabase/functions/anclar-bitacora/anclaje.ts` | La lógica: qué tramo, en qué orden, qué se hace si un calendario no contesta |
+| `supabase/functions/anclar-bitacora/index.ts` | La función: recorre organizaciones, ancla, guarda |
+| `src/lib/bitacora/verificador.ts` | Ahora recalcula la raíz de cada anclaje y la contrasta |
+| `src/components/bitacora/IntegridadBitacora.tsx` | El estado del ancla, sin exagerarlo |
+
+### Decisiones que se tomaron construyendo
+
+- **El nodo impar sube tal cual, no se duplica.** Duplicarlo es la falla
+  CVE-2012-2459 de Bitcoin: permite dos conjuntos de hojas distintos con la
+  misma raíz, y aquí eso significaría poder cambiar qué se certificó.
+- **Se hashean los bytes, no el texto hexadecimal.** Es lo que hacen Bitcoin y
+  OpenTimestamps; hashear el texto daría una raíz que ninguna herramienta de
+  fuera podría reproducir.
+- **Un hueco en la secuencia frena el anclaje.** Anclar un tramo incompleto
+  certificaría una historia que no es la que ocurrió, y el rango no se puede
+  corregir después.
+- **Que fallen todos los calendarios es un resultado, no una excepción.** El
+  anclaje queda `fallido` con el motivo escrito y la pantalla lo enseña. Un
+  fallo silencioso dejaría la ventana abierta sin que nadie se entere.
+- **Un anclaje no se corrige ni se borra.** Sólo madura de `pendiente` a
+  `confirmado`. Poder reescribir el tramo sería poder elegir qué se certificó.
+- **La tabla `anclaje` no tiene política de escritura, a propósito.** La crea la
+  Edge Function con `service_role`. Si alguien "arregla" eso con un
+  `using (true)`, cualquier usuario podría fabricar un ancla y el ejercicio
+  entero deja de probar nada.
+- **`pendiente` no se pinta como certificado.** El calendario recibió la raíz;
+  Bitcoin tarda unas horas. Hasta el bloque, no hay certificación, y la
+  pantalla lo dice con esas palabras.
+
+### Lo que falta comprobar en vivo
+
+El envío al calendario es una petición HTTP simple. **El armado del archivo
+`.ots` sigue la especificación del formato pero NO se pudo comprobar contra un
+calendario real**: el proxy de esta sesión bloquea `*.opentimestamps.org`, igual
+que bloquea Supabase.
+
+Por eso:
+
+1. La respuesta del calendario se guarda **tal cual** dentro del `.ots`. Si el
+   armado resultara mal, la prueba no se pierde y el archivo se rehace. Lo que
+   no se puede rehacer es el estampado, y ese ya habría ocurrido.
+2. **Antes del demo**: desplegar la función, forzar un anclaje manual, descargar
+   el `.ots` y pasarlo por la herramienta oficial (`ots verify`, o
+   `opentimestamps.org`). Si el archivo no valida, el fallo está en el armado y
+   se corrige sin volver a estampar nada.
+3. Mientras tanto la UI no afirma más de lo que hay: sin bloque, dice
+   «esperando confirmación de Bitcoin».
+
+### Lo que falta construir
+
+- **El `upgrade`**: pedirle al calendario la prueba completa cuando Bitcoin
+  confirme, y pasar el anclaje de `pendiente` a `confirmado` con su número de
+  bloque. Hoy la tabla y la UI ya lo contemplan; falta la corrida que lo haga.
+- **El cron diario** y la llamada forzada al cerrar el periodo de aviso.
+- **Descargar el `.ots`** desde la pantalla de integridad, junto al paquete.

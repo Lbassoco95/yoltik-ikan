@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Download, Loader2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Anchor, CheckCircle2, Clock, Download, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { estadoCadena, exportarPaquete, verificarEnBase } from "@/lib/api/bitacora";
+import { cn } from "@/lib/utils";
 import {
-  ADVERTENCIA_SIN_ANCLA,
+  estadoAnclaje,
+  estadoCadena,
+  exportarPaquete,
+  verificarEnBase,
+  type EstadoAnclaje,
+} from "@/lib/api/bitacora";
+import {
+  advertenciaDeAlcance,
   verificarPaquete,
   type ResultadoVerificacion,
 } from "@/lib/bitacora/verificador";
@@ -34,6 +41,11 @@ export function IntegridadBitacora({
   const { data: cabeza, isLoading, isError, error } = useQuery({
     queryKey: ["cadena", organizationId ?? "propia"],
     queryFn: () => estadoCadena(organizationId),
+  });
+
+  const { data: ancla } = useQuery({
+    queryKey: ["anclaje", organizationId ?? "propia"],
+    queryFn: () => estadoAnclaje(organizationId),
   });
 
   async function verificar() {
@@ -118,6 +130,8 @@ export function IntegridadBitacora({
         </div>
       )}
 
+      <EstadoDelAncla ancla={ancla ?? null} />
+
       {resultado && (
         <div
           className={`rounded-lg p-3 ${integra ? "bg-success/10" : "bg-destructive/10"}`}
@@ -153,10 +167,122 @@ export function IntegridadBitacora({
           )}
 
           {integra && (
-            <p className="text-[11px] text-warning mt-2 ml-6">{ADVERTENCIA_SIN_ANCLA}</p>
+            <>
+              <p
+                className={cn(
+                  "text-[11px] mt-2 ml-6",
+                  resultado.cubiertoHasta >= resultado.eventosVerificados
+                    ? "text-success"
+                    : "text-warning",
+                )}
+              >
+                {advertenciaDeAlcance(resultado)}
+              </p>
+
+              {/* Un anclaje cuya raíz no cuadra es la señal más grave del
+                  verificador: la cadena puede estar bien encadenada y aun así
+                  no ser la que se publicó. */}
+              {resultado.anclajes
+                .filter((a) => !a.coincide)
+                .map((a) => (
+                  <p key={a.id} className="text-[11px] text-destructive mt-1 ml-6">
+                    Anclaje {a.desde_secuencia}–{a.hasta_secuencia}: {a.motivo}
+                  </p>
+                ))}
+            </>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * El ancla externa, dicha sin exagerar.
+ *
+ * Tres estados distintos y ninguno se puede confundir con otro:
+ *   - confirmado: hay una raíz en un bloque de Bitcoin. Es la afirmación
+ *     fuerte, y es la única que se pinta en verde.
+ *   - pendiente: el calendario aceptó la raíz pero Bitcoin todavía no la
+ *     confirma. Tarda unas horas y es normal; no es una certificación aún.
+ *   - sin ancla: sólo la cadena interna. Se dice, no se calla.
+ *
+ * `eventos_sin_anclar` sale siempre, incluso con el ancla al día: es la
+ * ventana en la que una manipulación no tendría nada que la contradiga, y
+ * ocultarla sería vender más de lo que hay.
+ */
+function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
+  if (!ancla) return null;
+
+  const confirmado = ancla.estado === "confirmado";
+  const pendiente = ancla.estado === "pendiente";
+  const sinAncla = ancla.anclado_hasta == null;
+
+  return (
+    <div
+      className={cn(
+        "rounded-lg p-3",
+        confirmado ? "bg-success/10" : pendiente ? "bg-primary/5" : "bg-warning/10",
+      )}
+    >
+      <div className="flex items-start gap-2">
+        {confirmado ? (
+          <Anchor className="w-4 h-4 mt-0.5 text-success shrink-0" />
+        ) : pendiente ? (
+          <Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+        ) : (
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-warning shrink-0" />
+        )}
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-foreground">
+            {confirmado
+              ? `Anclado en Bitcoin · bloque ${ancla.bloque_btc?.toLocaleString("es-MX")}`
+              : pendiente
+                ? "Anclaje enviado · esperando confirmación de Bitcoin"
+                : sinAncla
+                  ? "Sin anclaje externo todavía"
+                  : "El último anclaje no llegó a publicarse"}
+          </p>
+
+          <p className="text-[11px] text-muted-foreground">
+            {confirmado ? (
+              <>
+                Los eventos 1 a {ancla.anclado_hasta?.toLocaleString("es-MX")} están respaldados
+                por una raíz publicada en Bitcoin
+                {ancla.fecha_bloque
+                  ? ` el ${new Date(ancla.fecha_bloque).toLocaleDateString("es-MX")}`
+                  : ""}
+                . Cualquiera puede comprobarlo con un nodo de Bitcoin, sin pedirnos nada.
+              </>
+            ) : pendiente ? (
+              <>
+                El calendario de OpenTimestamps ya recibió la raíz; Bitcoin tarda unas horas en
+                confirmarla. Hasta entonces esto todavía no es una certificación.
+              </>
+            ) : (
+              <>
+                Por ahora la integridad se comprueba sólo dentro de la base. Eso detecta que se
+                alterara un evento suelto, no que se reescribiera la cadena entera.
+              </>
+            )}
+          </p>
+
+          {ancla.eventos_sin_anclar > 0 && (
+            <p className="text-[11px] text-warning">
+              {ancla.eventos_sin_anclar.toLocaleString("es-MX")} evento
+              {ancla.eventos_sin_anclar === 1 ? "" : "s"} sin cobertura externa: son los
+              posteriores al último anclaje. El anclaje corre a diario y se fuerza al cerrar cada
+              periodo de aviso.
+            </p>
+          )}
+
+          {ancla.raiz_merkle && (
+            <p className="text-[11px] font-mono text-muted-foreground break-all">
+              raíz {ancla.raiz_merkle}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
