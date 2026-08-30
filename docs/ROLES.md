@@ -14,9 +14,21 @@ no contestó», y dejar al Oficial de Cumplimiento fuera de su propio sistema el
 día 17 por una falla que no es suya sería peor que un día sin segundo factor.
 La cabecera lo enseña en rojo mientras dure.
 
-Reponer un factor perdido (teléfono robado) es operación de Kawiil desde la
-consola de plataforma, no una preferencia del usuario: por eso la pantalla no
-ofrece quitarlo.
+Reponer un factor perdido (teléfono robado) es operación de Kawiil, no una
+preferencia del usuario: por eso la pantalla no ofrece quitarlo. Se hace
+borrando el factor de la cuenta:
+
+```sql
+-- Recuperación de un usuario que perdió su segundo factor. Al volver a entrar
+-- se le pedirá darlo de alta otra vez. Comprobado el 30/08/2026 sobre un
+-- usuario de prueba.
+delete from auth.mfa_factors
+ where user_id = (select id from auth.users where email = 'CORREO@EJEMPLO.MX');
+```
+
+`/seguridad/2fa` existe en las DOS aplicaciones —la de clientes y la consola de
+plataforma—. Sin la ruta en la consola, su comodín devolvía a `/` y de ahí otra
+vez al alta: un bucle que la dejaba inservible.
 
 ## Operador
 

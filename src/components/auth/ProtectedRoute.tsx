@@ -62,8 +62,28 @@ export function ProtectedRoute({
     return <Navigate to="/" replace />;
   }
 
+  // Se dice, no se redirige.
+  //
+  // Redirigir a "/" era un bucle: en la consola de plataforma "/" es ESTA
+  // MISMA ruta protegida, así que quien no tenía el privilegio rebotaba
+  // indefinidamente sin ver nunca por qué. Y aunque no lo fuera, mandar a
+  // alguien al inicio sin explicación no le dice si le falta un permiso, si se
+  // equivocó de dirección o si la aplicación está rota.
   if (requirePlatformAdmin && !esAdmin) {
-    return <Navigate to="/" replace />;
+    return (
+      <div className="min-h-screen grid place-items-center bg-background p-6">
+        <div className="ikan-card max-w-sm text-center space-y-2">
+          <h1 className="text-lg font-bold text-foreground">Consola de plataforma</h1>
+          <p className="text-sm text-muted-foreground">
+            Tu cuenta no tiene privilegio de administrador de plataforma. Esta consola es de
+            Kawiil y desde aquí se configura lo que afecta a todas las organizaciones.
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Si necesitas entrar, pídeselo a quien administre la plataforma.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

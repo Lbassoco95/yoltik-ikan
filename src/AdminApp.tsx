@@ -9,6 +9,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { LoginPage } from "@/pages/auth/Login";
 import { RecuperarPasswordPage } from "@/pages/auth/RecuperarPassword";
 import { RestablecerPasswordPage } from "@/pages/auth/RestablecerPassword";
+import AltaSegundoFactorPage from "@/pages/auth/AltaSegundoFactor";
 import AdminListasPage from "@/pages/admin/AdminListasPage";
 import AdminParametrosPage from "@/pages/admin/AdminParametrosPage";
 import AdminCatalogosPage from "@/pages/admin/AdminCatalogosPage";
@@ -39,6 +40,18 @@ const AdminApp = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/recuperar" element={<RecuperarPasswordPage />} />
             <Route path="/restablecer" element={<RestablecerPasswordPage />} />
+            {/* Tiene que existir también aquí. ProtectedRoute manda a quien no
+                tenga segundo factor a /seguridad/2fa; sin esta ruta, la de
+                comodín devolvía a "/" y de ahí otra vez al alta: un bucle de
+                redirecciones que dejaba la consola inservible. */}
+            <Route
+              path="/seguridad/2fa"
+              element={
+                <ProtectedRoute>
+                  <AltaSegundoFactorPage />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               element={

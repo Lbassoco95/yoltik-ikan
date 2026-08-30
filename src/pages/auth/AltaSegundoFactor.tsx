@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,23 @@ export default function AltaSegundoFactorPage() {
   const [cargando, setCargando] = useState(true);
   const [enviando, setEnviando] = useState(false);
 
+  // Una sola alta por visita, pase lo que pase.
+  //
+  // React en modo estricto ejecuta los efectos DOS veces en desarrollo. Aquí
+  // eso significa dos `enroll` a la vez, y como el alta limpia primero los
+  // factores a medio inscribir, la segunda corrida puede borrar el factor que
+  // la primera acaba de crear. El QR en pantalla quedaría apuntando a un
+  // factor que ya no existe: el usuario lo escanea, el código nunca valida y
+  // se queda atrapado en la única pantalla de la que no puede salir.
+  //
+  // (Es también lo que producía el `Failed to fetch` en consola: la petición
+  // de la corrida descartada, cancelada a medias.)
+  const yaEmpezo = useRef(false);
+
   useEffect(() => {
+    if (yaEmpezo.current) return;
+    yaEmpezo.current = true;
+
     let vivo = true;
     (async () => {
       const s = await situacionMfa();
