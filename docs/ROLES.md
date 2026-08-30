@@ -2,6 +2,22 @@
 
 Tres roles operativos. Un usuario puede acumular roles (típicamente OC + Admin).
 
+## Segundo factor: obligatorio
+
+Ninguna sesión llega a una pantalla con datos sin TOTP activo. Quien no lo tenga
+va a `/seguridad/2fa` antes que a cualquier otra ruta. El secreto lo guarda
+Supabase Auth; Ikán no lo ve ni lo almacena.
+
+Con una excepción deliberada: si **no se pudo preguntarle a Auth** por el
+factor, no se bloquea. Eso no es «este usuario no tiene 2FA», es «la plataforma
+no contestó», y dejar al Oficial de Cumplimiento fuera de su propio sistema el
+día 17 por una falla que no es suya sería peor que un día sin segundo factor.
+La cabecera lo enseña en rojo mientras dure.
+
+Reponer un factor perdido (teléfono robado) es operación de Kawiil desde la
+consola de plataforma, no una preferencia del usuario: por eso la pantalla no
+ofrece quitarlo.
+
 ## Operador
 
 - Vende u opera. Captura clientes y operaciones. **Su flujo termina con el acuse.**

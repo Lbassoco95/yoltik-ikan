@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut } from "lucide-react";
+import { Bell, Search, LogOut, ShieldAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ function getInitials(nombre: string | undefined): string {
 }
 
 export function AppHeader({ onToggleSidebar: _onToggleSidebar }: AppHeaderProps) {
-  const { profile, roles, signOut } = useAuth();
+  const { profile, roles, signOut, estadoMfa } = useAuth();
   const { activeRole, setActiveRole } = useActiveRole();
   const navegar = useNavigate();
 
@@ -48,6 +48,18 @@ export function AppHeader({ onToggleSidebar: _onToggleSidebar }: AppHeaderProps)
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Cuando no se pudo preguntarle a Auth por el segundo factor no se
+            bloquea el acceso —dejar al OC fuera de su sistema el día 17 por
+            una falla de plataforma sería peor— pero tampoco se calla: la
+            sesión está corriendo con menos protección de la que el producto
+            promete, y eso tiene que verse. */}
+        {estadoMfa === 'no_disponible' && (
+          <span className="flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
+            <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
+            Sin comprobar el segundo factor
+          </span>
+        )}
+
         <span className="text-sm font-medium text-muted-foreground">
           {profile?.organization_name ?? '—'}
         </span>

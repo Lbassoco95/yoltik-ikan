@@ -1,0 +1,177 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  confirmarInscripcion,
+  iniciarInscripcion,
+  situacionMfa,
+  type InscripcionMfa,
+} from "@/lib/api/mfa";
+import { useAuth } from "@/lib/auth-context";
+
+/**
+ * Alta del segundo factor.
+ *
+ * En Ikán el 2FA es obligatorio: una sesión da acceso a expedientes con CURP,
+ * RFC y hallazgos de PLD, y a la firma de avisos. Hasta ahora no había forma
+ * de darlo de alta —el login sabía verificarlo, nadie sabía inscribirlo— así
+ * que en la práctica nadie lo tenía y el perfil decía que sí.
+ *
+ * El factor NO queda activo hasta que se verifica un código. Si quedara activo
+ * al enseñar el QR, cerrar la pestaña sin escanearlo dejaría al usuario fuera
+ * de su propia cuenta.
+ */
+export default function AltaSegundoFactorPage() {
+  const navegar = useNavigate();
+  const { refrescarPerfil } = useAuth();
+  const [inscripcion, setInscripcion] = useState<InscripcionMfa | null>(null);
+  const [codigo, setCodigo] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      const s = await situacionMfa();
+      if (!vivo) return;
+
+      if (s.estado === "inscrito") {
+        navegar("/", { replace: true });
+        return;
+      }
+      if (s.estado === "no_disponible") {
+        setError(
+          `No se pudo preguntar por el segundo factor: ${s.motivo ?? "sin detalle"}. ` +
+            "Es un problema de la plataforma, no de tu cuenta.",
+        );
+        setCargando(false);
+        return;
+      }
+
+      try {
+        setInscripcion(await iniciarInscripcion());
+      } catch (e) {
+        if (vivo) setError((e as Error).message);
+      } finally {
+        if (vivo) setCargando(false);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [navegar]);
+
+  async function confirmar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!inscripcion) return;
+    setEnviando(true);
+    setError(null);
+    try {
+      await confirmarInscripcion(inscripcion.factorId, codigo);
+      await refrescarPerfil();
+      navegar("/", { replace: true });
+    } catch (err) {
+      setError(
+        (err as Error).message.includes("Invalid")
+          ? "El código no coincide. Revisa que sea el que muestra la app en este momento: cambia cada 30 segundos."
+          : (err as Error).message,
+      );
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen grid place-items-center bg-background p-6">
+      <div className="ikan-card w-full max-w-md space-y-5">
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+          <div>
+            <h1 className="text-lg font-bold text-foreground">Activa tu segundo factor</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Tu sesión da acceso a expedientes con datos personales y a la firma de avisos. Una
+              contraseña sola no basta para eso, así que en Ikán el segundo factor es obligatorio.
+            </p>
+          </div>
+        </div>
+
+        {cargando ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" /> Preparando el código…
+          </div>
+        ) : inscripcion ? (
+          <>
+            <ol className="text-sm text-foreground space-y-1 list-decimal ml-4">
+              <li>Abre tu app de autenticación (Google Authenticator, 1Password, Authy…).</li>
+              <li>Escanea este código.</li>
+              <li>Escribe abajo los seis dígitos que aparezcan.</li>
+            </ol>
+
+            <div
+              className="rounded-lg bg-white p-4 grid place-items-center [&>svg]:w-44 [&>svg]:h-44"
+              /* El QR llega como SVG desde Supabase Auth. Va sobre fondo blanco
+                 siempre: en tema oscuro, un QR con los colores invertidos no lo
+                 lee la mitad de las cámaras. */
+              dangerouslySetInnerHTML={{ __html: inscripcion.qr }}
+            />
+
+            <details className="text-xs text-muted-foreground">
+              <summary className="cursor-pointer">No puedo escanear el código</summary>
+              <p className="mt-2">Escribe esta clave a mano en tu app:</p>
+              <code className="block mt-1 font-mono text-[11px] break-all bg-muted/50 rounded p-2">
+                {inscripcion.secreto}
+              </code>
+            </details>
+
+            <form onSubmit={confirmar} className="space-y-3">
+              <div>
+                <Label htmlFor="codigo">Código de seis dígitos</Label>
+                <Input
+                  id="codigo"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="000000"
+                  className="font-mono tracking-[0.4em] text-center text-lg"
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+
+              {error && <p className="text-sm text-destructive">{error}</p>}
+
+              <Button type="submit" className="w-full gap-2" disabled={enviando || codigo.length < 6}>
+                {enviando && <Loader2 className="w-4 h-4 animate-spin" />}
+                Activar
+              </Button>
+            </form>
+
+            <p className="text-[11px] text-muted-foreground">
+              El secreto lo guarda Supabase Auth, no Ikán. Si pierdes el teléfono, la reposición la
+              hace Kawiil desde la consola de plataforma.
+            </p>
+          </>
+        ) : (
+          <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3">
+            <AlertTriangle className="w-4 h-4 mt-0.5 text-destructive shrink-0" />
+            <div className="text-sm text-foreground">
+              <p>{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => window.location.reload()}
+              >
+                Reintentar
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
