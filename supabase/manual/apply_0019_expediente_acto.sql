@@ -226,4 +226,24 @@ begin
   raise notice 'OK · % pruebas pasaron', v_ok;
 end $$;
 
+-- La API de gestión de Supabase NO devuelve los RAISE NOTICE: por ahí este
+-- bundle se veía como un `[]` indistinguible de "no hizo nada". El bloque de
+-- arriba revienta y revierte si algo falla, así que ver esta tabla ya significa
+-- que las comprobaciones pasaron.
+select 'expediente del acto' as bundle,
+       (select count(*) from information_schema.columns
+         where table_schema = 'public' and table_name = 'client'
+           and column_name in ('nombre','apellido_paterno','apellido_materno','fecha_nacimiento',
+                               'fecha_constitucion','pais_nacionalidad_clave','actividad_economica_clave'))::text
+         || ' de 7 campos del compareciente' as compareciente,
+       (select count(*) from information_schema.columns
+         where table_schema = 'public' and table_name = 'operation'
+           and column_name in ('instrumento_publico','datos_acto'))::text
+         || ' de 2 campos del acto' as acto,
+       (select count(*) from information_schema.columns
+         where table_schema = 'public' and table_name = 'organizations'
+           and column_name in ('clave_sujeto_obligado','clave_entidad_colegiada','clave_actividad'))::text
+         || ' de 3 claves del padrón' as padron,
+       '8 comprobaciones pasaron' as verificacion;
+
 commit;

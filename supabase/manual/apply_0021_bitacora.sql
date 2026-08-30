@@ -409,17 +409,33 @@ create policy "cadena_select" on cadena_auditoria
 -- SECURITY DEFINER eso significa que cualquier usuario autenticado la puede
 -- llamar CON LOS PERMISOS DEL DUEÑO. En `registrar_evento` eso sería fatal: un
 -- cliente podría fabricar eventos en la cadena de cualquier organización, que
--- es exactamente lo que la bitácora existe para impedir. Hay que quitarlo a
--- mano; no basta con "no otorgarlo".
-revoke all on function public.registrar_evento(uuid, text, text, uuid, jsonb, text, uuid, jsonb) from public;
-revoke all on function public.emitir_evento_de_tabla() from public;
+-- es exactamente lo que la bitácora existe para impedir.
+--
+-- Y con PUBLIC no basta. Supabase deja puesto un ALTER DEFAULT PRIVILEGES que
+-- otorga EXECUTE a `anon`, `authenticated` y `service_role` sobre TODA función
+-- nueva del esquema `public`. Ese grant es directo al rol, así que revocar de
+-- PUBLIC no lo toca: la función sigue siendo llamable. La primera versión de
+-- esta migration hacía justo eso y su propia verificación la rechazó al
+-- aplicarla en producción — de ahí que haya que nombrar los roles uno por uno.
+--
+-- `service_role` se deja: ya salta RLS por diseño y es el rol de servidor de
+-- confianza, así que quitarle EXECUTE no protege de nada y sí puede romper una
+-- Edge Function el día que la haya.
+--
+-- REGLA para lo que venga: toda función SECURITY DEFINER que no compruebe
+-- permisos por dentro necesita su revoke EXPLÍCITO a public, anon y
+-- authenticated. No alcanza con "no otorgarla".
+revoke all on function public.registrar_evento(uuid, text, text, uuid, jsonb, text, uuid, jsonb)
+  from public, anon, authenticated;
+revoke all on function public.emitir_evento_de_tabla() from public, anon, authenticated;
 
 -- Mismo problema, encontrado al revisar: `emitir_folio_hallazgo` es SECURITY
--- DEFINER, no comprueba nada y estaba abierta a cualquiera. Sólo la llama el
--- trigger `trg_emitir_folio`; nadie la invoca desde la aplicación. Quien la
--- llamara podía consumir folios de la secuencia de OTRA organización y abrir
--- huecos en una numeración que se supone continua.
-revoke all on function public.emitir_folio_hallazgo(uuid) from public;
+-- DEFINER, no comprueba nada y estaba abierta a cualquiera —además con grants
+-- directos a anon y authenticated de antes—. Sólo la llama el trigger
+-- `trg_emitir_folio`; nadie la invoca desde la aplicación. Quien la llamara
+-- podía consumir folios de la secuencia de OTRA organización y abrir huecos en
+-- una numeración que se supone continua.
+revoke all on function public.emitir_folio_hallazgo(uuid) from public, anon, authenticated;
 
 do $$ begin
   if exists (select 1 from pg_roles where rolname = 'authenticated') then
@@ -512,15 +528,22 @@ begin
   v_ok := v_ok + 1;
 
   -- 11. ninguna función SECURITY DEFINER sin control de acceso quedó abierta a
-  --     los clientes. PostgreSQL otorga EXECUTE a PUBLIC por omisión, así que
-  --     esto hay que revocarlo a mano y comprobarlo.
-  if has_function_privilege('authenticated',
-       'public.registrar_evento(uuid,text,text,uuid,jsonb,text,uuid,jsonb)', 'execute') then
-    raise exception 'FALLA 11: un cliente podría fabricar eventos en cualquier cadena';
-  end if;
-  if has_function_privilege('authenticated', 'public.emitir_folio_hallazgo(uuid)', 'execute') then
-    raise exception 'FALLA 11b: un cliente podría consumir folios de otra organización';
-  end if;
+  --     los clientes. Se revisan los DOS roles de cliente: PostgreSQL otorga
+  --     EXECUTE a PUBLIC por omisión, y encima Supabase deja un ALTER DEFAULT
+  --     PRIVILEGES que se lo da directo a anon y authenticated. Revocar sólo de
+  --     PUBLIC no basta, y esta comprobación es la que lo destapó en producción.
+  foreach v_txt in array array['authenticated', 'anon'] loop
+    if has_function_privilege(v_txt,
+         'public.registrar_evento(uuid,text,text,uuid,jsonb,text,uuid,jsonb)', 'execute') then
+      raise exception 'FALLA 11: % podría fabricar eventos en cualquier cadena', v_txt;
+    end if;
+    if has_function_privilege(v_txt, 'public.emitir_folio_hallazgo(uuid)', 'execute') then
+      raise exception 'FALLA 11b: % podría consumir folios de otra organización', v_txt;
+    end if;
+    if has_function_privilege(v_txt, 'public.emitir_evento_de_tabla()', 'execute') then
+      raise exception 'FALLA 11c: % podría emitir eventos a mano', v_txt;
+    end if;
+  end loop;
   v_ok := v_ok + 1;
 
   -- 12. y lo que sí es para todos, sigue siéndolo
@@ -529,9 +552,21 @@ begin
   end if;
   v_ok := v_ok + 1;
 
-  select count(*) into v_n from cadena_auditoria;
-  raise notice 'Cadenas activas: %', v_n;
   raise notice 'OK · % pruebas pasaron', v_ok;
 end $$;
+
+-- La API de gestión de Supabase NO devuelve los RAISE NOTICE: por ahí el
+-- bundle se veía como un `[]` indistinguible de "no hizo nada". El bloque de
+-- arriba revienta y revierte si algo falla, así que ver esta tabla ya significa
+-- que las once comprobaciones pasaron.
+select 'bitácora encadenada' as bundle,
+       (select count(*) from cadena_auditoria)::text || ' cadena(s) activa(s)' as estado,
+       (select count(*) from pg_trigger
+         where tgname like 'trg_evento_%' and tgname <> 'trg_evento_inmutable')::text
+         || ' de 7 emisores instalados' as emisores,
+       case when has_function_privilege('authenticated',
+              'public.registrar_evento(uuid,text,text,uuid,jsonb,text,uuid,jsonb)', 'execute')
+            then 'ABIERTA — revisar' else 'cerrada a los clientes' end as registrar_evento,
+       '11 comprobaciones pasaron' as verificacion;
 
 commit;

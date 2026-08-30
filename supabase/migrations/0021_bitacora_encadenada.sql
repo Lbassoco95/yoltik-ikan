@@ -387,17 +387,33 @@ create policy "cadena_select" on cadena_auditoria
 -- SECURITY DEFINER eso significa que cualquier usuario autenticado la puede
 -- llamar CON LOS PERMISOS DEL DUEÑO. En `registrar_evento` eso sería fatal: un
 -- cliente podría fabricar eventos en la cadena de cualquier organización, que
--- es exactamente lo que la bitácora existe para impedir. Hay que quitarlo a
--- mano; no basta con "no otorgarlo".
-revoke all on function public.registrar_evento(uuid, text, text, uuid, jsonb, text, uuid, jsonb) from public;
-revoke all on function public.emitir_evento_de_tabla() from public;
+-- es exactamente lo que la bitácora existe para impedir.
+--
+-- Y con PUBLIC no basta. Supabase deja puesto un ALTER DEFAULT PRIVILEGES que
+-- otorga EXECUTE a `anon`, `authenticated` y `service_role` sobre TODA función
+-- nueva del esquema `public`. Ese grant es directo al rol, así que revocar de
+-- PUBLIC no lo toca: la función sigue siendo llamable. La primera versión de
+-- esta migration hacía justo eso y su propia verificación la rechazó al
+-- aplicarla en producción — de ahí que haya que nombrar los roles uno por uno.
+--
+-- `service_role` se deja: ya salta RLS por diseño y es el rol de servidor de
+-- confianza, así que quitarle EXECUTE no protege de nada y sí puede romper una
+-- Edge Function el día que la haya.
+--
+-- REGLA para lo que venga: toda función SECURITY DEFINER que no compruebe
+-- permisos por dentro necesita su revoke EXPLÍCITO a public, anon y
+-- authenticated. No alcanza con "no otorgarla".
+revoke all on function public.registrar_evento(uuid, text, text, uuid, jsonb, text, uuid, jsonb)
+  from public, anon, authenticated;
+revoke all on function public.emitir_evento_de_tabla() from public, anon, authenticated;
 
 -- Mismo problema, encontrado al revisar: `emitir_folio_hallazgo` es SECURITY
--- DEFINER, no comprueba nada y estaba abierta a cualquiera. Sólo la llama el
--- trigger `trg_emitir_folio`; nadie la invoca desde la aplicación. Quien la
--- llamara podía consumir folios de la secuencia de OTRA organización y abrir
--- huecos en una numeración que se supone continua.
-revoke all on function public.emitir_folio_hallazgo(uuid) from public;
+-- DEFINER, no comprueba nada y estaba abierta a cualquiera —además con grants
+-- directos a anon y authenticated de antes—. Sólo la llama el trigger
+-- `trg_emitir_folio`; nadie la invoca desde la aplicación. Quien la llamara
+-- podía consumir folios de la secuencia de OTRA organización y abrir huecos en
+-- una numeración que se supone continua.
+revoke all on function public.emitir_folio_hallazgo(uuid) from public, anon, authenticated;
 
 do $$ begin
   if exists (select 1 from pg_roles where rolname = 'authenticated') then

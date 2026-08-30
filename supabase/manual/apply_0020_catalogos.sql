@@ -1780,4 +1780,19 @@ begin
   raise notice 'OK · % pruebas pasaron', v_ok;
 end $$;
 
+-- La API de gestión de Supabase NO devuelve los RAISE NOTICE: por ahí este
+-- bundle se veía como un `[]` indistinguible de "no hizo nada". El bloque de
+-- arriba revienta y revierte si algo falla, así que ver esta tabla ya significa
+-- que las comprobaciones pasaron.
+select 'catálogos del layout' as bundle,
+       (select count(*) from v_catalogos_estado where valores_vigentes > 0)::text
+         || ' de ' || (select count(*) from v_catalogos_estado)::text
+         || ' catálogos con valores' as catalogos,
+       (select sum(valores_vigentes) from v_catalogos_estado)::text || ' claves cargadas' as claves,
+       (select descripcion from v_catalogo_vigente
+         where catalogo = 'entidad_federativa' and clave = '14') as prueba_jalisco,
+       (select count(*) from organizations where clave_actividad is not null)::text
+         || ' organización(es) con clave de actividad' as padron,
+       '12 comprobaciones pasaron' as verificacion;
+
 commit;

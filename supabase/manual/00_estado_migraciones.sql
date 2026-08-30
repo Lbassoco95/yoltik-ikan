@@ -80,7 +80,14 @@ lateral (values
   (22, '0022 · cierre de fuga entre organizaciones (PRIORIDAD)',
        coalesce((select option_value from pg_options_to_table(c.reloptions)
                   where option_name = 'security_invoker'), 'false') = 'true',
-       'apply_0022_seguridad.sql')
+       'apply_0022_seguridad.sql'),
+  -- La tabla ya existe en producción, así que su presencia no distingue si el
+  -- bundle corrió. Lo que sí lo distingue es el comentario que pone: sólo lo
+  -- escribe la 0023.
+  (23, '0023 · prospect_intake (respaldo + cotejo con la base)',
+       to_regclass('public.prospect_intake') is not null
+         and obj_description('public.prospect_intake'::regclass, 'pg_class') is not null,
+       'apply_0023_prospect_intake.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -168,7 +175,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0022'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0023'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')

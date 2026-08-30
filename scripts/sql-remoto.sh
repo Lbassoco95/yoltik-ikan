@@ -61,8 +61,11 @@ CODIGO="$(curl -sS -o "$RESPUESTA" -w '%{http_code}' -X POST "$API" \
   -H "Content-Type: application/json" \
   --data-binary "$CUERPO" 2>>"$RESPUESTA")" || CODIGO="000"
 
+# La API de gestión responde 201 en las consultas que ejecutan SQL, no 200. La
+# primera versión sólo aceptaba 200 y salía con código 5 sin enseñar el cuerpo:
+# el resultado estaba ahí y se tiraba. Se aceptan los 2xx.
 case "$CODIGO" in
-  200) python3 -c 'import json,sys;d=json.load(sys.stdin);print(json.dumps(d,ensure_ascii=False,indent=1))' < "$RESPUESTA" ;;
+  2*) python3 -c 'import json,sys;d=json.load(sys.stdin);print(json.dumps(d,ensure_ascii=False,indent=1))' < "$RESPUESTA" ;;
   000)
     echo "No hubo respuesta de api.supabase.com." >&2
     echo "Casi seguro es la política de red del entorno, no el token: el proxy" >&2
