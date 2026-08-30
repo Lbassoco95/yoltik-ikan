@@ -33,7 +33,10 @@ insert into ikan_estado
 select '1 · Migraciones', orden, migration,
        case when aplicada then 'ya está' else 'FALTA' end,
        case when aplicada then '' else 'supabase/manual/' || bundle end
-from (values
+from (
+  select c.reloptions from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relname = 'v_user_roles_simple') c,
+lateral (values
   (11, '0011 · parámetros regulatorios (UMA y umbrales con vigencia)',
        to_regclass('public.parametro_regulatorio') is not null,
        'apply_0011_parametros.sql'),
@@ -73,7 +76,11 @@ from (values
        'apply_0020_catalogos.sql'),
   (21, '0021 · bitácora encadenada (cada paso con su hash)',
        to_regclass('public.evento_auditoria') is not null,
-       'apply_0021_bitacora.sql')
+       'apply_0021_bitacora.sql'),
+  (22, '0022 · cierre de fuga entre organizaciones (PRIORIDAD)',
+       coalesce((select option_value from pg_options_to_table(c.reloptions)
+                  where option_name = 'security_invoker'), 'false') = 'true',
+       'apply_0022_seguridad.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -161,7 +168,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0021'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0022'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')
