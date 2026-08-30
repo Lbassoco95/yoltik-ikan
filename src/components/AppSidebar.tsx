@@ -9,11 +9,13 @@ import { navEntriesForRole } from "@/lib/role-routes";
 import { NAV_LABEL_OVERRIDES } from "@/lib/perfil-actividad";
 
 interface AppSidebarProps {
+  /** Para que el marco decida si va fija o superpuesta en un teléfono. */
+  className?: string;
   collapsed: boolean;
   onToggle: () => void;
 }
 
-export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
+export function AppSidebar({ collapsed, onToggle, className }: AppSidebarProps) {
   const location = useLocation();
   const { activeRole } = useActiveRole();
   const { perfilActividad } = useAuth();
@@ -35,7 +37,8 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
     <aside
       className={cn(
         "flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out shrink-0 relative",
-        collapsed ? "w-[68px]" : "w-[260px]"
+        collapsed ? "w-[68px]" : "w-[260px]",
+        className,
       )}
     >
       {/* Logo */}

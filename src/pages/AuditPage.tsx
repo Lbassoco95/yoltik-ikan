@@ -191,7 +191,7 @@ export default function AuditPage() {
             No se pudo leer la bitácora: {(error as Error).message}
           </p>
         ) : (
-          <table className="w-full min-w-[52rem]">
+          <table className="w-full min-w-[44rem]">
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 {["#", "Momento", "Acción", "Entidad", "Objeto", "Actor", "Encadenamiento"].map(

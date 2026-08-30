@@ -355,7 +355,7 @@ export default function OperationsPage() {
             No se pudieron cargar las operaciones: {(error as Error)?.message}
           </div>
         ) : (
-          <table className="w-full min-w-[64rem]">
+          <table className="w-full min-w-[48rem]">
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 {[

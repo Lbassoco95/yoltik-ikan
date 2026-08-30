@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut } from "lucide-react";
+import { Bell, Search, LogOut, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ function getInitials(nombre: string | undefined): string {
   return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
 }
 
-export function AppHeader({ onToggleSidebar: _onToggleSidebar }: AppHeaderProps) {
+export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
   const { profile, roles, signOut } = useAuth();
   const { activeRole, setActiveRole } = useActiveRole();
   const navegar = useNavigate();
@@ -36,19 +36,32 @@ export function AppHeader({ onToggleSidebar: _onToggleSidebar }: AppHeaderProps)
   });
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 shrink-0">
-      <div className="flex items-center gap-4">
-        <div className="relative">
+    <header className="h-16 border-b border-border bg-card flex items-center justify-between gap-2 px-3 sm:px-6 shrink-0">
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Este botón existía en las props desde el andamiaje y nadie lo había
+            conectado. Sin él, en un teléfono no había manera de recuperar los
+            260 px que se comía la barra lateral. */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0"
+          aria-label="Abrir o cerrar el menú"
+          onClick={onToggleSidebar}
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
+
+        <div className="relative hidden sm:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar clientes, operaciones…"
-            className="pl-10 w-80 bg-muted/50 border-0 focus-visible:ring-1"
+            className="pl-10 w-64 lg:w-80 bg-muted/50 border-0 focus-visible:ring-1"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="text-sm font-medium text-muted-foreground">
+        <span className="hidden md:inline text-sm font-medium text-muted-foreground truncate max-w-[14rem]">
           {profile?.organization_name ?? '—'}
         </span>
 

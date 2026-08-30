@@ -93,7 +93,7 @@ export default function VerificationPage() {
               No se pudieron cargar: {(error as Error).message}
             </p>
           ) : (
-            <table className="w-full min-w-[40rem]">
+            <table className="w-full min-w-[34rem]">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
                   {["Compareciente", "Nivel KYC", "Expediente", "Identidad verificada"].map((h) => (

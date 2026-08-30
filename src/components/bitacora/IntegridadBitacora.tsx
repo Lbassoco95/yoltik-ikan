@@ -320,7 +320,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
           se perdían columnas sin manera de llegar a ellas. El scroll va en un
           div propio, dentro del borde. */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[36rem]">
+        <table className="w-full min-w-[32rem]">
           <thead>
             <tr className="bg-muted/30">
               {["Eventos", "Motivo", "Estado", "Bloque", "Prueba"].map((h) => (
