@@ -15,6 +15,11 @@
 -- cadena empieza hoy.
 -- =====================================================================
 
+-- Todo lo que sigue va en UNA transacción, verificación incluida: si una
+-- comprobación del final falla, no queda nada a medias en la base. Se agregó
+-- después de notar que estos cuatro bundles no la traían y los anteriores sí.
+begin;
+
 -- =====================================================================
 -- Ikán · Migration 0021 · Bitácora encadenada (RCG0.B8.1)
 -- =====================================================================
@@ -528,3 +533,5 @@ begin
   raise notice 'Cadenas activas: %', v_n;
   raise notice 'OK · % pruebas pasaron', v_ok;
 end $$;
+
+commit;

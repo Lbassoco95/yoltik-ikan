@@ -16,6 +16,11 @@
 -- pasa cómodo por el SQL Editor.
 -- =====================================================================
 
+-- Todo lo que sigue va en UNA transacción, verificación incluida: si una
+-- comprobación del final falla, no queda nada a medias en la base. Se agregó
+-- después de notar que estos cuatro bundles no la traían y los anteriores sí.
+begin;
+
 -- =====================================================================
 -- Ikán · Migration 0020 · Catálogos del layout: la clave sale de la base
 -- =====================================================================
@@ -1774,3 +1779,5 @@ begin
 
   raise notice 'OK · % pruebas pasaron', v_ok;
 end $$;
+
+commit;

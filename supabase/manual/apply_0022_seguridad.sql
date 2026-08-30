@@ -16,6 +16,11 @@
 -- Al final imprime una tabla con el estado de las tres cosas que corrige.
 -- =====================================================================
 
+-- Todo lo que sigue va en UNA transacción, verificación incluida: si una
+-- comprobación del final falla, no queda nada a medias en la base. Se agregó
+-- después de notar que estos cuatro bundles no la traían y los anteriores sí.
+begin;
+
 -- =====================================================================
 -- Ikán · Migration 0022 · Cierre de fuga entre organizaciones
 -- =====================================================================
@@ -177,3 +182,5 @@ select 'otras vistas de public sin security_invoker',
  where n.nspname = 'public' and c.relkind = 'v'
    and coalesce((select option_value from pg_options_to_table(c.reloptions)
                   where option_name = 'security_invoker'), 'false') <> 'true';
+
+commit;
