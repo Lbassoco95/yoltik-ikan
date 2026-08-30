@@ -26,7 +26,12 @@ import { useAuth } from "@/lib/auth-context";
  */
 export default function AltaSegundoFactorPage() {
   const navegar = useNavigate();
-  const { refrescarPerfil } = useAuth();
+  const { refrescarPerfil, signOut } = useAuth();
+
+  async function cerrarSesion() {
+    await signOut();
+    navegar("/login", { replace: true });
+  }
   const [inscripcion, setInscripcion] = useState<InscripcionMfa | null>(null);
   const [codigo, setCodigo] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -127,13 +132,18 @@ export default function AltaSegundoFactorPage() {
               <li>Escribe abajo los seis dígitos que aparezcan.</li>
             </ol>
 
-            <div
-              className="rounded-lg bg-white p-4 grid place-items-center [&>svg]:w-44 [&>svg]:h-44"
-              /* El QR llega como SVG desde Supabase Auth. Va sobre fondo blanco
-                 siempre: en tema oscuro, un QR con los colores invertidos no lo
-                 lee la mitad de las cámaras. */
-              dangerouslySetInnerHTML={{ __html: inscripcion.qr }}
-            />
+            {/* `qr_code` de Supabase es un DATA URI, no SVG suelto. Inyectarlo
+                como HTML dejaba «data:image/svg+xml;utf-8,» impreso como texto
+                encima del código. Va en un <img>, sin recomponer la cadena.
+                Fondo blanco siempre: en tema oscuro, un QR con los colores
+                invertidos no lo lee la mitad de las cámaras. */}
+            <div className="rounded-lg bg-white p-4 grid place-items-center">
+              <img
+                src={inscripcion.qr}
+                alt="Código QR para dar de alta el segundo factor"
+                className="w-44 h-44"
+              />
+            </div>
 
             <details className="text-xs text-muted-foreground">
               <summary className="cursor-pointer">No puedo escanear el código</summary>
@@ -146,6 +156,9 @@ export default function AltaSegundoFactorPage() {
             <form onSubmit={confirmar} className="space-y-3">
               <div>
                 <Label htmlFor="codigo">Código de seis dígitos</Label>
+                <p className="text-xs text-muted-foreground mb-1">
+                  Cambia cada 30 segundos. Si expira mientras lo escribe, tome el siguiente.
+                </p>
                 <Input
                   id="codigo"
                   inputMode="numeric"
@@ -160,16 +173,31 @@ export default function AltaSegundoFactorPage() {
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
+              {/* Se dice ANTES de pulsar, no después: activarlo es de una sola
+                  vía y quien lo hace sin tener el teléfono a mano se queda
+                  fuera hasta que alguien se lo reponga. */}
+              <p className="text-xs text-muted-foreground">
+                Una vez activado, el segundo factor no se desactiva desde Ikán. Si necesita
+                reponerlo, escriba a Kawiil: la reposición se hace desde la administración de la
+                plataforma.
+              </p>
+
               <Button type="submit" className="w-full gap-2" disabled={enviando || codigo.length < 6}>
                 {enviando && <Loader2 className="w-4 h-4 animate-spin" />}
                 Activar
               </Button>
             </form>
 
-            <p className="text-[11px] text-muted-foreground">
-              El secreto lo guarda Supabase Auth, no Ikán. Si pierdes el teléfono, la reposición la
-              hace Kawiil desde la consola de plataforma.
-            </p>
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <p className="text-xs text-muted-foreground">
+                El secreto lo guarda Supabase Auth, no Ikán.
+              </p>
+              {/* Sin esto, quien llega sin su teléfono no tiene ninguna salida:
+                  la pantalla no deja avanzar y no había forma de retroceder. */}
+              <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void cerrarSesion()}>
+                Cerrar sesión
+              </Button>
+            </div>
           </>
         ) : (
           <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3">

@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { Button } from '@/components/ui/button';
 import { useAdminPlataforma } from '@/hooks/useAdminPlataforma';
 import type { RolUsuario } from '@/types/domain';
 
@@ -34,21 +35,26 @@ export function ProtectedRoute({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // El 2FA es obligatorio: quien no lo tenga va al alta antes que a cualquier
-  // otra pantalla. Se espera a saberlo (`null`) en vez de dejar pasar mientras
-  // se pregunta, que sería un parpadeo por el que se cuela la sesión entera.
+  // El 2FA es obligatorio, sin excepción. Se espera a SABERLO (`null`) en vez
+  // de dejar pasar mientras se pregunta: ese parpadeo es por donde se cuela la
+  // sesión entera.
   //
-  // `no_disponible` NO bloquea, a propósito. Significa que no se pudo
-  // preguntarle a Auth —un problema de la plataforma, no del usuario— y dejar
-  // al Oficial de Cumplimiento fuera de su propio sistema el día 17 por eso
-  // sería peor que un día sin segundo factor. La cabecera lo enseña en rojo
-  // para que no pase inadvertido.
+  // Antes `no_disponible` dejaba pasar, con el argumento de no encerrar al
+  // Oficial de Cumplimiento el día 17 por una falla de plataforma. El
+  // argumento estaba mal: si Auth no responde, tampoco se puede iniciar
+  // sesión, así que la excepción no protegía de nada y sí abría un hueco —una
+  // caída momentánea de red bastaba para entrar sin segundo factor, y con eso
+  // la palabra «obligatorio» de la pantalla dejaba de ser cierta—. Ahora
+  // bloquea, con reintento y salida, que no es lo mismo que encerrar a nadie.
   if (estadoMfa === null) {
     return (
       <div className="flex h-screen items-center justify-center text-muted-foreground">
         Cargando…
       </div>
     );
+  }
+  if (estadoMfa === 'no_disponible') {
+    return <SinPoderComprobar />;
   }
   if (estadoMfa === 'sin_inscribir' && location.pathname !== '/seguridad/2fa') {
     return <Navigate to="/seguridad/2fa" replace />;
@@ -87,4 +93,38 @@ export function ProtectedRoute({
   }
 
   return <>{children}</>;
+}
+
+/**
+ * No se pudo comprobar el segundo factor.
+ *
+ * No se deja pasar —eso volvería mentira el «obligatorio» de la pantalla de
+ * alta— pero tampoco se encierra a nadie sin explicación: hay reintento y hay
+ * salida. Es una situación transitoria: si Auth no responde, tampoco se pudo
+ * haber iniciado sesión.
+ */
+function SinPoderComprobar() {
+  const { refrescarPerfil, signOut } = useAuth();
+  return (
+    <div className="min-h-screen grid place-items-center bg-background p-6">
+      <div className="ikan-card max-w-sm space-y-3 text-center">
+        <h1 className="text-lg font-bold text-foreground">No se pudo comprobar su segundo factor</h1>
+        <p className="text-sm text-muted-foreground">
+          Ikán no pudo preguntarle al servicio de autenticación si su cuenta tiene segundo factor.
+          Suele ser un corte momentáneo de red.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          No se entra sin comprobarlo: su sesión da acceso a expedientes con datos personales.
+        </p>
+        <div className="flex gap-2 justify-center pt-1">
+          <Button size="sm" onClick={() => void refrescarPerfil()}>
+            Reintentar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => void signOut()}>
+            Cerrar sesión
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }

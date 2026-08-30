@@ -58,10 +58,13 @@ export default function VerificationPage() {
       <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
         <div className="text-sm text-foreground">
+          {/* Encabezaba con «DEMO — sin integración real», que se lee como que
+              TODO el entorno es de mentira, y contradecía el párrafo siguiente:
+              los comparecientes de abajo son reales. Se acota al alcance. */}
           <p>
-            <strong className="text-warning">DEMO — sin integración real.</strong> La verificación
-            no presencial (documento, prueba de vida, face match, RENAPO) todavía no está
-            conectada con ningún proveedor. Ikán no ha verificado la identidad de nadie.
+            <strong className="text-warning">Verificación de identidad: sin integrar.</strong> La
+            verificación no presencial (documento, prueba de vida, face match, RENAPO) todavía no
+            está conectada con ningún proveedor. Ikán no ha verificado la identidad de nadie.
           </p>
           <p className="text-[11px] text-muted-foreground mt-1">
             Lo que se ve abajo es el estado real del expediente de cada compareciente, capturado

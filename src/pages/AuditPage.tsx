@@ -96,9 +96,14 @@ export default function AuditPage() {
           repo, hasta que Kawiil-Cumplimiento la confirme. */}
       <div className="bg-primary/5 border border-primary/20 rounded-lg px-4 py-3 flex items-start gap-3">
         <Shield className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+        {/* Decía «es inmutable», que afirma más de lo que el sistema sostiene:
+            quien tenga acceso de administrador a la base sí puede escribir. Lo
+            que sí se sostiene —y es lo que importa— es que se detecta. Misma
+            redacción que el panel de integridad, que ya lo decía bien. */}
         <p className="text-sm text-foreground">
-          La bitácora encadenada es inmutable: un registro no se modifica ni se borra, y una
-          corrección entra como registro nuevo.{" "}
+          Los registros de la bitácora no se modifican ni se borran desde Ikán, y una corrección
+          entra como registro nuevo. Cualquier alteración posterior rompe el encadenamiento de
+          hashes y se detecta al verificar.{" "}
           <span className="text-warning">
             El plazo de conservación de cinco años (LFPIORPI artículo 18) está pendiente de
             confirmar con Kawiil-Cumplimiento.

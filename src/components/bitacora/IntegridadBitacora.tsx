@@ -95,7 +95,7 @@ export function IntegridadBitacora({
 
   return (
     <div className="glass-card p-5 space-y-4">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 mt-0.5 text-primary shrink-0" />
           <div>
@@ -107,10 +107,23 @@ export function IntegridadBitacora({
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
-          <Button variant="outline" size="sm" className="gap-2" onClick={descargar}>
-            <Download className="w-3.5 h-3.5" /> Exportar
+          {/* Un solo nombre para esto en toda la app: el texto de Auditoría lo
+              llamaba «el paquete de verificación» y el botón decía «Exportar». */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={descargar}
+            disabled={cabeza?.ultima_secuencia === 0}
+          >
+            <Download className="w-3.5 h-3.5" /> Descargar paquete de verificación
           </Button>
-          <Button size="sm" className="gap-2" onClick={verificar} disabled={verificando}>
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={verificar}
+            disabled={verificando || cabeza?.ultima_secuencia === 0}
+          >
             {verificando && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Verificar
           </Button>
@@ -134,7 +147,18 @@ export function IntegridadBitacora({
                 : "Sin actividad"
             }
           />
-          <Dato etiqueta="Hash de la cadena" valor={cabeza!.ultimo_hash.slice(0, 16) + "…"} mono />
+          {/* Una organización recién dada de alta no tiene fila de cadena, y
+              `estadoCadena` devuelve 64 ceros. Pintarlos parece un hash y no
+              lo es: es la ausencia de uno. */}
+          <Dato
+            etiqueta="Hash de la cadena"
+            valor={
+              cabeza!.ultima_secuencia === 0
+                ? "Sin eventos todavía"
+                : cabeza!.ultimo_hash.slice(0, 16) + "…"
+            }
+            mono={cabeza!.ultima_secuencia > 0}
+          />
         </div>
       )}
 
