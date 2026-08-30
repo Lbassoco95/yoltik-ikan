@@ -88,4 +88,18 @@ end $$;
 alter default privileges in schema public
   grant execute on functions to anon, authenticated, service_role;
 
+-- Y sobre las TABLAS. Faltaba, y su ausencia volvía el banco de pruebas más
+-- RESTRICTIVO que producción: una tabla sin GRANT es ilegible pase lo que
+-- pase, así que una prueba de RLS podía salir en verde sin que la política
+-- tuviera nada que ver. Es el error del 30/08 al revés — un banco que no se
+-- parece al entorno real no prueba nada, se equivoque hacia donde se
+-- equivoque.
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to anon, authenticated, service_role;
+
 grant usage on schema public, auth, extensions to anon, authenticated, service_role, probador;
+
+-- `probador` HEREDA de `authenticated`, que es como se conecta un cliente en
+-- Supabase. Sin esto tendría menos privilegios que un usuario real y las
+-- pruebas de RLS medirían otra cosa.
+grant authenticated to probador;

@@ -104,7 +104,11 @@ lateral (values
   (26, '0026 · anclaje de la bitácora en Bitcoin (OpenTimestamps)',
        to_regclass('public.anclaje') is not null
          and to_regprocedure('public.rango_por_anclar(uuid)') is not null,
-       'apply_0026_anclaje.sql')
+       'apply_0026_anclaje.sql'),
+  (27, '0027 · prospectos visibles para Kawiil',
+       to_regprocedure('public.marcar_prospecto(uuid,text,text)') is not null
+         and to_regclass('public.v_prospectos_resumen') is not null,
+       'apply_0027_prospectos.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -214,7 +218,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0026'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0027'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')
