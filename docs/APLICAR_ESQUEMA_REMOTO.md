@@ -209,7 +209,60 @@ contraseña de Supabase.
 Para ver el estado o agregar a alguien más: `supabase/manual/bootstrap_platform_admin.sql`.
 El script es seguro de correr siempre — si ya hay administradores, lo dice y no toca nada.
 
-## Por qué esto no lo corre Claude directamente
+## Cómo darle a Claude acceso al remoto
+
+Está pedido y la herramienta ya existe: `scripts/sql-remoto.sh`. Falta **una sola cosa**,
+y no es una credencial.
+
+### El bloqueo es de red, no de permisos
+
+El entorno remoto donde corre Claude Code sale a internet por un proxy con una lista de
+dominios permitidos. Hoy `supabase.com`, `api.supabase.com` y `*.supabase.co` no están en
+ella: el gateway responde **403 al CONNECT**. Además sólo deja salir HTTP(S), no TCP crudo,
+así que `psql` al puerto 5432 no funcionaría ni con la contraseña en la mano.
+
+Comprobarlo en cualquier momento:
+
+```bash
+curl -sS "$HTTPS_PROXY/__agentproxy/status" | grep -A4 recentRelayFailures
+```
+
+**Un token de Supabase, por sí solo, no cambia nada.** Con la red cerrada, la petición no
+llega a salir.
+
+### Los dos pasos
+
+1. **Permitir `api.supabase.com`** en la política de red del entorno de Claude Code. Se
+   elige al crear el entorno, desde claude.ai/code → configuración del entorno. Documentado
+   en https://code.claude.com/docs/en/claude-code-on-the-web
+   Con ese dominio basta: la API de gestión ejecuta SQL sobre HTTPS y no hace falta abrir
+   `*.supabase.co` ni el puerto de Postgres.
+
+2. **Un personal access token de Supabase**, en `SUPABASE_ACCESS_TOKEN` o en
+   `~/.config/supabase/pat`. Se crea en https://supabase.com/dashboard/account/tokens
+
+   Dos cosas antes de generarlo: los tokens de Supabase son **de cuenta, no de proyecto**
+   —quien lo tenga alcanza todos los proyectos de la organización— y se revocan en esa
+   misma página cuando ya no hagan falta.
+
+Lo que se configure en Cowork **no sirve aquí**: son entornos distintos, cada uno con su
+propia política de red.
+
+### Ya listo de este lado
+
+`scripts/sql-remoto.sh` va por la API de gestión y distingue los tres fallos, para no
+mandar a nadie a perseguir el problema equivocado: falta de token, token rechazado, o red
+cerrada. Hoy responde lo tercero.
+
+```bash
+./scripts/sql-remoto.sh "select count(*) from client;"
+./scripts/sql-remoto.sh -f supabase/manual/00_estado_migraciones.sql
+```
+
+`.gitignore` cubre `.env`, `.env.*` y `*.pat`, y el token nunca se imprime ni se escribe en
+el repo.
+
+## Antecedente
 
 La pregunta salió en la sesión del 29 de agosto de 2026 y la respuesta no es de credenciales:
 **el entorno remoto donde corre Claude Code bloquea `supabase.com` y `*.supabase.co` en su
