@@ -1,0 +1,24 @@
+{
+  // Las Edge Functions son código de producción y hasta ahora NO se
+  // comprobaban: `tsconfig.app.json` sólo incluye `src`, así que
+  // `anclar-bitacora/index.ts` —el único archivo que nada de `src` importa—
+  // se desplegó con una función usada y nunca definida. Lo cazó Devin en
+  // producción, no el repo.
+  //
+  // Corren en Deno: las líneas que usan `Deno.serve`, `Deno.env` o un import
+  // por URL ya llevan su `@ts-expect-error`, así que el resto sí se comprueba.
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "noUnusedLocals": false,
+    "skipLibCheck": true,
+    "strict": false,
+    "strictNullChecks": true,
+    "target": "ES2022",
+    "types": []
+  },
+  "include": ["supabase/functions"]
+}

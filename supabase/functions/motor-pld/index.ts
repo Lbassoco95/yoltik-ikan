@@ -15,7 +15,6 @@
 // puro, testeado con vitest en src/test/motor-evaluadores.test.ts).
 // =====================================================================
 
-// @ts-expect-error — Deno runtime, no Node.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   correrMotor,
@@ -26,9 +25,7 @@ import {
   type Tipologia,
 } from './evaluadores.ts';
 
-// @ts-expect-error — Deno runtime
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-// @ts-expect-error — Deno runtime
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 interface RunInput {
@@ -56,7 +53,6 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// @ts-expect-error — Deno.serve
 Deno.serve(async (req: Request) => {
   // Preflight CORS.
   if (req.method === 'OPTIONS') {

@@ -96,7 +96,7 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
 npm install                       # deps
 npm run dev                       # dev server (http://localhost:8080)
 npm run build                     # build prod
-npm run typecheck                 # tsc --noEmit
+npm run typecheck                 # tsc: app + node + supabase/functions
 npm run lint                      # eslint
 npm run format                    # prettier
 

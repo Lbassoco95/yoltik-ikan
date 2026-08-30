@@ -309,3 +309,27 @@ export async function actualizarPrueba(
         .join(' ') || null,
   };
 }
+
+// =====================================================================
+// Conversión con la columna `bytea`
+// =====================================================================
+// Vive aquí y no en el archivo de la función porque aquí SÍ se prueba: el
+// archivo de la función se desplegó una vez con `deBytea` usada y nunca
+// definida, y no lo cazó nadie hasta producción.
+
+/** Postgres recibe bytea como cadena hexadecimal con prefijo \x. */
+export function bytea(bytes: Uint8Array): string {
+  return '\\x' + [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Y lo devuelve igual. Se valida antes de convertir: un `parseInt` sobre
+ *  basura devuelve NaN en silencio, y un NaN dentro de un Uint8Array se
+ *  guarda como cero — un .ots corrompido sin una sola señal de error. */
+export function deBytea(hex: string): Uint8Array {
+  const limpio = String(hex ?? '').startsWith('\\x') ? hex.slice(2) : String(hex ?? '');
+  if (limpio.length === 0 || !/^([0-9a-fA-F]{2})+$/.test(limpio))
+    throw new Error('La columna ots no trae bytea en hexadecimal.');
+  const out = new Uint8Array(limpio.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(limpio.slice(i * 2, i * 2 + 2), 16);
+  return out;
+}

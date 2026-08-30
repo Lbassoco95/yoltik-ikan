@@ -4,6 +4,8 @@
 import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
 import {
+  bytea,
+  deBytea,
   motivoValido,
   planearAnclaje,
   sellarRaiz,
@@ -210,5 +212,34 @@ describe("motivo del anclaje", () => {
   it("lo que mandó quien llamó queda escrito, no se traga en silencio", () => {
     expect(motivoValido("MANUAL").aviso).toContain("MANUAL");
     expect(motivoValido(42).aviso).toContain("42");
+  });
+});
+
+describe("conversión con la columna bytea", () => {
+  it("ida y vuelta devuelve los mismos bytes", () => {
+    const b = new Uint8Array([0x00, 0x01, 0x7f, 0x80, 0xff]);
+    expect([...deBytea(bytea(b))]).toEqual([...b]);
+  });
+
+  it("escribe el prefijo que espera Postgres", () => {
+    expect(bytea(new Uint8Array([0xde, 0xad]))).toBe("\\xdead");
+  });
+
+  it("lee con y sin prefijo", () => {
+    expect([...deBytea("\\xdead")]).toEqual([0xde, 0xad]);
+    expect([...deBytea("dead")]).toEqual([0xde, 0xad]);
+  });
+
+  it("un archivo grande sobrevive el viaje", () => {
+    const b = new Uint8Array(700).map((_, i) => (i * 7) % 256);
+    expect([...deBytea(bytea(b))]).toEqual([...b]);
+  });
+
+  it("lo que no es hexadecimal se rechaza en vez de convertirse en ceros", () => {
+    // parseInt sobre basura devuelve NaN en silencio, y un NaN dentro de un
+    // Uint8Array se guarda como cero: un .ots corrompido sin una sola señal.
+    expect(() => deBytea("\\xzz")).toThrow(/hexadecimal/i);
+    expect(() => deBytea("abc")).toThrow(/hexadecimal/i); // longitud impar
+    expect(() => deBytea("")).toThrow(/hexadecimal/i);
   });
 });

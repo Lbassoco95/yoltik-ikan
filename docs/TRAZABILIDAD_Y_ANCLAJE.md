@@ -311,6 +311,25 @@ comprobarlo.
 Un 404 del calendario es **lo normal** las primeras horas: Bitcoin no ha
 confirmado. No es fallo, no se escribe nada y mañana se reintenta.
 
+**El despliegue que no compilaba (30/ago/2026).** La primera versión de esta
+parte se desplegó con `deBytea` usada y nunca definida. `npm run typecheck`
+sólo miraba `src`, y `anclar-bitacora/index.ts` es el único archivo de las Edge
+Functions que nada de `src` importa: se desplegó sin que ningún compilador lo
+hubiera mirado. Lo cazó Devin en producción.
+
+Arreglado en tres pasos, no en uno:
+
+1. `tsconfig.functions.json` comprueba `supabase/functions/`, y
+   `npm run typecheck` lo corre. Verificado introduciendo el mismo error a
+   propósito.
+2. `supabase/functions/deno.d.ts` declara `Deno` y los imports por URL, para
+   que los `@ts-expect-error` desaparezcan: suprimían **cualquier** error de
+   esa línea, incluido uno real.
+3. `bytea()` y `deBytea()` se mudaron al módulo puro, donde sí hay pruebas. Y
+   `deBytea` ahora valida antes de convertir: `parseInt` sobre basura devuelve
+   NaN en silencio, y un NaN dentro de un `Uint8Array` se guarda como cero —un
+   `.ots` corrompido sin una sola señal de error—.
+
 ### Lo que falta construir
 
 - **La llamada forzada al cerrar el periodo de aviso** (`motivo: 'cierre_periodo'`).

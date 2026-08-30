@@ -24,10 +24,11 @@
 // src/test/anclaje.test.ts, sin calendario ni base delante.
 // =====================================================================
 
-// @ts-expect-error — Deno runtime, no Node.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   actualizarPrueba,
+  bytea,
+  deBytea,
   motivoValido,
   planearAnclaje,
   sellarRaiz,
@@ -35,9 +36,7 @@ import {
 } from './anclaje.ts';
 import { ActualizadorHttp, SelladorHttp } from '../_shared/opentimestamps.ts';
 
-// @ts-expect-error — Deno runtime
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-// @ts-expect-error — Deno runtime
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 interface EntradaAnclaje {
@@ -68,11 +67,6 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-/** Postgres recibe bytea como cadena hex con prefijo \x. */
-function bytea(bytes: Uint8Array): string {
-  return '\\x' + [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
 interface ResumenActualizacion {
   anclaje_id: string;
   confirmado: boolean;
@@ -90,7 +84,6 @@ interface ResumenOrg {
   motivo_no_anclado?: string;
 }
 
-// @ts-expect-error — Deno.serve
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST')
