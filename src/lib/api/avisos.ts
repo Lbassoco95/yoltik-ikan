@@ -227,3 +227,29 @@ export async function guardarAviso(entrada: {
   if (error) throw error;
   return (data as { id: string }).id;
 }
+
+export interface AvisoGuardado {
+  id: string;
+  periodo: string | null;
+  referencia: string | null;
+  exento: boolean;
+  estado: string;
+  operation_ids: string[];
+  layout: string;
+  layout_version: string | null;
+  generado_en: string;
+  xml: string | null;
+}
+
+/** Los avisos ya generados de un periodo, del más reciente al más viejo. */
+export async function listarAvisos(periodo: string): Promise<AvisoGuardado[]> {
+  const { organizationId } = await contextoSesion();
+  const { data, error } = await supabase
+    .from('aviso')
+    .select('id, periodo, referencia, exento, estado, operation_ids, layout, layout_version, generado_en, xml')
+    .eq('organization_id', organizationId)
+    .eq('periodo', periodo)
+    .order('generado_en', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as AvisoGuardado[];
+}

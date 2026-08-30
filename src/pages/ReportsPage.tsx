@@ -1,162 +1,393 @@
-import { Plus, Clock, AlertTriangle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, CheckCircle2, Clock, Download, FileCode, Info, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockReports } from "@/data/mockData";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cargarPeriodo, guardarAviso, listarAvisos, periodosConActos } from "@/lib/api/avisos";
+import { evaluarAvisoMensual } from "@/lib/aviso-mensual";
+import { generarAvisoXml } from "@/lib/aviso/generador-xml";
+import { labelTipoActo } from "@/lib/perfil-actividad";
 import { cn, formatMxn } from "@/lib/utils";
-import { useAuth } from "@/lib/auth-context";
 
-const typeColors = { OR: "bg-primary/10 text-primary", OI: "bg-secondary/10 text-secondary", OP: "bg-vulnerable/10 text-vulnerable", Aviso: "bg-accent/10 text-accent" };
-const statusColors = { Borrador: "bg-muted text-muted-foreground", Enviado: "bg-success/10 text-success", Acusado: "bg-accent/10 text-accent" };
+/** AAAA-MM del mes en curso. */
+function mesActual() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
 
-// Borradores de aviso Fracción XII (DEMO) — usan los comparecientes reales del seed.
-const notariaAvisos = [
-  { folio: "XII-2026-0001", tipoActo: "Compraventa de inmueble", fecha: "2026-08-18", compareciente: "María Fernanda Ruiz Demo", monto: 2000000 },
-  { folio: "XII-2026-0002", tipoActo: "Poder irrevocable", fecha: "2026-08-18", compareciente: "María Fernanda Ruiz Demo", monto: 0 },
-  { folio: "XII-2026-0003", tipoActo: "Constitución de sociedad", fecha: "2026-08-19", compareciente: "Inmobiliaria Demo del Bajío S.A. de C.V.", monto: 1000000 },
-];
+const nombreMes = (p: string) =>
+  new Date(`${p}-01T12:00:00`).toLocaleDateString("es-MX", { month: "long", year: "numeric" });
 
 export default function ReportsPage() {
-  const { perfilActividad } = useAuth();
-  const esNotarias = perfilActividad === "notarias";
-  const tdpaReports = mockReports.filter(r => ["OR", "OI", "OP"].includes(r.type));
-  const avReports = mockReports.filter(r => r.type === "Aviso");
+  const [periodo, setPeriodo] = useState(mesActual());
+  const queryClient = useQueryClient();
+
+  const { data: periodos = [] } = useQuery({
+    queryKey: ["periodos-con-actos"],
+    queryFn: periodosConActos,
+  });
+
+  // Si el mes en curso no tiene actos, se abre en el último que sí los tuvo:
+  // llegar a una pantalla vacía no dice si no hay nada o si algo falló.
+  useEffect(() => {
+    if (periodos.length && !periodos.includes(periodo) && periodo === mesActual()) {
+      setPeriodo(periodos[0]);
+    }
+  }, [periodos, periodo]);
+
+  const { data: datos, isLoading, isError, error } = useQuery({
+    queryKey: ["periodo-aviso", periodo],
+    queryFn: () => cargarPeriodo(periodo),
+  });
+
+  const { data: avisos = [] } = useQuery({
+    queryKey: ["avisos", periodo],
+    queryFn: () => listarAvisos(periodo),
+  });
+
+  const evaluacion = datos ? evaluarAvisoMensual(datos.operaciones, datos.hallazgos) : null;
+
+  const generar = useMutation({
+    mutationFn: async (enCeros: boolean) => {
+      if (!datos) throw new Error("El periodo todavía no carga.");
+      const entrada = enCeros
+        ? { ...datos.entrada, actos: [], en_ceros: true }
+        : datos.entrada;
+      const r = generarAvisoXml(entrada);
+      if (!r.xml) throw new Error(r.errores.join("\n"));
+
+      const referencia = `IKAN${periodo.replace("-", "")}`.slice(0, 14);
+      await guardarAviso({
+        periodo,
+        xml: r.xml,
+        referencia,
+        operation_ids: enCeros ? [] : datos.operaciones.filter((o) => o.canal === "sppld").map((o) => o.id),
+        exento: enCeros,
+        layout_version: "fep",
+      });
+      descargar(r.xml, `aviso-${periodo}.xml`);
+      return r;
+    },
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ["avisos", periodo] });
+      for (const a of r.advertencias) toast.warning(a);
+      toast.success("Aviso generado y descargado");
+    },
+    onError: (e: Error) => toast.error(e.message, { duration: 12000 }),
+  });
+
+  // Vista previa de lo que el generador diría, sin escribir nada.
+  const previo = datos ? generarAvisoXml(datos.entrada) : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Reportes y Avisos</h1>
-        <Button className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
-          <Plus className="w-4 h-4" /> Generar Aviso
-        </Button>
-      </div>
-
-      {/* Deadline banners */}
-      {esNotarias ? (
-        <div className="bg-warning/10 border border-warning/30 rounded-lg px-4 py-3 flex items-center gap-3">
-          <Clock className="w-4 h-4 text-warning" />
-          <p className="text-sm">
-            Borradores de Aviso (Fracción XII) pendientes de generar: <strong>3</strong>.
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Aviso mensual</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Se presenta a más tardar el día 17 del mes siguiente al periodo reportado.
           </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-warning/10 border border-warning/30 rounded-lg px-4 py-3 flex items-center gap-3">
-            <Clock className="w-4 h-4 text-warning" />
-            <p className="text-sm">OR pendientes: <strong>1 operación</strong>. Plazo: 15 días hábiles</p>
-          </div>
-          <div className="bg-vulnerable/10 border border-vulnerable/30 rounded-lg px-4 py-3 flex items-center gap-3">
-            <Clock className="w-4 h-4 text-vulnerable" />
-            <p className="text-sm">Avisos pendientes: <strong>1 operación</strong>. Plazo: día 17 (faltan 3 días)</p>
-          </div>
-        </div>
-      )}
+        <Select value={periodo} onValueChange={setPeriodo}>
+          <SelectTrigger className="w-52 shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[...new Set([mesActual(), ...periodos])].sort().reverse().map((p) => (
+              <SelectItem key={p} value={p}>
+                {nombreMes(p)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      {esNotarias ? (
-        <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
-            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
-            <span>
-              <strong>DEMO — sin generación real de avisos.</strong> Borradores ilustrativos de
-              Fracción XII a partir de los actos capturados; la generación y el envío del Aviso al
-              SAT/SPPLD son trabajo posterior.
-            </span>
+      {isLoading ? (
+        <div className="glass-card p-8 flex items-center justify-center gap-2 text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" /> Cargando el periodo…
+        </div>
+      ) : isError ? (
+        <div className="glass-card p-6 text-sm text-destructive">
+          No se pudo cargar el periodo: {(error as Error)?.message}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Tarjeta
+              titulo="Actos del SPPLD"
+              valor={String(evaluacion?.reportables.length ?? 0)}
+              nota="Entran en este aviso"
+            />
+            <Tarjeta
+              titulo="Por DeclaraNOT"
+              valor={String(evaluacion?.porDeclaraNot.length ?? 0)}
+              nota="NO se reportan aquí: otro sistema, otro plazo"
+              alerta={(evaluacion?.porDeclaraNot.length ?? 0) > 0}
+            />
+            <Tarjeta
+              titulo="Hallazgos abiertos"
+              valor={String(datos?.hallazgos.length ?? 0)}
+              nota="No frenan el aviso del periodo"
+            />
           </div>
-          <Tabs defaultValue="xii">
-            <TabsList className="bg-muted/50">
-              <TabsTrigger value="xii">Avisos — Fracción XII (SAT/SPPLD)</TabsTrigger>
-            </TabsList>
-            <TabsContent value="xii" className="mt-4">
-              <div className="glass-card overflow-hidden">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
-                      {["Folio", "Tipo de acto", "Fecha", "Compareciente", "Valor", "Estado"].map(h => (
-                        <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {notariaAvisos.map(a => (
-                      <tr key={a.folio} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3 text-sm font-mono">{a.folio}</td>
-                        <td className="px-4 py-3 text-sm">{a.tipoActo}</td>
-                        <td className="px-4 py-3 text-sm">{a.fecha}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-foreground">{a.compareciente}</td>
-                        <td className="px-4 py-3 text-sm font-semibold">{formatMxn(a.monto)}</td>
-                        <td className="px-4 py-3"><span className={cn("status-badge", statusColors.Borrador)}>Borrador</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+          {datos?.faltanClavesPadron && (
+            <Aviso
+              tono="bloqueo"
+              titulo="Faltan las claves del padrón SAT"
+              detalle="Sin la clave del sujeto obligado y la de actividad vulnerable, ningún aviso pasa la validación del portal. Se capturan una sola vez; hoy las carga Kawiil."
+            />
+          )}
+
+          {evaluacion?.bloqueos.map((b) => (
+            <Aviso key={b.motivo} tono="bloqueo" titulo={b.motivo} detalle={b.detalle} />
+          ))}
+
+          {evaluacion?.recordatorios.map((r) => (
+            <Aviso key={r.motivo} tono="recordatorio" titulo={r.motivo} detalle={r.detalle} />
+          ))}
+
+          {/* Generación */}
+          <div className="glass-card p-5 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <FileCode className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Generar el archivo XML de {nombreMes(periodo)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
+                    Se arma contra el layout de fe pública del SPPLD y se descarga listo para
+                    subir al portal. Queda guardado tal cual, con su versión de layout, y el
+                    hecho de haberlo generado entra en la bitácora encadenada.
+                  </p>
+                </div>
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      ) : (
-      <Tabs defaultValue="tdpa">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="tdpa">TDPA — CNBV/UIF</TabsTrigger>
-          <TabsTrigger value="av">AV — SAT/SPPLD</TabsTrigger>
-        </TabsList>
+              <div className="flex gap-2 shrink-0">
+                {evaluacion?.puedeEnCeros && (evaluacion?.reportables.length ?? 0) === 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => generar.mutate(true)}
+                    disabled={generar.isPending}
+                  >
+                    Informe en ceros
+                  </Button>
+                )}
+                <Button
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+                  onClick={() => generar.mutate(false)}
+                  disabled={generar.isPending || (evaluacion?.reportables.length ?? 0) === 0}
+                >
+                  {generar.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  Generar y descargar
+                </Button>
+              </div>
+            </div>
 
-        <TabsContent value="tdpa" className="mt-4">
-          <div className="glass-card overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  {["Folio", "Tipo", "Fecha detección", "Fecha envío", "Cliente", "Monto", "Estado"].map(h => (
-                    <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3">{h}</th>
+            {previo && previo.errores.length > 0 && (
+              <div className="rounded-lg bg-destructive/10 p-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+                  <p className="text-sm font-semibold text-foreground">
+                    {previo.errores.length} cosa(s) que el portal rechazaría
+                  </p>
+                </div>
+                <ul className="mt-2 ml-6 space-y-1">
+                  {previo.errores.slice(0, 10).map((e, i) => (
+                    <li key={i} className="text-xs text-foreground">
+                      {e}
+                    </li>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {tdpaReports.map(r => (
-                  <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors">
-                    <td className="px-4 py-3 text-sm font-mono">{r.folio}</td>
-                    <td className="px-4 py-3"><span className={cn("status-badge", typeColors[r.type])}>{r.type}</span></td>
-                    <td className="px-4 py-3 text-sm">{r.detectionDate}</td>
-                    <td className="px-4 py-3 text-sm">{r.sendDate || "—"}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-foreground">{r.clientName}</td>
-                    <td className="px-4 py-3 text-sm font-semibold">${r.amount.toLocaleString()} MXN</td>
-                    <td className="px-4 py-3"><span className={cn("status-badge", statusColors[r.status])}>{r.status}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </ul>
+                <p className="text-[11px] text-muted-foreground mt-2 ml-6">
+                  No se genera el archivo hasta que esto se corrija. Un XML que el portal rechaza
+                  el día 17 es peor que no tener ninguno.
+                </p>
+              </div>
+            )}
+
+            {previo && previo.errores.length === 0 && previo.advertencias.length > 0 && (
+              <div className="rounded-lg bg-warning/10 p-3">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-warning shrink-0" />
+                  <p className="text-sm font-semibold text-foreground">
+                    El archivo se genera, pero sale incompleto
+                  </p>
+                </div>
+                <ul className="mt-2 ml-6 space-y-1">
+                  {previo.advertencias.slice(0, 8).map((a, i) => (
+                    <li key={i} className="text-xs text-warning">
+                      {a}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {previo && previo.errores.length === 0 && previo.advertencias.length === 0 && (
+              <div className="rounded-lg bg-success/10 p-3 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                <p className="text-sm text-foreground">
+                  El archivo cumple lo que el layout pide. Listo para subir al portal.
+                </p>
+              </div>
+            )}
           </div>
-        </TabsContent>
 
-        <TabsContent value="av" className="mt-4">
+          {/* Actos del periodo */}
           <div className="glass-card overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  {["Folio", "Mes", "Prioridad", "Cliente", "Monto", "Activo", "Alerta", "Estado"].map(h => (
-                    <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3">{h}</th>
+                  {["Fecha", "Tipo de acto", "Valor", "Canal", "Rebasa umbral"].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                    >
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {avReports.map(r => (
-                  <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors">
-                    <td className="px-4 py-3 text-sm font-mono">{r.folio}</td>
-                    <td className="px-4 py-3 text-sm">{r.month}</td>
-                    <td className="px-4 py-3">
-                      <span className={cn("status-badge", r.priority === "24hrs" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground")}>{r.priority}</span>
+                {(datos?.operaciones ?? []).map((o) => (
+                  <tr key={o.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 text-sm">
+                      {new Date(o.fecha).toLocaleDateString("es-MX")}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-foreground">{r.clientName}</td>
-                    <td className="px-4 py-3 text-sm font-semibold">${r.amount.toLocaleString()} MXN</td>
-                    <td className="px-4 py-3"><span className="status-badge bg-vulnerable/10 text-vulnerable">{r.asset}</span></td>
-                    <td className="px-4 py-3 text-sm font-mono">{r.alertCode}</td>
-                    <td className="px-4 py-3"><span className={cn("status-badge", statusColors[r.status])}>{r.status}</span></td>
+                    <td className="px-4 py-3 text-sm font-medium text-foreground">
+                      {labelTipoActo(o.tipo_acto)}
+                    </td>
+                    <td className="px-4 py-3 text-sm">{formatMxn(o.monto_mxn)}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={cn(
+                          "status-badge",
+                          o.canal === "declaranot"
+                            ? "bg-warning/15 text-warning"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {o.canal === "declaranot" ? "DeclaraNOT" : "SPPLD"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm">{o.rebasa_umbral ? "Sí" : "No"}</td>
                   </tr>
                 ))}
+                {(datos?.operaciones ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                      Sin actos registrados en {nombreMes(periodo)}.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-        </TabsContent>
-      </Tabs>
+
+          {/* Avisos ya generados */}
+          {avisos.length > 0 && (
+            <div className="glass-card p-5">
+              <p className="text-sm font-semibold text-foreground mb-3">
+                Avisos generados de {nombreMes(periodo)}
+              </p>
+              <ul className="space-y-2">
+                {avisos.map((a) => (
+                  <li key={a.id} className="flex items-center justify-between gap-4 text-sm">
+                    <span>
+                      <span className="font-mono text-xs text-muted-foreground mr-2">
+                        {a.referencia ?? a.id.slice(0, 8)}
+                      </span>
+                      {a.exento ? "Informe en ceros" : `${a.operation_ids.length} acto(s)`}
+                      <span className="text-muted-foreground">
+                        {" · "}
+                        {new Date(a.generado_en).toLocaleString("es-MX")}
+                      </span>
+                    </span>
+                    {a.xml && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => descargar(a.xml!, `aviso-${a.periodo}-${a.referencia}.xml`)}
+                      >
+                        <Download className="w-3.5 h-3.5" /> Descargar
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
+}
+
+function Tarjeta({
+  titulo,
+  valor,
+  nota,
+  alerta,
+}: {
+  titulo: string;
+  valor: string;
+  nota: string;
+  alerta?: boolean;
+}) {
+  return (
+    <div className={cn("glass-card p-4", alerta && "border-l-4 border-l-warning")}>
+      <p className="text-xs text-muted-foreground uppercase tracking-wider">{titulo}</p>
+      <p className="text-2xl font-bold text-foreground mt-1">{valor}</p>
+      <p className="text-[11px] text-muted-foreground mt-1">{nota}</p>
+    </div>
+  );
+}
+
+function Aviso({
+  tono,
+  titulo,
+  detalle,
+}: {
+  tono: "bloqueo" | "recordatorio";
+  titulo: string;
+  detalle: string;
+}) {
+  const bloqueo = tono === "bloqueo";
+  return (
+    <div className={cn("rounded-lg p-4 flex items-start gap-3", bloqueo ? "bg-destructive/10" : "bg-muted/50")}>
+      {bloqueo ? (
+        <AlertTriangle className="w-4 h-4 mt-0.5 text-destructive shrink-0" />
+      ) : (
+        <Clock className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
+      )}
+      <div>
+        <p className="text-sm font-semibold text-foreground">{titulo}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{detalle}</p>
+      </div>
+    </div>
+  );
+}
+
+/** El archivo se baja desde el navegador: el XML ya está en memoria y no hay
+ *  razón para pedirlo otra vez al servidor. */
+function descargar(xml: string, nombre: string) {
+  const url = URL.createObjectURL(new Blob([xml], { type: "application/xml" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombre;
+  a.click();
+  URL.revokeObjectURL(url);
 }
