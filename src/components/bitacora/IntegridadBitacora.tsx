@@ -248,9 +248,13 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
             {confirmado ? (
               <>
                 Los eventos 1 a {ancla.anclado_hasta?.toLocaleString("es-MX")} están respaldados
-                por una raíz publicada en Bitcoin
+                por una raíz publicada en el bloque{" "}
+                {ancla.bloque_btc?.toLocaleString("es-MX")} de Bitcoin
+                {/* La fecha sale de la altura del bloque, no de cuándo lo
+                    revisamos: mientras no se consulte un explorador, se dice
+                    el bloque y no una fecha. */}
                 {ancla.fecha_bloque
-                  ? ` el ${new Date(ancla.fecha_bloque).toLocaleDateString("es-MX")}`
+                  ? `, del ${new Date(ancla.fecha_bloque).toLocaleDateString("es-MX")}`
                   : ""}
                 . Cualquiera puede comprobarlo con un nodo de Bitcoin, sin pedirnos nada.
               </>

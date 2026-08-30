@@ -10,6 +10,9 @@
 import { raizMerkle } from '../_shared/merkle.ts';
 import {
   armarOts,
+  leerOts,
+  sustituirPendientes,
+  type Actualizador,
   type RespuestaCalendario,
   type Sellador,
 } from '../_shared/opentimestamps.ts';
@@ -171,5 +174,138 @@ export async function sellarRaiz(
     detalle: fallaron.length
       ? `Sin respuesta de ${fallaron.map((r) => r.calendario).join(', ')}.`
       : null,
+  };
+}
+
+// =====================================================================
+// De pendiente a confirmado
+// =====================================================================
+
+export interface ResultadoActualizacion {
+  /** El archivo con las promesas ya sustituidas por la prueba completa.
+   *  Null si no cambió nada. */
+  ots: Uint8Array | null;
+  /** Altura del bloque de Bitcoin, cuando la prueba ya llega hasta él. */
+  bloque: number | null;
+  confirmado: boolean;
+  detalle: string | null;
+}
+
+/**
+ * Pide a los calendarios la prueba completa y, si ya la tienen, la incorpora.
+ *
+ * Que un calendario conteste 404 es lo NORMAL las primeras horas: Bitcoin no
+ * ha confirmado. No es un fallo y el anclaje se queda pendiente hasta mañana.
+ *
+ * Sólo se declara confirmado cuando la prueba llega de verdad hasta un bloque.
+ * Un archivo con más operaciones pero sin atestiguación de Bitcoin sigue siendo
+ * una promesa más larga, no una certificación, y decir lo contrario sería
+ * exactamente la exageración que este bloque existe para no cometer.
+ */
+export async function actualizarPrueba(
+  archivo: Uint8Array,
+  actualizador: Actualizador,
+): Promise<ResultadoActualizacion> {
+  const lectura = await leerOts(archivo);
+
+  if (lectura.bloques.length > 0)
+    return {
+      ots: null,
+      bloque: Math.min(...lectura.bloques),
+      confirmado: true,
+      detalle: 'La prueba ya llegaba a un bloque: no hizo falta pedir nada.',
+    };
+
+  const sinCalcular = lectura.pendientes.filter((p) => p.commitment === null);
+  const reemplazos: { desde: number; hasta: number; prueba: Uint8Array }[] = [];
+  const fallos: string[] = [];
+
+  // Dos ramas distintas pueden converger en el mismo par (calendario,
+  // commitment): pasó en el primer anclaje real, donde `a.pool.eternitywall`
+  // y `finney.calendar.eternitywall` son el mismo calendario y sus dos pruebas
+  // se encuentran en el mismo nodo. Sin agrupar, se le pediría dos veces lo
+  // mismo —y con cuatro calendarios eso es tráfico y riesgo de tope de
+  // peticiones a cambio de nada.
+  const porPeticion = new Map<string, typeof lectura.pendientes>();
+  for (const rama of lectura.pendientes) {
+    if (rama.commitment === null) continue;
+    const llave = `${rama.uri}|${rama.commitment}`;
+    const grupo = porPeticion.get(llave);
+    if (grupo) grupo.push(rama);
+    else porPeticion.set(llave, [rama]);
+  }
+
+  for (const grupo of porPeticion.values()) {
+    const { uri, commitment } = grupo[0];
+    try {
+      const prueba = await actualizador.actualizar(uri, commitment!);
+      if (prueba)
+        for (const rama of grupo)
+          reemplazos.push({ desde: rama.desde, hasta: rama.hasta, prueba });
+    } catch (e) {
+      // Que un calendario falle no debe impedir aprovechar a los otros.
+      fallos.push(`${uri}: ${(e as Error).message}`);
+    }
+  }
+
+  const notas = [
+    sinCalcular.length
+      ? `${sinCalcular.length} rama(s) usan una operación que no se sabe calcular aquí y no se ` +
+        'actualizaron.'
+      : null,
+    fallos.length ? `Sin respuesta de ${fallos.join('; ')}.` : null,
+  ].filter(Boolean);
+
+  if (reemplazos.length === 0)
+    return {
+      ots: null,
+      bloque: null,
+      confirmado: false,
+      detalle:
+        [
+          'Ningún calendario tiene todavía la prueba completa: Bitcoin no ha confirmado.',
+          ...notas,
+        ].join(' ') || null,
+    };
+
+  const nuevo = sustituirPendientes(archivo, reemplazos);
+
+  // Se vuelve a leer lo que quedó, en vez de confiar en que lo mandado por el
+  // calendario es lo que decimos que es. Si el archivo nuevo no se puede leer,
+  // NO se guarda: es preferible seguir pendiente con una prueba válida que
+  // confirmado con una rota.
+  let releido;
+  try {
+    releido = await leerOts(nuevo);
+  } catch (e) {
+    return {
+      ots: null,
+      bloque: null,
+      confirmado: false,
+      detalle: `El calendario devolvió algo que no se puede leer, no se guardó: ${(e as Error).message}`,
+    };
+  }
+
+  if (releido.digest !== lectura.digest)
+    return {
+      ots: null,
+      bloque: null,
+      confirmado: false,
+      detalle: 'La actualización cambiaría el digest anclado: se descarta.',
+    };
+
+  return {
+    ots: nuevo,
+    bloque: releido.bloques.length ? Math.min(...releido.bloques) : null,
+    confirmado: releido.bloques.length > 0,
+    detalle:
+      [
+        releido.bloques.length
+          ? null
+          : 'La prueba creció pero todavía no llega a un bloque: sigue pendiente.',
+        ...notas,
+      ]
+        .filter(Boolean)
+        .join(' ') || null,
   };
 }

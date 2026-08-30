@@ -270,14 +270,51 @@ de error no debe poder impedir el anclaje.
 Requiere volver a desplegar la función. Mientras no se despliegue, el cron
 corre sin anclar nada.
 
-### Lo que falta construir### Lo que falta construir
+### Lo que falta construir### De pendiente a confirmado
 
-- **El `upgrade`**: pedirle al calendario la prueba completa cuando Bitcoin
-  confirme, y pasar el anclaje de `pendiente` a `confirmado` con su número de
-  bloque. Hoy la tabla y la UI ya lo contemplan; falta la corrida que lo haga.
-  Sin esto ningún anclaje llega nunca a `confirmado`, y la pantalla se queda
-  para siempre en «esperando confirmación de Bitcoin».
+Construido. La misma función hace las dos cosas y el cron las corre en orden:
+primero `anclar` lo nuevo, después `actualizar` lo que Bitcoin ya confirmó.
+En ese orden y no al revés, porque lo recién anclado nunca está confirmado y
+preguntarlo primero sería una petición garantizadamente inútil a cada
+calendario.
+
+Actualizar exige **leer** el archivo: cada rama es una cadena de operaciones
+sobre el digest, y lo que el calendario espera recibir es el resultado de
+aplicarlas todas. Ese valor no está escrito en ninguna parte, se calcula.
+
+Cuatro decisiones de esta parte:
+
+- **El commitment NO es un hash de 32 bytes.** Las ramas reales terminan en
+  `prepend`/`append`, así que lo que el calendario conoce es el mensaje
+  concatenado —44 bytes en el anclaje de producción—. Darlo por hecho habría
+  hecho fallar todas las peticiones.
+- **Ramas distintas pueden converger.** En el primer anclaje real,
+  `a.pool.eternitywall` y `finney.calendar.eternitywall` son el MISMO
+  calendario y sus dos pruebas se encuentran en el mismo nodo: tres commitments
+  para cuatro ramas. El actualizador agrupa por (calendario, commitment) antes
+  de pedir nada.
+- **Una prueba más larga sigue siendo una promesa.** Sólo se declara
+  `confirmado` cuando la prueba llega de verdad a una atestiguación de Bitcoin.
+  Que el calendario devuelva más operaciones no es una certificación.
+- **Si el calendario devuelve algo ilegible, no se guarda.** El archivo nuevo
+  se vuelve a leer antes de escribirlo, y si no se puede leer —o si cambiara el
+  digest anclado— se descarta. Es preferible seguir pendiente con una prueba
+  válida que confirmado con una rota.
+
+`fecha_bloque` **se queda en null a propósito**: la atestiguación lleva la
+ALTURA del bloque, no su hora. Poner ahí el momento en que revisamos sería
+fechar la certificación cuando nos enteramos. La hora real se saca de la altura
+contra un explorador de Bitcoin, y eso no está construido; mientras tanto la
+pantalla dice el número de bloque, que es lo que sí se sabe y lo que permite
+comprobarlo.
+
+Un 404 del calendario es **lo normal** las primeras horas: Bitcoin no ha
+confirmado. No es fallo, no se escribe nada y mañana se reintenta.
+
+### Lo que falta construir
+
 - **La llamada forzada al cerrar el periodo de aviso** (`motivo: 'cierre_periodo'`).
+- **La hora del bloque**, consultando la altura contra un explorador.
 - **Descargar el `.ots`** desde la pantalla de integridad, junto al paquete.
 - **El plazo de `pg_net` en el cron.** Su valor por omisión son 5 s y el primer
   anclaje real tardó 4.5 s con una sola organización. Que expire no cancela la

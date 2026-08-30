@@ -9,21 +9,10 @@
  * Lo que se manda es un digest de 32 bytes. Ni un dato personal, ni un
  * identificador, ni cuántos eventos hay detrás.
  *
- * ═══════════════════════════════════════════════════════════════════════
- * PENDIENTE DE COMPROBAR EN VIVO
- * ═══════════════════════════════════════════════════════════════════════
- * El envío al calendario es una petición HTTP simple y no tiene misterio. El
- * ARMADO DEL ARCHIVO .ots sigue la especificación del formato, pero en esta
- * sesión no se pudo comprobar contra un calendario real: el proxy del entorno
- * bloquea *.opentimestamps.org. Antes del demo hay que verificar un `.ots`
- * generado por esto con la herramienta oficial (`ots verify`), y hasta
- * entonces la UI dice que el anclaje está sin comprobar en lugar de afirmar
- * que está certificado.
- *
- * Por eso `respuesta_cruda` se guarda TAL CUAL: si el armado resultara mal,
- * la prueba del calendario no se pierde y el archivo se rehace después. Lo
- * que no se puede rehacer es el estampado, y ese ya habría ocurrido.
- * ═══════════════════════════════════════════════════════════════════════
+ * El armado del archivo se comprobó en producción el 30 de agosto de 2026 con
+ * la herramienta oficial: `ots info` lee el `.ots` que genera esto, su digest
+ * es exactamente la raíz Merkle anclada y trae las atestiguaciones pendientes
+ * de los cuatro calendarios.
  */
 
 /** Calendarios públicos. Se manda a varios a propósito: si uno desaparece
@@ -174,5 +163,280 @@ export function armarOts(digest: Uint8Array, respuestas: RespuestaCalendario[]):
   );
 }
 
+// =====================================================================
+// Lectura del .ots y actualización de la prueba
+// =====================================================================
+//
+// Un anclaje nace `pendiente`: el calendario recibió la raíz en segundos, pero
+// Bitcoin tarda horas en confirmarla. Pasar a `confirmado` es pedirle al
+// calendario la prueba completa —la que ya incluye la ruta hasta un bloque— y
+// sustituir con ella la promesa que había.
+//
+// Para eso hay que LEER el archivo: cada rama es una cadena de operaciones que
+// transforman el digest, y lo que el calendario espera recibir es el resultado
+// de aplicarlas todas. Ese valor no está escrito en ningún lado; se calcula.
+
+/** Etiquetas de operación del formato. */
+const OP_APPEND = 0xf0;
+const OP_PREPEND = 0xf1;
+const OP_REVERSE = 0x02;
+const OP_HEXLIFY = 0x03;
+const OP_RIPEMD160 = 0x67;
+const OP_KECCAK256 = 0x63;
+/** Sigue una atestiguación, no una operación. */
+const ATESTIGUACION = 0x00;
+
+const TAG_PENDIENTE = [0x83, 0xdf, 0xe3, 0x0d, 0x2e, 0xf9, 0x0c, 0x8e];
+const TAG_BITCOIN = [0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01];
+
+/** Una promesa de calendario dentro del archivo, con dónde vive en bytes. */
+export interface RamaPendiente {
+  /** A quién pedirle la prueba completa. */
+  uri: string;
+  /**
+   * El valor que el calendario conoce: el digest después de aplicar todas las
+   * operaciones de esta rama. Null si la rama usa una operación que no se sabe
+   * calcular aquí —entonces esa rama no se actualiza, y se dice.
+   */
+  commitment: string | null;
+  /** Desde el byte de la etiqueta 0x00 hasta el final de la atestiguación.
+   *  Es exactamente lo que se sustituye por la respuesta del calendario. */
+  desde: number;
+  hasta: number;
+}
+
+export interface LecturaOts {
+  /** El digest del archivo: tiene que ser la raíz Merkle anclada. */
+  digest: string;
+  pendientes: RamaPendiente[];
+  /** Alturas de bloque de Bitcoin ya presentes. Vacío mientras esté pendiente. */
+  bloques: number[];
+}
+
+class Lector {
+  pos = 0;
+  constructor(readonly b: Uint8Array) {}
+
+  byte(): number {
+    if (this.pos >= this.b.length) throw new Error('El archivo .ots se corta antes de tiempo.');
+    return this.b[this.pos++];
+  }
+
+  bytes(n: number): Uint8Array {
+    if (this.pos + n > this.b.length) throw new Error('El archivo .ots se corta antes de tiempo.');
+    const out = this.b.slice(this.pos, this.pos + n);
+    this.pos += n;
+    return out;
+  }
+
+  varuint(): number {
+    let valor = 0;
+    let corrimiento = 0;
+    for (;;) {
+      const b = this.byte();
+      valor |= (b & 0x7f) << corrimiento;
+      if ((b & 0x80) === 0) return valor;
+      corrimiento += 7;
+      if (corrimiento > 35) throw new Error('Entero variable fuera de rango en el .ots.');
+    }
+  }
+
+  /** Longitud seguida de contenido. */
+  varbytes(): Uint8Array {
+    return this.bytes(this.varuint());
+  }
+}
+
+const aHex = (b: Uint8Array) => [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+
+async function sha256(m: Uint8Array): Promise<Uint8Array> {
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', m as unknown as ArrayBuffer));
+}
+
+/**
+ * Lee el archivo y devuelve qué ramas siguen pendientes y qué bloques hay.
+ *
+ * Recorre el árbol calculando el mensaje de cada rama sobre la marcha, que es
+ * lo que el calendario necesita recibir para devolver la prueba completa.
+ *
+ * Las operaciones RIPEMD-160 y KECCAK-256 existen en el formato y no están en
+ * Web Crypto. No se inventan: la rama se lee igual —la estructura sí se puede
+ * recorrer— pero su `commitment` queda en null y esa rama no se actualiza. Es
+ * preferible dejar una rama sin actualizar a mandarle al calendario un valor
+ * calculado a ojo.
+ */
+export async function leerOts(archivo: Uint8Array): Promise<LecturaOts> {
+  const r = new Lector(archivo);
+
+  const magia = r.bytes(MAGIC.length);
+  if (magia.some((b, i) => b !== MAGIC[i]))
+    throw new Error('Esto no es un archivo .ots: la cabecera no corresponde.');
+
+  const version = r.varuint();
+  if (version !== VERSION)
+    throw new Error(`El .ots es de la versión ${version} y aquí sólo se lee la ${VERSION}.`);
+
+  const opHash = r.byte();
+  if (opHash !== OP_SHA256)
+    throw new Error(`El .ots usa la función de hash ${opHash}, no SHA-256.`);
+
+  const digest = r.bytes(32);
+  const pendientes: RamaPendiente[] = [];
+  const bloques: number[] = [];
+
+  await recorrer(r, digest, pendientes, bloques);
+
+  return { digest: aHex(digest), pendientes, bloques };
+}
+
+/**
+ * Un nivel del árbol. El byte 0xff dice "después de esta rama viene otra desde
+ * el mismo punto"; la última no lo lleva.
+ */
+async function recorrer(
+  r: Lector,
+  mensaje: Uint8Array | null,
+  pendientes: RamaPendiente[],
+  bloques: number[],
+): Promise<void> {
+  let tag = r.byte();
+  while (tag === BIFURCACION) {
+    await unaRama(r, r.byte(), mensaje, pendientes, bloques);
+    tag = r.byte();
+  }
+  await unaRama(r, tag, mensaje, pendientes, bloques);
+}
+
+async function unaRama(
+  r: Lector,
+  tag: number,
+  mensaje: Uint8Array | null,
+  pendientes: RamaPendiente[],
+  bloques: number[],
+): Promise<void> {
+  if (tag === ATESTIGUACION) {
+    // La etiqueta 0x00 empieza un byte antes de donde estamos.
+    const desde = r.pos - 1;
+    const tipo = r.bytes(8);
+    const carga = r.varbytes();
+
+    if (TAG_PENDIENTE.every((b, i) => b === tipo[i])) {
+      const interno = new Lector(carga);
+      pendientes.push({
+        uri: new TextDecoder().decode(interno.varbytes()),
+        commitment: mensaje ? aHex(mensaje) : null,
+        desde,
+        hasta: r.pos,
+      });
+    } else if (TAG_BITCOIN.every((b, i) => b === tipo[i])) {
+      bloques.push(new Lector(carga).varuint());
+    }
+    // Cualquier otra atestiguación se lee y se ignora: el formato admite más
+    // de las que aquí interesan, y no reconocerlas no es motivo para fallar.
+    return;
+  }
+
+  const siguiente = mensaje === null ? null : await aplicar(r, tag, mensaje);
+  await recorrer(r, siguiente, pendientes, bloques);
+}
+
+/** Aplica la operación al mensaje. Null cuando no se sabe calcularla. */
+async function aplicar(r: Lector, tag: number, m: Uint8Array): Promise<Uint8Array | null> {
+  switch (tag) {
+    case OP_APPEND:
+      return concatenar(m, r.varbytes());
+    case OP_PREPEND:
+      return concatenar(r.varbytes(), m);
+    case OP_REVERSE:
+      return m.slice().reverse();
+    case OP_HEXLIFY:
+      return new TextEncoder().encode(aHex(m));
+    case OP_SHA256:
+      return await sha256(m);
+    case OP_RIPEMD160:
+    case OP_KECCAK256:
+      // Existen en el formato y no están en Web Crypto. Se sigue recorriendo
+      // la estructura, pero sin poder calcular el mensaje de esta rama.
+      return null;
+    default:
+      throw new Error(`Operación desconocida 0x${tag.toString(16)} en el .ots.`);
+  }
+}
+
+/**
+ * Sustituye la promesa de una rama por la prueba que devolvió el calendario.
+ *
+ * Se hace a nivel de bytes y no volviendo a serializar el árbol: lo que ocupa
+ * la promesa —la etiqueta 0x00 y su atestiguación— es exactamente el sitio
+ * donde encaja lo que el calendario manda, que ya es una prueba serializada
+ * para ese mismo mensaje. Reescribir el archivo entero sería reintroducir el
+ * riesgo del armado en algo que ya está validado.
+ *
+ * Los reemplazos se aplican de atrás hacia adelante para que los
+ * desplazamientos de los anteriores sigan siendo válidos.
+ */
+export function sustituirPendientes(
+  archivo: Uint8Array,
+  reemplazos: { desde: number; hasta: number; prueba: Uint8Array }[],
+): Uint8Array {
+  if (reemplazos.length === 0) return archivo;
+
+  const ordenados = [...reemplazos].sort((a, b) => b.desde - a.desde);
+  for (const x of ordenados) {
+    if (x.desde < 0 || x.hasta > archivo.length || x.desde >= x.hasta)
+      throw new Error('El reemplazo cae fuera del archivo .ots.');
+  }
+  for (let i = 1; i < ordenados.length; i++) {
+    if (ordenados[i].hasta > ordenados[i - 1].desde)
+      throw new Error('Dos reemplazos se pisan dentro del .ots.');
+  }
+
+  let out = archivo;
+  for (const x of ordenados) {
+    out = concatenar(out.slice(0, x.desde), x.prueba, out.slice(x.hasta));
+  }
+  return out;
+}
+
+/** Lo que hace falta del mundo exterior para actualizar una prueba. */
+export interface Actualizador {
+  actualizar(uri: string, commitment: string): Promise<Uint8Array | null>;
+}
+
+/**
+ * El de verdad: `GET <calendario>/timestamp/<commitment>`.
+ *
+ * Devuelve null cuando el calendario todavía no tiene la prueba completa —lo
+ * normal las primeras horas—, que NO es un error: el anclaje sigue pendiente y
+ * se vuelve a intentar mañana.
+ */
+export class ActualizadorHttp implements Actualizador {
+  constructor(private readonly tiempoLimiteMs = 15_000) {}
+
+  async actualizar(uri: string, commitment: string): Promise<Uint8Array | null> {
+    const r = await fetch(`${uri}/timestamp/${commitment}`, {
+      headers: {
+        Accept: 'application/vnd.opentimestamps.v1',
+        'User-Agent': 'ikan-anclaje/1.0',
+      },
+      signal: AbortSignal.timeout(this.tiempoLimiteMs),
+    });
+    // 404 mientras Bitcoin no confirme: es el caso normal, no un fallo.
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error(`HTTP ${r.status} al pedir la prueba a ${uri}`);
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    return bytes.length ? bytes : null;
+  }
+}
+
 /** Sólo para pruebas y para el guardado: el varint del formato, expuesto. */
-export const _internos = { varint, concatenar, MAGIC, OP_SHA256, BIFURCACION };
+export const _internos = {
+  varint,
+  concatenar,
+  MAGIC,
+  OP_SHA256,
+  BIFURCACION,
+  TAG_PENDIENTE,
+  TAG_BITCOIN,
+  ATESTIGUACION,
+};

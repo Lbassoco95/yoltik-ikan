@@ -26,8 +26,14 @@
 
 // @ts-expect-error — Deno runtime, no Node.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { motivoValido, planearAnclaje, sellarRaiz, type MotivoAnclaje } from './anclaje.ts';
-import { SelladorHttp } from '../_shared/opentimestamps.ts';
+import {
+  actualizarPrueba,
+  motivoValido,
+  planearAnclaje,
+  sellarRaiz,
+  type MotivoAnclaje,
+} from './anclaje.ts';
+import { ActualizadorHttp, SelladorHttp } from '../_shared/opentimestamps.ts';
 
 // @ts-expect-error — Deno runtime
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -40,6 +46,13 @@ interface EntradaAnclaje {
   /** Se normaliza: un motivo que la tabla no admite haría fallar el insert y
    *  el anclaje no ocurriría, con respuesta 200. Ver `motivoValido`. */
   motivo?: MotivoAnclaje | string;
+  /**
+   * 'anclar' (por omisión) publica lo nuevo; 'actualizar' recoge las pruebas
+   * que Bitcoin ya confirmó. El cron diario hace LAS DOS, en ese orden: sin la
+   * segunda, ningún anclaje llega nunca a `confirmado` y la pantalla se queda
+   * para siempre en «esperando confirmación».
+   */
+  accion?: 'anclar' | 'actualizar' | 'ambas';
 }
 
 const corsHeaders = {
@@ -60,6 +73,13 @@ function bytea(bytes: Uint8Array): string {
   return '\\x' + [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+interface ResumenActualizacion {
+  anclaje_id: string;
+  confirmado: boolean;
+  bloque: number | null;
+  detalle: string | null;
+}
+
 interface ResumenOrg {
   organization_id: string;
   anclado: boolean;
@@ -78,9 +98,13 @@ Deno.serve(async (req: Request) => {
 
   const entrada: EntradaAnclaje = await req.json().catch(() => ({}));
   const { motivo, aviso: avisoMotivo } = motivoValido(entrada.motivo);
+  const accion = entrada.accion ?? 'ambas';
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
   const sellador = new SelladorHttp();
   const t0 = Date.now();
+
+  const resumen: ResumenOrg[] = [];
+  const actualizados: ResumenActualizacion[] = [];
 
   // Qué organizaciones tocan. Una cadena sin eventos no aparece aquí, así que
   // el cron no gasta un estampado en una organización que no ha hecho nada.
@@ -89,9 +113,7 @@ Deno.serve(async (req: Request) => {
   const { data: cadenas, error: errCadenas } = await consulta;
   if (errCadenas) return json({ error: errCadenas.message }, 500);
 
-  const resumen: ResumenOrg[] = [];
-
-  for (const cadena of cadenas ?? []) {
+  for (const cadena of accion === 'actualizar' ? [] : (cadenas ?? [])) {
     const org = cadena.organization_id as string;
     try {
       // Dónde arranca el tramo: justo después del último anclaje.
@@ -167,13 +189,81 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // ------------------------------------------------------------------
+  // Recoger las pruebas que Bitcoin ya confirmó
+  // ------------------------------------------------------------------
+  // Va DESPUÉS de anclar y no antes: lo recién anclado nunca está confirmado,
+  // así que preguntarlo primero sería una petición garantizadamente inútil a
+  // cada calendario.
+  if (accion !== 'anclar') {
+    const actualizador = new ActualizadorHttp();
+
+    let pend = supabase
+      .from('anclaje')
+      .select('id, organization_id, raiz_merkle, ots')
+      .eq('estado', 'pendiente')
+      .not('ots', 'is', null)
+      .order('creado_en')
+      .limit(50);
+    if (entrada.organization_id) pend = pend.eq('organization_id', entrada.organization_id);
+
+    const { data: pendientes, error: errPend } = await pend;
+    if (errPend) return json({ error: errPend.message }, 500);
+
+    for (const a of pendientes ?? []) {
+      try {
+        const r = await actualizarPrueba(deBytea(a.ots as string), actualizador);
+
+        // Sólo se escribe cuando hay algo que escribir. Un anclaje que sigue
+        // pendiente no se toca: reescribirlo cada día sólo movería
+        // `actualizado_en` y ensuciaría el rastro.
+        if (r.ots || r.confirmado) {
+          const { error } = await supabase
+            .from('anclaje')
+            .update({
+              ...(r.ots ? { ots: bytea(r.ots) } : {}),
+              // `fecha_bloque` se queda en null a propósito: la atestiguación
+              // de Bitcoin lleva la ALTURA del bloque, no su hora. Poner aquí
+              // el momento en que revisamos sería fechar la certificación
+              // cuando nos enteramos, que es justo lo que no se debe afirmar.
+              // La hora real se saca de la altura contra un explorador, y eso
+              // todavía no está construido.
+              ...(r.confirmado ? { estado: 'confirmado', bloque_btc: r.bloque } : {}),
+              ...(r.detalle ? { detalle: r.detalle } : {}),
+            })
+            .eq('id', a.id);
+          if (error) throw new Error(error.message);
+        }
+
+        actualizados.push({
+          anclaje_id: a.id as string,
+          confirmado: r.confirmado,
+          bloque: r.bloque,
+          detalle: r.detalle,
+        });
+      } catch (e) {
+        // Un anclaje que falle al actualizar no debe impedir los demás: la
+        // prueba que ya tiene sigue siendo válida y mañana se reintenta.
+        actualizados.push({
+          anclaje_id: a.id as string,
+          confirmado: false,
+          bloque: null,
+          detalle: (e as Error).message,
+        });
+      }
+    }
+  }
+
   return json({
     ok: true,
     motivo,
+    accion,
     aviso: avisoMotivo,
     organizaciones: resumen.length,
     ancladas: resumen.filter((r) => r.anclado).length,
     detalle: resumen,
+    actualizados: actualizados.length ? actualizados : undefined,
+    confirmados: actualizados.filter((a) => a.confirmado).length,
     duracion_ms: Date.now() - t0,
   });
 });
