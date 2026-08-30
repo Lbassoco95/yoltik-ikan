@@ -100,7 +100,11 @@ lateral (values
        exists (select 1 from information_schema.columns
                 where table_schema = 'public' and table_name = 'aviso'
                   and column_name = 'layout_version'),
-       'apply_0025_aviso.sql')
+       'apply_0025_aviso.sql'),
+  (26, '0026 · anclaje de la bitácora en Bitcoin (OpenTimestamps)',
+       to_regclass('public.anclaje') is not null
+         and to_regprocedure('public.rango_por_anclar(uuid)') is not null,
+       'apply_0026_anclaje.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -163,6 +167,28 @@ begin
     insert into ikan_estado values ('3 · Seguridad', 2, 'cadenas de bitácora', v_n || ' activa(s)', '');
   end if;
 
+  -- El anclaje externo: cuánta bitácora va sin cobertura y, sobre todo, que
+  -- nadie le haya puesto a `anclaje` una política de escritura. Con una, un
+  -- usuario podría fabricar un ancla y todo el ejercicio deja de probar nada.
+  if to_regclass('public.anclaje') is null then
+    insert into ikan_estado values ('3 · Seguridad', 3, 'anclaje en Bitcoin',
+      'FALTA (la 0026 no está)', 'apply_0026_anclaje.sql; después desplegar la Edge Function');
+  else
+    execute $q$select count(*) from pg_policies
+               where schemaname='public' and tablename='anclaje' and cmd <> 'SELECT'$q$ into v_n;
+    if v_n > 0 then
+      insert into ikan_estado values ('3 · Seguridad', 3, 'anclaje en Bitcoin',
+        'HUECO GRAVE: ' || v_n || ' política(s) de escritura en anclaje',
+        'bórralas: sólo la Edge Function con service_role debe crear anclajes');
+    else
+      execute 'select count(*) from public.anclaje' into v_n;
+      execute $q$select coalesce(sum(eventos_sin_anclar),0)::text from public.v_anclaje_estado$q$ into v_t;
+      insert into ikan_estado values ('3 · Seguridad', 3, 'anclaje en Bitcoin',
+        v_n || ' anclaje(s); ' || v_t || ' evento(s) sin cobertura',
+        case when v_n = 0 then 'falta desplegar y correr la Edge Function anclar-bitacora' else '' end);
+    end if;
+  end if;
+
   -- Quién entra a la consola de plataforma
   if to_regclass('public.platform_admin') is null then
     insert into ikan_estado values ('4 · Consola', 1, 'administradores de plataforma',
@@ -188,7 +214,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0025'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0026'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')
