@@ -5,9 +5,10 @@
  * tipografía —y además le cuenta a Google quién abre la plataforma de
  * cumplimiento de un notario, que no es asunto suyo.
  *
- * PENDIENTE DE DECISIÓN: el brandbook v2.1 §06 exige Sora; CLAUDE.md dice que
- * Plus Jakarta Sans la sustituye. Cambiar de familia es cambiar estos dos
- * imports y `--font-sans`; el resto no se entera. */
+ * UNA SOLA FAMILIA en toda la aplicación —cliente, consola y login—: dos
+ * tipografías conviviendo es una inconsistencia que se ve y no compra nada.
+ * Cuál debe ser sigue pendiente de Dirección (el brandbook v2.1 §06 pide
+ * Sora); cambiarla son estos imports y `--font-sans`, el resto no se entera. */
 @import '@fontsource/plus-jakarta-sans/400.css';
 @import '@fontsource/plus-jakarta-sans/500.css';
 @import '@fontsource/plus-jakarta-sans/600.css';
@@ -34,7 +35,8 @@
     --primary: 213 68% 15%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 204 40% 28%;
+    /* Navy aclarado; el anterior no salía de ninguna parte de la paleta */
+    --secondary: 213 45% 27%;
     --secondary-foreground: 210 40% 98%;
 
     /* Verde Hielo #F0F5F4 */
@@ -46,7 +48,13 @@
     --accent: 171 100% 28%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 4 72% 47%;
+    /* Rojo funcional #B32B21 — aprobado por Dirección el 30/08/2026.
+       NO es color de marca: no va a piezas comerciales. Existe porque un
+       producto de cumplimiento tiene que distinguir «esto está roto» —cadena
+       rota, aviso rechazado, campo inválido— de «esto le toca atender», que
+       es el ámbar. Sin esa distinción las dos cosas se leen igual y la
+       urgente se pierde entre las otras. */
+    --destructive: 4 68% 42%;
     --destructive-foreground: 0 0% 100%;
 
     /* Ámbar Cálido #F0A500 — lo que le toca atender */
@@ -62,20 +70,24 @@
 
     --border: 214 20% 90%;
     --input: 214 20% 90%;
-    --ring: 207 72% 15%;
+    /* El foco es Jade, como el resto de lo accionable. Estaba en el navy
+       viejo, que se confunde con el borde y no se ve al tabular. */
+    --ring: 171 100% 28%;
 
     --radius: 0.625rem;
 
     /* Mismo Navy Profundo que --primary: la barra y la estructura son lo mismo */
     --sidebar-background: 213 68% 15%;
     --sidebar-foreground: 210 40% 85%;
-    --sidebar-primary: 155 100% 33%;
+    /* Jade, no el verde #00A862 del andamiaje que estaba fuera de paleta */
+    --sidebar-primary: 171 100% 28%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 207 60% 20%;
+    /* Un navy más claro que el fondo, para la sección activa */
+    --sidebar-accent: 213 55% 22%;
     --sidebar-accent-foreground: 210 40% 95%;
-    --sidebar-border: 207 50% 22%;
-    --sidebar-ring: 155 100% 33%;
-    --sidebar-muted: 207 40% 25%;
+    --sidebar-border: 213 50% 24%;
+    --sidebar-ring: 171 100% 28%;
+    --sidebar-muted: 213 40% 27%;
   }
 }
 

@@ -82,20 +82,19 @@ Tres pantallas afirmaban cosas que el sistema no sostiene:
 Y `mfa_habilitado` decía `true` fijo cuando no existía ni la pantalla para dar
 de alta el segundo factor.
 
-## Decisiones abiertas · no son de Code
+## Decisiones · resueltas el 30/08/2026
 
-1. **Tipografía.** El Brandbook v2.1 §06 exige **Sora**; `CLAUDE.md` decía que
-   Plus Jakarta Sans la sustituye. Uno de los dos está desactualizado. Mientras
-   tanto la familia va **empaquetada** con `@fontsource` —el nivel 3 de entrega
-   es on-prem y no puede depender del CDN de Google—, así que cambiarla son los
-   `@import` de `src/index.css`, `--font-sans` y `tailwind.config.ts`.
-2. **El rojo funcional `#B32B21`.** El brandbook no define uno y un producto de
-   cumplimiento necesita distinguir «esto está roto» de «esto necesita tu
-   atención». Queda PROPUESTO; hasta que Dirección lo apruebe se usa el
-   `--destructive` actual y no se lleva a piezas comerciales.
-3. **`AdminUsuariosPage` con reposición del segundo factor.** Hoy la pantalla
-   de 2FA dice lo que es cierto —escribir a Kawiil— en vez de prometer una
-   consola que no existe. Construirla es lo correcto a mediano plazo.
+1. **Tipografía: una sola familia en toda la aplicación** —cliente, consola y
+   login—, empaquetada con `@fontsource`. Sigue pendiente de Dirección si esa
+   familia debe ser Sora en vez de Plus Jakarta Sans; no bloquea nada.
+2. **El rojo funcional `#B32B21`: aprobado.** Como color **funcional, no de
+   marca**: no va a piezas comerciales. Existe porque un producto de
+   cumplimiento tiene que distinguir «esto está roto» de «esto le toca
+   atender», y sin esa distinción la urgente se pierde entre las otras.
+3. **`AdminUsuariosPage`: a D-2.** Es la pantalla donde Kawiil repone el
+   segundo factor de alguien que perdió el teléfono. Hoy eso sólo se puede
+   hacer con SQL sobre `auth.mfa_factors`, y por eso la pantalla de 2FA dice
+   «escriba a Kawiil» en vez de prometer una consola que no existe.
 
 ## Lo que sigue (D-2)
 
