@@ -108,6 +108,21 @@ aplica es el fedatario, leyéndola.
 RFC, CURP y fecha son intercambiables dentro de una persona: faltar los tres
 frena el aviso, faltar uno no.
 
+**Lo que exige el layout se dice en el formulario, no el día 17.** Un RFC de
+doce caracteres en una persona física no lo rechaza nadie hasta que el portal
+tira el archivo, y para entonces el compareciente ya se fue. Así que:
+
+- Cada campo se valida **mientras se escribe**, contra las columnas LONGITUD y
+  FORMATO del instructivo: patrón del RFC (cuatro letras en persona física,
+  tres en moral), de la CURP, fechas que existan de verdad —20260231 cumple el
+  patrón y no es un día—, importes de hasta 14 enteros, claves sin espacios.
+- El encabezado de la captura lleva la **cuenta viva** de lo que falta y nombra
+  los primeros seis, con su contexto: "Datos de los Apoderados 2 · Falta el
+  RFC", no "faltan 12 campos".
+- El generador del XML aplica **el mismo validador**. Si uno aceptara lo que el
+  otro rechaza, la pantalla diría "listo" y el portal rechazaría: hay una
+  prueba que compara las dos listas.
+
 **Quién lo completa.** El Operador lo captura en el alta. Completarlo después es
 de OC y Admin: la política `operation_update_motor_or_oc` sólo se lo permite a
 ellos y el flujo del Operador termina con el acuse (`docs/ROLES.md`). Si el

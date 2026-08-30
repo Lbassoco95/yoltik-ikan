@@ -6,6 +6,7 @@ import {
   SIN_APELLIDO,
   camposDelActo,
   camposPendientesDelSubarbol,
+  pendientesDelSubarbol,
   catalogosPendientes,
   fechasIncoherentes,
   pendientesActo,
@@ -177,10 +178,39 @@ describe('pendientes del acto', () => {
     expect(campos(p)).toContain('tipo_actividad');
   });
 
-  it('cuenta los campos que faltan del subárbol del acto', () => {
+  it('nombra cada campo que falta de la rama, no un total', () => {
     const p = pendientesActo(ACTO_BASE);
-    const detalle = p.find((x) => x.campo === 'otorgamiento_poder')?.detalle ?? '';
-    expect(detalle).toMatch(/Falta el detalle del acto: \d+ campos/);
+    const delActo = p.filter((x) => x.origen === 'acto' && x.no.startsWith('3.6.1.3.1'));
+    expect(delActo.length).toBeGreaterThan(0);
+    // Cada pendiente apunta a un campo del instructivo y se explica solo.
+    for (const x of delActo) {
+      expect(x.detalle.length).toBeGreaterThan(5);
+      expect(x.gravedad).toBe('bloquea_aviso');
+    }
+    expect(p.map((x) => x.detalle).join(' ')).not.toMatch(/\d+ campos de esta rama/);
+  });
+
+  it('dice de qué apoderado falta el dato cuando hay varios', () => {
+    const p = pendientesDelSubarbol('otorgamiento_poder', { [claveConteo('3.6.1.3.1.2')]: 2 });
+    const contextos = [...new Set(p.map((x) => x.contexto).filter(Boolean))];
+    expect(contextos.some((c) => /Apoderados 1/.test(c!))).toBe(true);
+    expect(contextos.some((c) => /Apoderados 2/.test(c!))).toBe(true);
+  });
+
+  it('un valor con formato inválido pesa igual que uno que falta', () => {
+    // Un RFC de doce caracteres en una persona física no lo rechaza nadie
+    // hasta el día 17. Aquí se ve al escribirlo.
+    const tipoPersona = ramaDelActo('otorgamiento_poder')!.hijos[1].hijos.find(
+      (h) => h.esTipoPersona,
+    )!;
+    const datos = escribirValor(
+      escribirVariante({}, tipoPersona, [0], 'persona_fisica'),
+      '3.6.1.3.1.2.2.1.5',
+      [0],
+      'PELJ80050AB1',
+    );
+    const conRfcCorto = pendientesDelSubarbol('otorgamiento_poder', datos);
+    expect(conRfcCorto.some((x) => x.campo === 'rfc' && /RFC/.test(x.detalle))).toBe(true);
   });
 
   it('capturar el subárbol baja la cuenta de faltantes', () => {

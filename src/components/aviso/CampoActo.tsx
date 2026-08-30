@@ -11,6 +11,8 @@ import { SelectCatalogo } from "@/components/aviso/SelectCatalogo";
 import { CATALOGO_DE_CAMPO } from "@/lib/aviso/catalogos-fep.generated";
 import type { CampoFep } from "@/lib/aviso/campos-fep.generated";
 import { controlDe } from "@/lib/aviso/ramas-acto";
+import { validarCampo } from "@/lib/aviso/validacion-acto";
+import { cn } from "@/lib/utils";
 
 /** Longitud máxima que admite el layout, cuando la declara. */
 function maximo(campo: CampoFep): number | undefined {
@@ -29,6 +31,10 @@ function maximo(campo: CampoFep): number | undefined {
  * Quien captura decide si aplica —Ikán no la evalúa, porque mapear esa frase a
  * una clave de catálogo sería inventar— pero la decide leyéndola, no
  * adivinando por qué hay un campo ahí.
+ *
+ * Y si el valor no cumple lo que el layout exige, se dice AQUÍ, mientras se
+ * escribe. Un RFC de doce caracteres en una persona física no lo detecta nadie
+ * hasta el día 17, y para entonces el compareciente ya se fue.
  */
 export function CampoActo({
   campo,
@@ -43,6 +49,7 @@ export function CampoActo({
 }) {
   const control = controlDe(campo);
   const codigoCatalogo = CATALOGO_DE_CAMPO[campo.no];
+  const problema = validarCampo(campo, valor);
   const marca =
     campo.grado === "siempre" ? (
       <span className="text-destructive ml-1" title="Obligatorio">
@@ -50,7 +57,9 @@ export function CampoActo({
       </span>
     ) : null;
 
-  const pie = campo.condicion ? (
+  const pie = problema ? (
+    <p className="text-[11px] text-destructive mt-1">{problema}</p>
+  ) : campo.condicion ? (
     <p className="text-[11px] text-muted-foreground mt-1">{campo.condicion}</p>
   ) : null;
 
@@ -64,6 +73,7 @@ export function CampoActo({
           onChange={onChange}
           ayuda={campo.condicion ?? undefined}
         />
+        {problema && <p className="text-[11px] text-destructive mt-1">{problema}</p>}
       </div>
     );
   }
@@ -93,6 +103,8 @@ export function CampoActo({
           maxLength={control === "fecha" ? undefined : maximo(campo)}
           value={valor}
           disabled={soloLectura}
+          aria-invalid={!!problema}
+          className={cn(problema && "border-destructive focus-visible:ring-destructive")}
           onChange={(e) => onChange(e.target.value)}
         />
       )}

@@ -17,6 +17,7 @@
 import { CAMPOS_FEP, type CampoFep } from './campos-fep.generated';
 import { ramaDelActo, type NodoRama } from './ramas-acto';
 import { leerValor, leerVariante, numeroRepeticiones, type DatosActo } from './valores-acto';
+import { validarCampo } from './validacion-acto';
 
 // =====================================================================
 // Vocabulario
@@ -51,6 +52,18 @@ export interface Pendiente {
   origen: Origen;
   momento: Momento;
   gravedad: Gravedad;
+  /**
+   * Repetición a la que pertenece, cuando el campo cuelga de un grupo que se
+   * repite. Sin esto, "falta el RFC" no dice de cuál de los tres apoderados.
+   */
+  ruta?: number[];
+  /** Dónde está, en palabras: "Datos de los Apoderados 2". */
+  contexto?: string;
+}
+
+/** Identifica un pendiente sin ambigüedad, repeticiones incluidas. */
+export function clavePendiente(p: Pendiente): string {
+  return `${p.origen}-${p.no}-${p.campo}-${(p.ruta ?? []).join('.')}`;
 }
 
 /** El layout pide cuatro equis cuando la persona no tiene ese apellido
@@ -253,15 +266,10 @@ export function pendientesActo(a: ActoParaAviso): Pendiente[] {
 
   if (vacio(a.tipo_acto))
     push('3.6.1.3', 'tipo_actividad', 'Falta el tipo de acto: sin él no hay rama que llenar.');
-  else {
-    const faltantes = camposPendientesDelSubarbol(String(a.tipo_acto), a.datos_acto ?? {});
-    if (faltantes > 0)
-      push(
-        subarbolDeActo(String(a.tipo_acto))?.no ?? '3.6.1.3',
-        String(a.tipo_acto),
-        `Falta el detalle del acto: ${faltantes} campo${faltantes === 1 ? '' : 's'} de esta rama del layout.`,
-      );
-  }
+  // Lo que le falta a la rama del acto va campo por campo, no como un total:
+  // "faltan 12" obliga a adivinar cuáles, y el formulario del acto es
+  // justamente donde el notario puede llenarlos.
+  else out.push(...pendientesDelSubarbol(String(a.tipo_acto), a.datos_acto ?? {}));
 
   return out;
 }
@@ -369,62 +377,121 @@ export function camposDelActo(tipoActo: string): CampoFep[] {
 }
 
 /**
- * Qué le falta a la rama del acto para que el aviso salga.
+ * Qué le falta a la rama del acto, campo por campo y con nombre.
+ *
+ * Antes esto devolvía un número —"faltan 12 campos"— y el notario tenía que
+ * adivinar cuáles. Ahora nombra cada uno y dice de qué apoderado o de qué socio
+ * es, para que se llene en el formulario del acto y no el día 17, cuando el
+ * portal lo rechace.
  *
  * Cuenta lo mismo que frena al generador del XML, ni más ni menos: los campos
- * de grado `siempre` sin capturar y los `<tipo_persona>` sin elegir. Los
- * condicionales y los "si se cuenta con la información" no se cuentan porque
- * no bloquean el archivo. Que las dos cuentas coincidan está cubierto con una
- * prueba: si divergen, la pantalla diría "listo" y el portal rechazaría.
- *
- * Recorre las repeticiones de verdad —tres apoderados son tres juegos de
- * campos— en vez de contar etiquetas distintas, que era una cota inferior.
+ * de grado `siempre` sin capturar, los `<tipo_persona>` sin elegir y los
+ * valores que no cumplen el formato del layout. Los condicionales y los "si se
+ * cuenta con la información" no bloquean. Que las dos listas coincidan está
+ * cubierto con una prueba: si divergieran, la pantalla diría "listo" y el
+ * portal rechazaría.
  */
-export function camposPendientesDelSubarbol(
-  tipoActo: string,
-  datosActo: DatosActo,
-): number {
+export function pendientesDelSubarbol(tipoActo: string, datosActo: DatosActo): Pendiente[] {
   const rama = ramaDelActo(tipoActo);
-  return rama ? faltantesDelNodo(rama, datosActo ?? {}, [], true) : 0;
+  if (!rama) return [];
+  const out: Pendiente[] = [];
+  recorrerNodo(rama, datosActo ?? {}, [], '', out, true);
+  return out;
 }
 
-/** Abre el nodo en sus repeticiones y suma lo que falta en cada una. */
-function faltantesDelNodo(
+/** Cuántos campos de la rama siguen sin resolverse. Para la columna de la
+ *  lista, donde no cabe el detalle. */
+export function camposPendientesDelSubarbol(tipoActo: string, datosActo: DatosActo): number {
+  return pendientesDelSubarbol(tipoActo, datosActo).length;
+}
+
+/** Abre el nodo en sus repeticiones y recorre cada una. */
+function recorrerNodo(
   nodo: NodoRama,
   datos: DatosActo,
   ruta: number[],
+  contexto: string,
+  out: Pendiente[],
   raiz = false,
-): number {
-  if (!nodo.repetible) return faltantesDeUna(nodo, datos, ruta, raiz);
-  let n = 0;
+): void {
+  if (!nodo.repetible) {
+    recorrerUna(nodo, datos, ruta, contexto, out, raiz);
+    return;
+  }
   const total = numeroRepeticiones(datos, nodo.no, ruta);
-  for (let i = 0; i < total; i++) n += faltantesDeUna(nodo, datos, [...ruta, i]);
-  return n;
+  for (let i = 0; i < total; i++)
+    recorrerUna(
+      nodo,
+      datos,
+      [...ruta, i],
+      total > 1 ? `${nodo.nombre} ${i + 1}` : nodo.nombre,
+      out,
+    );
 }
 
-/** Lo que falta en UNA repetición concreta. */
-function faltantesDeUna(
+/** Una repetición concreta del nodo. */
+function recorrerUna(
   nodo: NodoRama,
   datos: DatosActo,
   ruta: number[],
+  contexto: string,
+  out: Pendiente[],
   raiz = false,
-): number {
+): void {
   // Un contenedor que no se exige siempre y está vacío no se emite, así que no
   // le falta nada. Mismo criterio que el generador del XML.
-  if (nodo.grado !== 'siempre' && !raiz && !hayAlgo(nodo, datos, ruta)) return 0;
+  if (nodo.grado !== 'siempre' && !raiz && !hayAlgo(nodo, datos, ruta)) return;
 
-  let n = nodo.campos.filter(
-    (c) => c.grado === 'siempre' && leerValor(datos, c.no, ruta).trim() === '',
-  ).length;
+  const donde = contexto || (raiz ? '' : nodo.nombre);
+
+  for (const campo of nodo.campos) {
+    const valor = leerValor(datos, campo.no, ruta);
+    if (valor.trim() === '') {
+      if (campo.grado === 'siempre')
+        out.push(pendienteDeCampo(campo, ruta, donde, `Falta ${campo.nombre.toLowerCase()}.`));
+      continue;
+    }
+    const problema = validarCampo(campo, valor);
+    if (problema) out.push(pendienteDeCampo(campo, ruta, donde, `${campo.nombre}: ${problema}`));
+  }
 
   if (nodo.esTipoPersona) {
     const elegida = leerVariante(datos, nodo.no, ruta);
     const variante = nodo.hijos.find((h) => h.etiqueta === elegida);
-    return variante ? n + faltantesDelNodo(variante, datos, ruta) : n + 1;
+    if (!variante)
+      out.push({
+        no: nodo.no,
+        campo: nodo.etiqueta,
+        detalle: 'Falta indicar si es persona física, moral o fideicomiso.',
+        origen: 'acto',
+        momento: 'captura',
+        gravedad: 'bloquea_aviso',
+        ruta,
+        contexto: donde || undefined,
+      });
+    else recorrerNodo(variante, datos, ruta, donde, out);
+    return;
   }
 
-  for (const hijo of nodo.hijos) n += faltantesDelNodo(hijo, datos, ruta);
-  return n;
+  for (const hijo of nodo.hijos) recorrerNodo(hijo, datos, ruta, donde, out);
+}
+
+function pendienteDeCampo(
+  campo: CampoFep,
+  ruta: number[],
+  contexto: string,
+  detalle: string,
+): Pendiente {
+  return {
+    no: campo.no,
+    campo: campo.etiqueta,
+    detalle,
+    origen: 'acto',
+    momento: 'captura',
+    gravedad: 'bloquea_aviso',
+    ruta,
+    contexto: contexto || undefined,
+  };
 }
 
 function hayAlgo(nodo: NodoRama, datos: DatosActo, ruta: number[]): boolean {

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { CampoActo } from "@/components/aviso/CampoActo";
 import { ramaDelActo, type NodoRama } from "@/lib/aviso/ramas-acto";
+import { clavePendiente, pendientesDelSubarbol } from "@/lib/aviso/completitud";
 import {
   agregarRepeticion,
   escribirValor,
@@ -38,6 +39,11 @@ import {
  *     llevaría una persona a medias escondida bajo otra.
  *   - Las fechas se guardan en ISO. La conversión a AAAAMMDD la hace el
  *     generador del XML, en un solo lugar.
+ *
+ * Lo que el layout exige se dice aquí, no el día del aviso: el encabezado lleva
+ * la cuenta viva de lo que falta y cada campo marca su propio problema en el
+ * momento en que se escribe. El notario tiene el expediente abierto ahora; el
+ * 17 ya no.
  */
 export function CapturaActo({
   tipoActo,
@@ -60,8 +66,42 @@ export function CapturaActo({
       </p>
     );
 
+  const faltan = pendientesDelSubarbol(tipoActo, datos);
+
   return (
     <div className="space-y-4">
+      {faltan.length === 0 ? (
+        <div className="flex items-start gap-2 rounded-lg bg-success/10 p-3">
+          <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
+          <p className="text-sm text-foreground">
+            La rama del acto está completa para el layout.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-lg bg-warning/10 p-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5 text-warning shrink-0" />
+            <p className="text-sm text-foreground">
+              Faltan {faltan.length} dato{faltan.length === 1 ? "" : "s"} que el layout exige. Sin
+              ellos el portal rechaza el aviso.
+            </p>
+          </div>
+          <ul className="mt-2 ml-6 space-y-1">
+            {faltan.slice(0, 6).map((p) => (
+              <li key={clavePendiente(p)} className="text-xs text-foreground">
+                {p.contexto && <span className="text-muted-foreground">{p.contexto} · </span>}
+                {p.detalle}
+              </li>
+            ))}
+          </ul>
+          {faltan.length > 6 && (
+            <p className="text-[11px] text-muted-foreground mt-1 ml-6">
+              y {faltan.length - 6} más, marcados abajo.
+            </p>
+          )}
+        </div>
+      )}
+
       <Nodo
         nodo={rama}
         ruta={[]}

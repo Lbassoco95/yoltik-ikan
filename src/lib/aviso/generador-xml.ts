@@ -28,6 +28,7 @@ import {
   type DatosActo,
 } from '@/lib/aviso/valores-acto';
 import type { CampoFep } from '@/lib/aviso/campos-fep.generated';
+import { validarCampo } from '@/lib/aviso/validacion-acto';
 
 // =====================================================================
 // Normalización a lo que el layout admite
@@ -495,6 +496,14 @@ function campoXml(
   if (!crudo) {
     if (campo.grado === 'siempre')
       errores.push(`${donde}: falta ${campo.nombre} (campo ${campo.no}).`);
+    return [];
+  }
+
+  // El mismo juicio que hace la captura. Si aquí pasara algo que allá se marcó
+  // como inválido, el notario vería "listo" y el portal rechazaría el archivo.
+  const problema = validarCampo(campo, crudo);
+  if (problema) {
+    errores.push(`${donde}: ${campo.nombre} (campo ${campo.no}) — ${problema}`);
     return [];
   }
 

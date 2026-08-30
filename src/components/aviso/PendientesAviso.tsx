@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Clock, Info } from "lucide-react";
-import { CAMPOS_DEL_CIERRE, type Pendiente } from "@/lib/aviso/completitud";
+import { CAMPOS_DEL_CIERRE, clavePendiente, type Pendiente } from "@/lib/aviso/completitud";
 import { cn } from "@/lib/utils";
 
 const ORIGEN_LABEL: Record<Pendiente["origen"], string> = {
@@ -96,8 +96,12 @@ function Bloque({
       <p className="text-[11px] text-muted-foreground mt-0.5 ml-6">{descripcion}</p>
       <ul className="mt-2 ml-6 space-y-1.5">
         {items.map((p) => (
-          <li key={`${p.origen}-${p.no}-${p.campo}`} className="text-xs text-foreground">
-            <span className="text-muted-foreground">{ORIGEN_LABEL[p.origen]} · </span>
+          // La clave incluye la repetición: el RFC del primer apoderado y el
+          // del segundo son el mismo campo del instructivo.
+          <li key={clavePendiente(p)} className="text-xs text-foreground">
+            <span className="text-muted-foreground">
+              {p.contexto ?? ORIGEN_LABEL[p.origen]} ·{" "}
+            </span>
             {p.detalle}{" "}
             <span className="text-muted-foreground">
               (campo {p.no} <code>&lt;{p.campo}&gt;</code>)
