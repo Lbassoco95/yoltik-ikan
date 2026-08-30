@@ -38,27 +38,31 @@ export default function AltaSegundoFactorPage() {
   const [cargando, setCargando] = useState(true);
   const [enviando, setEnviando] = useState(false);
 
-  // Una sola alta por visita, pase lo que pase.
-  //
-  // React en modo estricto ejecuta los efectos DOS veces en desarrollo. Aquí
-  // eso significa dos `enroll` a la vez, y como el alta limpia primero los
-  // factores a medio inscribir, la segunda corrida puede borrar el factor que
-  // la primera acaba de crear. El QR en pantalla quedaría apuntando a un
-  // factor que ya no existe: el usuario lo escanea, el código nunca valida y
-  // se queda atrapado en la única pantalla de la que no puede salir.
-  //
-  // (Es también lo que producía el `Failed to fetch` en consola: la petición
-  // de la corrida descartada, cancelada a medias.)
+  /**
+   * Una sola alta por visita, pase lo que pase.
+   *
+   * React en modo estricto ejecuta los efectos DOS veces en desarrollo. Sin
+   * guardia eso son dos `enroll` a la vez, y como el alta limpia primero los
+   * factores a medio inscribir, la segunda corrida borra el factor que la
+   * primera acaba de crear: el QR quedaría apuntando a uno inexistente.
+   *
+   * SIN una bandera `vivo` que descarte el resultado. Tenerlas las dos era
+   * peor que el problema original: la limpieza del primer pase ponía
+   * `vivo = false`, el segundo pase salía por el guardia sin hacer nada, y el
+   * `enroll` en vuelo terminaba descartándose. La pantalla se quedaba en
+   * «Preparando el código…» para siempre — en la única de la que no se puede
+   * salir. En modo estricto React REMONTA la misma instancia, así que los
+   * hooks sobreviven y actualizar el estado después funciona; en un desmontaje
+   * de verdad, actualizarlo es una operación sin efecto.
+   */
   const yaEmpezo = useRef(false);
 
   useEffect(() => {
     if (yaEmpezo.current) return;
     yaEmpezo.current = true;
 
-    let vivo = true;
     (async () => {
       const s = await situacionMfa();
-      if (!vivo) return;
 
       if (s.estado === "inscrito") {
         navegar("/", { replace: true });
@@ -76,14 +80,11 @@ export default function AltaSegundoFactorPage() {
       try {
         setInscripcion(await iniciarInscripcion());
       } catch (e) {
-        if (vivo) setError((e as Error).message);
+        setError((e as Error).message);
       } finally {
-        if (vivo) setCargando(false);
+        setCargando(false);
       }
     })();
-    return () => {
-      vivo = false;
-    };
   }, [navegar]);
 
   async function confirmar(e: React.FormEvent) {
