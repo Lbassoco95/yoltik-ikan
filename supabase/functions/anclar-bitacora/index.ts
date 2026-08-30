@@ -35,6 +35,7 @@ import {
   type MotivoAnclaje,
 } from './anclaje.ts';
 import { ActualizadorHttp, SelladorHttp } from '../_shared/opentimestamps.ts';
+import { FechaDeBloqueHttp } from '../_shared/bitcoin.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -98,6 +99,7 @@ Deno.serve(async (req: Request) => {
 
   const resumen: ResumenOrg[] = [];
   const actualizados: ResumenActualizacion[] = [];
+  const fechadas: { anclaje_id: string; bloque: number; fecha: string }[] = [];
 
   // Qué organizaciones tocan. Una cadena sin eventos no aparece aquí, así que
   // el cron no gasta un estampado en una organización que no ha hecho nada.
@@ -190,6 +192,7 @@ Deno.serve(async (req: Request) => {
   // cada calendario.
   if (accion !== 'anclar') {
     const actualizador = new ActualizadorHttp();
+    const fechaDeBloque = new FechaDeBloqueHttp();
 
     let pend = supabase
       .from('anclaje')
@@ -211,17 +214,21 @@ Deno.serve(async (req: Request) => {
         // pendiente no se toca: reescribirlo cada día sólo movería
         // `actualizado_en` y ensuciaría el rastro.
         if (r.ots || r.confirmado) {
+          // La hora del bloque sale de un explorador público, porque la
+          // atestiguación sólo lleva la ALTURA. Es comodidad de lectura: si el
+          // explorador no contesta se queda en null y la pantalla enseña el
+          // número de bloque, que es lo verificable. Nunca decide si está
+          // confirmado —eso lo dice el archivo—, y por eso va después.
+          const fecha = r.confirmado && r.bloque != null
+            ? await fechaDeBloque.consultar(r.bloque)
+            : null;
+
           const { error } = await supabase
             .from('anclaje')
             .update({
               ...(r.ots ? { ots: bytea(r.ots) } : {}),
-              // `fecha_bloque` se queda en null a propósito: la atestiguación
-              // de Bitcoin lleva la ALTURA del bloque, no su hora. Poner aquí
-              // el momento en que revisamos sería fechar la certificación
-              // cuando nos enteramos, que es justo lo que no se debe afirmar.
-              // La hora real se saca de la altura contra un explorador, y eso
-              // todavía no está construido.
               ...(r.confirmado ? { estado: 'confirmado', bloque_btc: r.bloque } : {}),
+              ...(fecha ? { fecha_bloque: fecha } : {}),
               ...(r.detalle ? { detalle: r.detalle } : {}),
             })
             .eq('id', a.id);
@@ -247,6 +254,29 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Anclajes ya confirmados a los que les falta la fecha: o se confirmaron
+  // antes de que esto existiera, o el explorador no contestó ese día. Se
+  // rellenan aquí, sin volver a tocar la prueba.
+  if (accion !== 'anclar') {
+    const fechaDeBloque = new FechaDeBloqueHttp();
+    let sinFecha = supabase
+      .from('anclaje')
+      .select('id, bloque_btc')
+      .eq('estado', 'confirmado')
+      .is('fecha_bloque', null)
+      .not('bloque_btc', 'is', null)
+      .limit(50);
+    if (entrada.organization_id) sinFecha = sinFecha.eq('organization_id', entrada.organization_id);
+
+    const { data: pendientesDeFecha } = await sinFecha;
+    for (const a of pendientesDeFecha ?? []) {
+      const fecha = await fechaDeBloque.consultar(Number(a.bloque_btc));
+      if (!fecha) continue;
+      await supabase.from('anclaje').update({ fecha_bloque: fecha }).eq('id', a.id);
+      fechadas.push({ anclaje_id: a.id as string, bloque: Number(a.bloque_btc), fecha });
+    }
+  }
+
   return json({
     ok: true,
     motivo,
@@ -257,6 +287,7 @@ Deno.serve(async (req: Request) => {
     detalle: resumen,
     actualizados: actualizados.length ? actualizados : undefined,
     confirmados: actualizados.filter((a) => a.confirmado).length,
+    fechadas: fechadas.length ? fechadas : undefined,
     duracion_ms: Date.now() - t0,
   });
 });

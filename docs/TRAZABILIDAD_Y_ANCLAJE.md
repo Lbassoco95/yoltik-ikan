@@ -347,11 +347,30 @@ Arreglado en tres pasos, no en uno:
 
 ### Lo que falta construir
 
-- **La hora del bloque**, consultando la altura contra un explorador. Hoy la
-  pantalla dice el número de bloque, que es lo verificable; la fecha sale de
-  consultarlo (el 964750 es del 30/08/2026 16:00:40 UTC) y eso todavía no está
-  construido.
 - **NOM-151** (B8.3) y **espejo en L2** (B8.4), ambos por decisión comercial.
+
+### La fecha del bloque
+
+La atestiguación lleva la **altura**, no la hora. La altura es la prueba; la
+fecha es comodidad de lectura —«anclado el 30 de agosto» dice más que «bloque
+964750»— y sale de consultar esa altura contra un explorador público
+(mempool.space, con blockstream.info de respaldo: los dos hablan la API de
+Esplora).
+
+De ahí una regla que no se rompe: **la fecha jamás decide si un anclaje está
+confirmado**. Eso lo dice la atestiguación dentro del archivo. Si el explorador
+no contesta, miente o desaparece, el anclaje sigue confirmado, `fecha_bloque`
+se queda en null y la pantalla enseña el número de bloque, que es lo que
+cualquiera puede comprobar por su cuenta.
+
+Se descarta la respuesta cuando no es lo que dice ser: un HTML de error en vez
+del hash —meterlo en la URL siguiente sería pedirle al segundo servicio un
+bloque llamado `<!DOCTYPE html>`—, un bloque de otra altura, o un `timestamp`
+que no es un número positivo. Un explorador equivocado de altura daría la fecha
+de otro bloque y nadie lo notaría jamás.
+
+La corrida de actualización también rellena la fecha de los anclajes que ya
+estaban confirmados sin ella, sin volver a tocar la prueba.
 
 ### Cómo verifica un tercero
 

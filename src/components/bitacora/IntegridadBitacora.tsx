@@ -282,8 +282,13 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
                       : "No se publicó"}
                 </span>
               </td>
-              <td className="px-3 py-2 text-xs font-mono text-muted-foreground">
-                {a.bloque_btc?.toLocaleString("es-MX") ?? "—"}
+              <td className="px-3 py-2 text-xs text-muted-foreground">
+                <span className="font-mono">{a.bloque_btc?.toLocaleString("es-MX") ?? "—"}</span>
+                {a.fecha_bloque && (
+                  <span className="block text-[10px]">
+                    {new Date(a.fecha_bloque).toLocaleDateString("es-MX")}
+                  </span>
+                )}
               </td>
               <td className="px-3 py-2">
                 <Button
@@ -367,11 +372,16 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
                 Los eventos 1 a {ancla.anclado_hasta?.toLocaleString("es-MX")} están respaldados
                 por una raíz publicada en el bloque{" "}
                 {ancla.bloque_btc?.toLocaleString("es-MX")} de Bitcoin
-                {/* La fecha sale de la altura del bloque, no de cuándo lo
-                    revisamos: mientras no se consulte un explorador, se dice
-                    el bloque y no una fecha. */}
+                {/* El bloque va primero porque es lo verificable; la fecha
+                    sale de consultar esa altura en un explorador público y es
+                    comodidad de lectura. Si no se pudo consultar, se calla:
+                    no se inventa una fecha. */}
                 {ancla.fecha_bloque
-                  ? `, del ${new Date(ancla.fecha_bloque).toLocaleDateString("es-MX")}`
+                  ? `, del ${new Date(ancla.fecha_bloque).toLocaleDateString("es-MX", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}`
                   : ""}
                 . Cualquiera puede comprobarlo con un nodo de Bitcoin, sin pedirnos nada.
               </>
