@@ -241,6 +241,21 @@ function Contenido({ nodo, ruta, datos, onChange, soloLectura, nivel }: PropsNod
   );
 }
 
+/** ¿Hay algo capturado en la variante elegida? Decide si vale la pena
+ *  preguntar antes de borrarla. */
+function hayDatosEnVariante(
+  nodo: NodoRama,
+  variante: string,
+  datos: DatosActo,
+  ruta: number[],
+): boolean {
+  const hijo = nodo.hijos.find((h) => h.etiqueta === variante);
+  if (!hijo) return false;
+  const conValor = (n: NodoRama): boolean =>
+    n.campos.some((c) => leerValor(datos, c.no, ruta).trim() !== "") || n.hijos.some(conValor);
+  return conValor(hijo);
+}
+
 const NOMBRE_VARIANTE: Record<string, string> = {
   persona_fisica: "Persona física",
   persona_moral: "Persona moral",
@@ -259,7 +274,23 @@ function TipoPersona({ nodo, ruta, datos, onChange, soloLectura, nivel }: PropsN
         <Select
           value={elegida ?? ""}
           disabled={soloLectura}
-          onValueChange={(v) => onChange(escribirVariante(datos, nodo, ruta, v))}
+          onValueChange={(v) => {
+            // Cambiar de variante borra lo capturado en la anterior —tiene que
+            // hacerlo, si no el XML llevaría una persona a medias escondida
+            // bajo otra— pero hasta ahora lo hacía en silencio: quien capturó
+            // ocho campos y tocó el selector por error perdía el trabajo sin
+            // enterarse. Sólo se pregunta si de verdad hay algo que perder.
+            if (
+              elegida &&
+              v !== elegida &&
+              hayDatosEnVariante(nodo, elegida, datos, ruta) &&
+              !window.confirm(
+                "Cambiar el tipo de persona borra los datos capturados de la anterior. ¿Continuar?",
+              )
+            )
+              return;
+            onChange(escribirVariante(datos, nodo, ruta, v));
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecciona…" />

@@ -83,7 +83,7 @@ export default function VerificationPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-card overflow-hidden">
+        <div className="lg:col-span-2 glass-card overflow-x-auto">
           {isLoading ? (
             <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" /> Cargando comparecientes…
@@ -93,7 +93,7 @@ export default function VerificationPage() {
               No se pudieron cargar: {(error as Error).message}
             </p>
           ) : (
-            <table className="w-full">
+            <table className="w-full min-w-[40rem]">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
                   {["Compareciente", "Nivel KYC", "Expediente", "Identidad verificada"].map((h) => (

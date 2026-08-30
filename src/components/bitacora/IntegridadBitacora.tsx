@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Anchor, CheckCircle2, Clock, Download, Loader2, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  Anchor,
+  CheckCircle2,
+  Clock,
+  Download,
+  Loader2,
+  ShieldCheck,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -35,13 +43,20 @@ export function IntegridadBitacora({
   organizationId?: string;
   titulo?: string;
 }) {
-  const [resultado, setResultado] = useState<ResultadoVerificacion | null>(null);
-  const [roturasBase, setRoturasBase] = useState<{ secuencia: number; motivo: string }[] | null>(
+  const [resultado, setResultado] = useState<ResultadoVerificacion | null>(
     null,
   );
+  const [roturasBase, setRoturasBase] = useState<
+    { secuencia: number; motivo: string }[] | null
+  >(null);
   const [verificando, setVerificando] = useState(false);
 
-  const { data: cabeza, isLoading, isError, error } = useQuery({
+  const {
+    data: cabeza,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["cadena", organizationId ?? "propia"],
     queryFn: () => estadoCadena(organizationId),
   });
@@ -77,7 +92,9 @@ export function IntegridadBitacora({
   async function descargar() {
     try {
       const paquete = await exportarPaquete(organizationId);
-      const blob = new Blob([JSON.stringify(paquete, null, 1)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(paquete, null, 1)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -90,7 +107,9 @@ export function IntegridadBitacora({
   }
 
   const coinciden =
-    resultado != null && roturasBase != null && resultado.integra === (roturasBase.length === 0);
+    resultado != null &&
+    roturasBase != null &&
+    resultado.integra === (roturasBase.length === 0);
   const integra = resultado?.integra === true && roturasBase?.length === 0;
 
   return (
@@ -101,8 +120,9 @@ export function IntegridadBitacora({
           <div>
             <p className="text-sm font-semibold text-foreground">{titulo}</p>
             <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
-              Cada alta, cada acto y cada movimiento del motor queda encadenado por hashes.
-              Alterar o borrar un registro pasado rompe la cadena y se detecta al recalcularla.
+              Cada alta, cada acto y cada movimiento del motor queda encadenado
+              por hashes. Alterar o borrar un registro pasado rompe la cadena y
+              se detecta al recalcularla.
             </p>
           </div>
         </div>
@@ -116,7 +136,8 @@ export function IntegridadBitacora({
             onClick={descargar}
             disabled={cabeza?.ultima_secuencia === 0}
           >
-            <Download className="w-3.5 h-3.5" /> Descargar paquete de verificación
+            <Download className="w-3.5 h-3.5" /> Descargar paquete de
+            verificación
           </Button>
           <Button
             size="sm"
@@ -131,14 +152,19 @@ export function IntegridadBitacora({
       </div>
 
       {isLoading ? (
-        <p className="text-xs text-muted-foreground">Leyendo la cabeza de la cadena…</p>
+        <p className="text-xs text-muted-foreground">
+          Leyendo la cabeza de la cadena…
+        </p>
       ) : isError ? (
         <p className="text-xs text-destructive">
           No se pudo leer la bitácora: {(error as Error)?.message}
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Dato etiqueta="Eventos registrados" valor={cabeza!.ultima_secuencia.toLocaleString("es-MX")} />
+          <Dato
+            etiqueta="Eventos registrados"
+            valor={cabeza!.ultima_secuencia.toLocaleString("es-MX")}
+          />
           <Dato
             etiqueta="Último movimiento"
             valor={
@@ -185,15 +211,19 @@ export function IntegridadBitacora({
 
           {!coinciden && (
             <p className="text-xs text-destructive mt-2 ml-6">
-              La base y este navegador no llegaron al mismo resultado. Eso, por sí solo, ya es
-              motivo de revisión: significa que uno de los dos no está calculando lo que dice.
+              La base y este navegador no llegaron al mismo resultado. Eso, por
+              sí solo, ya es motivo de revisión: significa que uno de los dos no
+              está calculando lo que dice.
             </p>
           )}
 
           {resultado.roturas.length > 0 && (
             <ul className="mt-2 ml-6 space-y-1">
               {resultado.roturas.slice(0, 8).map((r, i) => (
-                <li key={`${r.secuencia}-${i}`} className="text-xs text-foreground">
+                <li
+                  key={`${r.secuencia}-${i}`}
+                  className="text-xs text-foreground"
+                >
                   Evento {r.secuencia}: {r.motivo}
                 </li>
               ))}
@@ -219,7 +249,10 @@ export function IntegridadBitacora({
               {resultado.anclajes
                 .filter((a) => !a.coincide)
                 .map((a) => (
-                  <p key={a.id} className="text-[11px] text-destructive mt-1 ml-6">
+                  <p
+                    key={a.id}
+                    className="text-[11px] text-destructive mt-1 ml-6"
+                  >
                     Anclaje {a.desde_secuencia}–{a.hasta_secuencia}: {a.motivo}
                   </p>
                 ))}
@@ -252,7 +285,9 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
     setBajando(a.id);
     try {
       const bytes = await descargarOts(a.id);
-      const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/octet-stream" }));
+      const url = URL.createObjectURL(
+        new Blob([bytes as BlobPart], { type: "application/octet-stream" }),
+      );
       const el = document.createElement("a");
       el.href = url;
       el.download = `anclaje-${a.desde_secuencia}-${a.hasta_secuencia}.ots`;
@@ -266,78 +301,96 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
   }
 
   return (
-    <div className="rounded-lg border overflow-hidden">
-      <table className="w-full">
-        <thead>
-          <tr className="bg-muted/30">
-            {["Eventos", "Motivo", "Estado", "Bloque", "Prueba"].map((h) => (
-              <th
-                key={h}
-                className="text-left text-[11px] font-semibold text-muted-foreground uppercase px-3 py-2"
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {anclajes.map((a) => (
-            <tr key={a.id} className="border-t border-border">
-              <td className="px-3 py-2 text-xs font-mono">
-                {a.desde_secuencia}–{a.hasta_secuencia}
-              </td>
-              <td className="px-3 py-2 text-xs">{MOTIVO_LABEL[a.motivo]}</td>
-              <td className="px-3 py-2">
-                {/* El significado va en el texto, no sólo en el color. */}
-                <span
-                  className={cn(
-                    "status-badge text-[10px]",
-                    a.estado === "confirmado"
-                      ? "bg-success/10 text-success"
-                      : a.estado === "pendiente"
-                        ? "bg-primary/10 text-primary"
-                        : "bg-destructive/10 text-destructive",
-                  )}
+    <div className="rounded-lg border">
+      {/* El contenedor redondeado recortaba el desbordamiento: en un teléfono
+          se perdían columnas sin manera de llegar a ellas. El scroll va en un
+          div propio, dentro del borde. */}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[36rem]">
+          <thead>
+            <tr className="bg-muted/30">
+              {["Eventos", "Motivo", "Estado", "Bloque", "Prueba"].map((h) => (
+                <th
+                  key={h}
+                  className="text-left text-[11px] font-semibold text-muted-foreground uppercase px-3 py-2"
                 >
-                  {a.estado === "confirmado"
-                    ? "En Bitcoin"
-                    : a.estado === "pendiente"
-                      ? "Esperando bloque"
-                      : "No se publicó"}
-                </span>
-              </td>
-              <td className="px-3 py-2 text-xs text-muted-foreground">
-                <span className="font-mono">{a.bloque_btc?.toLocaleString("es-MX") ?? "—"}</span>
-                {a.fecha_bloque && (
-                  <span className="block text-[10px]">
-                    {new Date(a.fecha_bloque).toLocaleDateString("es-MX")}
-                  </span>
-                )}
-              </td>
-              <td className="px-3 py-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="gap-1.5 h-7"
-                  disabled={a.estado === "fallido" || bajando === a.id}
-                  onClick={() => bajar(a)}
-                >
-                  {bajando === a.id ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Download className="w-3 h-3" />
-                  )}
-                  .ots
-                </Button>
-              </td>
+                  {h}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {anclajes.map((a) => (
+              <tr key={a.id} className="border-t border-border">
+                <td className="px-3 py-2 text-xs font-mono">
+                  {a.desde_secuencia}–{a.hasta_secuencia}
+                </td>
+                <td className="px-3 py-2 text-xs">{MOTIVO_LABEL[a.motivo]}</td>
+                <td className="px-3 py-2">
+                  {/* El significado va en el texto, no sólo en el color. */}
+                  <span
+                    className={cn(
+                      "status-badge text-[10px]",
+                      a.estado === "confirmado"
+                        ? "bg-success/10 text-success"
+                        : a.estado === "pendiente"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-destructive/10 text-destructive",
+                    )}
+                  >
+                    {a.estado === "confirmado"
+                      ? "En Bitcoin"
+                      : a.estado === "pendiente"
+                        ? "Esperando bloque"
+                        : "No se publicó"}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">
+                  <span className="font-mono">
+                    {a.bloque_btc?.toLocaleString("es-MX") ?? "—"}
+                  </span>
+                  {a.fecha_bloque && (
+                    <span className="block text-[10px]">
+                      {new Date(a.fecha_bloque).toLocaleDateString("es-MX")}
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="gap-1.5 h-7"
+                    disabled={!a.tiene_ots || bajando === a.id}
+                    title={
+                      a.tiene_ots
+                        ? undefined
+                        : "Todavía no hay archivo de prueba para este anclaje."
+                    }
+                    onClick={() => bajar(a)}
+                  >
+                    {bajando === a.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Download className="w-3 h-3" />
+                    )}
+                    {a.estado === "confirmado" ? ".ots" : ".ots (incompleta)"}
+                  </Button>
+                  {a.tiene_ots && a.estado !== "confirmado" && (
+                    <p className="text-xs text-muted-foreground mt-0.5 max-w-[16rem]">
+                      Aún sin confirmación de Bitcoin. Sirve para conservarla,
+                      no para acreditar la fecha todavía.
+                    </p>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <p className="text-[11px] text-muted-foreground px-3 py-2 border-t border-border">
-        El archivo <code>.ots</code> es la prueba: con <code>ots verify</code> y un nodo de
-        Bitcoin, o comparando la raíz contra el bloque en cualquier explorador, se comprueba sin
-        pedirnos nada.
+        El archivo <code>.ots</code> es la prueba: con <code>ots verify</code> y
+        un nodo de Bitcoin, o comparando la raíz contra el bloque en cualquier
+        explorador, se comprueba sin pedirnos nada.
       </p>
     </div>
   );
@@ -368,7 +421,11 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
     <div
       className={cn(
         "rounded-lg p-3",
-        confirmado ? "bg-success/10" : pendiente ? "bg-primary/5" : "bg-warning/10",
+        confirmado
+          ? "bg-success/10"
+          : pendiente
+            ? "bg-primary/5"
+            : "bg-warning/10",
       )}
     >
       <div className="flex items-start gap-2">
@@ -393,31 +450,37 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
           <p className="text-[11px] text-muted-foreground">
             {confirmado ? (
               <>
-                Los eventos 1 a {ancla.anclado_hasta?.toLocaleString("es-MX")} están respaldados
-                por una raíz publicada en el bloque{" "}
+                Los eventos 1 a {ancla.anclado_hasta?.toLocaleString("es-MX")}{" "}
+                están respaldados por una raíz publicada en el bloque{" "}
                 {ancla.bloque_btc?.toLocaleString("es-MX")} de Bitcoin
                 {/* El bloque va primero porque es lo verificable; la fecha
                     sale de consultar esa altura en un explorador público y es
                     comodidad de lectura. Si no se pudo consultar, se calla:
                     no se inventa una fecha. */}
                 {ancla.fecha_bloque
-                  ? `, del ${new Date(ancla.fecha_bloque).toLocaleDateString("es-MX", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}`
+                  ? `, del ${new Date(ancla.fecha_bloque).toLocaleDateString(
+                      "es-MX",
+                      {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      },
+                    )}`
                   : ""}
-                . Cualquiera puede comprobarlo con un nodo de Bitcoin, sin pedirnos nada.
+                . Cualquiera puede comprobarlo con un nodo de Bitcoin, sin
+                pedirnos nada.
               </>
             ) : pendiente ? (
               <>
-                El calendario de OpenTimestamps ya recibió la raíz; Bitcoin tarda unas horas en
-                confirmarla. Hasta entonces esto todavía no es una certificación.
+                El calendario de OpenTimestamps ya recibió la raíz; Bitcoin
+                tarda unas horas en confirmarla. Hasta entonces esto todavía no
+                es una certificación.
               </>
             ) : (
               <>
-                Por ahora la integridad se comprueba sólo dentro de la base. Eso detecta que se
-                alterara un evento suelto, no que se reescribiera la cadena entera.
+                Por ahora la integridad se comprueba sólo dentro de la base. Eso
+                detecta que se alterara un evento suelto, no que se reescribiera
+                la cadena entera.
               </>
             )}
           </p>
@@ -425,9 +488,9 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
           {ancla.eventos_sin_anclar > 0 && (
             <p className="text-[11px] text-warning">
               {ancla.eventos_sin_anclar.toLocaleString("es-MX")} evento
-              {ancla.eventos_sin_anclar === 1 ? "" : "s"} sin cobertura externa: son los
-              posteriores al último anclaje. El anclaje corre a diario y se fuerza al cerrar cada
-              periodo de aviso.
+              {ancla.eventos_sin_anclar === 1 ? "" : "s"} sin cobertura externa:
+              son los posteriores al último anclaje. El anclaje corre a diario y
+              se fuerza al cerrar cada periodo de aviso.
             </p>
           )}
 
@@ -442,11 +505,23 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
   );
 }
 
-function Dato({ etiqueta, valor, mono }: { etiqueta: string; valor: string; mono?: boolean }) {
+function Dato({
+  etiqueta,
+  valor,
+  mono,
+}: {
+  etiqueta: string;
+  valor: string;
+  mono?: boolean;
+}) {
   return (
     <div className="rounded-lg bg-muted/40 p-3">
-      <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{etiqueta}</p>
-      <p className={`text-sm font-semibold text-foreground mt-0.5 ${mono ? "font-mono" : ""}`}>
+      <p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+        {etiqueta}
+      </p>
+      <p
+        className={`text-sm font-semibold text-foreground mt-0.5 ${mono ? "font-mono" : ""}`}
+      >
         {valor}
       </p>
     </div>

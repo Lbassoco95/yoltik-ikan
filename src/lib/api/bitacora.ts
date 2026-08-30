@@ -125,6 +125,9 @@ export interface AnclajeListado {
   fecha_bloque: string | null;
   detalle: string | null;
   creado_en: string;
+  /** Si hay archivo de prueba que descargar. Se pregunta sin traerse los
+   *  bytes: sin esto la pantalla ofrecía un botón que sólo podía fallar. */
+  tiene_ots: boolean;
 }
 
 export interface EstadoAnclaje {
@@ -162,17 +165,29 @@ export async function listarAnclajes(
   limite = 20,
 ): Promise<AnclajeListado[]> {
   const id = organizationId ?? (await contextoSesion()).organizationId;
+  // Hace falta saber si la prueba existe: sin eso la pantalla ofrecía
+  // descargar el `.ots` de un anclaje que todavía no lo tiene, y el único
+  // aviso llegaba como error DESPUÉS de pulsar.
+  //
+  // Hoy los bytes viajan y se descartan aquí, que es feo pero acotado (un
+  // `.ots` ronda 1–3 KB y la lista trae diez). PostgREST no sabe proyectar
+  // `ots is not null` sin una columna generada, y añadirla es una migration.
+  // TODO[Sprint D-2]: columna `tiene_ots boolean generated always as (ots is
+  // not null) stored` y quitar `ots` de este select.
   const { data, error } = await supabase
     .from('anclaje')
     .select(
       'id, desde_secuencia, hasta_secuencia, raiz_merkle, cadena_hash_final, motivo, estado, ' +
-        'calendarios, bloque_btc, fecha_bloque, detalle, creado_en',
+        'calendarios, bloque_btc, fecha_bloque, detalle, creado_en, ots',
     )
     .eq('organization_id', id)
     .order('hasta_secuencia', { ascending: false })
     .limit(limite);
   if (error) throw error;
-  return (data ?? []) as unknown as AnclajeListado[];
+
+  return ((data ?? []) as unknown as (AnclajeListado & { ots: string | null })[]).map(
+    ({ ots, ...resto }) => ({ ...resto, tiene_ots: !!ots }),
+  );
 }
 
 /** Verificación hecha por la base. Devuelve las roturas; vacío = íntegra. */

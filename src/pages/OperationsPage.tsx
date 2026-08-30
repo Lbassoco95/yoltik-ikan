@@ -130,6 +130,27 @@ export default function OperationsPage() {
   const nombrePorCliente = new Map(clientes.map((c) => [c.id, c.nombre_razon_social]));
   const clientePorId = new Map(clientes.map((c) => [c.id, c]));
 
+  /**
+   * Qué umbral rebasa el monto, dicho con palabras.
+   *
+   * La fila se tiñe según esto, pero el tinte no informa a nadie que no
+   * distinga esos colores, ni sobrevive a imprimir la tabla en blanco y negro.
+   * El color refuerza; el texto es el que lleva el significado.
+   */
+  function umbralRebasado(monto: number): { etiqueta: string; clase: string } | null {
+    if (threshold3210 != null && monto >= threshold3210)
+      return {
+        etiqueta: "Rebasa el umbral de restricción (3 210 UMA)",
+        clase: "bg-destructive/10 text-destructive",
+      };
+    if (threshold645 != null && monto >= threshold645)
+      return {
+        etiqueta: "Rebasa el umbral de identificación (645 UMA)",
+        clase: "bg-warning/10 text-warning",
+      };
+    return null;
+  }
+
   /** Cuántos datos le faltan a un acto ya registrado para entrar al aviso.
    *  Se calcula en la lista para que el rezago se vea sin abrir nada. */
   function bloqueosDelActo(op: (typeof operaciones)[number]): number {
@@ -225,10 +246,27 @@ export default function OperationsPage() {
     onError: (e: Error) => toast.error(`No se pudo guardar: ${e.message}`),
   });
 
-  /** Cambiar de tipo de acto cambia la rama entera del layout: lo capturado
-   *  para la anterior no tiene dónde ir, así que se descarta a la vista. */
+  /**
+   * Cambiar de tipo de acto cambia la rama entera del formato del aviso: lo
+   * capturado para la anterior no tiene dónde ir, así que se descarta.
+   *
+   * Se pregunta antes, y sólo si hay algo que perder. Descartarlo en silencio
+   * significa que quien tocó el selector por error se entera cuando ya vació
+   * media captura.
+   */
   function cambiarTipoActo(tipo_acto: string) {
-    setForm((f) => (f.tipo_acto === tipo_acto ? f : { ...f, tipo_acto, datos_acto: {} }));
+    setForm((f) => {
+      if (f.tipo_acto === tipo_acto) return f;
+      const hayCaptura = Object.keys(f.datos_acto).length > 0;
+      if (
+        hayCaptura &&
+        !window.confirm(
+          "Cambiar el tipo de acto borra el expediente capturado para el anterior. ¿Continuar?",
+        )
+      )
+        return f;
+      return { ...f, tipo_acto, datos_acto: {} };
+    });
   }
 
   // Lo que le faltaría a este acto para entrar al aviso, calculado mientras se
@@ -307,7 +345,7 @@ export default function OperationsPage() {
         </div>
       )}
 
-      <div className="glass-card overflow-hidden">
+      <div className="glass-card overflow-x-auto">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando operaciones…
@@ -317,7 +355,7 @@ export default function OperationsPage() {
             No se pudieron cargar las operaciones: {(error as Error)?.message}
           </div>
         ) : (
-          <table className="w-full">
+          <table className="w-full min-w-[64rem]">
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 {[
@@ -327,6 +365,7 @@ export default function OperationsPage() {
                   "Monto",
                   esNotarias ? "Tipo de acto" : "Tipo",
                   esNotarias ? "Valor (UMA)" : "Activo",
+                  "Umbral",
                   "Requiere aviso",
                   ...(esNotarias ? ["Expediente"] : []),
                 ].map((h) => (
@@ -383,6 +422,16 @@ export default function OperationsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3">
+                    {(() => {
+                      const u = umbralRebasado(op.monto_mxn);
+                      return u ? (
+                        <span className={cn("status-badge text-xs", u.clase)}>{u.etiqueta}</span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Por debajo</span>
+                      );
+                    })()}
+                  </td>
+                  <td className="px-4 py-3">
                     {op.requiere_aviso ? (
                       <span className="status-badge bg-warning/10 text-warning">Sí</span>
                     ) : (
@@ -427,7 +476,7 @@ export default function OperationsPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td
-                    colSpan={esNotarias ? 8 : 6}
+                    colSpan={esNotarias ? 9 : 7}
                     className="px-4 py-8 text-center text-muted-foreground text-sm"
                   >
                     {L.operacionesVacio}
@@ -468,7 +517,7 @@ export default function OperationsPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {esNotarias ? (
                 <div className="col-span-2">
                   <Label>Tipo de acto</Label>

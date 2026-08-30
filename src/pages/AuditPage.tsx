@@ -149,7 +149,9 @@ export default function AuditPage() {
         </Select>
       </div>
 
-      <div className="glass-card overflow-hidden">
+      {/* overflow-x-auto y no -hidden: recortar el desbordamiento hace que
+          en un teléfono se pierdan columnas sin manera de llegar a ellas. */}
+      <div className="glass-card overflow-x-auto">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando bitácora…
@@ -159,7 +161,7 @@ export default function AuditPage() {
             No se pudo leer la bitácora: {(error as Error).message}
           </p>
         ) : (
-          <table className="w-full">
+          <table className="w-full min-w-[52rem]">
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 {["#", "Momento", "Acción", "Entidad", "Objeto", "Actor", "Encadenamiento"].map(
