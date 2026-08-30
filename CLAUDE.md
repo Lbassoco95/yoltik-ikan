@@ -141,14 +141,11 @@ Ver `README.md` para tree completo. Resumen:
 Lee `docs/SPRINT_D1_BACKLOG.md`. Ese archivo tiene los bloques ordenados por
 dependencias, cada uno con criterio de aceptación y validación.
 
-**Estado actual del bootstrap**:
-- ✅ D1.B0a — pre-trabajo sobre scaffold Lovable (lockfiles, lovable-tagger, tokens `ikan.*`).
-- 🟡 D1.B0b — contexto persistente y docs (este chunk).
-- ⏳ D1.B0c — schema (migrations + config + edge function stub).
-- ⏳ D1.B0d — seeds Ixim Pay.
-- ⏳ D1.B0e — configs (package.json, env, scripts).
-- ⏳ D1.B0f — front Ikán sobre Lovable (auth + roles + role-routes).
-- ⏳ D1.B1 — smoke test contra Supabase remoto.
+**Sprint D-1 CERRADO** el 30 de agosto de 2026 (`66a1b7c`). Las siete
+comprobaciones de aceptación pasaron en navegador contra producción, y la
+bitácora está anclada en el bloque 964750 de Bitcoin. El estado con evidencia,
+lo que se cazó al probar y las tres decisiones que siguen abiertas están en
+`docs/CIERRE_D1.md` — léelo antes de tocar nada de D-2.
 
 ## Lo que NO va al demo (postpónlo si te lo piden)
 
