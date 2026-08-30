@@ -90,6 +90,15 @@ begin
   end if;
   raise notice 'OK · % códigos postales cargados', v_n;
 end $$;
+
+-- La API de gestión no devuelve los RAISE NOTICE, así que esta última parte se
+-- veía como un \`[]\` indistinguible de "no hizo nada". El bloque de arriba
+-- revienta si la cuenta no cuadra, así que ver la tabla ya significa que pasó.
+select 'códigos postales' as bundle,
+       (select valores_vigentes from v_catalogos_estado where codigo = ${q(CODIGO)})::text
+         || ' cargados' as estado,
+       (select descripcion from v_catalogo_vigente
+         where catalogo = ${q(CODIGO)} and clave = '01000') as prueba_cero_a_la_izquierda;
 `
     : ''
 }`;
