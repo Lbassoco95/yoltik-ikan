@@ -28,6 +28,7 @@
 | **RCG0.B8.1** | **Bitácora encadenada** | ✅ **hecho** |
 | **RCG0.B8.2** | **Anclaje en Bitcoin (OpenTimestamps)** | ⏳ **siguiente** |
 | **RCG0.B8.3** | **Constancia NOM-151 (requiere PSC)** | ⛔ después del demo |
+| **RCG0.B9** | **Cierre de fuga entre organizaciones (migration 0022)** | ✅ **hecho · falta aplicar en producción** |
 
 Decisiones confirmadas con Polo (2026-08-20):
 - **B1**: el contador de 24h basta con que sea **visible** en el panel del OC (contador
