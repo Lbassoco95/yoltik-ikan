@@ -95,7 +95,12 @@ lateral (values
          and (select prosrc from pg_proc
                where oid = to_regprocedure('public.registrar_evento(uuid,text,text,uuid,jsonb,text,uuid,jsonb)'))
              not like '%gen_random_bytes%',
-       'apply_0024_nonce.sql')
+       'apply_0024_nonce.sql'),
+  (25, '0025 · aviso: versión de layout, XML y bitácora',
+       exists (select 1 from information_schema.columns
+                where table_schema = 'public' and table_name = 'aviso'
+                  and column_name = 'layout_version'),
+       'apply_0025_aviso.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -183,7 +188,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0024'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0025'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')
