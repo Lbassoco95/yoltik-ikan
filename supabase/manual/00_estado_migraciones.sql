@@ -104,7 +104,14 @@ lateral (values
   (26, '0026 · anclaje de la bitácora en Bitcoin (OpenTimestamps)',
        to_regclass('public.anclaje') is not null
          and to_regprocedure('public.rango_por_anclar(uuid)') is not null,
-       'apply_0026_anclaje.sql')
+       'apply_0026_anclaje.sql'),
+  -- La tabla existía sin lectura para nadie. Ahora Kawiil la puede leer para
+  -- seguimiento comercial, pero la escritura sigue siendo sólo de service_role.
+  (27, '0027 · prospect_intake: lectura sólo para Kawiil',
+       (select count(*) from pg_policies where schemaname='public' and tablename='prospect_intake') = 1
+         and exists (select 1 from pg_policies where schemaname='public' and tablename='prospect_intake'
+                      and cmd='SELECT' and qual::text like '%es_admin_kawiil%'),
+       'apply_0027_prospectos.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -214,7 +221,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0026'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0027'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')
