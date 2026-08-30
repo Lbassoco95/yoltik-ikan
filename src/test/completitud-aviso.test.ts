@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { generarAvisoXml } from '@/lib/aviso/generador-xml';
+import { ramaDelActo } from '@/lib/aviso/ramas-acto';
+import { claveConteo, claveDato, escribirValor, escribirVariante } from '@/lib/aviso/valores-acto';
 import {
   SIN_APELLIDO,
   camposDelActo,
@@ -182,8 +185,102 @@ describe('pendientes del acto', () => {
 
   it('capturar el subárbol baja la cuenta de faltantes', () => {
     const antes = camposPendientesDelSubarbol('otorgamiento_poder', {});
-    const despues = camposPendientesDelSubarbol('otorgamiento_poder', { tipo_poder: '1' });
+    const despues = camposPendientesDelSubarbol('otorgamiento_poder', {
+      // Tipo de poder del primer apoderado: el grupo es repetible.
+      [claveDato('3.6.1.3.1.2.1', [0])]: '1',
+    });
     expect(despues).toBe(antes - 1);
+  });
+
+  it('cada repetición cuenta aparte: dos apoderados piden dos juegos de datos', () => {
+    const uno = camposPendientesDelSubarbol('otorgamiento_poder', {});
+    const dos = camposPendientesDelSubarbol('otorgamiento_poder', {
+      [claveConteo('3.6.1.3.1.2')]: 2,
+    });
+    expect(dos).toBeGreaterThan(uno);
+  });
+
+  it('elegir el tipo de persona cambia lo que falta', () => {
+    const sinElegir = camposPendientesDelSubarbol('otorgamiento_poder', {});
+    const rama = ramaDelActo('otorgamiento_poder')!;
+    const tipoPersona = rama.hijos[0].hijos[0]; // <tipo_persona> del poderdante
+    const conFisica = camposPendientesDelSubarbol(
+      'otorgamiento_poder',
+      escribirVariante({}, tipoPersona, [0], 'persona_fisica'),
+    );
+    // Deja de faltar la elección y empiezan a faltar los datos de la persona.
+    expect(conFisica).not.toBe(sinElegir);
+  });
+
+  it('no cuenta un contenedor opcional que nadie llenó', () => {
+    // El mutuo trae <datos_garantia>, que sólo aplica si hay garantía. Vacío no
+    // debe pedir nada: si lo pidiera, el aviso nunca se podría cerrar.
+    const mutuo = camposPendientesDelSubarbol('contrato_mutuo_credito', {});
+    const conGarantia = camposPendientesDelSubarbol('contrato_mutuo_credito', {
+      [claveDato('3.6.1.3.9.4.1', [0])]: '1',
+    });
+    expect(conGarantia).toBeGreaterThan(mutuo);
+  });
+});
+
+/**
+ * La cuenta de la pantalla y lo que frena al generador tienen que ser la misma
+ * cosa. Si divergen, la captura diría "listo para aviso" y el portal
+ * rechazaría el archivo: el peor de los dos errores posibles.
+ */
+describe('la cuenta de pendientes coincide con lo que frena el XML', () => {
+  const BASE = {
+    mes_reportado: '2026-08',
+    sujeto: { clave_sujeto_obligado: 'NOTA900101AB1', clave_actividad: 'FEP' },
+    actos: [] as never[],
+  };
+
+  const acto = (datos_acto: Record<string, unknown>) => ({
+    referencia_aviso: 'IKAN2608001',
+    prioridad: '1' as const,
+    alerta: { tipo: '100', descripcion: 'Sin alerta' },
+    persona: {
+      nombre: 'Juan',
+      apellido_paterno: 'Pérez',
+      apellido_materno: 'López',
+      rfc: 'PELJ800502AB1',
+    },
+    instrumento_publico: '45321',
+    fecha_operacion: '2026-08-14',
+    tipo_acto: 'otorgamiento_poder',
+    datos_acto,
+  });
+
+  it('cero pendientes implica que el generador no se queja de la rama', () => {
+    let d: Record<string, unknown> = {};
+    const rama = ramaDelActo('otorgamiento_poder')!;
+    const tp = (i: 0 | 1) => rama.hijos[i].hijos.find((h) => h.esTipoPersona)!;
+    d = escribirVariante(d, tp(0), [0], 'persona_fisica');
+    d = escribirVariante(d, tp(1), [0], 'persona_fisica');
+    for (const [no, valor] of [
+      ['3.6.1.3.1.1.1.1.1', 'MARIA'],
+      ['3.6.1.3.1.1.1.1.2', 'MUÑOZ'],
+      ['3.6.1.3.1.1.1.1.3', 'RAMIREZ'],
+      ['3.6.1.3.1.1.1.1.5', 'MURM750311AB1'],
+      ['3.6.1.3.1.1.1.1.7', 'MX'],
+      ['3.6.1.3.1.1.1.1.8', '1234567'],
+      ['3.6.1.3.1.2.1', '1'],
+      ['3.6.1.3.1.2.2.1.1', 'JUAN'],
+      ['3.6.1.3.1.2.2.1.2', 'PEREZ'],
+      ['3.6.1.3.1.2.2.1.3', 'LOPEZ'],
+      ['3.6.1.3.1.2.2.1.5', 'PELJ800502AB1'],
+      ['3.6.1.3.1.2.2.1.7', 'MX'],
+    ] as const)
+      d = escribirValor(d, no, [0], valor);
+
+    expect(camposPendientesDelSubarbol('otorgamiento_poder', d)).toBe(0);
+    const r = generarAvisoXml({ ...BASE, actos: [acto(d)] });
+    expect(r.errores).toEqual([]);
+  });
+
+  it('con pendientes el generador tampoco entrega archivo', () => {
+    expect(camposPendientesDelSubarbol('otorgamiento_poder', {})).toBeGreaterThan(0);
+    expect(generarAvisoXml({ ...BASE, actos: [acto({})] }).xml).toBeNull();
   });
 });
 

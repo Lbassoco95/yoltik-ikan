@@ -20,6 +20,14 @@
  */
 
 import { actosDelSppld } from '@/lib/perfil-actividad';
+import { controlDe, ramaDelActo, type NodoRama } from '@/lib/aviso/ramas-acto';
+import {
+  leerValor,
+  leerVariante,
+  numeroRepeticiones,
+  type DatosActo,
+} from '@/lib/aviso/valores-acto';
+import type { CampoFep } from '@/lib/aviso/campos-fep.generated';
 
 // =====================================================================
 // Normalización a lo que el layout admite
@@ -258,19 +266,12 @@ export function generarAvisoXml(entrada: EntradaAviso): ResultadoXml {
           'DeclaraNOT, no va en este aviso.',
       );
     } else {
-      const detalle = a.datos_acto ?? {};
-      const claves = Object.keys(detalle).filter((k) => String(detalle[k] ?? '').trim() !== '');
-      if (claves.length === 0) {
-        advertencias.push(
-          `${donde}: la rama <${acto}> va vacía. El detalle del acto todavía no se captura en ` +
-            'Ikán, así que el portal va a rechazar este aviso hasta que se complete.',
+      const rama = ramaDelActo(acto);
+      if (!rama)
+        errores.push(
+          `${donde}: el layout no trae la rama <${acto}>. Revisa el diccionario del instructivo.`,
         );
-        l.push(`      <${acto}/>`);
-      } else {
-        l.push(`      <${acto}>`);
-        for (const k of claves.sort()) l.push(et(k, String(detalle[k]), 7));
-        l.push(`      </${acto}>`);
-      }
+      else l.push(...ramaXml(rama, a.datos_acto ?? {}, [], 6, donde, errores, advertencias, true));
     }
     l.push('     </tipo_actividad>');
 
@@ -333,4 +334,212 @@ function personaAviso(
 
   l.push('   </persona_aviso>');
   return l;
+}
+
+// =====================================================================
+// Rama del tipo de acto (3.6.1.3.x)
+// =====================================================================
+
+/**
+ * Serializa el subárbol propio del acto desde el diccionario del instructivo.
+ *
+ * Recorre el árbol en el orden en que el instructivo numera los campos, que es
+ * el orden de la secuencia del XSD. Un campo fuera de lugar invalida el archivo
+ * aunque el contenido esté bien, así que el orden no se decide aquí: se hereda.
+ *
+ * Qué bloquea y qué no:
+ *
+ *   - `grado: 'siempre'` vacío es error. Sin eso el archivo se rechaza.
+ *   - `grado: 'condicional'` y `'si_aplica'` vacíos se omiten. El instructivo
+ *     los exige sólo en ciertos casos y evaluar esa condición en automático
+ *     obligaría a mapear prosa a claves de catálogo, que es inventar.
+ *   - Un contenedor opcional sin nada capturado no se emite. Emitirlo vacío
+ *     produce un <datos_garantia/> que el portal rechaza por incompleto.
+ */
+function ramaXml(
+  nodo: NodoRama,
+  datos: DatosActo,
+  ruta: number[],
+  sangria: number,
+  donde: string,
+  errores: string[],
+  advertencias: string[],
+  /** La raíz del acto va siempre, aunque el instructivo la marque opcional:
+   *  es opcional entre las diez ramas, no dentro del acto que ya se eligió. */
+  raiz = false,
+): string[] {
+  if (!nodo.repetible)
+    return nodoXml(nodo, datos, ruta, sangria, donde, errores, advertencias, undefined, undefined, raiz);
+
+  const total = numeroRepeticiones(datos, nodo.no, ruta);
+  const l: string[] = [];
+  for (let i = 0; i < total; i++)
+    l.push(...nodoXml(nodo, datos, [...ruta, i], sangria, donde, errores, advertencias, i, total));
+  return l;
+}
+
+function nodoXml(
+  nodo: NodoRama,
+  datos: DatosActo,
+  ruta: number[],
+  sangria: number,
+  donde: string,
+  errores: string[],
+  advertencias: string[],
+  indice?: number,
+  total?: number,
+  raiz = false,
+): string[] {
+  const ubicacion =
+    indice != null && (total ?? 1) > 1
+      ? `${donde} · ${nodo.nombre} ${indice + 1}`
+      : `${donde} · ${nodo.nombre}`;
+
+  // Un contenedor que no se exige SIEMPRE y que nadie llenó no va en el
+  // archivo. Incluye los condicionales: <datos_garantia> existe si hay
+  // garantía, y un mutuo sin garantía tiene que poder cerrarse.
+  if (nodo.grado !== 'siempre' && !raiz && !tieneAlgo(nodo, datos, ruta)) return [];
+
+  const dentro = nodo.esTipoPersona
+    ? tipoPersonaXml(nodo, datos, ruta, sangria + 1, ubicacion, errores, advertencias)
+    : contenidoXml(nodo, datos, ruta, sangria + 1, ubicacion, errores, advertencias);
+
+  const s = ' '.repeat(sangria);
+  return [`${s}<${nodo.etiqueta}>`, ...dentro, `${s}</${nodo.etiqueta}>`];
+}
+
+function contenidoXml(
+  nodo: NodoRama,
+  datos: DatosActo,
+  ruta: number[],
+  sangria: number,
+  donde: string,
+  errores: string[],
+  advertencias: string[],
+): string[] {
+  const l: string[] = [];
+  for (const campo of nodo.campos)
+    l.push(...campoXml(campo, datos, ruta, sangria, donde, errores));
+
+  identificadoresXml(nodo, datos, ruta, donde, errores, advertencias);
+
+  for (const hijo of nodo.hijos)
+    l.push(...ramaXml(hijo, datos, ruta, sangria, donde, errores, advertencias));
+  return l;
+}
+
+/** Sólo la variante elegida. Las otras dos no existen en el archivo. */
+function tipoPersonaXml(
+  nodo: NodoRama,
+  datos: DatosActo,
+  ruta: number[],
+  sangria: number,
+  donde: string,
+  errores: string[],
+  advertencias: string[],
+): string[] {
+  const l: string[] = [];
+  for (const campo of nodo.campos)
+    l.push(...campoXml(campo, datos, ruta, sangria, donde, errores));
+
+  const elegida = leerVariante(datos, nodo.no, ruta);
+  const variante = nodo.hijos.find((h) => h.etiqueta === elegida);
+  if (!variante) {
+    errores.push(`${donde}: falta el tipo de persona (física, moral o fideicomiso).`);
+    return l;
+  }
+  return [...l, ...ramaXml(variante, datos, ruta, sangria, donde, errores, advertencias)];
+}
+
+/**
+ * RFC, CURP y fecha son intercambiables entre sí dentro de una persona: el
+ * instructivo los marca "obligatorio si se cuenta con los mismos", pero exige
+ * al menos uno. Faltar los tres frena el aviso; faltar uno, no.
+ */
+const IDENTIFICADORES = ['rfc', 'curp', 'fecha_nacimiento', 'fecha_constitucion'];
+
+function identificadoresXml(
+  nodo: NodoRama,
+  datos: DatosActo,
+  ruta: number[],
+  donde: string,
+  errores: string[],
+  advertencias: string[],
+): void {
+  const propios = nodo.campos.filter((c) => IDENTIFICADORES.includes(c.etiqueta));
+  if (propios.length < 2) return;
+  const capturados = propios.filter((c) => leerValor(datos, c.no, ruta).trim() !== '');
+  if (capturados.length === 0)
+    errores.push(
+      `${donde}: no tiene ${propios.map((c) => c.etiqueta).join(', ')}. El layout necesita al ` +
+        'menos uno de ellos.',
+    );
+  else if (capturados.length < propios.length)
+    advertencias.push(
+      `${donde}: sin ${propios
+        .filter((c) => leerValor(datos, c.no, ruta).trim() === '')
+        .map((c) => c.etiqueta)
+        .join(', ')}.`,
+    );
+}
+
+function campoXml(
+  campo: CampoFep,
+  datos: DatosActo,
+  ruta: number[],
+  sangria: number,
+  donde: string,
+  errores: string[],
+): string[] {
+  const crudo = leerValor(datos, campo.no, ruta).trim();
+  if (!crudo) {
+    if (campo.grado === 'siempre')
+      errores.push(`${donde}: falta ${campo.nombre} (campo ${campo.no}).`);
+    return [];
+  }
+
+  const valor = valorLayout(campo, crudo);
+  if (valor === null) {
+    errores.push(`${donde}: ${campo.nombre} (campo ${campo.no}) no tiene un valor utilizable.`);
+    return [];
+  }
+  return [et(campo.etiqueta, valor, sangria)];
+}
+
+/**
+ * El valor tal como lo espera el layout. Las fechas se guardan en ISO durante
+ * la captura y se convierten aquí, en un solo lugar; los importes llevan dos
+ * decimales obligatorios; RFC y CURP conservan el & y la Ñ.
+ */
+export function valorLayout(campo: CampoFep, crudo: string): string | null {
+  switch (controlDe(campo)) {
+    case 'fecha':
+      return fechaLayout(crudo) ?? (/^\d{8}$/.test(crudo) ? crudo : null);
+    case 'monto': {
+      const n = Number(crudo.replace(/[, ]/g, ''));
+      return Number.isFinite(n) ? n.toFixed(2) : null;
+    }
+    case 'catalogo':
+    case 'numero':
+      return claveLayout(crudo) || null;
+    default:
+      return IDENTIFICADORES.includes(campo.etiqueta) || /^(rfc|curp)$/.test(campo.etiqueta)
+        ? claveLayout(crudo) || null
+        : textoLayout(crudo) || null;
+  }
+}
+
+/** ¿Hay algo capturado en este nodo o debajo? Decide si un contenedor opcional
+ *  se emite o no existe. */
+function tieneAlgo(nodo: NodoRama, datos: DatosActo, ruta: number[]): boolean {
+  if (nodo.campos.some((c) => leerValor(datos, c.no, ruta).trim() !== '')) return true;
+  if (nodo.esTipoPersona && leerVariante(datos, nodo.no, ruta)) return true;
+  return nodo.hijos.some((h) =>
+    h.repetible
+      ? Array.from({ length: numeroRepeticiones(datos, h.no, ruta) }, (_, i) => [
+          ...ruta,
+          i,
+        ]).some((r) => tieneAlgo(h, datos, r))
+      : tieneAlgo(h, datos, ruta),
+  );
 }

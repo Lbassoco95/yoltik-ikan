@@ -118,6 +118,21 @@ describe("variante de tipo_persona", () => {
     expect(leerVariante(d, TIPO_PERSONA_APODERADO)).toBe("persona_moral");
   });
 
+  it("cambiar la variante de un apoderado no borra la del otro", () => {
+    // Los dos apoderados comparten los números del instructivo: sólo los
+    // distingue la ruta de repeticiones.
+    let d = escribirVariante({}, tipoPersona, [0], "persona_fisica");
+    d = escribirValor(d, NOMBRE_APODERADO, [0], "ANA");
+    d = escribirVariante(d, tipoPersona, [1], "persona_fisica");
+    d = escribirValor(d, NOMBRE_APODERADO, [1], "BETO");
+
+    d = escribirVariante(d, tipoPersona, [1], "persona_moral");
+
+    expect(leerValor(d, NOMBRE_APODERADO, [0])).toBe("ANA");
+    expect(leerVariante(d, TIPO_PERSONA_APODERADO, [0])).toBe("persona_fisica");
+    expect(leerValor(d, NOMBRE_APODERADO, [1])).toBe("");
+  });
+
   it("no toca lo capturado fuera de esa persona", () => {
     const TIPO_PODER = "3.6.1.3.1.2.1";
     let d = escribirValor({}, TIPO_PODER, [], "1");

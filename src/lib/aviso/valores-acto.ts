@@ -98,6 +98,10 @@ export function leerVariante(datos: DatosActo, no: string, ruta: number[] = []):
  * Cambiar de variante borra lo capturado en la anterior. Si no, el XML llevaría
  * una persona física a medias escondida bajo una moral, y el portal la
  * rechazaría sin decir por qué.
+ *
+ * El borrado va acotado a ESTA repetición: el primer apoderado y el segundo
+ * comparten la numeración del instructivo y sólo los distingue la ruta, así
+ * que borrar por número a secas se llevaría por delante al otro apoderado.
  */
 export function escribirVariante(
   datos: DatosActo,
@@ -106,13 +110,14 @@ export function escribirVariante(
   variante: string,
 ): DatosActo {
   const out: DatosActo = {};
-  const descartadas = nodo.hijos
-    .filter((h) => h.etiqueta !== variante)
-    .map((h) => h.no + '.');
+  const descartadas = nodo.hijos.filter((h) => h.etiqueta !== variante).map((h) => h.no);
   for (const [k, v] of Object.entries(datos)) {
     const p = partirClave(k);
-    if (p && descartadas.some((d) => p.no === d.slice(0, -1) || p.no.startsWith(d))) continue;
-    out[k] = v;
+    const deLaVariante =
+      p &&
+      descartadas.some((d) => p.no === d || p.no.startsWith(d + '.')) &&
+      ruta.every((r, i) => p.ruta[i] === r);
+    if (!deLaVariante) out[k] = v;
   }
   out[claveVariante(nodo.no, ruta)] = variante;
   return out;

@@ -21,7 +21,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { listarClientes } from "@/lib/api/clientes";
-import { listarOperaciones, crearOperacion, invocarMotor } from "@/lib/api/operaciones";
+import {
+  listarOperaciones,
+  crearOperacion,
+  invocarMotor,
+  actualizarDatosActo,
+} from "@/lib/api/operaciones";
 import type { NuevaOperacionInput, TipoOperacion } from "@/types/domain";
 import { formatMxn, cn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
@@ -37,6 +42,10 @@ import {
 } from "@/lib/perfil-actividad";
 import { getClavesPadron } from "@/lib/api/organizacion";
 import { PendientesAviso } from "@/components/aviso/PendientesAviso";
+import { CapturaActo } from "@/components/aviso/CapturaActo";
+import type { DatosActo } from "@/lib/aviso/valores-acto";
+import { useActiveRole } from "@/hooks/useActiveRole";
+import type { Operation } from "@/types/domain";
 import {
   catalogosPendientes,
   pendientesActo,
@@ -72,14 +81,24 @@ const FORM_INICIAL = {
   tipo_acto: "",
   fecha: hoyISO(),
   instrumento_publico: "",
+  datos_acto: {} as DatosActo,
 };
 
 export default function OperationsPage() {
   const [search, setSearch] = useState("");
   const [dialogAbierto, setDialogAbierto] = useState(false);
   const [form, setForm] = useState(FORM_INICIAL);
+  // Acto cuyo expediente se está completando desde la lista. El detalle del
+  // acto rara vez está entero el día de la firma.
+  const [actoEnCurso, setActoEnCurso] = useState<Operation | null>(null);
+  const [datosEnCurso, setDatosEnCurso] = useState<DatosActo>({});
   const queryClient = useQueryClient();
   const { perfilActividad } = useAuth();
+  const { activeRole } = useActiveRole();
+  // Completar un acto ya registrado es de OC/Admin: la política
+  // `operation_update_motor_or_oc` sólo se lo permite a ellos y el flujo del
+  // Operador termina con el acuse (docs/ROLES.md).
+  const puedeCompletar = activeRole === "oc" || activeRole === "admin";
   const L = LABELS[perfilActividad];
   const esNotarias = perfilActividad === "notarias";
 
@@ -188,6 +207,7 @@ export default function OperationsPage() {
       monto_mxn: monto,
       activo_virtual: esNotarias ? undefined : form.activo_virtual.trim() || undefined,
       contraparte: Object.keys(contraparte).length ? contraparte : undefined,
+      datos_acto: esNotarias ? form.datos_acto : undefined,
       // Mediodía local: la fecha del acto es un día, no un instante, y guardarla
       // a las 00:00 la corre al día anterior en husos al oeste de UTC.
       fecha: new Date(`${form.fecha}T12:00:00`).toISOString(),
@@ -195,9 +215,24 @@ export default function OperationsPage() {
     });
   }
 
+  const guardarExpediente = useMutation({
+    mutationFn: () => actualizarDatosActo(actoEnCurso!.id, datosEnCurso),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["operaciones"] });
+      toast.success("Expediente del acto actualizado");
+      setActoEnCurso(null);
+    },
+    onError: (e: Error) => toast.error(`No se pudo guardar: ${e.message}`),
+  });
+
+  /** Cambiar de tipo de acto cambia la rama entera del layout: lo capturado
+   *  para la anterior no tiene dónde ir, así que se descarta a la vista. */
+  function cambiarTipoActo(tipo_acto: string) {
+    setForm((f) => (f.tipo_acto === tipo_acto ? f : { ...f, tipo_acto, datos_acto: {} }));
+  }
+
   // Lo que le faltaría a este acto para entrar al aviso, calculado mientras se
-  // captura. El subárbol del tipo de acto todavía no se captura aquí: ver
-  // el aviso ámbar del diálogo.
+  // captura.
   const comparecienteSeleccionado = clientes.find((c) => c.id === form.client_id);
   const pendientesDelAlta = esNotarias
     ? [
@@ -209,7 +244,7 @@ export default function OperationsPage() {
           fecha: form.fecha,
           instrumento_publico: form.instrumento_publico,
           tipo_acto: form.tipo_acto,
-          datos_acto: {},
+          datos_acto: form.datos_acto,
         }),
       ]
     : [];
@@ -357,15 +392,33 @@ export default function OperationsPage() {
                   {esNotarias &&
                     (() => {
                       const faltan = bloqueosDelActo(op);
+                      const tipoActo = (op.contraparte as Record<string, unknown> | null)
+                        ?.tipo_acto as string | undefined;
                       return (
                         <td className="px-4 py-3">
-                          {faltan === 0 ? (
-                            <span className="status-badge bg-success/10 text-success">Completo</span>
-                          ) : (
-                            <span className="status-badge bg-warning/10 text-warning">
-                              Faltan {faltan}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {faltan === 0 ? (
+                              <span className="status-badge bg-success/10 text-success">
+                                Completo
+                              </span>
+                            ) : (
+                              <span className="status-badge bg-warning/10 text-warning">
+                                Faltan {faltan}
+                              </span>
+                            )}
+                            {puedeCompletar && tipoActo && canalDeActo(tipoActo) === "sppld" && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setActoEnCurso(op);
+                                  setDatosEnCurso((op.datos_acto ?? {}) as DatosActo);
+                                }}
+                              >
+                                Completar
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       );
                     })()}
@@ -421,7 +474,7 @@ export default function OperationsPage() {
                   <Label>Tipo de acto</Label>
                   <Select
                     value={form.tipo_acto}
-                    onValueChange={(v) => setForm({ ...form, tipo_acto: v })}
+                    onValueChange={cambiarTipoActo}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona el tipo de acto…" />
@@ -530,10 +583,27 @@ export default function OperationsPage() {
               {catalogosDelActo.length > 0 && (
                 <div className="rounded-lg bg-warning/10 p-3">
                   <p className="text-[11px] text-warning">
-                    DEMO — sin integración real: el detalle de esta rama del layout todavía no se
-                    captura aquí y sus catálogos de la UIF no están cargados (
-                    {catalogosDelActo.join(", ")}). Se completa desde el expediente del acto.
+                    DEMO — sin integración real: estos catálogos de la UIF todavía no están
+                    cargados en Ikán ({catalogosDelActo.join(", ")}), así que sus claves se
+                    capturan a mano. Los carga Kawiil desde la consola de plataforma.
                   </p>
+                </div>
+              )}
+
+              {form.tipo_acto && canal === "sppld" && (
+                <div className="rounded-lg border p-3 space-y-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    Expediente del acto — {labelTipoActo(form.tipo_acto)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Lo que pide el layout de fe pública para esta rama. Lo que no se sepa hoy se
+                    completa antes del cierre del mes; el acto queda registrado igual.
+                  </p>
+                  <CapturaActo
+                    tipoActo={form.tipo_acto}
+                    datos={form.datos_acto}
+                    onChange={(datos_acto) => setForm((f) => ({ ...f, datos_acto }))}
+                  />
                 </div>
               )}
 
@@ -552,6 +622,48 @@ export default function OperationsPage() {
             >
               {alta.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               Registrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Completar el expediente de un acto ya registrado. El notario casi
+          nunca tiene todo el día de la firma: el RFC de un socio llega
+          después, y el aviso se cierra el 17. */}
+      <Dialog open={!!actoEnCurso} onOpenChange={(v) => !v && setActoEnCurso(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Expediente del acto</DialogTitle>
+            <DialogDescription>
+              {actoEnCurso
+                ? `${labelTipoActo(
+                    (actoEnCurso.contraparte as Record<string, unknown> | null)?.tipo_acto,
+                  )} · instrumento ${actoEnCurso.instrumento_publico ?? "sin capturar"}`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          {actoEnCurso && (
+            <CapturaActo
+              tipoActo={
+                (actoEnCurso.contraparte as Record<string, unknown> | null)?.tipo_acto as string
+              }
+              datos={datosEnCurso}
+              onChange={setDatosEnCurso}
+            />
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setActoEnCurso(null)}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+              onClick={() => guardarExpediente.mutate()}
+              disabled={guardarExpediente.isPending}
+            >
+              {guardarExpediente.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+              Guardar
             </Button>
           </DialogFooter>
         </DialogContent>

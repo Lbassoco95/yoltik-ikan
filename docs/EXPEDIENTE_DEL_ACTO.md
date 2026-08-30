@@ -66,13 +66,56 @@ el número de campo de cada una.
 - **Una escritura puede contener varios actos.** `instrumento_publico` **no** es
   único: no lleva constraint de unicidad, sólo índice.
 
+## El subárbol del acto
+
+Las diez ramas del layout (3.6.1.3.1 a 3.6.1.3.10) ya se capturan. No hay diez
+formularios escritos a mano: la pantalla se arma desde el diccionario, así que
+cuando el SAT publique otra versión del instructivo se regenera
+`campos-fep.generated.ts` y la captura cambia sola.
+
+**Cómo se guarda.** El layout repite la misma etiqueta por todas partes —hay un
+`<rfc>` del poderdante, otro del apoderado, otro de cada socio— así que la clave
+en `operation.datos_acto` es el **número del instructivo** más la ruta de
+repeticiones, no la etiqueta:
+
+```
+3.6.1.3.1.2.2.1.5          RFC del apoderado, cuando hay uno solo
+3.6.1.3.1.2.2.1.5@1        RFC del segundo apoderado
+3.6.1.3.6.2.7.2.1.5@0.2    RFC del tercer vendedor de la primera persona moral
+3.6.1.3.1.2#n              cuántos apoderados hay
+3.6.1.3.1.2.2@1#tipo       si el segundo apoderado es física, moral o fideicomiso
+```
+
+Guardarlo por etiqueta pisaría el RFC del poderdante con el del apoderado, y el
+aviso saldría con los datos cambiados de sitio: peor que no salir. Quitar una
+repetición renumera las siguientes, incluidos los grupos repetibles anidados
+(una escisión tiene varias escindidas y cada una sus accionistas).
+
+**Los tres sentidos de "Obligatorio".** El instructivo usa la misma palabra para
+cosas distintas, y tratarlas igual rompe el aviso por los dos lados:
+
+| Grado | Qué dice el instructivo | Bloquea |
+|---|---|---|
+| `siempre` | exigible en cuanto existe la etiqueta padre | Sí |
+| `condicional` | "obligatorio si en `<motivo_constitucion>` se elige la opción 1. Fusión" | No |
+| `si_aplica` | "si se cuenta con la información" / "con los mismos" | No |
+| `opcional` | el instructivo no lo marca obligatorio | No |
+
+La condición se guarda **en prosa, literal**, y se muestra bajo el campo. Mapear
+"opción 1. Fusión" a una clave de catálogo sería inventar; quien decide si
+aplica es el fedatario, leyéndola.
+
+RFC, CURP y fecha son intercambiables dentro de una persona: faltar los tres
+frena el aviso, faltar uno no.
+
+**Quién lo completa.** El Operador lo captura en el alta. Completarlo después es
+de OC y Admin: la política `operation_update_motor_or_oc` sólo se lo permite a
+ellos y el flujo del Operador termina con el acuse (`docs/ROLES.md`). Si el
+modelo tuviera que cambiar —que el notario-operador pueda corregir su propio
+acto antes del cierre— es una decisión de roles, no de esta pantalla.
+
 ## Lo que este bloque NO cierra
 
-- **El subárbol de cada tipo de acto** (ramas 3.6.1.3.1 a 3.6.1.3.10: datos del
-  poderdante, de los apoderados, de los socios, de la garantía…). El diccionario
-  ya los conoce y el panel cuenta cuántos faltan; la **captura** de esos grupos
-  repetidos queda para el siguiente bloque. Mientras tanto el diálogo lo dice con
-  banner ámbar, no en silencio.
 - **Los catálogos de la UIF** (país, actividad económica, tipo de poder, tipo de
   persona moral, …). El instructivo remite a ellos pero no los incluye, y no se
   inventan: las claves se capturan a mano con banner ámbar hasta que se carguen
@@ -90,7 +133,14 @@ el número de campo de cada una.
 | `scripts/generar-campos-fep.mjs` | Genera el diccionario desde el CSV del instructivo |
 | `src/lib/aviso/campos-fep.generated.ts` | Los 518 campos, transcritos — **no editar a mano** |
 | `src/lib/aviso/completitud.ts` | Qué falta y cuándo se necesita. Módulo puro |
+| `src/lib/aviso/ramas-acto.ts` | El árbol de cada tipo de acto, armado desde el diccionario |
+| `src/lib/aviso/valores-acto.ts` | Cómo se guardan los valores en `datos_acto`. Módulo puro |
+| `src/lib/aviso/catalogos-fep.generated.ts` | Qué catálogo de la base le toca a cada campo — **generado** |
 | `src/components/aviso/PendientesAviso.tsx` | El panel |
-| `src/test/completitud-aviso.test.ts` | 26 pruebas |
+| `src/components/aviso/CapturaActo.tsx` | La captura del subárbol, recursiva |
+| `src/components/aviso/CampoActo.tsx` | Un campo, con el control que le toca según el instructivo |
+| `src/test/completitud-aviso.test.ts` | 31 pruebas |
+| `src/test/ramas-acto.test.ts` | 19 pruebas de la estructura |
+| `src/test/valores-acto.test.ts` | 22 pruebas del almacenamiento |
 
 Regenerar el diccionario: `node scripts/generar-campos-fep.mjs`.

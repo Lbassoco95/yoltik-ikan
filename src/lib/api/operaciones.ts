@@ -42,6 +42,25 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
   return data as unknown as Operation;
 }
 
+/**
+ * Completa el subárbol del acto de una operación ya registrada.
+ *
+ * Sólo OC y Admin: la política `operation_update_motor_or_oc` lo exige y el
+ * modelo de roles dice que el flujo del Operador termina con el acuse. Un
+ * Operador que llame esto recibe un error de la base, no una escritura
+ * silenciosa.
+ */
+export async function actualizarDatosActo(
+  operationId: string,
+  datosActo: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('operation')
+    .update({ datos_acto: datosActo })
+    .eq('id', operationId);
+  if (error) throw error;
+}
+
 /** Invoca la Edge Function motor-pld tras el alta de una operación. El acuse al
  *  Operador es neutro: el motor corre en segundo plano y sus hallazgos los
  *  consume el OC. Un fallo al invocar NO rompe el alta (se registra en consola).

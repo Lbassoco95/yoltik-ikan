@@ -15,6 +15,8 @@
  */
 
 import { CAMPOS_FEP, type CampoFep } from './campos-fep.generated';
+import { ramaDelActo, type NodoRama } from './ramas-acto';
+import { leerValor, leerVariante, numeroRepeticiones, type DatosActo } from './valores-acto';
 
 // =====================================================================
 // Vocabulario
@@ -367,33 +369,74 @@ export function camposDelActo(tipoActo: string): CampoFep[] {
 }
 
 /**
- * Cuántos campos obligatorios de la rama siguen sin capturar.
+ * Qué le falta a la rama del acto para que el aviso salga.
  *
- * Cuenta por etiqueta XML, no por número: el layout repite la misma etiqueta en
- * ramas distintas (todos los <rfc> de todos los intervinientes) y `datos_acto`
- * las guarda una sola vez por grupo. Es una cota inferior honesta de lo que
- * falta, no una cuenta exacta — la exacta llega cuando exista la captura del
- * subárbol completo.
+ * Cuenta lo mismo que frena al generador del XML, ni más ni menos: los campos
+ * de grado `siempre` sin capturar y los `<tipo_persona>` sin elegir. Los
+ * condicionales y los "si se cuenta con la información" no se cuentan porque
+ * no bloquean el archivo. Que las dos cuentas coincidan está cubierto con una
+ * prueba: si divergen, la pantalla diría "listo" y el portal rechazaría.
+ *
+ * Recorre las repeticiones de verdad —tres apoderados son tres juegos de
+ * campos— en vez de contar etiquetas distintas, que era una cota inferior.
  */
 export function camposPendientesDelSubarbol(
   tipoActo: string,
-  datosActo: Record<string, unknown>,
+  datosActo: DatosActo,
 ): number {
-  const capturadas = new Set(
-    Object.entries(datosActo ?? {})
-      .filter(([, v]) => !vacio(v))
-      .map(([k]) => k),
+  const rama = ramaDelActo(tipoActo);
+  return rama ? faltantesDelNodo(rama, datosActo ?? {}, [], true) : 0;
+}
+
+/** Abre el nodo en sus repeticiones y suma lo que falta en cada una. */
+function faltantesDelNodo(
+  nodo: NodoRama,
+  datos: DatosActo,
+  ruta: number[],
+  raiz = false,
+): number {
+  if (!nodo.repetible) return faltantesDeUna(nodo, datos, ruta, raiz);
+  let n = 0;
+  const total = numeroRepeticiones(datos, nodo.no, ruta);
+  for (let i = 0; i < total; i++) n += faltantesDeUna(nodo, datos, [...ruta, i]);
+  return n;
+}
+
+/** Lo que falta en UNA repetición concreta. */
+function faltantesDeUna(
+  nodo: NodoRama,
+  datos: DatosActo,
+  ruta: number[],
+  raiz = false,
+): number {
+  // Un contenedor que no se exige siempre y está vacío no se emite, así que no
+  // le falta nada. Mismo criterio que el generador del XML.
+  if (nodo.grado !== 'siempre' && !raiz && !hayAlgo(nodo, datos, ruta)) return 0;
+
+  let n = nodo.campos.filter(
+    (c) => c.grado === 'siempre' && leerValor(datos, c.no, ruta).trim() === '',
+  ).length;
+
+  if (nodo.esTipoPersona) {
+    const elegida = leerVariante(datos, nodo.no, ruta);
+    const variante = nodo.hijos.find((h) => h.etiqueta === elegida);
+    return variante ? n + faltantesDelNodo(variante, datos, ruta) : n + 1;
+  }
+
+  for (const hijo of nodo.hijos) n += faltantesDelNodo(hijo, datos, ruta);
+  return n;
+}
+
+function hayAlgo(nodo: NodoRama, datos: DatosActo, ruta: number[]): boolean {
+  if (nodo.campos.some((c) => leerValor(datos, c.no, ruta).trim() !== '')) return true;
+  if (nodo.esTipoPersona && leerVariante(datos, nodo.no, ruta)) return true;
+  return nodo.hijos.some((h) =>
+    h.repetible
+      ? Array.from({ length: numeroRepeticiones(datos, h.no, ruta) }, (_, i) => [...ruta, i]).some(
+          (r) => hayAlgo(h, datos, r),
+        )
+      : hayAlgo(h, datos, ruta),
   );
-  const obligatorias = new Set(
-    camposDelActo(tipoActo)
-      .filter((c) => c.obligatorio)
-      .map((c) => c.etiqueta),
-  );
-  let faltan = 0;
-  obligatorias.forEach((e) => {
-    if (!capturadas.has(e)) faltan += 1;
-  });
-  return faltan;
 }
 
 /** Catálogos de la UIF que la rama necesita y que Ikán todavía no tiene

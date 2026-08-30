@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const DESTINO = 'supabase/seed/13_catalogos_fep.sql';
+const DESTINO_TS = 'src/lib/aviso/catalogos-fep.generated.ts';
 
 // El diccionario ya generado es la fuente: así el registro no se desincroniza
 // del instructivo cuando el SAT publique una versión nueva del layout.
@@ -97,6 +98,14 @@ for (const f of filas) {
   g.campos.add(f.no);
 }
 
+// El front necesita, para pintar la lista de un campo, el CÓDIGO del catálogo
+// en la base —no el nombre que trae el instructivo. Derivarlo otra vez en
+// TypeScript sería mantener dos veces la misma regla, y el día que difieran el
+// select se queda vacío sin decir por qué. Sale de aquí, campo por campo.
+const codigoPorCampo = new Map();
+for (const g of porCatalogo.values())
+  for (const no of g.campos) codigoPorCampo.set(no, g.codigo);
+
 const q = (s) => (s == null ? 'null' : `'${String(s).replace(/'/g, "''")}'`);
 const arr = (xs) => `array[${[...xs].sort().map(q).join(', ')}]::text[]`;
 
@@ -161,3 +170,28 @@ update catalogo_sat
 
 writeFileSync(DESTINO, salida);
 console.log(`${DESTINO}: ${porCatalogo.size} catálogos registrados + prioridad sembrado`);
+
+const entradas = [...codigoPorCampo.entries()]
+  .sort((a, b) => a[0].localeCompare(b[0]))
+  .map(([no, codigo]) => `  ${JSON.stringify(no)}: ${JSON.stringify(codigo)},`)
+  .join('\n');
+
+writeFileSync(
+  DESTINO_TS,
+  `/**
+ * ARCHIVO GENERADO — no editar a mano.
+ * Regenerar con: node scripts/generar-catalogos-fep.mjs
+ *
+ * Qué catálogo de la base le toca a cada campo del layout. La clave es el
+ * número del instructivo; el valor, el \`codigo\` de \`catalogo_sat\`.
+ *
+ * Sale del mismo sitio que el seed 13, para que la pantalla de captura y el
+ * registro de catálogos no puedan discrepar.
+ */
+
+export const CATALOGO_DE_CAMPO: Record<string, string> = {
+${entradas}
+};
+`,
+);
+console.log(`${DESTINO_TS}: ${codigoPorCampo.size} campos con catálogo`);

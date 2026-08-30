@@ -13,7 +13,7 @@
  * Módulo puro.
  */
 
-import { CAMPOS_FEP, type CampoFep } from './campos-fep.generated';
+import { CAMPOS_FEP, type CampoFep, type GradoObligatoriedad } from './campos-fep.generated';
 
 export interface NodoRama {
   /** Número del instructivo. Es la jerarquía y la trazabilidad. */
@@ -21,6 +21,15 @@ export interface NodoRama {
   etiqueta: string;
   nombre: string;
   obligatorio: boolean;
+  /**
+   * Cuándo existe la etiqueta. `condicional` es la que importa aquí:
+   * <datos_garantia> viene marcada obligatoria, pero sólo "si el tipo de
+   * operación es con garantía". Tratarla como siempre exigible haría imposible
+   * cerrar un mutuo sin garantía.
+   */
+  grado: GradoObligatoriedad;
+  /** La condición del instructivo, literal, cuando el grado es condicional. */
+  condicion: string | null;
   /** Admite varias apariciones: "una <datos_apoderado> por cada apoderado". */
   repetible: boolean;
   /** Campos con valor propios de este nodo, no de sus hijos. */
@@ -55,6 +64,8 @@ function construir(raiz: CampoFep): NodoRama {
     etiqueta: raiz.etiqueta,
     nombre: raiz.nombre,
     obligatorio: raiz.obligatorio,
+    grado: raiz.grado,
+    condicion: raiz.condicion,
     repetible: raiz.repetible,
     campos: hijos.filter((h) => h.tipo !== 'Etiqueta'),
     hijos: hijos.filter((h) => h.tipo === 'Etiqueta').map(construir),
