@@ -143,13 +143,13 @@ export default function ClientDetailPage() {
               clasificacion={evaluacion?.clasificacion}
               score={evaluacion?.score_total}
             />
-            <p className="text-[11px] text-muted-foreground mt-1">
+            <p className="text-[13px] text-muted-foreground mt-1">
               {evaluacion
                 ? `Evaluado el ${new Date(evaluacion.evaluado_en).toLocaleDateString("es-MX")}`
                 : "Sin matriz aplicada"}
             </p>
             {evaluacion?.motivo_alto_de_oficio && (
-              <p className="text-[11px] text-destructive mt-0.5 max-w-xs">
+              <p className="text-[13px] text-destructive mt-0.5 max-w-xs">
                 {evaluacion.motivo_alto_de_oficio}
               </p>
             )}

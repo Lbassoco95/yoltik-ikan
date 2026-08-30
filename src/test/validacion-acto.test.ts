@@ -38,6 +38,23 @@ describe("RFC", () => {
     expect(validarCampo(RFC_PF, "PELJ80050AB1")).toContain("RFC");
   });
 
+  it("dice cuántos caracteres lleva, no recita el patrón", () => {
+    // 11, 12 y 13 sobre `longitud: "13"`, que es el caso de la revisión.
+    expect(validarCampo(RFC_PF, "PELJ80050AB")).toContain("lleva 11");
+    expect(validarCampo(RFC_PF, "PELJ80050AB1")).toContain("lleva 12");
+    expect(validarCampo(RFC_PF, "PELJ800502AB1")).toBeNull();
+  });
+
+  it("un RFC válido no da error falso aunque el instructivo cambie de forma", () => {
+    // La longitud se compara EXACTA. Con la comprobación anterior —buscar un
+    // "12" dentro de la cadena— una versión futura del instructivo que
+    // declarara "121" o "12-13" habría tratado a este RFC de persona física
+    // como si fuera de moral, y habría marcado un error donde no lo hay.
+    for (const longitud of ["121", "12-13", "13"]) {
+      expect(validarCampo({ ...RFC_PF, longitud }, "PELJ800502AB1"), longitud).toBeNull();
+    }
+  });
+
   it("distingue las tres letras de la persona moral de las cuatro de la física", () => {
     expect(validarCampo(RFC_PM, "ABC900101AB1")).toBeNull();
     expect(validarCampo(RFC_PF, "ABC900101AB1")).not.toBeNull();

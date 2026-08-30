@@ -177,8 +177,8 @@ export default function ReportsPage() {
                     Generar el archivo XML de {nombreMes(periodo)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
-                    Se arma contra el layout de fe pública del SPPLD y se descarga listo para
-                    subir al portal. Queda guardado tal cual, con su versión de layout, y el
+                    Se arma contra el formato de fe pública del SPPLD y se descarga listo para
+                    subir al portal. Queda guardado tal cual, con su versión de formato, y el
                     hecho de haberlo generado entra en la bitácora encadenada.
                   </p>
                 </div>
@@ -223,7 +223,7 @@ export default function ReportsPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="text-[11px] text-muted-foreground mt-2 ml-6">
+                <p className="text-[13px] text-muted-foreground mt-2 ml-6">
                   No se genera el archivo hasta que esto se corrija. Un XML que el portal rechaza
                   el día 17 es peor que no tener ninguno.
                 </p>
@@ -252,7 +252,7 @@ export default function ReportsPage() {
               <div className="rounded-lg bg-success/10 p-3 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                 <p className="text-sm text-foreground">
-                  El archivo cumple lo que el layout pide. Listo para subir al portal.
+                  El archivo cumple lo que el formato del aviso pide. Listo para subir al portal.
                 </p>
               </div>
             )}
@@ -364,7 +364,7 @@ function Tarjeta({
     <div className={cn("glass-card p-4", alerta && "border-l-4 border-l-warning")}>
       <p className="text-xs text-muted-foreground uppercase tracking-wider">{titulo}</p>
       <p className="text-2xl font-bold text-foreground mt-1">{valor}</p>
-      <p className="text-[11px] text-muted-foreground mt-1">{nota}</p>
+      <p className="text-[13px] text-muted-foreground mt-1">{nota}</p>
     </div>
   );
 }

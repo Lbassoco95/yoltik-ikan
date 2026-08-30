@@ -247,11 +247,11 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
             <span className="font-mono text-xs text-muted-foreground">
               {folio(hallazgo)}
             </span>
-            <span className={cn('status-badge text-[10px]', ESTADO_CLASS[hallazgo.estado])}>
+            <span className={cn('status-badge text-xs', ESTADO_CLASS[hallazgo.estado])}>
               {ESTADO_LABEL[hallazgo.estado]}
             </span>
             {urgencia && (
-              <span className={cn('status-badge text-[10px]', URGENCIA_CLASS[urgencia])}>
+              <span className={cn('status-badge text-xs', URGENCIA_CLASS[urgencia])}>
                 {URGENCIA_LABEL[urgencia]}
               </span>
             )}
@@ -312,7 +312,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                 <div className="flex flex-wrap gap-2">
                   <span
                     className={cn(
-                      'status-badge text-[10px]',
+                      'status-badge text-xs',
                       contexto.matriz_evaluada
                         ? 'bg-success/10 text-success'
                         : 'bg-warning/10 text-warning',
@@ -324,7 +324,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                   </span>
                   <span
                     className={cn(
-                      'status-badge text-[10px]',
+                      'status-badge text-xs',
                       contexto.perfil_declarado
                         ? 'bg-muted text-muted-foreground'
                         : 'bg-warning/10 text-warning',
@@ -371,7 +371,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
               </Campo>
               <Campo label="Severidad">
                 <span
-                  className={cn('status-badge text-[10px]', SEVERIDAD_CLASS[hallazgo.severidad])}
+                  className={cn('status-badge text-xs', SEVERIDAD_CLASS[hallazgo.severidad])}
                 >
                   {hallazgo.severidad}
                 </span>
@@ -416,7 +416,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   Cada cambio queda registrado en la bitácora.
                 </p>
               </div>
@@ -441,7 +441,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   {urgencia ? `${URGENCIA_DESCRIPCION[urgencia]} ` : ''}Asignada automáticamente
                   por la regla que generó el hallazgo; editable. {URGENCIA_NOTA}
                 </p>
@@ -464,7 +464,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                   }}
                   disabled={mutSubir.isPending}
                 />
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   PDF o imagen (JPG, PNG, WEBP, HEIC), hasta{' '}
                   {Math.round(TAMANO_MAX_DOCUMENTO_BYTES / (1024 * 1024))} MB. Se guarda en un
                   bucket privado; la descarga usa una liga firmada de corta vida.

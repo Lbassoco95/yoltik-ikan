@@ -106,12 +106,13 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-foreground">
           Hola, {profile?.nombre ?? ""}
         </h1>
-        <p className="text-sm text-muted-foreground capitalize">
-          {new Date().toLocaleDateString("es-MX", {
-            weekday: "long", day: "numeric", month: "long", year: "numeric",
-          })}
+        {/* Sin `capitalize`: pintaba «Domingo, 30 De Agosto De 2026». Las
+            mayúsculas de título son del inglés; en español va todo en minúscula
+            salvo la inicial de la oración. */}
+        <p className="text-sm text-muted-foreground first-letter:uppercase">
+          {new Date().toLocaleDateString("es-MX", { dateStyle: "long" })}
           {umaMxn != null && (
-            <span className="normal-case"> · UMA vigente {formatMxn(umaMxn)}</span>
+            <span> · UMA vigente {formatMxn(umaMxn)}</span>
           )}
         </p>
       </div>
@@ -139,7 +140,7 @@ export default function DashboardPage() {
             )}>
               {isLoading ? "—" : (t.valor ?? 0).toLocaleString("es-MX")}
             </span>
-            {t.nota && <span className="block text-[11px] text-muted-foreground mt-0.5">{t.nota}</span>}
+            {t.nota && <span className="block text-[13px] text-muted-foreground mt-0.5">{t.nota}</span>}
           </Link>
         ))}
       </div>
@@ -198,7 +199,7 @@ export default function DashboardPage() {
               <div className="flex items-end gap-1.5 h-40">
                 {(data?.operacionesPorDia ?? []).map((d) => (
                   <div key={d.fecha} className="flex-1 flex flex-col items-center gap-1.5 group">
-                    <span className="text-[10px] tabular-nums text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-xs tabular-nums text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                       {d.total}
                     </span>
                     <div
@@ -209,7 +210,7 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between text-[10px] text-muted-foreground mt-2">
+              <div className="flex justify-between text-xs text-muted-foreground mt-2">
                 <span>
                   {new Date((data?.operacionesPorDia?.[0]?.fecha ?? "") + "T12:00:00")
                     .toLocaleDateString("es-MX", { day: "numeric", month: "short" })}

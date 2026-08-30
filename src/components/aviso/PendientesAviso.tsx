@@ -56,7 +56,7 @@ export function PendientesAviso({
         <Bloque
           icono={<Info className="w-4 h-4 text-muted-foreground shrink-0" />}
           titulo={`Recomendado · ${recomendados.length}`}
-          descripcion="El layout los admite vacíos, pero el expediente queda incompleto."
+          descripcion="El formato del aviso los admite vacíos, pero el expediente queda incompleto."
           items={recomendados}
         />
       )}
@@ -93,7 +93,7 @@ function Bloque({
         {icono}
         <p className="text-sm font-semibold text-foreground">{titulo}</p>
       </div>
-      <p className="text-[11px] text-muted-foreground mt-0.5 ml-6">{descripcion}</p>
+      <p className="text-[13px] text-muted-foreground mt-0.5 ml-6">{descripcion}</p>
       <ul className="mt-2 ml-6 space-y-1.5">
         {items.map((p) => (
           // La clave incluye la repetición: el RFC del primer apoderado y el

@@ -193,7 +193,7 @@ export default function OperationsPage() {
     }
     const monto = Number(form.monto_mxn);
     if (!Number.isFinite(monto) || monto < 0) {
-      toast.error("Monto inválido");
+      toast.error(esNotarias ? "Valor del acto inválido" : "Monto inválido");
       return;
     }
     if (esNotarias && !form.tipo_acto) {
@@ -319,18 +319,18 @@ export default function OperationsPage() {
             <p className="text-sm font-semibold text-foreground">
               Umbrales de aviso — Fracción XII (fe pública)
             </p>
-            <span className="status-badge bg-warning/20 text-warning text-[10px]">REFERENCIA</span>
+            <span className="status-badge bg-warning/20 text-warning text-xs">REFERENCIA</span>
           </div>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
             {UMBRALES_XII_REFERENCIA.items.map((u) => (
               <div key={u.concepto} className="rounded-lg bg-muted/40 p-3">
                 <p className="text-xs text-muted-foreground">{u.concepto}</p>
                 <p className="text-lg font-bold text-foreground">{u.umbral}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">{u.detalle}</p>
+                <p className="text-[13px] text-muted-foreground mt-1">{u.detalle}</p>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[11px] text-warning">{UMBRALES_XII_REFERENCIA.nota}</p>
+          <p className="mt-3 text-[13px] text-warning">{UMBRALES_XII_REFERENCIA.nota}</p>
         </div>
       ) : (
         <div className="text-xs text-muted-foreground flex gap-6">
@@ -416,7 +416,7 @@ export default function OperationsPage() {
                           : "—"}
                       </span>
                     ) : (
-                      <span className="status-badge bg-vulnerable/10 text-vulnerable">
+                      <span className="status-badge bg-muted text-muted-foreground">
                         {op.activo_virtual ?? "—"}
                       </span>
                     )}
@@ -573,7 +573,7 @@ export default function OperationsPage() {
                   onChange={(e) => setForm({ ...form, fecha: e.target.value })}
                 />
                 {esNotarias && (
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-[13px] text-muted-foreground mt-1">
                     La de la firma del instrumento, no la de captura.
                   </p>
                 )}
@@ -589,7 +589,7 @@ export default function OperationsPage() {
                       setForm({ ...form, instrumento_publico: e.target.value.toUpperCase() })
                     }
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-[13px] text-muted-foreground mt-1">
                     Sin comas ni puntos. Acepta ceros a la izquierda y guiones.
                   </p>
                 </div>
@@ -625,13 +625,13 @@ export default function OperationsPage() {
                   <p className="text-xs font-semibold text-foreground">
                     Este acto se presenta por DeclaraNOT, no por el SPPLD
                   </p>
-                  <p className="text-[11px] text-warning mt-1">{NOTA_CANALES}</p>
+                  <p className="text-[13px] text-warning mt-1">{NOTA_CANALES}</p>
                 </div>
               )}
 
               {catalogosDelActo.length > 0 && (
                 <div className="rounded-lg bg-warning/10 p-3">
-                  <p className="text-[11px] text-warning">
+                  <p className="text-[13px] text-warning">
                     DEMO — sin integración real: estos catálogos de la UIF todavía no están
                     cargados en Ikán ({catalogosDelActo.join(", ")}), así que sus claves se
                     capturan a mano. Los carga Kawiil desde la consola de plataforma.
@@ -644,8 +644,8 @@ export default function OperationsPage() {
                   <p className="text-sm font-semibold text-foreground">
                     Expediente del acto — {labelTipoActo(form.tipo_acto)}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Lo que pide el layout de fe pública para esta rama. Lo que no se sepa hoy se
+                  <p className="text-[13px] text-muted-foreground">
+                    Lo que pide el formato de fe pública para esta rama. Lo que no se sepa hoy se
                     completa antes del cierre del mes; el acto queda registrado igual.
                   </p>
                   <CapturaActo

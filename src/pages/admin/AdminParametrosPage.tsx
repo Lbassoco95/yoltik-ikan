@@ -88,7 +88,7 @@ export default function AdminParametrosPage() {
                     >
                       <td className="px-4 py-3">
                         <span className="text-sm font-medium text-foreground">{p.nombre}</span>
-                        <span className="block text-[11px] font-mono text-muted-foreground mt-0.5">
+                        <span className="block text-[13px] font-mono text-muted-foreground mt-0.5">
                           {p.codigo}
                         </span>
                       </td>
@@ -109,7 +109,7 @@ export default function AdminParametrosPage() {
                       <td className="px-4 py-3 text-xs text-muted-foreground max-w-[260px]">
                         {p.fuente}
                         {p.publicacion_dof && (
-                          <span className="block text-[11px] mt-0.5">{p.publicacion_dof}</span>
+                          <span className="block text-[13px] mt-0.5">{p.publicacion_dof}</span>
                         )}
                       </td>
                       <td className="px-4 py-3">

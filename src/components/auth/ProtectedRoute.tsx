@@ -84,7 +84,7 @@ export function ProtectedRoute({
             Su cuenta no tiene privilegio de administrador de plataforma. Esta consola es de
             Kawiil y desde aquí se configura lo que afecta a todas las organizaciones.
           </p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Si necesita entrar, pídalo a quien administre la plataforma.
           </p>
         </div>

@@ -64,7 +64,7 @@ export function validarCampo(campo: CampoFep, valor: string | null | undefined):
       if (n < 0) return 'El importe no puede ser negativo.';
       // "1 entero de 14 dígitos, 1 punto y 2 decimales": 14 posiciones enteras.
       if (Math.floor(Math.abs(n)).toString().length > 14)
-        return 'El layout admite hasta 14 dígitos enteros.';
+        return 'El formato del aviso admite hasta 14 dígitos enteros.';
       return null;
     }
 
@@ -75,18 +75,26 @@ export function validarCampo(campo: CampoFep, valor: string | null | undefined):
       const clave = crudo.toUpperCase();
 
       if (campo.etiqueta === 'rfc') {
-        const re = /12/.test(campo.longitud) ? RFC_PM : RFC_PF;
-        return re.test(clave)
+        // Comparación EXACTA y no /12/: el diccionario declara hoy "13" y "12"
+        // a secas, pero una versión futura del instructivo que dijera "12-13"
+        // o "121" haría que un RFC válido mostrara un error falso.
+        const moral = campo.longitud.trim() === '12';
+        const largo = moral ? 12 : 13;
+        if (clave.length !== largo)
+          return `El RFC de persona ${moral ? 'moral' : 'física'} va con ${largo} caracteres; lleva ${clave.length}.`;
+        return (moral ? RFC_PM : RFC_PF).test(clave)
           ? null
-          : `El RFC no tiene la forma que pide el layout (${
-              re === RFC_PM ? 'tres' : 'cuatro'
-            } letras, seis dígitos de fecha y tres caracteres).`;
+          : `Ese RFC no tiene la forma de uno de persona ${moral ? 'moral' : 'física'}: ` +
+              `${moral ? 'tres' : 'cuatro'} letras, seis dígitos de fecha y tres caracteres.`;
       }
 
-      if (campo.etiqueta === 'curp')
+      if (campo.etiqueta === 'curp') {
+        if (clave.length !== 18) return `La CURP va con 18 caracteres; lleva ${clave.length}.`;
         return CURP_RE.test(clave)
           ? null
-          : 'La CURP no tiene la forma que pide el layout (18 caracteres).';
+          : 'Esa CURP no tiene la forma que pide el formato del aviso: cuatro letras, seis ' +
+              'dígitos de fecha, H o M, y el resto de la clave.';
+      }
 
       // El carácter va antes que la longitud: "M X" es un espacio de más, no
       // un país de tres letras, y decirlo bien ahorra el segundo intento. Un
@@ -99,7 +107,7 @@ export function validarCampo(campo: CampoFep, valor: string | null | undefined):
       if (l) {
         if (clave.length < l.min)
           return `Va de ${l.min} a ${l.max} caracteres; lleva ${clave.length}.`;
-        if (clave.length > l.max) return `El layout admite hasta ${l.max} caracteres.`;
+        if (clave.length > l.max) return `El formato del aviso admite hasta ${l.max} caracteres.`;
       }
 
       return null;

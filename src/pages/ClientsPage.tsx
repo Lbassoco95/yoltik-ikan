@@ -318,7 +318,7 @@ export default function ClientsPage() {
                     value={form.apellido_paterno}
                     onChange={(e) => setForm({ ...form, apellido_paterno: e.target.value })}
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-[13px] text-muted-foreground mt-1">
                     Si no tiene, captura {SIN_APELLIDO}.
                   </p>
                 </div>
@@ -328,7 +328,7 @@ export default function ClientsPage() {
                     value={form.apellido_materno}
                     onChange={(e) => setForm({ ...form, apellido_materno: e.target.value })}
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-[13px] text-muted-foreground mt-1">
                     Si no tiene, captura {SIN_APELLIDO}.
                   </p>
                 </div>

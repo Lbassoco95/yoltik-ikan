@@ -205,7 +205,9 @@ export function IntegridadBitacora({
             <p className="text-sm font-semibold text-foreground">
               {integra
                 ? `Íntegra · ${resultado.eventosVerificados.toLocaleString("es-MX")} eventos recalculados`
-                : `Cadena rota · ${resultado.roturas.length} hallazgo(s)`}
+                : `Cadena rota · ${resultado.roturas.length} ${
+                    resultado.roturas.length === 1 ? "hallazgo" : "hallazgos"
+                  }`}
             </p>
           </div>
 
@@ -234,7 +236,7 @@ export function IntegridadBitacora({
             <>
               <p
                 className={cn(
-                  "text-[11px] mt-2 ml-6",
+                  "text-[13px] mt-2 ml-6",
                   resultado.cubiertoHasta >= resultado.eventosVerificados
                     ? "text-success"
                     : "text-warning",
@@ -251,7 +253,7 @@ export function IntegridadBitacora({
                 .map((a) => (
                   <p
                     key={a.id}
-                    className="text-[11px] text-destructive mt-1 ml-6"
+                    className="text-[13px] text-destructive mt-1 ml-6"
                   >
                     Anclaje {a.desde_secuencia}–{a.hasta_secuencia}: {a.motivo}
                   </p>
@@ -312,7 +314,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
               {["Eventos", "Motivo", "Estado", "Bloque", "Prueba"].map((h) => (
                 <th
                   key={h}
-                  className="text-left text-[11px] font-semibold text-muted-foreground uppercase px-3 py-2"
+                  className="text-left text-[13px] font-semibold text-muted-foreground uppercase px-3 py-2"
                 >
                   {h}
                 </th>
@@ -330,7 +332,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
                   {/* El significado va en el texto, no sólo en el color. */}
                   <span
                     className={cn(
-                      "status-badge text-[10px]",
+                      "status-badge text-xs",
                       a.estado === "confirmado"
                         ? "bg-success/10 text-success"
                         : a.estado === "pendiente"
@@ -350,7 +352,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
                     {a.bloque_btc?.toLocaleString("es-MX") ?? "—"}
                   </span>
                   {a.fecha_bloque && (
-                    <span className="block text-[10px]">
+                    <span className="block text-xs">
                       {new Date(a.fecha_bloque).toLocaleDateString("es-MX")}
                     </span>
                   )}
@@ -387,7 +389,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
           </tbody>
         </table>
       </div>
-      <p className="text-[11px] text-muted-foreground px-3 py-2 border-t border-border">
+      <p className="text-[13px] text-muted-foreground px-3 py-2 border-t border-border">
         El archivo <code>.ots</code> es la prueba: con <code>ots verify</code> y
         un nodo de Bitcoin, o comparando la raíz contra el bloque en cualquier
         explorador, se comprueba sin pedirnos nada.
@@ -447,7 +449,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
                   : "El último anclaje no llegó a publicarse"}
           </p>
 
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             {confirmado ? (
               <>
                 Los eventos 1 a {ancla.anclado_hasta?.toLocaleString("es-MX")}{" "}
@@ -486,7 +488,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
           </p>
 
           {ancla.eventos_sin_anclar > 0 && (
-            <p className="text-[11px] text-warning">
+            <p className="text-[13px] text-warning">
               {ancla.eventos_sin_anclar.toLocaleString("es-MX")} evento
               {ancla.eventos_sin_anclar === 1 ? "" : "s"} sin cobertura externa:
               son los posteriores al último anclaje. El anclaje corre a diario y
@@ -495,7 +497,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
           )}
 
           {ancla.raiz_merkle && (
-            <p className="text-[11px] font-mono text-muted-foreground break-all">
+            <p className="text-[13px] font-mono text-muted-foreground break-all">
               raíz {ancla.raiz_merkle}
             </p>
           )}
@@ -516,7 +518,7 @@ function Dato({
 }) {
   return (
     <div className="rounded-lg bg-muted/40 p-3">
-      <p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+      <p className="text-[13px] text-muted-foreground uppercase tracking-wider">
         {etiqueta}
       </p>
       <p

@@ -115,7 +115,7 @@ export default function ConfigPage() {
                         {a.nombre}
                       </p>
                       {habilitada && (
-                        <span className="status-badge bg-accent/10 text-accent text-[10px] shrink-0">
+                        <span className="status-badge bg-accent/10 text-accent text-xs shrink-0">
                           Activa
                         </span>
                       )}
@@ -165,7 +165,7 @@ export default function ConfigPage() {
                             <span className="text-xs text-muted-foreground italic">Sin rol asignado</span>
                           ) : (
                             u.roles.map((r) => (
-                              <span key={r} className="status-badge bg-muted text-muted-foreground text-[10px]">
+                              <span key={r} className="status-badge bg-muted text-muted-foreground text-xs">
                                 {r === "oc" ? "Oficial de Cumplimiento" : r === "admin" ? "Administrador" : "Operador"}
                               </span>
                             ))

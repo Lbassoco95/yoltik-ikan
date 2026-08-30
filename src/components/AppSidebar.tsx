@@ -70,7 +70,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               {badge > 0 && (
                 <span className={cn(
                   "ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center",
-                  collapsed ? "absolute -top-1 -right-1 w-4 h-4 text-[10px]" : "w-5 h-5"
+                  collapsed ? "absolute -top-1 -right-1 w-4 h-4 text-xs" : "w-5 h-5"
                 )}>
                   {badge}
                 </span>

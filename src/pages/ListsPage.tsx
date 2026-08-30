@@ -161,7 +161,7 @@ export default function ListsPage() {
                   </div>
                 </div>
                 {l.obligatoria && (
-                  <span className="status-badge bg-accent/10 text-accent text-[10px] shrink-0">
+                  <span className="status-badge bg-accent/10 text-accent text-xs shrink-0">
                     Obligatoria
                   </span>
                 )}
@@ -170,20 +170,20 @@ export default function ListsPage() {
               <div className="flex flex-wrap gap-2">
                 <span
                   className={cn(
-                    "status-badge text-[10px]",
+                    "status-badge text-xs",
                     l.naturaleza === "fiscal"
-                      ? "bg-vulnerable/10 text-vulnerable"
+                      ? "bg-muted text-muted-foreground"
                       : "bg-muted text-muted-foreground",
                   )}
                 >
                   {NATURALEZA_LABEL[l.naturaleza]}
                 </span>
                 {l.actualizada_al ? (
-                  <span className="status-badge bg-success/10 text-success text-[10px]">
+                  <span className="status-badge bg-success/10 text-success text-xs">
                     Actualizada al {new Date(l.actualizada_al + "T12:00:00").toLocaleDateString("es-MX")}
                   </span>
                 ) : (
-                  <span className="status-badge bg-warning/10 text-warning text-[10px]">
+                  <span className="status-badge bg-warning/10 text-warning text-xs">
                     Sin datos cargados
                   </span>
                 )}
@@ -194,14 +194,14 @@ export default function ListsPage() {
                   <span className="block text-xl font-bold tabular-nums text-foreground">
                     {l.registros_vigentes.toLocaleString("es-MX")}
                   </span>
-                  <span className="text-[11px] text-muted-foreground">registros vigentes</span>
+                  <span className="text-[13px] text-muted-foreground">registros vigentes</span>
                 </div>
                 {l.registros_bloqueantes !== l.registros_vigentes && (
                   <div>
                     <span className="block text-xl font-bold tabular-nums text-destructive">
                       {l.registros_bloqueantes.toLocaleString("es-MX")}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">exigen acción</span>
+                    <span className="text-[13px] text-muted-foreground">exigen acción</span>
                   </div>
                 )}
               </div>

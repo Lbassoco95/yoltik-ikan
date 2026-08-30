@@ -50,18 +50,26 @@ export function CampoActo({
   const control = controlDe(campo);
   const codigoCatalogo = CATALOGO_DE_CAMPO[campo.no];
   const problema = validarCampo(campo, valor);
+  // `title` no aparece en táctil y los lectores de pantalla lo tratan de forma
+  // irregular. La leyenda «* obligatorio» va al principio del formulario.
   const marca =
     campo.grado === "siempre" ? (
-      <span className="text-destructive ml-1" title="Obligatorio">
+      <span className="text-destructive ml-1" aria-label="obligatorio">
         *
       </span>
     ) : null;
 
-  const pie = problema ? (
-    <p className="text-[11px] text-destructive mt-1">{problema}</p>
-  ) : campo.condicion ? (
-    <p className="text-[11px] text-muted-foreground mt-1">{campo.condicion}</p>
-  ) : null;
+  // Los dos, no uno u otro: justo cuando el notario se equivoca es cuando más
+  // necesita leer la condición del instructivo que explica por qué el campo
+  // está ahí. Antes el error la borraba.
+  const pie = (
+    <>
+      {problema && <p className="text-[13px] text-destructive mt-1">{problema}</p>}
+      {campo.condicion && (
+        <p className="text-[13px] text-muted-foreground mt-1">{campo.condicion}</p>
+      )}
+    </>
+  );
 
   if (control === "catalogo" && codigoCatalogo) {
     return (
@@ -71,9 +79,8 @@ export function CampoActo({
           etiqueta={campo.nombre}
           valor={valor}
           onChange={onChange}
-          ayuda={campo.condicion ?? undefined}
         />
-        {problema && <p className="text-[11px] text-destructive mt-1">{problema}</p>}
+        {pie}
       </div>
     );
   }

@@ -44,7 +44,7 @@ export default function AdminCatalogosPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Catálogos del layout</h1>
+        <h1 className="text-2xl font-bold text-foreground">Catálogos del formato del aviso</h1>
         <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
           Las claves con las que se manda el informe. Donde el aviso pide una clave —estado, país,
           tipo de poder, giro mercantil— la pantalla del cliente ofrece una lista tomada de aquí y
@@ -79,7 +79,7 @@ export default function AdminCatalogosPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                {["Catálogo", "Campos del layout", "Formato de clave", "Valores", "Actualizado", ""].map(
+                {["Catálogo", "Campos del formato", "Formato de clave", "Valores", "Actualizado", ""].map(
                   (h) => (
                     <th
                       key={h}
@@ -96,7 +96,7 @@ export default function AdminCatalogosPage() {
                 <tr key={c.codigo} className="border-b border-border last:border-0">
                   <td className="px-4 py-3">
                     <p className="text-sm font-medium text-foreground">{c.nombre}</p>
-                    <p className="font-mono text-[11px] text-muted-foreground">{c.codigo}</p>
+                    <p className="font-mono text-[13px] text-muted-foreground">{c.codigo}</p>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {c.etiquetas_layout.map((e) => `<${e}>`).join(", ")}
@@ -231,7 +231,7 @@ function DialogCarga({
                   </p>
                 </div>
                 {previo.fueraDePatron.length > 0 && (
-                  <p className="text-[11px] text-warning mt-1 ml-6">
+                  <p className="text-[13px] text-warning mt-1 ml-6">
                     {previo.fueraDePatron.length} clave(s) no cumplen{" "}
                     <code>{catalogo.clave_patron}</code> — por ejemplo{" "}
                     <code>{previo.fueraDePatron[0].clave}</code>. La carga no procede: una clave
@@ -247,7 +247,7 @@ function DialogCarga({
                   </p>
                   <ul className="mt-1 space-y-0.5">
                     {previo.descartadas.slice(0, 8).map((d) => (
-                      <li key={d.fila} className="text-[11px] text-muted-foreground">
+                      <li key={d.fila} className="text-[13px] text-muted-foreground">
                         Fila {d.fila}: {d.motivo}
                       </li>
                     ))}
@@ -266,14 +266,14 @@ function DialogCarga({
                   ))}
                 </ul>
                 {previo.valores.length > 8 && (
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-[13px] text-muted-foreground mt-1">
                     … y {previo.valores.length - 8} más
                   </p>
                 )}
               </div>
 
               {catalogo.valores_vigentes > 0 && (
-                <p className="text-[11px] text-warning">
+                <p className="text-[13px] text-warning">
                   Este catálogo ya tiene {catalogo.valores_vigentes} valores. Los actuales no se
                   borran: se cierra su vigencia con la fecha de hoy, para que un aviso presentado
                   antes se pueda auditar contra el catálogo que estaba entonces.

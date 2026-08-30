@@ -148,7 +148,7 @@ export default function AltaSegundoFactorPage() {
             <details className="text-xs text-muted-foreground">
               <summary className="cursor-pointer">No puedo escanear el código</summary>
               <p className="mt-2">Escriba esta clave a mano en su app:</p>
-              <code className="block mt-1 font-mono text-[11px] break-all bg-muted/50 rounded p-2">
+              <code className="block mt-1 font-mono text-[13px] break-all bg-muted/50 rounded p-2">
                 {inscripcion.secreto}
               </code>
             </details>

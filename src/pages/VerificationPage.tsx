@@ -66,7 +66,7 @@ export default function VerificationPage() {
             verificación no presencial (documento, prueba de vida, face match, RENAPO) todavía no
             está conectada con ningún proveedor. Ikán no ha verificado la identidad de nadie.
           </p>
-          <p className="text-[11px] text-muted-foreground mt-1">
+          <p className="text-[13px] text-muted-foreground mt-1">
             Lo que se ve abajo es el estado real del expediente de cada compareciente, capturado
             a mano. Ningún score, ningún veredicto: no existen todavía.
           </p>
@@ -121,17 +121,17 @@ export default function VerificationPage() {
                         >
                           {cliente.nombre_razon_social}
                         </Link>
-                        <p className="text-[11px] text-muted-foreground">{cliente.rfc ?? "sin RFC"}</p>
+                        <p className="text-[13px] text-muted-foreground">{cliente.rfc ?? "sin RFC"}</p>
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-sm">{nivel.etiqueta}</span>
-                        <p className="text-[11px] text-muted-foreground">{nivel.detalle}</p>
+                        <p className="text-[13px] text-muted-foreground">{nivel.detalle}</p>
                       </td>
                       <td className="px-4 py-3">
                         {/* El significado va en el texto, no sólo en el color. */}
                         <span
                           className={cn(
-                            "status-badge text-[10px]",
+                            "status-badge text-xs",
                             faltan === 0
                               ? "bg-success/10 text-success"
                               : "bg-warning/10 text-warning",
@@ -141,7 +141,7 @@ export default function VerificationPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="status-badge bg-muted text-muted-foreground text-[10px]">
+                        <span className="status-badge bg-muted text-muted-foreground text-xs">
                           Sin verificar
                         </span>
                       </td>
@@ -165,7 +165,7 @@ export default function VerificationPage() {
             <ShieldQuestion className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
             <div>
               <h3 className="text-sm font-semibold text-foreground">Cuando haya proveedor</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-[13px] text-muted-foreground mt-0.5">
                 Los ocho pasos del flujo no presencial. Ninguno corre todavía.
               </p>
             </div>
@@ -174,18 +174,18 @@ export default function VerificationPage() {
           <ol className="mt-4 space-y-3">
             {PASOS_PREVISTOS.map((p, i) => (
               <li key={p.paso} className="flex gap-3">
-                <span className="w-6 h-6 shrink-0 rounded-full bg-muted text-muted-foreground text-[11px] font-semibold flex items-center justify-center">
+                <span className="w-6 h-6 shrink-0 rounded-full bg-muted text-muted-foreground text-[13px] font-semibold flex items-center justify-center">
                   {i + 1}
                 </span>
                 <div>
                   <p className="text-sm text-foreground">{p.paso}</p>
-                  <p className="text-[11px] text-muted-foreground">{p.detalle}</p>
+                  <p className="text-[13px] text-muted-foreground">{p.detalle}</p>
                 </div>
               </li>
             ))}
           </ol>
 
-          <p className="text-[11px] text-warning mt-4">
+          <p className="text-[13px] text-warning mt-4">
             Los umbrales de aprobación (score de documento, de prueba de vida, de face match) los
             fija el proveedor junto con el Oficial de Cumplimiento. No se inventan aquí.
           </p>
@@ -209,7 +209,7 @@ function Metrica({
       <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl bg-accent" />
       <p className="text-xs font-medium text-muted-foreground uppercase">{etiqueta}</p>
       <p className="text-3xl font-bold text-foreground mt-1">{valor}</p>
-      {nota && <p className="text-[11px] text-warning mt-0.5">{nota}</p>}
+      {nota && <p className="text-[13px] text-warning mt-0.5">{nota}</p>}
     </div>
   );
 }

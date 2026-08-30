@@ -138,7 +138,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
                 accept=".csv,.xls,.txt"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) void analizar(f); }}
               />
-              <p className="text-[11px] text-muted-foreground mt-1">
+              <p className="text-[13px] text-muted-foreground mt-1">
                 Los listados del SAT vienen con extensión <span className="font-mono">.xls</span>{" "}
                 pero son CSV. Súbelos tal cual los descargaste, sin abrirlos ni reguardarlos en
                 Excel: al hacerlo cambia la codificación y se pierden los acentos.
@@ -204,7 +204,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+                <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
                   {alcance === "completa" ? (
                     <>
                       Se dará de baja a quien esté activo en esta fuente y no venga en el

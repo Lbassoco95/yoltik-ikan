@@ -69,7 +69,7 @@ export default function RulesEnginePage() {
               {uma.publicacion_dof ? ` · ${uma.publicacion_dof}` : ""}
             </span>
             {esReferenciaSinConfirmar(uma) && (
-              <span className="status-badge bg-warning/10 text-warning text-[10px]">
+              <span className="status-badge bg-warning/10 text-warning text-xs">
                 Pendiente de validación de Cumplimiento
               </span>
             )}
@@ -109,7 +109,7 @@ export default function RulesEnginePage() {
                   <td className="px-4 py-4 text-sm font-medium text-foreground">
                     {param!.nombre}
                     {esReferenciaSinConfirmar(param) && (
-                      <span className="ml-2 status-badge bg-warning/10 text-warning text-[10px]">
+                      <span className="ml-2 status-badge bg-warning/10 text-warning text-xs">
                         Sin confirmar
                       </span>
                     )}
@@ -137,7 +137,7 @@ export default function RulesEnginePage() {
           </table>
         </div>
         {parametros.some(esReferenciaSinConfirmar) && (
-          <p className="mt-3 text-[11px] text-warning">
+          <p className="mt-3 text-[13px] text-warning">
             Los umbrales marcados «Sin confirmar» provienen de fuentes secundarias y todavía no
             los valida Kawiil-Cumplimiento contra el texto legal vigente.
           </p>

@@ -41,11 +41,11 @@ function Elemento({ el }: { el: MatrizElemento }) {
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-mono font-bold">{el.codigo}</span>
         <span className="text-sm font-semibold">{el.nombre}</span>
-        <span className="status-badge bg-muted text-muted-foreground text-[10px]">
+        <span className="status-badge bg-muted text-muted-foreground text-xs">
           {el.variables.length} variable{el.variables.length === 1 ? '' : 's'}
         </span>
         {el.aplica_si && (
-          <span className="status-badge bg-primary/10 text-primary text-[10px]" title="Predicado de aplicabilidad">
+          <span className="status-badge bg-primary/10 text-primary text-xs" title="Predicado de aplicabilidad">
             {el.aplica_si}
           </span>
         )}
@@ -186,7 +186,7 @@ export default function MatrizRiesgoPage() {
                   <span className="text-sm font-semibold">Versión {mostrada.version}</span>
                   <span
                     className={cn(
-                      'status-badge text-[10px]',
+                      'status-badge text-xs',
                       mostrada.estado === 'borrador'
                         ? 'bg-warning/20 text-warning'
                         : 'bg-jade/15 text-jade',
@@ -195,7 +195,7 @@ export default function MatrizRiesgoPage() {
                     {mostrada.estado === 'borrador' ? 'Borrador' : 'Publicada'}
                   </span>
                   {mostrada.activa && (
-                    <span className="status-badge bg-primary/10 text-primary text-[10px]">Vigente</span>
+                    <span className="status-badge bg-primary/10 text-primary text-xs">Vigente</span>
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground">

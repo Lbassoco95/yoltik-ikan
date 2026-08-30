@@ -44,9 +44,39 @@ const OPERACION: Record<string, string> = {
   delete: "Baja",
 };
 
+/**
+ * Nombre de la tabla → nombre en español.
+ *
+ * El filtro y la columna enseñaban el identificador crudo de la base
+ * (`operation`, `catalogo_valor`), que sólo significa algo para quien conoce el
+ * esquema. Lo que no esté aquí se muestra tal cual: es preferible un
+ * identificador feo a un nombre inventado.
+ */
+const ENTIDAD: Record<string, string> = {
+  client: "Compareciente",
+  operation: "Acto u operación",
+  hallazgo: "Hallazgo",
+  hallazgo_bitacora: "Movimiento de hallazgo",
+  aviso: "Aviso",
+  catalogo_valor: "Valor de catálogo",
+  lista_movimiento: "Movimiento de lista",
+  parametro_regulatorio: "Parámetro regulatorio",
+};
+
+function entidadLegible(entidad: string): string {
+  return ENTIDAD[entidad] ?? entidad;
+}
+
 function accionLegible(tipo: string): string {
   const [, op] = tipo.split(".");
   return OPERACION[op] ?? tipo;
+}
+
+/** `operation.insert` → "Alta · Acto u operación", para el desplegable. */
+function tipoLegible(tipo: string): string {
+  const [entidad, op] = tipo.split(".");
+  if (!op) return tipo;
+  return `${OPERACION[op] ?? op} · ${entidadLegible(entidad)}`;
 }
 
 export default function AuditPage() {
@@ -129,7 +159,7 @@ export default function AuditPage() {
             <SelectItem value={TODOS}>Todas las entidades</SelectItem>
             {(facetas?.entidades ?? []).map((x) => (
               <SelectItem key={x} value={x}>
-                {x}
+                {entidadLegible(x)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -142,7 +172,7 @@ export default function AuditPage() {
             <SelectItem value={TODOS}>Todos los eventos</SelectItem>
             {(facetas?.tipos ?? []).map((x) => (
               <SelectItem key={x} value={x}>
-                {x}
+                {tipoLegible(x)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -194,7 +224,7 @@ export default function AuditPage() {
                       {accionLegible(e.tipo)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm">{e.entidad}</td>
+                  <td className="px-4 py-3 text-sm">{entidadLegible(e.entidad)}</td>
                   <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
                     {e.entidad_id ? e.entidad_id.slice(0, 8) : "—"}
                   </td>
@@ -219,7 +249,7 @@ export default function AuditPage() {
       </div>
 
       {eventos.length >= 200 && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           Se muestran los 200 eventos más recientes. Para la bitácora completa, descarga el paquete
           de verificación de arriba: lleva todos los eventos y sus hashes.
         </p>
@@ -229,7 +259,7 @@ export default function AuditPage() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Evento {detalle?.secuencia} · {detalle?.tipo}
+              Evento {detalle?.secuencia} · {detalle ? tipoLegible(detalle.tipo) : ""}
             </DialogTitle>
             <DialogDescription>
               {detalle ? new Date(detalle.registrado_en).toLocaleString("es-MX") : ""}
@@ -260,21 +290,21 @@ export default function AuditPage() {
                   acto de 2025 con las reglas de 2025. */}
               {Object.keys(detalle.versiones ?? {}).length > 0 && (
                 <Campo etiqueta="Versiones vigentes">
-                  <pre className="text-[11px] font-mono bg-muted/40 rounded p-2 overflow-x-auto">
+                  <pre className="text-[13px] font-mono bg-muted/40 rounded p-2 overflow-x-auto">
                     {JSON.stringify(detalle.versiones, null, 2)}
                   </pre>
                 </Campo>
               )}
 
               <Campo etiqueta="Contenido registrado">
-                <pre className="text-[11px] font-mono bg-muted/40 rounded p-2 overflow-x-auto">
+                <pre className="text-[13px] font-mono bg-muted/40 rounded p-2 overflow-x-auto">
                   {JSON.stringify(detalle.payload, null, 2)}
                 </pre>
               </Campo>
 
               <div className="rounded-lg border p-3 space-y-2">
                 <p className="text-xs font-semibold text-foreground">Encadenamiento</p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   El hash de la cadena se calcula sobre el hash del evento anterior. Cambiar
                   cualquier evento pasado rompe todos los que le siguen, y eso se detecta con el
                   botón de verificar de arriba.
@@ -303,8 +333,8 @@ function Campo({ etiqueta, children }: { etiqueta: string; children: React.React
 function Hash({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-      <span className="text-[11px] text-muted-foreground w-32 shrink-0">{etiqueta}</span>
-      <code className="text-[11px] font-mono break-all">{valor}</code>
+      <span className="text-[13px] text-muted-foreground w-32 shrink-0">{etiqueta}</span>
+      <code className="text-[13px] font-mono break-all">{valor}</code>
     </div>
   );
 }

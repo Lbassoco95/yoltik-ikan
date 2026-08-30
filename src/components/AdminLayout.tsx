@@ -32,7 +32,7 @@ export function AdminLayout() {
               <span className="block text-sm font-bold tracking-tight text-sidebar-accent-foreground">
                 Ikán · Plataforma
               </span>
-              <span className="block text-[11px] text-sidebar-foreground/60">
+              <span className="block text-[13px] text-sidebar-foreground/60">
                 Consola de Kawiil
               </span>
             </div>

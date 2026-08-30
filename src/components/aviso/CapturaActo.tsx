@@ -61,7 +61,7 @@ export function CapturaActo({
   if (!rama)
     return (
       <p className="text-sm text-muted-foreground">
-        Este acto no tiene rama propia en el layout de fe pública. Si se presenta por DeclaraNOT,
+        Este acto no tiene rama propia en el formato de fe pública. Si se presenta por DeclaraNOT,
         el detalle se captura allá.
       </p>
     );
@@ -74,7 +74,7 @@ export function CapturaActo({
         <div className="flex items-start gap-2 rounded-lg bg-success/10 p-3">
           <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
           <p className="text-sm text-foreground">
-            La rama del acto está completa para el layout.
+            La rama del acto está completa para el formato del aviso.
           </p>
         </div>
       ) : (
@@ -82,7 +82,7 @@ export function CapturaActo({
           <div className="flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 mt-0.5 text-warning shrink-0" />
             <p className="text-sm text-foreground">
-              Faltan {faltan.length} dato{faltan.length === 1 ? "" : "s"} que el layout exige. Sin
+              Faltan {faltan.length} dato{faltan.length === 1 ? "" : "s"} que el formato del aviso exige. Sin
               ellos el portal rechaza el aviso.
             </p>
           </div>
@@ -95,12 +95,19 @@ export function CapturaActo({
             ))}
           </ul>
           {faltan.length > 6 && (
-            <p className="text-[11px] text-muted-foreground mt-1 ml-6">
+            <p className="text-[13px] text-muted-foreground mt-1 ml-6">
               y {faltan.length - 6} más, marcados abajo.
             </p>
           )}
         </div>
       )}
+
+      {/* La leyenda va aquí y no en un `title` de cada asterisco: `title` no
+          aparece en táctil y los lectores de pantalla lo tratan de forma
+          irregular. */}
+      <p className="text-xs text-muted-foreground">
+        <span className="text-destructive">*</span> obligatorio para el aviso
+      </p>
 
       <Nodo
         nodo={rama}
@@ -152,7 +159,7 @@ function Nodo({ nodo, ruta, datos, onChange, soloLectura, nivel }: PropsNodo) {
             onClick={() => onChange(agregarRepeticion(datos, nodo.no, ruta))}
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
-            Agregar
+            Agregar {sustantivo(nodo)}
           </Button>
         )}
       </div>
@@ -163,6 +170,10 @@ function Nodo({ nodo, ruta, datos, onChange, soloLectura, nivel }: PropsNodo) {
             <span className="text-xs text-muted-foreground">
               {nodo.nombre} {i + 1} de {total}
             </span>
+            {/* Sólo a partir de dos: `quitarRepeticion` nunca baja de una
+                —un poder sin ningún apoderado no es un poder— así que el botón
+                sobre la única sería un adorno que no hace nada. Un grupo
+                opcional que se deja vacío simplemente no se emite. */}
             {!soloLectura && total > 1 && (
               <Button
                 type="button"
@@ -171,7 +182,7 @@ function Nodo({ nodo, ruta, datos, onChange, soloLectura, nivel }: PropsNodo) {
                 onClick={() => onChange(quitarRepeticion(datos, nodo.no, ruta, i))}
               >
                 <Trash2 className="h-3.5 w-3.5 mr-1" />
-                Quitar
+                Quitar {sustantivo(nodo)}
               </Button>
             )}
           </div>
@@ -256,6 +267,20 @@ function hayDatosEnVariante(
   return conValor(hijo);
 }
 
+/** «Datos de los Apoderados» → «apoderado». Con poderdantes y apoderados en
+ *  la misma pantalla, un botón que sólo dice «Agregar» no dice cuál. */
+function sustantivo(nodo: NodoRama): string {
+  const limpio = nodo.nombre
+    .replace(/^datos de (los|las|el|la)\s+/i, "")
+    .replace(/^datos del?\s+/i, "")
+    // «accionistas o socios» → «accionistas»: con la disyuntiva completa el
+    // botón decía «Agregar accionistas o socio».
+    .split(/\s+[oy]\s+/i)[0]
+    .trim()
+    .toLowerCase();
+  return limpio.replace(/e?s$/, "") || "elemento";
+}
+
 const NOMBRE_VARIANTE: Record<string, string> = {
   persona_fisica: "Persona física",
   persona_moral: "Persona moral",
@@ -333,7 +358,7 @@ function TipoPersona({ nodo, ruta, datos, onChange, soloLectura, nivel }: PropsN
         />
       ) : (
         <p className="text-xs text-muted-foreground">
-          Elija el tipo de persona para ver los datos que pide el layout.
+          Elija el tipo de persona para ver los datos que pide el formato del aviso.
         </p>
       )}
     </div>

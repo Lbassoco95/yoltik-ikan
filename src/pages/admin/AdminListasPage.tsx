@@ -199,7 +199,7 @@ export default function AdminListasPage() {
                           <span className={cn(
                             "status-badge",
                             r.naturaleza === "fiscal"
-                              ? "bg-vulnerable/10 text-vulnerable"
+                              ? "bg-muted text-muted-foreground"
                               : "bg-destructive/10 text-destructive",
                           )}>
                             {r.fuente_nombre}
@@ -322,19 +322,19 @@ export default function AdminListasPage() {
                     <p className="text-xs text-muted-foreground mt-0.5">{f.autoridad}</p>
                   </div>
                   {f.obligatoria && (
-                    <span className="status-badge bg-accent/10 text-accent text-[10px] shrink-0">
+                    <span className="status-badge bg-accent/10 text-accent text-xs shrink-0">
                       Obligatoria
                     </span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <span className={cn(
-                    "status-badge text-[10px]",
-                    f.naturaleza === "fiscal" ? "bg-vulnerable/10 text-vulnerable" : "bg-muted text-muted-foreground",
+                    "status-badge text-xs",
+                    f.naturaleza === "fiscal" ? "bg-muted text-muted-foreground" : "bg-muted text-muted-foreground",
                   )}>
                     {NATURALEZA_LABEL[f.naturaleza]}
                   </span>
-                  <span className="status-badge bg-muted text-muted-foreground text-[10px]">
+                  <span className="status-badge bg-muted text-muted-foreground text-xs">
                     {f.modo_actualizacion === "movimientos" ? (
                       <>Altas y bajas por oficio</>
                     ) : (
@@ -375,7 +375,7 @@ export default function AdminListasPage() {
             <div>
               <Label>Fecha de publicación</Label>
               <Input type="date" value={fechaPublicacion} onChange={(e) => setFechaPublicacion(e.target.value)} />
-              <p className="text-[11px] text-muted-foreground mt-1">
+              <p className="text-[13px] text-muted-foreground mt-1">
                 Cuándo lo emitió la autoridad, no cuándo lo capturas.
               </p>
             </div>
@@ -531,7 +531,7 @@ export default function AdminListasPage() {
               placeholder="Por ejemplo: RFC capturado por error"
               rows={2}
             />
-            <p className="text-[11px] text-muted-foreground mt-1">
+            <p className="text-[13px] text-muted-foreground mt-1">
               Queda como constancia permanente en la carga.
             </p>
           </div>

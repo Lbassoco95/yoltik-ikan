@@ -73,7 +73,7 @@ export function AppHeader({ onToggleSidebar: _onToggleSidebar }: AppHeaderProps)
           >
             <Bell className="w-5 h-5" />
             {abiertos > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center">
                 {abiertos > 99 ? "99+" : abiertos}
               </span>
             )}
