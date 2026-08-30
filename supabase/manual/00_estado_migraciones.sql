@@ -87,7 +87,15 @@ lateral (values
   (23, '0023 · prospect_intake (respaldo + cotejo con la base)',
        to_regclass('public.prospect_intake') is not null
          and obj_description('public.prospect_intake'::regclass, 'pg_class') is not null,
-       'apply_0023_prospect_intake.sql')
+       'apply_0023_prospect_intake.sql'),
+  -- Sin esto la base NO ACEPTA ALTAS: la bitácora cuelga de siete triggers y
+  -- su función revienta. Se detecta por el rastro de pgcrypto en el cuerpo.
+  (24, '0024 · nonce sin pgcrypto (URGENTE: sin esto no se puede dar de alta nada)',
+       to_regprocedure('public.registrar_evento(uuid,text,text,uuid,jsonb,text,uuid,jsonb)') is not null
+         and (select prosrc from pg_proc
+               where oid = to_regprocedure('public.registrar_evento(uuid,text,text,uuid,jsonb,text,uuid,jsonb)'))
+             not like '%gen_random_bytes%',
+       'apply_0024_nonce.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -175,7 +183,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0023'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0024'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')

@@ -16,8 +16,7 @@
 -- =====================================================================
 
 -- Todo lo que sigue va en UNA transacción, verificación incluida: si una
--- comprobación del final falla, no queda nada a medias en la base. Se agregó
--- después de notar que estos cuatro bundles no la traían y los anteriores sí.
+-- comprobación del final falla, no queda nada a medias en la base.
 begin;
 
 -- =====================================================================
@@ -213,7 +212,25 @@ begin
      for update;
 
   v_canonico := public.json_canonico(coalesce(p_payload, '{}'::jsonb));
-  v_nonce := encode(gen_random_bytes(16), 'hex');
+
+  -- El nonce sale de gen_random_uuid(), que vive en pg_catalog y siempre es
+  -- visible, no de gen_random_bytes(), que es de pgcrypto.
+  --
+  -- La primera versión usaba pgcrypto y rompió producción: en Supabase esa
+  -- extensión vive en el esquema `extensions`, y esta función tiene
+  -- `search_path = ''`, así que no la veía. Y como la bitácora cuelga de siete
+  -- triggers, la falla no se quedó en la bitácora: dejó de poderse dar de alta
+  -- un cliente, un acto, un hallazgo o un catálogo.
+  --
+  -- Se podría haber calificado `extensions.gen_random_bytes` o metido ese
+  -- esquema en el search_path, pero las dos opciones atan el código a cómo
+  -- Supabase acomoda sus extensiones, y en un Postgres común pgcrypto cae en
+  -- `public`. Quitar la dependencia es más corto y funciona en los dos lados.
+  --
+  -- 122 bits de aleatoriedad contra los 128 de antes: para impedir que se
+  -- adivine el contenido de un evento probando combinaciones, da exactamente
+  -- igual.
+  v_nonce := replace(gen_random_uuid()::text, '-', '');
 
   v_evento_hash := encode(sha256(convert_to(v_canonico || '|' || v_nonce, 'UTF8')), 'hex');
   v_cadena_hash := encode(

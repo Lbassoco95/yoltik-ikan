@@ -4,6 +4,27 @@
 > Supabase remoto (`cibpguwwggwzdhhpdomz`) tenga el esquema aplicado.** Ya nos pasó dos veces.
 > Aquí queda cómo aplicarlo y cómo verificar que siga aplicado.
 
+## Probar contra un Postgres que se parezca a Supabase
+
+`supabase/manual/harness_postgres_local.sql` prepara una base desechable con lo que
+Supabase tiene y un PostgreSQL limpio no. Correrlo ANTES de las migrations no es opcional:
+dos errores llegaron a producción el 30 de agosto de 2026 porque el banco de pruebas era
+más permisivo que el entorno real, y un banco de pruebas más permisivo no prueba nada.
+
+```bash
+createdb prueba
+psql -d prueba -f supabase/manual/harness_postgres_local.sql
+for f in supabase/migrations/*.sql; do psql -d prueba -v ON_ERROR_STOP=1 -f "$f"; done
+```
+
+Lo que reproduce, y por qué cada cosa:
+
+| Qué | Qué error dejó pasar su ausencia |
+|---|---|
+| `ALTER DEFAULT PRIVILEGES` que da EXECUTE a `anon` y `authenticated` | La 0021 revocaba sólo de `PUBLIC`; en Supabase la función seguía abierta a los clientes |
+| `pgcrypto` y `btree_gist` en el esquema `extensions`, no en `public` | La 0021 usaba `gen_random_bytes()` sin calificar; en Supabase no la veía y **rompió toda alta en producción** |
+| Rol `probador` sin privilegios | Un superusuario se salta el RLS SIEMPRE, incluso con FORCE: probar como `postgres` no prueba nada |
+
 ## Antes que nada: el SQL Editor sólo muestra la ÚLTIMA consulta
 
 Nos costó tres vueltas. Si pegas un script con varios `SELECT`, el editor del dashboard
