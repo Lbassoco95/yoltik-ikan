@@ -88,7 +88,7 @@ export function CampoActo({
       {control === "si_no" ? (
         <Select value={valor} onValueChange={onChange} disabled={soloLectura}>
           <SelectTrigger id={campo.no}>
-            <SelectValue placeholder="Selecciona…" />
+            <SelectValue placeholder="Seleccione…" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="SI">Sí</SelectItem>

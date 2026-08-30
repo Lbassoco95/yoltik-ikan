@@ -293,7 +293,7 @@ function TipoPersona({ nodo, ruta, datos, onChange, soloLectura, nivel }: PropsN
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Selecciona…" />
+            <SelectValue placeholder="Seleccione…" />
           </SelectTrigger>
           <SelectContent>
             {nodo.hijos.map((h) => (
@@ -333,7 +333,7 @@ function TipoPersona({ nodo, ruta, datos, onChange, soloLectura, nivel }: PropsN
         />
       ) : (
         <p className="text-xs text-muted-foreground">
-          Elige el tipo de persona para ver los datos que pide el layout.
+          Elija el tipo de persona para ver los datos que pide el layout.
         </p>
       )}
     </div>

@@ -110,7 +110,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           <div>
             <Label>Fuente</Label>
             <Select value={fuenteId} onValueChange={(v) => { setFuenteId(v); setAnalisis(null); }}>
-              <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Seleccione…" /></SelectTrigger>
               <SelectContent>
                 {fuentes.filter((f) => f.modo_actualizacion === "snapshot").map((f) => (
                   <SelectItem key={f.id} value={f.id}>{f.nombre}</SelectItem>

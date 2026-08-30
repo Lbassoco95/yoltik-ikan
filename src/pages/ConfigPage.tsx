@@ -32,7 +32,7 @@ export default function ConfigPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Los datos de tu organización y quién tiene acceso. Para cambiarlos, contacta a Kawiil.
+          Los datos de su organización y quién tiene acceso. Para cambiarlos, contacte a Kawiil.
         </p>
       </div>
 
@@ -44,7 +44,7 @@ export default function ConfigPage() {
         <p className="glass-card p-6 text-sm text-destructive">{(org.error as Error).message}</p>
       ) : !org.data ? (
         <p className="glass-card p-6 text-sm text-warning">
-          No se encontró la organización de tu perfil.
+          No se encontró la organización de su perfil.
         </p>
       ) : (
         <>
@@ -96,7 +96,7 @@ export default function ConfigPage() {
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-1">Actividades vulnerables</h2>
             <p className="text-xs text-muted-foreground mb-4">
-              Artículo 17 de la LFPIORPI. Las marcadas son las que opera tu organización.
+              Artículo 17 de la LFPIORPI. Las marcadas son las que opera su organización.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {ACTIVIDADES_VULNERABLES.map((a) => {

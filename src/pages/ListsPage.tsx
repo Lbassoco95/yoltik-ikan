@@ -54,7 +54,7 @@ export default function ListsPage() {
         </div>
 
         {busqueda.trim().length > 0 && busqueda.trim().length < 3 && (
-          <p className="text-xs text-muted-foreground mt-2">Escribe al menos tres letras.</p>
+          <p className="text-xs text-muted-foreground mt-2">Escriba al menos tres letras.</p>
         )}
 
         {busqueda.trim().length >= 3 && (

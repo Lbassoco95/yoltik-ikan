@@ -67,7 +67,7 @@ export default function AltaSegundoFactorPage() {
       if (s.estado === "no_disponible") {
         setError(
           `No se pudo preguntar por el segundo factor: ${s.motivo ?? "sin detalle"}. ` +
-            "Es un problema de la plataforma, no de tu cuenta.",
+            "Es un problema de la plataforma, no de su cuenta.",
         );
         setCargando(false);
         return;
@@ -98,7 +98,7 @@ export default function AltaSegundoFactorPage() {
     } catch (err) {
       setError(
         (err as Error).message.includes("Invalid")
-          ? "El código no coincide. Revisa que sea el que muestra la app en este momento: cambia cada 30 segundos."
+          ? "El código no coincide. Revise que sea el que muestra la app en este momento: cambia cada 30 segundos."
           : (err as Error).message,
       );
     } finally {
@@ -112,9 +112,9 @@ export default function AltaSegundoFactorPage() {
         <div className="flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 mt-0.5 text-primary shrink-0" />
           <div>
-            <h1 className="text-lg font-bold text-foreground">Activa tu segundo factor</h1>
+            <h1 className="text-lg font-bold text-foreground">Active su segundo factor</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Tu sesión da acceso a expedientes con datos personales y a la firma de avisos. Una
+              Su sesión da acceso a expedientes con datos personales y a la firma de avisos. Una
               contraseña sola no basta para eso, así que en Ikán el segundo factor es obligatorio.
             </p>
           </div>
@@ -127,9 +127,9 @@ export default function AltaSegundoFactorPage() {
         ) : inscripcion ? (
           <>
             <ol className="text-sm text-foreground space-y-1 list-decimal ml-4">
-              <li>Abre tu app de autenticación (Google Authenticator, 1Password, Authy…).</li>
-              <li>Escanea este código.</li>
-              <li>Escribe abajo los seis dígitos que aparezcan.</li>
+              <li>Abra su app de autenticación (Google Authenticator, 1Password, Authy…).</li>
+              <li>Escanee este código.</li>
+              <li>Escriba abajo los seis dígitos que aparezcan.</li>
             </ol>
 
             {/* `qr_code` de Supabase es un DATA URI, no SVG suelto. Inyectarlo
@@ -147,7 +147,7 @@ export default function AltaSegundoFactorPage() {
 
             <details className="text-xs text-muted-foreground">
               <summary className="cursor-pointer">No puedo escanear el código</summary>
-              <p className="mt-2">Escribe esta clave a mano en tu app:</p>
+              <p className="mt-2">Escriba esta clave a mano en su app:</p>
               <code className="block mt-1 font-mono text-[11px] break-all bg-muted/50 rounded p-2">
                 {inscripcion.secreto}
               </code>

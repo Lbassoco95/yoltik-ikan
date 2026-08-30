@@ -188,7 +188,7 @@ export default function OperationsPage() {
 
   function enviar() {
     if (!form.client_id) {
-      toast.error(esNotarias ? "Selecciona un compareciente" : "Selecciona un cliente");
+      toast.error(esNotarias ? "Seleccione un compareciente" : "Seleccione un cliente");
       return;
     }
     const monto = Number(form.monto_mxn);
@@ -197,11 +197,11 @@ export default function OperationsPage() {
       return;
     }
     if (esNotarias && !form.tipo_acto) {
-      toast.error("Selecciona el tipo de acto");
+      toast.error("Seleccione el tipo de acto");
       return;
     }
     if (!form.fecha) {
-      toast.error(esNotarias ? "Captura la fecha del acto" : "Captura la fecha de la operación");
+      toast.error(esNotarias ? "Capture la fecha del acto" : "Capture la fecha de la operación");
       return;
     }
     // El único rechazo de captura que se permite: un número de instrumento con
@@ -504,7 +504,7 @@ export default function OperationsPage() {
               >
                 <SelectTrigger>
                   <SelectValue
-                    placeholder={esNotarias ? "Selecciona un compareciente…" : "Selecciona un cliente…"}
+                    placeholder={esNotarias ? "Seleccione un compareciente…" : "Seleccione un cliente…"}
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -526,7 +526,7 @@ export default function OperationsPage() {
                     onValueChange={cambiarTipoActo}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecciona el tipo de acto…" />
+                      <SelectValue placeholder="Seleccione el tipo de acto…" />
                     </SelectTrigger>
                     <SelectContent>
                       {TIPOS_ACTO_NOTARIA.map((t) => (

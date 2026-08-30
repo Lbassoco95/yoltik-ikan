@@ -182,7 +182,7 @@ export function RestablecerPasswordPage() {
           <form onSubmit={submitOtp} className="space-y-4">
             <div>
               <label htmlFor="otp-restablecer" className="block text-sm font-medium text-foreground mb-1">
-                Código de tu app de autenticación (TOTP)
+                Código de su app de autenticación (TOTP)
               </label>
               <input
                 id="otp-restablecer"
@@ -198,7 +198,7 @@ export function RestablecerPasswordPage() {
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              Confirma tu segundo factor antes de definir la contraseña nueva.
+              Confirme su segundo factor antes de definir la contraseña nueva.
             </p>
             {error && <p className="text-destructive text-sm">{error}</p>}
             <button type="submit" disabled={busy} className="ikan-btn-primary w-full disabled:opacity-50">
@@ -250,7 +250,7 @@ export function RestablecerPasswordPage() {
         {estado === 'exito' && (
           <div className="space-y-4">
             <p className="text-sm text-foreground">
-              Tu contraseña se actualizó. Inicia sesión con la contraseña nueva y tu código TOTP.
+              Su contraseña se actualizó. Inicie sesión con la contraseña nueva y su código TOTP.
             </p>
             <button type="button" onClick={() => navigate('/login')} className="ikan-btn-primary w-full">
               Ir a iniciar sesión

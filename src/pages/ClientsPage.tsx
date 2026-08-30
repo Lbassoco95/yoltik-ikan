@@ -137,7 +137,7 @@ export default function ClientsPage() {
     const nombreFinal = esFisica ? nombreCompuesto(form) : form.razon_social.trim();
     if (!nombreFinal) {
       toast.error(
-        esFisica ? "Captura al menos nombre y apellido paterno" : "La razón social es obligatoria",
+        esFisica ? "Capture al menos nombre y apellido paterno" : "La razón social es obligatoria",
       );
       return;
     }

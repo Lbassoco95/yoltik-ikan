@@ -364,7 +364,7 @@ export default function AdminListasPage() {
             <div className="md:col-span-1">
               <Label>Fuente</Label>
               <Select value={fuenteId} onValueChange={setFuenteId}>
-                <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Seleccione…" /></SelectTrigger>
                 <SelectContent>
                   {capturables.map((f) => (
                     <SelectItem key={f.id} value={f.id}>{f.nombre}</SelectItem>
@@ -448,7 +448,7 @@ export default function AdminListasPage() {
                         value={l.situacion}
                         onValueChange={(v) => actualizarLinea(i, "situacion", v)}
                       >
-                        <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Seleccione…" /></SelectTrigger>
                         <SelectContent>
                           {fuenteSeleccionada.situaciones.map((sit) => (
                             <SelectItem key={sit} value={sit}>

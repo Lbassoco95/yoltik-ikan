@@ -81,11 +81,11 @@ export function ProtectedRoute({
         <div className="ikan-card max-w-sm text-center space-y-2">
           <h1 className="text-lg font-bold text-foreground">Consola de plataforma</h1>
           <p className="text-sm text-muted-foreground">
-            Tu cuenta no tiene privilegio de administrador de plataforma. Esta consola es de
+            Su cuenta no tiene privilegio de administrador de plataforma. Esta consola es de
             Kawiil y desde aquí se configura lo que afecta a todas las organizaciones.
           </p>
           <p className="text-[11px] text-muted-foreground">
-            Si necesitas entrar, pídeselo a quien administre la plataforma.
+            Si necesita entrar, pídalo a quien administre la plataforma.
           </p>
         </div>
       </div>

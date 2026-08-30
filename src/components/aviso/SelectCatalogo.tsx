@@ -26,7 +26,7 @@ export function SelectCatalogo({
   etiqueta,
   valor,
   onChange,
-  placeholder = "Selecciona…",
+  placeholder = "Seleccione…",
   ayuda,
 }: {
   /** Código del catálogo en `catalogo_sat` (ej. "entidad_federativa"). */

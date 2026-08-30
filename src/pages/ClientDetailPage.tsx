@@ -219,7 +219,7 @@ export default function ClientDetailPage() {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecciona…" />
+                            <SelectValue placeholder="Seleccione…" />
                           </SelectTrigger>
                           <SelectContent>
                             {v.opciones.map((o) => (
@@ -249,7 +249,7 @@ export default function ClientDetailPage() {
                       )}
                     </>
                   ) : (
-                    "Captura incompleta: responde todas las variables para calcular el riesgo."
+                    "Captura incompleta: responda todas las variables para calcular el riesgo."
                   )}
                 </p>
                 <Button

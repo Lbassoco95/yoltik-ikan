@@ -53,7 +53,7 @@ const prospectSchema = z.object({
   regimen_fiscal: z.string().optional(),
   ciudad: z.string().optional(),
   estado_republica: z.string().optional(),
-  actividad_vulnerable: z.array(z.string()).min(1, "Selecciona al menos una actividad vulnerable"),
+  actividad_vulnerable: z.array(z.string()).min(1, "Seleccione al menos una actividad vulnerable"),
   estado_operacion: z.string().optional(),
   volumen_ops_mes: z.coerce.number().int().min(0).optional().nullable(),
   clientes_activos: z.coerce.number().int().min(0).optional().nullable(),
@@ -291,7 +291,7 @@ const RegistroPage = ({
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecciona tu régimen fiscal" />
+                                <SelectValue placeholder="Seleccione su régimen fiscal" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -331,7 +331,7 @@ const RegistroPage = ({
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecciona estado" />
+                                <SelectValue placeholder="Seleccione estado" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -360,7 +360,7 @@ const RegistroPage = ({
                       render={() => (
                         <FormItem>
                           <div className="mb-4">
-                            <FormLabel className="text-base">Selecciona las actividades que aplican a tu operación *</FormLabel>
+                            <FormLabel className="text-base">Seleccione las actividades que aplican a su operación *</FormLabel>
                             <FormDescription>Puedes seleccionar múltiples opciones</FormDescription>
                           </div>
                           <div className="space-y-3">
@@ -416,7 +416,7 @@ const RegistroPage = ({
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecciona estado de operación" />
+                                <SelectValue placeholder="Seleccione estado de operación" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -457,7 +457,7 @@ const RegistroPage = ({
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
-                                      <SelectValue placeholder="Selecciona entidad" />
+                                      <SelectValue placeholder="Seleccione entidad" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
@@ -482,7 +482,7 @@ const RegistroPage = ({
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
-                                      <SelectValue placeholder="Selecciona tipo" />
+                                      <SelectValue placeholder="Seleccione tipo" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
