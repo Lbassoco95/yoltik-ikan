@@ -11,6 +11,7 @@ import { RecuperarPasswordPage } from "@/pages/auth/RecuperarPassword";
 import { RestablecerPasswordPage } from "@/pages/auth/RestablecerPassword";
 import AltaSegundoFactorPage from "@/pages/auth/AltaSegundoFactor";
 import AdminListasPage from "@/pages/admin/AdminListasPage";
+import AdminProspectosPage from "@/pages/admin/AdminProspectosPage";
 import AdminParametrosPage from "@/pages/admin/AdminParametrosPage";
 import AdminCatalogosPage from "@/pages/admin/AdminCatalogosPage";
 import AdminBitacoraPage from "@/pages/admin/AdminBitacoraPage";
@@ -60,7 +61,8 @@ const AdminApp = () => (
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<Navigate to="/listas" replace />} />
+              <Route path="/" element={<Navigate to="/prospectos" replace />} />
+              <Route path="/prospectos" element={<AdminProspectosPage />} />
               <Route path="/listas" element={<AdminListasPage />} />
               <Route path="/parametros" element={<AdminParametrosPage />} />
               <Route path="/catalogos" element={<AdminCatalogosPage />} />

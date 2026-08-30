@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { LogOut, ShieldCheck, Database, SlidersHorizontal, ListOrdered, Link2 } from "lucide-react";
+import { LogOut, ShieldCheck, Database, SlidersHorizontal, ListOrdered, Link2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
  * configuración que afecta a TODAS las organizaciones.
  */
 const SECCIONES = [
+  { to: "/prospectos", label: "Prospectos", icon: UserPlus },
   { to: "/listas", label: "Listas restrictivas", icon: Database },
   { to: "/parametros", label: "Parámetros regulatorios", icon: SlidersHorizontal },
   { to: "/catalogos", label: "Catálogos del layout", icon: ListOrdered },

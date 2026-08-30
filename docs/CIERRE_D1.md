@@ -98,10 +98,8 @@ de alta el segundo factor.
 
 ## Lo que sigue (D-2)
 
-- Pantalla de prospectos sobre `prospect_intake`. Hoy quien llena el formulario
-  del sitio **entra y nadie lo ve nunca**: la tabla tiene RLS con cero
-  políticas a propósito, así que hace falta una de lectura para
-  `platform_admin`.
+- ~~Pantalla de prospectos~~ — hecha (migration 0027 + `/prospectos` en la
+  consola).
 - Consola de plataforma para cargar catálogos y listas sin SQL.
 - Las dos secciones de reglas de `RulesEnginePage`, maqueta declarada con
   banner ámbar.
