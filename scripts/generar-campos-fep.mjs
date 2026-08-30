@@ -67,6 +67,59 @@ function catalogoUif(reglas) {
   return nombre;
 }
 
+/**
+ * ¿La etiqueta se repite? El instructivo lo dice en prosa —"Debe existir una
+ * etiqueta <datos_apoderado> por cada apoderado"— y de ahí sale. Es lo que
+ * separa un campo de una lista en la pantalla de captura.
+ */
+function esRepetible(reglas) {
+  return /por cada|una o m[\u00e1a]s|tantas etiquetas/i.test(reglas ?? '');
+}
+
+/**
+ * Cuándo es exigible un campo marcado "Obligatorio".
+ *
+ * El instructivo usa "Obligatorio" para tres cosas distintas y tratarlas igual
+ * rompe el aviso por los dos lados: bloquear un campo que sólo aplica en un
+ * caso hace imposible generar un XML válido; no bloquear ninguno deja pasar
+ * archivos que el portal rechaza.
+ *
+ *   - `siempre`      — exigible en cuanto existe la etiqueta padre.
+ *   - `condicional`  — "obligatorio si en <motivo_constitucion> se elige la
+ *                      opción 1. Fusión". Depende de otro campo.
+ *   - `si_aplica`    — "si se cuenta con la información" / "con los mismos".
+ *                      El propio instructivo admite que puede no haberlo.
+ *
+ * Las dos últimas NO bloquean el aviso. La condición se guarda en prosa, tal
+ * como está escrita: mapear "opción 1. Fusión" a una clave de catálogo sería
+ * inventar, y quien decide si aplica es el fedatario, con la condición a la
+ * vista.
+ */
+function obligatoriedadDe(obligatorio, reglas) {
+  if (!obligatorio) return { grado: 'opcional', condicion: null };
+  const r = reglas ?? '';
+  if (/se cuenta con (la informaci[\u00f3o]n|los mismos)/i.test(r))
+    return { grado: 'si_aplica', condicion: condicionEnProsa(r) };
+  // "obligatorio si ... <campo> ..." con una referencia a otro campo: la
+  // mención de la etiqueta padre no cuenta, esa es la regla normal.
+  const m = r.match(/obligatori[oa][^.]*?\bsi\b([^.]*)/i);
+  if (m) {
+    const cond = m[1].replace(/existe la etiqueta <[^>]+>/gi, '');
+    if (/<[^>]+>|se el[ii]j?[ge]|se escoje|el valor|la opci[\u00f3o]n|forma de pago/i.test(cond))
+      return { grado: 'condicional', condicion: condicionEnProsa(r) };
+  }
+  if (/a excepci[\u00f3o]n de los casos/i.test(r))
+    return { grado: 'condicional', condicion: condicionEnProsa(r) };
+  return { grado: 'siempre', condicion: null };
+}
+
+/** La frase del instructivo que dice cuándo aplica, recortada a la oración. */
+function condicionEnProsa(reglas) {
+  const m = reglas.match(/(?:VXSD:\s*)?((?:El campo|La etiqueta)[^.]*?\bobligatori[oa]\b[^.]*(?:\.\d+)?[^.]*)\./i);
+  const frase = (m ? m[1] : reglas.split('.')[0]).replace(/\s+/g, ' ').trim();
+  return frase || null;
+}
+
 const filas = leerCsv(readFileSync(ORIGEN, 'utf8'));
 const encabezado = filas[0].map((h) => h.trim());
 const idx = (nombre) => encabezado.indexOf(nombre);
@@ -91,6 +144,8 @@ const campos = filas
     longitud: f[iLong].trim(),
     formato: f[iFormato].trim(),
     catalogo: catalogoUif(f[iReglas] ?? ''),
+    repetible: esRepetible(f[iReglas]),
+    ...obligatoriedadDe(/obligatorio/i.test(f[iOblig]), f[iReglas] ?? ''),
   }));
 
 const lit = (v) => (v === null ? 'null' : JSON.stringify(v));
@@ -99,7 +154,8 @@ const cuerpo = campos
     (c) =>
       `  { no: ${lit(c.no)}, etiqueta: ${lit(c.etiqueta)}, nombre: ${lit(c.nombre)}, ` +
       `obligatorio: ${c.obligatorio}, tipo: ${lit(c.tipo)}, longitud: ${lit(c.longitud)}, ` +
-      `formato: ${lit(c.formato)}, catalogo: ${lit(c.catalogo)} },`,
+      `formato: ${lit(c.formato)}, catalogo: ${lit(c.catalogo)}, repetible: ${c.repetible}, ` +
+      `grado: ${lit(c.grado)}, condicion: ${lit(c.condicion)} },`,
   )
   .join('\n');
 
@@ -124,10 +180,25 @@ export interface CampoFep {
   tipo: string;
   longitud: string;
   formato: string;
-  /** Catálogo de la UIF al que remite la regla de negocio. Ikán todavía no los
-   *  tiene cargados: ver src/lib/aviso/completitud.ts. */
+  /** Catálogo de la UIF al que remite la regla de negocio. */
   catalogo: string | null;
+  /** La etiqueta admite varias apariciones: "una <datos_apoderado> por cada
+   *  apoderado". Es lo que separa un campo de una lista en la captura. */
+  repetible: boolean;
+  /**
+   * Cuándo se exige. \`obligatorio\` dice qué columna trae el instructivo;
+   * esto dice qué significa esa columna en cada caso:
+   *   - \`siempre\`     — exigible en cuanto existe el padre. Bloquea el aviso.
+   *   - \`condicional\` — depende de otro campo (ver \`condicion\`). No bloquea.
+   *   - \`si_aplica\`   — "si se cuenta con la información". No bloquea.
+   *   - \`opcional\`    — el instructivo no lo marca obligatorio.
+   */
+  grado: GradoObligatoriedad;
+  /** La frase del instructivo que fija la condición, literal. Null si no hay. */
+  condicion: string | null;
 }
+
+export type GradoObligatoriedad = 'siempre' | 'condicional' | 'si_aplica' | 'opcional';
 
 export const CAMPOS_FEP: CampoFep[] = [
 ${cuerpo}

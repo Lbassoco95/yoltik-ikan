@@ -18,7 +18,10 @@ const DESTINO = 'supabase/seed/13_catalogos_fep.sql';
 const dicc = readFileSync('src/lib/aviso/campos-fep.generated.ts', 'utf8');
 const filas = [
   ...dicc.matchAll(
-    /\{ no: "(.*?)", etiqueta: "(.*?)", nombre: "(.*?)", obligatorio: (?:true|false), tipo: "(.*?)", longitud: "(.*?)", formato: ".*?", catalogo: (null|".*?") \}/g,
+    // Tolera campos nuevos al final: el diccionario creció con `repetible` y un
+    // regex anclado al cierre dejó de encontrar nada, vaciando el registro sin
+    // avisar. Se corta en `catalogo`, que es lo último que le importa a esto.
+    /\{ no: "(.*?)", etiqueta: "(.*?)", nombre: "(.*?)", obligatorio: (?:true|false), tipo: "(.*?)", longitud: "(.*?)", formato: ".*?", catalogo: (null|"[^"]*")/g,
   ),
 ].map((m) => ({
   no: m[1],
