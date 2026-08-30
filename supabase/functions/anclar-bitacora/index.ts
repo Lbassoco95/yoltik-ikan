@@ -26,7 +26,7 @@
 
 // @ts-expect-error — Deno runtime, no Node.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { planearAnclaje, sellarRaiz, type MotivoAnclaje } from './anclaje.ts';
+import { motivoValido, planearAnclaje, sellarRaiz, type MotivoAnclaje } from './anclaje.ts';
 import { SelladorHttp } from '../_shared/opentimestamps.ts';
 
 // @ts-expect-error — Deno runtime
@@ -37,7 +37,9 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 interface EntradaAnclaje {
   /** Sin esto se anclan TODAS las organizaciones: es el modo del cron. */
   organization_id?: string;
-  motivo?: MotivoAnclaje;
+  /** Se normaliza: un motivo que la tabla no admite haría fallar el insert y
+   *  el anclaje no ocurriría, con respuesta 200. Ver `motivoValido`. */
+  motivo?: MotivoAnclaje | string;
 }
 
 const corsHeaders = {
@@ -75,7 +77,7 @@ Deno.serve(async (req: Request) => {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders });
 
   const entrada: EntradaAnclaje = await req.json().catch(() => ({}));
-  const motivo: MotivoAnclaje = entrada.motivo ?? 'diario';
+  const { motivo, aviso: avisoMotivo } = motivoValido(entrada.motivo);
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
   const sellador = new SelladorHttp();
   const t0 = Date.now();
@@ -142,7 +144,7 @@ Deno.serve(async (req: Request) => {
         estado: sellado.estado,
         ots: sellado.ots ? bytea(sellado.ots) : null,
         calendarios: sellado.calendarios,
-        detalle: sellado.detalle,
+        detalle: [sellado.detalle, avisoMotivo].filter(Boolean).join(' ') || null,
       });
       if (errIns) throw new Error(errIns.message);
 
@@ -168,6 +170,7 @@ Deno.serve(async (req: Request) => {
   return json({
     ok: true,
     motivo,
+    aviso: avisoMotivo,
     organizaciones: resumen.length,
     ancladas: resumen.filter((r) => r.anclado).length,
     detalle: resumen,

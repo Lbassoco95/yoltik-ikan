@@ -1,9 +1,8 @@
 # Trazabilidad, certificación y anclaje — diseño
 
 > Documento de decisión y estado. **B8.1 construido** (migration 0021).
-> **B8.2 construido** (migration 0026 + Edge Function `anclar-bitacora`), con
-> una reserva importante: ver «Lo que falta comprobar en vivo» al final.
-> B8.3 y B8.4 siguen sin construir.
+> **B8.2 construido, aplicado en producción y comprobado en vivo** el 30 de
+> agosto de 2026. B8.3 (NOM-151) y B8.4 (espejo en L2) siguen sin construir.
 
 ## Qué se está pidiendo, dicho con precisión
 
@@ -225,29 +224,64 @@ depender de que el calendario responda, y se prueba en vivo al desplegarla.
   Bitcoin tarda unas horas. Hasta el bloque, no hay certificación, y la
   pantalla lo dice con esas palabras.
 
-### Lo que falta comprobar en vivo
+### Comprobado en vivo · 30/ago/2026
 
-El envío al calendario es una petición HTTP simple. **El armado del archivo
-`.ots` sigue la especificación del formato pero NO se pudo comprobar contra un
-calendario real**: el proxy de esta sesión bloquea `*.opentimestamps.org`, igual
-que bloquea Supabase.
+El archivo `.ots` se armó aquí sin poder probarlo contra un calendario real —el
+proxy de esta sesión bloquea `*.opentimestamps.org`— y sin la librería de
+referencia, que arrastra `web3`, `bitcore-lib` y `fs` y no corre en una Edge
+Function. La comprobación se hizo en producción y **el armado resultó
+correcto**:
 
-Por eso:
+```
+$ ots info anclaje.ots
+File sha256 hash: 61ab5aec00735d8719fb655417a3c8c8e234effd08fb927736aea77367cbf110
+Timestamp:
+ -> append 062762a4946c2fd0 … verify PendingAttestation('https://bob.btc.calendar.opentimestamps.org')
+ -> append 9fedb9307beba7ff… verify PendingAttestation('https://finney.calendar.eternitywall.com')
+ -> append b83100176a4a1d21… verify PendingAttestation('https://finney.calendar.eternitywall.com')
+ -> append e17da83005f7942a… verify PendingAttestation('https://alice.btc.calendar.opentimestamps.org')
+```
 
-1. La respuesta del calendario se guarda **tal cual** dentro del `.ots`. Si el
-   armado resultara mal, la prueba no se pierde y el archivo se rehace. Lo que
-   no se puede rehacer es el estampado, y ese ya habría ocurrido.
-2. **Antes del demo**: desplegar la función, forzar un anclaje manual, descargar
-   el `.ots` y pasarlo por la herramienta oficial (`ots verify`, o
-   `opentimestamps.org`). Si el archivo no valida, el fallo está en el armado y
-   se corrige sin volver a estampar nada.
-3. Mientras tanto la UI no afirma más de lo que hay: sin bloque, dice
-   «esperando confirmación de Bitcoin».
+La herramienta oficial lo lee, el digest del archivo es exactamente la
+`raiz_merkle` de la tabla, y trae las cuatro atestiguaciones. Los nombres
+difieren de los que se piden porque `a.pool`/`b.pool` son alias que resuelven a
+`alice`, `bob` y `finney`.
 
-### Lo que falta construir
+Primer anclaje real: cadena de plataforma, eventos 1 a 32 354 (la carga de
+códigos postales), raíz `61ab5aec…`, estado `pendiente`.
+
+**La reserva queda levantada.** El serializador de `opentimestamps.ts` ya no es
+"según la especificación": es "validado contra la herramienta oficial".
+
+### El fallo silencioso que apareció al programar el cron
+
+El cron se programó mandando `motivo: 'cron'`, que la tabla no admite —los tres
+valores son `diario`, `cierre_periodo` y `manual`—. El insert habría fallado,
+el error lo habría atrapado el `try`, y la función habría devuelto **HTTP 200
+con cero anclajes, todas las noches**, sin que nadie se enterara hasta mirar la
+tabla semanas después.
+
+Corregido en la función, no en el cron: `motivoValido()` normaliza cualquier
+motivo desconocido a `diario` —que es lo que en la práctica es una corrida
+automática— y escribe en `detalle` lo que mandó quien llamó, para que sea
+visible y no silencioso. **Anclar importa más que la etiqueta**, y esta clase
+de error no debe poder impedir el anclaje.
+
+Requiere volver a desplegar la función. Mientras no se despliegue, el cron
+corre sin anclar nada.
+
+### Lo que falta construir### Lo que falta construir
 
 - **El `upgrade`**: pedirle al calendario la prueba completa cuando Bitcoin
   confirme, y pasar el anclaje de `pendiente` a `confirmado` con su número de
   bloque. Hoy la tabla y la UI ya lo contemplan; falta la corrida que lo haga.
-- **El cron diario** y la llamada forzada al cerrar el periodo de aviso.
+  Sin esto ningún anclaje llega nunca a `confirmado`, y la pantalla se queda
+  para siempre en «esperando confirmación de Bitcoin».
+- **La llamada forzada al cerrar el periodo de aviso** (`motivo: 'cierre_periodo'`).
 - **Descargar el `.ots`** desde la pantalla de integridad, junto al paquete.
+- **El plazo de `pg_net` en el cron.** Su valor por omisión son 5 s y el primer
+  anclaje real tardó 4.5 s con una sola organización. Que expire no cancela la
+  Edge Function —la petición ya salió y la función termina igual, así que el
+  anclaje ocurre— pero deja el registro del cron marcado como fallo y ya no se
+  puede distinguir una corrida buena de una mala mirando `net`. Conviene
+  subirlo a 30 s.

@@ -16,6 +16,34 @@ import {
 
 export type MotivoAnclaje = 'diario' | 'cierre_periodo' | 'manual';
 
+const MOTIVOS: MotivoAnclaje[] = ['diario', 'cierre_periodo', 'manual'];
+
+/**
+ * El motivo que la base acepta, salga de donde salga la llamada.
+ *
+ * La tabla sólo admite esos tres, y un motivo desconocido hace fallar el
+ * insert entero: el anclaje no ocurre y la respuesta sigue siendo 200. Eso ya
+ * pasó —el cron se programó mandando 'cron'— y es la peor forma de fallar,
+ * porque nadie se entera hasta que alguien mira la tabla semanas después.
+ *
+ * Anclar importa más que la etiqueta, así que lo desconocido cae en 'diario',
+ * que es lo que en la práctica es una corrida automática. Lo que mandó quien
+ * llamó queda escrito en `detalle`, para que sea visible y no silencioso.
+ */
+export function motivoValido(motivo: unknown): {
+  motivo: MotivoAnclaje;
+  aviso: string | null;
+} {
+  const m = String(motivo ?? '').trim();
+  if ((MOTIVOS as string[]).includes(m)) return { motivo: m as MotivoAnclaje, aviso: null };
+  return {
+    motivo: 'diario',
+    aviso: m
+      ? `Quien llamó mandó motivo "${m}", que la tabla no admite; se ancló como 'diario'.`
+      : null,
+  };
+}
+
 /** Un eslabón de la bitácora, en el orden en que la cadena los encadenó. */
 export interface EslabonBitacora {
   secuencia: number;

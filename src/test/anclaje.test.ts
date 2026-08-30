@@ -3,7 +3,11 @@
 // calendario, que es justamente lo que no hay en esta sesión.
 import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
-import { planearAnclaje, sellarRaiz } from "../../supabase/functions/anclar-bitacora/anclaje";
+import {
+  motivoValido,
+  planearAnclaje,
+  sellarRaiz,
+} from "../../supabase/functions/anclar-bitacora/anclaje";
 import {
   SelladorFalso,
   armarOts,
@@ -179,5 +183,32 @@ describe("armado del archivo .ots", () => {
     expect([..._internos.varint(127)]).toEqual([0x7f]);
     expect([..._internos.varint(128)]).toEqual([0x80, 0x01]);
     expect([..._internos.varint(300)]).toEqual([0xac, 0x02]);
+  });
+});
+
+describe("motivo del anclaje", () => {
+  it("deja pasar los tres que la tabla admite", () => {
+    for (const m of ["diario", "cierre_periodo", "manual"]) {
+      expect(motivoValido(m)).toEqual({ motivo: m, aviso: null });
+    }
+  });
+
+  it("un motivo que la tabla no admite NO tumba el anclaje", () => {
+    // El cron se programó mandando 'cron'. Con el insert crudo, el anclaje
+    // fallaba y la respuesta seguía siendo 200: nadie se enteraba hasta mirar
+    // la tabla semanas después. Anclar importa más que la etiqueta.
+    const r = motivoValido("cron");
+    expect(r.motivo).toBe("diario");
+    expect(r.aviso).toContain("cron");
+  });
+
+  it("sin motivo se ancla como diario, sin aviso", () => {
+    expect(motivoValido(undefined)).toEqual({ motivo: "diario", aviso: null });
+    expect(motivoValido("")).toEqual({ motivo: "diario", aviso: null });
+  });
+
+  it("lo que mandó quien llamó queda escrito, no se traga en silencio", () => {
+    expect(motivoValido("MANUAL").aviso).toContain("MANUAL");
+    expect(motivoValido(42).aviso).toContain("42");
   });
 });
