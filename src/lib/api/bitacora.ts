@@ -227,3 +227,61 @@ export async function exportarPaquete(organizationId?: string): Promise<PaqueteV
     anclajes,
   };
 }
+
+/**
+ * Fuerza el anclaje de lo que la bitácora lleva hasta ahora.
+ *
+ * Se llama al generar un aviso. El anclaje diario dejaría el aviso —el
+ * documento que se defiende ante la autoridad— sin raíz publicada hasta la
+ * madrugada siguiente, que es justo cuando más falta hace poder demostrar que
+ * el archivo se generó con esos datos y no con otros.
+ *
+ * NO lanza si falla. El aviso ya está guardado y descargado cuando esto corre:
+ * romper la pantalla por un calendario que no contestó sería castigar al
+ * notario por un problema que no es suyo, y el anclaje diario lo recogerá.
+ * Devuelve si se ancló, para poder decirlo sin adornos.
+ */
+export async function anclarPorCierreDePeriodo(): Promise<boolean> {
+  try {
+    const { organizationId } = await contextoSesion();
+    const { data, error } = await supabase.functions.invoke('anclar-bitacora', {
+      body: { organization_id: organizationId, motivo: 'cierre_periodo', accion: 'anclar' },
+    });
+    if (error) {
+      console.warn('[anclaje] no se pudo forzar el anclaje del cierre:', error.message);
+      return false;
+    }
+    return ((data as { ancladas?: number } | null)?.ancladas ?? 0) > 0;
+  } catch (e) {
+    console.warn('[anclaje] no se pudo forzar el anclaje del cierre:', (e as Error).message);
+    return false;
+  }
+}
+
+/**
+ * El archivo `.ots` de un anclaje: la prueba que se le entrega a un tercero.
+ *
+ * Supabase devuelve `bytea` como cadena hexadecimal con prefijo `\x`. Se valida
+ * antes de convertir porque `parseInt` sobre basura devuelve NaN en silencio y
+ * un NaN dentro de un `Uint8Array` se guarda como cero: un archivo corrompido
+ * sin una sola señal de error.
+ */
+export async function descargarOts(anclajeId: string): Promise<Uint8Array> {
+  const { data, error } = await supabase
+    .from('anclaje')
+    .select('ots')
+    .eq('id', anclajeId)
+    .maybeSingle();
+  if (error) throw error;
+
+  const hex = (data as { ots: string | null } | null)?.ots;
+  if (!hex) throw new Error('Este anclaje todavía no tiene prueba que descargar.');
+
+  const limpio = hex.startsWith('\\x') ? hex.slice(2) : hex;
+  if (!/^([0-9a-fA-F]{2})+$/.test(limpio))
+    throw new Error('La prueba guardada no está en el formato esperado.');
+
+  const out = new Uint8Array(limpio.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(limpio.slice(i * 2, i * 2 + 2), 16);
+  return out;
+}

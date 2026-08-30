@@ -1,8 +1,9 @@
 # Trazabilidad, certificación y anclaje — diseño
 
-> Documento de decisión y estado. **B8.1 construido** (migration 0021).
-> **B8.2 construido, aplicado en producción y comprobado en vivo** el 30 de
-> agosto de 2026. B8.3 (NOM-151) y B8.4 (espejo en L2) siguen sin construir.
+> Documento de decisión y estado. **B8.1 y B8.2 construidos, aplicados en
+> producción y confirmados en Bitcoin** el 30 de agosto de 2026: la bitácora
+> de la plataforma —eventos 1 a 32 354— está anclada en el **bloque 964750**.
+> B8.3 (NOM-151) y B8.4 (espejo en L2) siguen sin construir.
 
 ## Qué se está pidiendo, dicho con precisión
 
@@ -248,7 +249,21 @@ difieren de los que se piden porque `a.pool`/`b.pool` son alias que resuelven a
 `alice`, `bob` y `finney`.
 
 Primer anclaje real: cadena de plataforma, eventos 1 a 32 354 (la carga de
-códigos postales), raíz `61ab5aec…`, estado `pendiente`.
+códigos postales), raíz `61ab5aec…`.
+
+**Confirmado en Bitcoin ese mismo día**, unas dos horas después:
+
+```
+$ ots info anclaje.ots
+File sha256 hash: 61ab5aec00735d8719fb655417a3c8c8e234effd08fb927736aea77367cbf110
+…
+verify BitcoinBlockHeaderAttestation(964750)
+# Bitcoin block merkle root 62bc3a0a4ad34d24f1c8626c85de9f811de458f5b1cefd439c23ccabf42da6be
+```
+
+El archivo pasó de 687 a 2 474 bytes: la promesa del calendario se sustituyó
+por la ruta completa hasta el bloque. **El ciclo entero está cerrado en
+producción**, del evento a la cadena de bloques.
 
 **La reserva queda levantada.** El serializador de `opentimestamps.ts` ya no es
 "según la especificación": es "validado contra la herramienta oficial".
@@ -332,8 +347,25 @@ Arreglado en tres pasos, no en uno:
 
 ### Lo que falta construir
 
-- **La llamada forzada al cerrar el periodo de aviso** (`motivo: 'cierre_periodo'`).
-- **La hora del bloque**, consultando la altura contra un explorador.
+- **La hora del bloque**, consultando la altura contra un explorador. Hoy la
+  pantalla dice el número de bloque, que es lo verificable; la fecha sale de
+  consultarlo (el 964750 es del 30/08/2026 16:00:40 UTC) y eso todavía no está
+  construido.
+- **NOM-151** (B8.3) y **espejo en L2** (B8.4), ambos por decisión comercial.
+
+### Cómo verifica un tercero
+
+`ots verify` necesita **un nodo de Bitcoin**. Eso no es una carencia del
+diseño: es exactamente lo que se buscaba. Si verificar dependiera de una API de
+Ikán, se estaría pidiendo confiar justo en quien se quiere auditar.
+
+Quien no tenga nodo tiene un camino igual de independiente:
+
+1. `ots info anclaje.ots` —sin red— da la altura del bloque y la raíz Merkle
+   de Bitcoin.
+2. Esa raíz se busca en cualquier explorador (mempool.space, blockstream.info).
+3. Si coincide, ese archivo existía antes de ese bloque. Ikán no interviene en
+   ningún paso.
 - **Descargar el `.ots`** desde la pantalla de integridad, junto al paquete.
 - **El plazo de `pg_net` en el cron.** Su valor por omisión son 5 s y el primer
   anclaje real tardó 4.5 s con una sola organización. Que expire no cancela la

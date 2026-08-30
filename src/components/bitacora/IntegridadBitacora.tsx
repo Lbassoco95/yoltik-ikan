@@ -5,10 +5,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  descargarOts,
   estadoAnclaje,
   estadoCadena,
   exportarPaquete,
+  listarAnclajes,
   verificarEnBase,
+  type AnclajeListado,
   type EstadoAnclaje,
 } from "@/lib/api/bitacora";
 import {
@@ -46,6 +49,11 @@ export function IntegridadBitacora({
   const { data: ancla } = useQuery({
     queryKey: ["anclaje", organizationId ?? "propia"],
     queryFn: () => estadoAnclaje(organizationId),
+  });
+
+  const { data: anclajes = [] } = useQuery({
+    queryKey: ["anclajes", organizationId ?? "propia"],
+    queryFn: () => listarAnclajes(organizationId, 10),
   });
 
   async function verificar() {
@@ -132,6 +140,8 @@ export function IntegridadBitacora({
 
       <EstadoDelAncla ancla={ancla ?? null} />
 
+      {anclajes.length > 0 && <Anclajes anclajes={anclajes} />}
+
       {resultado && (
         <div
           className={`rounded-lg p-3 ${integra ? "bg-success/10" : "bg-destructive/10"}`}
@@ -193,6 +203,113 @@ export function IntegridadBitacora({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+const MOTIVO_LABEL: Record<AnclajeListado["motivo"], string> = {
+  diario: "Diario",
+  cierre_periodo: "Cierre de aviso",
+  manual: "Manual",
+};
+
+/**
+ * Los anclajes, con su prueba descargable.
+ *
+ * El `.ots` es lo que se le entrega a un tercero: con él y un nodo de Bitcoin
+ * —o cualquier explorador de bloques— comprueba por su cuenta que esos eventos
+ * existían antes de ese bloque. Sin poder descargarlo, el anclaje sería una
+ * afirmación nuestra sobre nosotros mismos.
+ */
+function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
+  const [bajando, setBajando] = useState<string | null>(null);
+
+  async function bajar(a: AnclajeListado) {
+    setBajando(a.id);
+    try {
+      const bytes = await descargarOts(a.id);
+      const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/octet-stream" }));
+      const el = document.createElement("a");
+      el.href = url;
+      el.download = `anclaje-${a.desde_secuencia}-${a.hasta_secuencia}.ots`;
+      el.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBajando(null);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border overflow-hidden">
+      <table className="w-full">
+        <thead>
+          <tr className="bg-muted/30">
+            {["Eventos", "Motivo", "Estado", "Bloque", "Prueba"].map((h) => (
+              <th
+                key={h}
+                className="text-left text-[11px] font-semibold text-muted-foreground uppercase px-3 py-2"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {anclajes.map((a) => (
+            <tr key={a.id} className="border-t border-border">
+              <td className="px-3 py-2 text-xs font-mono">
+                {a.desde_secuencia}–{a.hasta_secuencia}
+              </td>
+              <td className="px-3 py-2 text-xs">{MOTIVO_LABEL[a.motivo]}</td>
+              <td className="px-3 py-2">
+                {/* El significado va en el texto, no sólo en el color. */}
+                <span
+                  className={cn(
+                    "status-badge text-[10px]",
+                    a.estado === "confirmado"
+                      ? "bg-success/10 text-success"
+                      : a.estado === "pendiente"
+                        ? "bg-primary/10 text-primary"
+                        : "bg-destructive/10 text-destructive",
+                  )}
+                >
+                  {a.estado === "confirmado"
+                    ? "En Bitcoin"
+                    : a.estado === "pendiente"
+                      ? "Esperando bloque"
+                      : "No se publicó"}
+                </span>
+              </td>
+              <td className="px-3 py-2 text-xs font-mono text-muted-foreground">
+                {a.bloque_btc?.toLocaleString("es-MX") ?? "—"}
+              </td>
+              <td className="px-3 py-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="gap-1.5 h-7"
+                  disabled={a.estado === "fallido" || bajando === a.id}
+                  onClick={() => bajar(a)}
+                >
+                  {bajando === a.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Download className="w-3 h-3" />
+                  )}
+                  .ots
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-[11px] text-muted-foreground px-3 py-2 border-t border-border">
+        El archivo <code>.ots</code> es la prueba: con <code>ots verify</code> y un nodo de
+        Bitcoin, o comparando la raíz contra el bloque en cualquier explorador, se comprueba sin
+        pedirnos nada.
+      </p>
     </div>
   );
 }

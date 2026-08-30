@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cargarPeriodo, guardarAviso, listarAvisos, periodosConActos } from "@/lib/api/avisos";
+import { anclarPorCierreDePeriodo } from "@/lib/api/bitacora";
 import { evaluarAvisoMensual } from "@/lib/aviso-mensual";
 import { generarAvisoXml } from "@/lib/aviso/generador-xml";
 import { labelTipoActo } from "@/lib/perfil-actividad";
@@ -73,12 +74,24 @@ export default function ReportsPage() {
         layout_version: "fep",
       });
       descargar(r.xml, `aviso-${periodo}.xml`);
-      return r;
+
+      // El aviso es el documento que se defiende ante la autoridad. El anclaje
+      // diario lo dejaría sin raíz publicada hasta la madrugada siguiente, que
+      // es justo cuando más falta hace poder demostrar que se generó con estos
+      // datos y no con otros. No frena nada si falla: el aviso ya está
+      // guardado y descargado, y el anclaje diario lo recoge.
+      const anclado = await anclarPorCierreDePeriodo();
+      return { ...r, anclado };
     },
     onSuccess: (r) => {
       queryClient.invalidateQueries({ queryKey: ["avisos", periodo] });
+      queryClient.invalidateQueries({ queryKey: ["anclaje"] });
       for (const a of r.advertencias) toast.warning(a);
-      toast.success("Aviso generado y descargado");
+      toast.success(
+        r.anclado
+          ? "Aviso generado y descargado · bitácora anclada"
+          : "Aviso generado y descargado",
+      );
     },
     onError: (e: Error) => toast.error(e.message, { duration: 12000 }),
   });
