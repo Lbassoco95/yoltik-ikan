@@ -47,7 +47,11 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
 ## Stack
 
 - Front: Vite + React 18 + TypeScript + Tailwind 3 + shadcn/ui (ya instalado por Lovable)
-- Tipografía: **Plus Jakarta Sans** (heredada del Lovable; sustituye a `Sora` mencionado en docs históricos)
+- Tipografía: **Plus Jakarta Sans**, empaquetada con `@fontsource` (nunca desde el CDN de
+  Google: el nivel 3 de entrega es on-prem y no puede depender de una llamada saliente).
+  ⚠️ **Conflicto abierto**: el Brandbook Yoltik v2.1 §06 exige **Sora**. Este archivo decía que
+  Plus Jakarta Sans la sustituía. Uno de los dos está desactualizado y lo decide Dirección.
+  Cambiar de familia son los `@import` de `src/index.css`, `--font-sans` y `tailwind.config.ts`.
 - Auth: Supabase Auth con **2FA TOTP obligatorio**
 - BD: Supabase Postgres con **RLS multi-tenant por organización y por rol**
 - Edge Functions: Deno/TS (Motor PLD vive aquí en Sprint D-3)
@@ -74,10 +78,17 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
    - Tipologías XVI-01..XVI-08: `33333333-0000-0000-0000-00000000000{1..8}`
    - Plantilla matriz cliente XVI: `44444444-0000-0000-0000-000000000001`
    - Cliente demo Juan Pérez: `55555555-0000-0000-0000-000000000001`
-5. **Brand Yoltik v3.** Navy / Jade / Mint / Ámbar; tipografía Plus Jakarta Sans.
-   `tailwind.config.ts` ya tiene los tokens `ikan.*` apuntando a las CSS vars HSL
-   que shadcn usa. **Yoli (mascota) NO aparece en docs ni UI formales** — solo en
-   materiales informales si se solicita.
+5. **Brand Yoltik v3.** Navy Profundo `#0C2340` / Jade Turquesa `#00917C` / Verde Ikán
+   `#2A7F62` / Ámbar Cálido `#F0A500` / Electric Mint `#1DDBA8`.
+   **El color no decora, anuncia** — cuatro significados y ninguno más:
+   Jade = lo que se puede hacer · Verde Ikán = lo que está en orden ·
+   Ámbar = lo que le toca atender · rojo = lo que está roto.
+   Nunca dos verdes distintos juntos; el Mint no es un estado (hover, foco, «nuevo»).
+   **Todo estado lleva texto**: el color refuerza, no informa.
+   El rojo funcional `#B32B21` está PROPUESTO y pendiente de Dirección; hasta entonces
+   se usa el `--destructive` actual y no se lleva a piezas comerciales.
+   El producto se llama **Ikán**; **Yoltik** es el endoso («Por Yoltik»).
+   **Yoli (mascota) NO aparece en docs ni UI formales** — solo en materiales informales.
 6. **No mezclar con Kailash.** Repo separado, conceptos separados, nada de copiar
    patrones específicos de Kailash sin pensar si aplican.
 7. **Idioma**: UI y mensajes de usuario en **español de México**. Comentarios de

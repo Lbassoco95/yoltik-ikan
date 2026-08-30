@@ -83,7 +83,19 @@ export function IntegridadBitacora({
       setRoturasBase(roturas);
       setResultado(await verificarPaquete(paquete));
     } catch (e) {
-      toast.error(`No se pudo verificar: ${(e as Error).message}`);
+      // Distinguir «la cadena está mal» de «no pudiste preguntar» no es un
+      // matiz: con un solo toast rojo, quien verifica no sabe si su bitácora
+      // está rota o si le falta un permiso, y las dos cosas se atienden de
+      // forma opuesta.
+      const msg = (e as Error).message ?? "";
+      const esPermiso = /permission|denied|not exist|does not exist|42501|42883|PGRST/i.test(msg);
+      toast.error(
+        esPermiso
+          ? `No se pudo ejecutar la verificación en la base: parece un problema de permisos o de ` +
+              `instalación, no de la bitácora. Avise a Kawiil. (${msg})`
+          : `No se pudo verificar: ${msg}`,
+        { duration: 12000 },
+      );
     } finally {
       setVerificando(false);
     }

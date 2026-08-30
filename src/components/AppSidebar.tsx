@@ -43,7 +43,17 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
           <Heart className="w-4 h-4 text-accent-foreground" />
         </div>
-        {!collapsed && <span className="text-lg font-bold tracking-tight text-sidebar-accent-foreground">Yoltik</span>}
+        {/* La marca no se decidía: el login decía Ikán, la barra decía Yoltik
+            y la pestaña decía Yoltik RegTech. El producto es Ikán; Yoltik es
+            el endoso. */}
+        {!collapsed && (
+          <span className="flex flex-col leading-none">
+            <span className="text-lg font-bold tracking-tight text-sidebar-accent-foreground">
+              Ikán
+            </span>
+            <span className="text-xs text-sidebar-foreground/70">Por Yoltik</span>
+          </span>
+        )}
       </div>
 
       {/* Main Nav */}

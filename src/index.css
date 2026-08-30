@@ -1,4 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+/* La tipografía va EMPAQUETADA, no desde el CDN de Google.
+ *
+ * El nivel 3 de entrega es on-prem en casa del cliente: una instalación que
+ * depende de una llamada saliente a fonts.googleapis.com se queda sin
+ * tipografía —y además le cuenta a Google quién abre la plataforma de
+ * cumplimiento de un notario, que no es asunto suyo.
+ *
+ * PENDIENTE DE DECISIÓN: el brandbook v2.1 §06 exige Sora; CLAUDE.md dice que
+ * Plus Jakarta Sans la sustituye. Cambiar de familia es cambiar estos dos
+ * imports y `--font-sans`; el resto no se entera. */
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
 
 @tailwind base;
 @tailwind components;
@@ -17,25 +30,33 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 18%;
 
-    --primary: 207 72% 15%;
+    /* Navy Profundo #0C2340 */
+    --primary: 213 68% 15%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 204 40% 28%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 20% 95%;
-    --muted-foreground: 215 14% 46%;
+    /* Verde Hielo #F0F5F4 */
+    --muted: 168 20% 95%;
+    /* Gris Técnico #6B8C87, oscurecido para llegar a contraste AA */
+    --muted-foreground: 171 13% 40%;
 
-    --accent: 155 100% 33%;
+    /* Jade Turquesa #00917C — lo accionable: botones, enlaces, foco */
+    --accent: 171 100% 28%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 4 72% 47%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 28 80% 52%;
-    --warning-foreground: 0 0% 100%;
+    /* Ámbar Cálido #F0A500 — lo que le toca atender */
+    --warning: 41 100% 47%;
+    /* Navy sobre ámbar: el blanco sobre #F0A500 no llega a contraste AA */
+    --warning-foreground: 213 68% 15%;
 
-    --success: 145 53% 42%;
+    /* Verde Ikán #2A7F62 — lo que está en orden. Distinto del Jade a
+       propósito: el Jade es lo que se puede hacer, éste lo ya resuelto. */
+    --success: 160 50% 33%;
     --success-foreground: 0 0% 100%;
 
 
@@ -45,7 +66,8 @@
 
     --radius: 0.625rem;
 
-    --sidebar-background: 207 72% 15%;
+    /* Mismo Navy Profundo que --primary: la barra y la estructura son lo mismo */
+    --sidebar-background: 213 68% 15%;
     --sidebar-foreground: 210 40% 85%;
     --sidebar-primary: 155 100% 33%;
     --sidebar-primary-foreground: 0 0% 100%;
