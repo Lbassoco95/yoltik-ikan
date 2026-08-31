@@ -79,7 +79,16 @@ export default function ClientsPage() {
   // El buscador del encabezado navega aquí con ?q=. Se toma como valor
   // INICIAL, no como fuente de verdad: a partir de ahí manda el campo de esta
   // pantalla, y escribir en él no reescribe la URL a cada tecla.
-  const [aVerificar, setAVerificar] = useState<{ id: string; nombre: string } | null>(null);
+  interface AVerificar {
+    id: string;
+    nombre: string;
+    tipoPersona: TipoPersona;
+    correo: string | null;
+    telefono: string | null;
+  }
+  const [aVerificar, setAVerificar] = useState<AVerificar | null>(null);
+  /** A dónde ir al cerrar el diálogo, cuando viene del alta. */
+  const [volverA, setVolverA] = useState<string | null>(null);
   const [parametrosUrl] = useSearchParams();
   const [search, setSearch] = useState(() => parametrosUrl.get("q") ?? "");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -121,8 +130,27 @@ export default function ClientsPage() {
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
       toast.success("Cliente registrado");
       setDialogAbierto(false);
+      // El momento de verificar a alguien es cuando lo tienes enfrente, no
+      // cuando te acuerdas tres días después. Antes había que registrarlo,
+      // volver a la lista y buscarlo para mandarle la verificación; para
+      // entonces el compareciente ya se fue de la notaría.
+      //
+      // El correo y el teléfono se pasan del formulario que se acaba de
+      // llenar: volver a teclear el correo que escribiste hace diez segundos
+      // es la clase de fricción que hace que nadie use la función.
+      if (cliente.tipo_persona === "fisica") {
+        setAVerificar({
+          id: cliente.id,
+          nombre: cliente.nombre_razon_social,
+          tipoPersona: cliente.tipo_persona,
+          correo: form.email.trim() || null,
+          telefono: form.telefono.trim() || null,
+        });
+        setVolverA(`/clientes/${cliente.id}`);
+      } else {
+        navigate(`/clientes/${cliente.id}`);
+      }
       setForm(FORM_INICIAL);
-      navigate(`/clientes/${cliente.id}`);
     },
     onError: (e: Error) => toast.error(`No se pudo registrar: ${e.message}`),
   });
@@ -291,7 +319,18 @@ export default function ClientsPage() {
                     <EstadoIdentidad
                       estado={verificaciones?.get(client.id)}
                       onVerificar={() =>
-                        setAVerificar({ id: client.id, nombre: client.nombre_razon_social })
+                        setAVerificar({
+                          id: client.id,
+                          nombre: client.nombre_razon_social,
+                          tipoPersona: client.tipo_persona,
+                          // Lo que se capturó en el alta. Sin esto había que
+                          // volver a teclear un correo que ya está en el
+                          // expediente.
+                          correo:
+                            (client.datos_kyc?.email as string | undefined) ?? null,
+                          telefono:
+                            (client.datos_kyc?.telefono as string | undefined) ?? null,
+                        })
                       }
                     />
                   </td>
@@ -501,10 +540,20 @@ export default function ClientsPage() {
       <EnviarVerificacionDialog
         clienteId={aVerificar?.id ?? null}
         clienteNombre={aVerificar?.nombre ?? ""}
-        correoSugerido={null}
-        telefonoSugerido={null}
+        tipoPersona={aVerificar?.tipoPersona}
+        correoSugerido={aVerificar?.correo ?? null}
+        telefonoSugerido={aVerificar?.telefono ?? null}
         nombreOrganizacion={profile?.organization_name ?? "Su notaría"}
-        onCerrar={() => setAVerificar(null)}
+        onCerrar={() => {
+          setAVerificar(null);
+          // Sólo cuando venía del alta: desde la lista, cerrar el diálogo debe
+          // dejarte donde estabas.
+          if (volverA) {
+            const destino = volverA;
+            setVolverA(null);
+            navigate(destino);
+          }
+        }}
         onEnviada={() => void recargarVerificaciones()}
       />
     </div>

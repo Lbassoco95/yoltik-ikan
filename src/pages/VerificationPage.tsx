@@ -13,6 +13,7 @@ import {
 } from "@/lib/api/verificacion";
 import { pendientesCompareciente } from "@/lib/aviso/completitud";
 import { useAuth } from "@/lib/auth-context";
+import type { TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
 
 /**
@@ -62,7 +63,13 @@ const PASOS_DIDIT = [
 
 export default function VerificationPage() {
   const { profile } = useAuth();
-  const [aVerificar, setAVerificar] = useState<{ id: string; nombre: string } | null>(null);
+  const [aVerificar, setAVerificar] = useState<{
+    id: string;
+    nombre: string;
+    tipoPersona: TipoPersona;
+    correo: string | null;
+    telefono: string | null;
+  } | null>(null);
 
   const { data: clientes = [], isLoading, isError, error } = useQuery({
     queryKey: ["clientes"],
@@ -187,6 +194,11 @@ export default function VerificationPage() {
                             setAVerificar({
                               id: cliente.id,
                               nombre: cliente.nombre_razon_social,
+                              tipoPersona: cliente.tipo_persona,
+                              correo:
+                                (cliente.datos_kyc?.email as string | undefined) ?? null,
+                              telefono:
+                                (cliente.datos_kyc?.telefono as string | undefined) ?? null,
                             })
                           }
                         />
@@ -250,8 +262,9 @@ export default function VerificationPage() {
       <EnviarVerificacionDialog
         clienteId={aVerificar?.id ?? null}
         clienteNombre={aVerificar?.nombre ?? ""}
-        correoSugerido={null}
-        telefonoSugerido={null}
+        tipoPersona={aVerificar?.tipoPersona}
+        correoSugerido={aVerificar?.correo ?? null}
+        telefonoSugerido={aVerificar?.telefono ?? null}
         nombreOrganizacion={profile?.organization_name ?? "Su notaría"}
         onCerrar={() => setAVerificar(null)}
         onEnviada={() => void recargar()}
