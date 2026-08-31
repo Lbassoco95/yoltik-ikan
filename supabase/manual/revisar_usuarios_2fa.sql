@@ -50,6 +50,7 @@ insert into ikan_usuarios
 select
   '1 · Usuarios',
   case
+    when r.roles_ajenos is not null then 0             -- lo más raro, hasta arriba
     when f.verificados > 0 then 3                      -- lo que está en orden, al final
     when u.last_sign_in_at is not null then 1          -- lo que hay que mirar, arriba
     else 2
@@ -59,9 +60,11 @@ select
     when a.user_id is not null then coalesce(o.razon_social, '—') || ' [ADMIN DE PLATAFORMA]'
     else coalesce(o.razon_social, '(sin organización)')
   end
-    || coalesce(' · ' || nullif(r.roles, ''), ''),
+    || coalesce(' · ' || nullif(r.roles, ''), '')
+    || coalesce('  ///  TAMBIÉN EN OTRA ORGANIZACIÓN: ' || r.roles_ajenos, ''),
   f.verificados || ' confirmado(s), ' || f.pendientes || ' a medias',
   case
+    when r.roles_ajenos is not null           then 'REVISAR: tiene roles en más de una organización'
     when f.verificados > 0                    then 'entra normal'
     when f.pendientes  > 0                    then 'alta a medias: no confirmó el código'
     when u.last_sign_in_at is not null        then 'REVISAR: ya entró y sigue sin factor'
@@ -72,9 +75,27 @@ from auth.users u
 left join public.user_profile  p on p.id = u.id
 left join public.organizations o on o.id = p.organization_id
 left join public.platform_admin a on a.user_id = u.id
+-- Los roles se separan por organización a propósito.
+--
+-- `user_roles` es único por (user_id, organization_id, rol), así que un rol
+-- REPETIDO en la lista de alguien sólo puede significar una cosa: que ese
+-- usuario lo tiene en DOS organizaciones distintas. La primera versión de este
+-- archivo los agregaba sin mirar la organización y los pegaba a la del perfil,
+-- que es justo lo que escondía el hallazgo: salía "admin, oc, oc, operador" y
+-- parecía un duplicado inofensivo.
+--
+-- Un usuario con roles fuera de su organización ve datos de las dos. Es el
+-- patrón que cerró la 0022 a nivel de RLS; aquí se mira a nivel de padrón.
 left join lateral (
-  select string_agg(ur.rol::text, ', ' order by ur.rol::text) as roles
-    from public.user_roles ur where ur.user_id = u.id
+  select
+    string_agg(distinct ur.rol::text, ', ' order by ur.rol::text)
+      filter (where ur.organization_id is not distinct from p.organization_id) as roles,
+    string_agg(distinct ur.rol::text || ' en ' || coalesce(o2.razon_social, ur.organization_id::text), '; '
+               order by ur.rol::text || ' en ' || coalesce(o2.razon_social, ur.organization_id::text))
+      filter (where ur.organization_id is distinct from p.organization_id) as roles_ajenos
+    from public.user_roles ur
+    left join public.organizations o2 on o2.id = ur.organization_id
+   where ur.user_id = u.id
 ) r on true
 left join lateral (
   select count(*) filter (where mf.status = 'verified')  as verificados,
