@@ -20,9 +20,17 @@ export interface UsuarioPlataforma {
   roles: string[];
   activo: boolean;
   es_kawiil: boolean;
-  /** Factores TOTP dados de alta y confirmados. Con 0, esa persona no entra. */
+  /**
+   * Factores TOTP dados de alta y confirmados.
+   *
+   * Con 0 esa persona NO está bloqueada: inicia sesión con su contraseña y
+   * `ProtectedRoute` la manda a inscribirse antes de dejarla ver nada. Lo que
+   * falta es el alta, no el acceso — y por eso reponerle el factor a alguien
+   * así no arregla nada; la función de la 0028 lo rechaza a propósito.
+   */
   factores_verificados: number;
-  /** Empezados y no confirmados: quedan de un alta que no se terminó. */
+  /** Empezados y no confirmados: quedan de un alta que no se terminó. Tampoco
+   *  encierran a nadie; `iniciarInscripcion` los limpia al volver a empezar. */
   factores_pendientes: number;
   ultimo_acceso: string | null;
   creado_en: string;

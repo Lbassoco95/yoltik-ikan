@@ -71,7 +71,7 @@ export default function AdminUsuariosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const sinFactor = usuarios.filter((u) => u.factores_verificados === 0).length;
+  const pendientesDeAlta = usuarios.filter((u) => u.factores_verificados === 0).length;
 
   const visibles = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -97,6 +97,14 @@ export default function AdminUsuariosPage() {
           quien perdió el teléfono, sin abrir la base de datos y dejando constancia en la
           bitácora de su organización.
         </p>
+        {/* Sin esta aclaración, «pendiente de alta» se lee como «bloqueado» y
+            empuja a reponer factores, que es justo lo que no hay que hacer:
+            reponerle el factor a quien nunca lo dio de alta no arregla nada. */}
+        <p className="text-sm text-muted-foreground mt-2">
+          Quien está pendiente de alta no está bloqueado: entra con su contraseña e Ikán lo
+          lleva a inscribir su autenticador antes de dejarlo ver nada. Reponer es sólo para
+          quien ya lo tenía y hoy no puede usarlo.
+        </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
@@ -109,15 +117,13 @@ export default function AdminUsuariosPage() {
             className="pl-9"
           />
         </div>
-        {/* Ámbar porque es lo que le toca atender a quien está en esta pantalla:
-            un usuario sin factor verificado no puede entrar. */}
         <Button
           variant={soloSinFactor ? "default" : "outline"}
           onClick={() => setSoloSinFactor((v) => !v)}
           className="gap-2 shrink-0"
         >
           <ShieldAlert className="w-4 h-4" />
-          Sin segundo factor ({sinFactor})
+          Pendientes de alta ({pendientesDeAlta})
         </Button>
       </div>
 
@@ -177,7 +183,9 @@ export default function AdminUsuariosPage() {
                         : "—"}
                       {!u.activo && <span className="block text-destructive">Perfil desactivado</span>}
                     </td>
-                    {/* El color refuerza; el texto es el que lleva el significado. */}
+                    {/* Ámbar es «lo que le toca atender», no «lo que está roto»:
+                        un alta pendiente se resuelve sola en cuanto la persona
+                        entra. El color refuerza; el texto lleva el significado. */}
                     <td className="px-4 py-3">
                       <span
                         className={cn(
@@ -190,7 +198,7 @@ export default function AdminUsuariosPage() {
                         ) : (
                           <ShieldAlert className="w-3 h-3" />
                         )}
-                        {conFactor ? "Activo" : "Sin factor: no puede entrar"}
+                        {conFactor ? "Activo" : "Pendiente de alta"}
                       </span>
                       {u.factores_pendientes > 0 && (
                         <span className="block text-xs text-muted-foreground mt-1">

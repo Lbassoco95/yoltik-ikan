@@ -325,7 +325,7 @@ select 'reposición del segundo factor' as bundle,
          where u.deleted_at is null
            and not exists (select 1 from auth.mfa_factors f
                             where f.user_id = u.id and f.status = 'verified'))::text
-         || ' usuario(s) SIN segundo factor (no pueden entrar)' as pendientes,
+         || ' usuario(s) sin terminar el alta de TOTP' as pendientes,
        (select count(*) from platform_admin)::text || ' admin(s) que pueden reponerlo' as quien,
        '5 comprobaciones pasaron' as verificacion;
 
