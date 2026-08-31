@@ -11,6 +11,7 @@ import {
   fechasIncoherentes,
   pendientesActo,
   pendientesCompareciente,
+  pendientesIdentificacion,
   pendientesSujetoObligado,
   resumenExpediente,
   subarbolDeActo,
@@ -352,5 +353,85 @@ describe('resumen del expediente', () => {
       expect.arrayContaining(['curp', 'pais_nacionalidad']),
     );
     expect(r.bloqueanElAviso.every((p) => p.origen === 'acto')).toBe(true);
+  });
+});
+
+describe('la identificación del artículo 18 va aparte del layout', () => {
+  it('sin verificación, el expediente no está completo', () => {
+    const p = pendientesIdentificacion(null);
+    expect(p).toHaveLength(1);
+    expect(p[0].gravedad).toBe('bloquea_expediente');
+  });
+
+  it('NUNCA se presenta como algo que el portal rechace', () => {
+    // El XML del SPPLD no tiene un campo que diga si al compareciente lo
+    // identificaron: un aviso de alguien sin verificar pasa la validación igual
+    // de bien. Decir lo contrario contagiaría de duda a los renglones ciertos.
+    for (const estado of [null, 'no_iniciada', 'en_progreso', 'rechazada', 'expirada']) {
+      for (const x of pendientesIdentificacion(estado)) {
+        expect(x.gravedad).not.toBe('bloquea_aviso');
+      }
+    }
+  });
+
+  it('sólo «aprobada» cierra el pendiente', () => {
+    expect(pendientesIdentificacion('aprobada')).toEqual([]);
+    // En progreso es una verificación que la persona no ha terminado, y
+    // rechazada es peor que no tenerla: significa que NO se comprobó.
+    expect(pendientesIdentificacion('en_progreso')).toHaveLength(1);
+    expect(pendientesIdentificacion('rechazada')).toHaveLength(1);
+    expect(pendientesIdentificacion('expirada')).toHaveLength(1);
+  });
+
+  it('distingue no pedida, sin resolver y rechazada', () => {
+    expect(pendientesIdentificacion(null)[0].detalle).toMatch(/no se le ha pedido/i);
+    expect(pendientesIdentificacion('en_progreso')[0].detalle).toMatch(/sin resolver/i);
+    expect(pendientesIdentificacion('rechazada')[0].detalle).toMatch(/no pasó/i);
+  });
+});
+
+describe('la identificación no crea pendientes imposibles', () => {
+  it('una persona moral no se identifica con Didit', () => {
+    // El diálogo de envío se niega a abrirle una verificación —no tiene INE ni
+    // cara— así que exigirla sería un pendiente que nadie puede cerrar nunca. Y
+    // un pendiente imposible enseña a ignorar la lista entera.
+    expect(pendientesIdentificacion(null, { tipoPersona: 'moral' })).toEqual([]);
+    expect(pendientesIdentificacion('rechazada', { tipoPersona: 'moral' })).toEqual([]);
+    // La física sí.
+    expect(pendientesIdentificacion(null, { tipoPersona: 'fisica' })).toHaveLength(1);
+  });
+
+  it('mientras carga no afirma que no se le haya pedido', () => {
+    // Sin esto, un compareciente verificado aparecía medio segundo como si
+    // nunca se le hubiera pedido nada, y luego saltaba a verde.
+    expect(pendientesIdentificacion(undefined, { cargando: true })).toEqual([]);
+    expect(pendientesIdentificacion(undefined, { cargando: false })).toHaveLength(1);
+  });
+});
+
+describe('qué se puede diferir de un acto y qué no', () => {
+  // La fecha, el instrumento y el tipo identifican el acto: sin ellos el
+  // registro no señala nada y no habría ni a qué volver a completarlo. Por eso
+  // se validan aparte y no admiten diferirse, mientras que los campos de la
+  // rama sí.
+  it('la falta de instrumento, fecha o tipo no es de la rama', () => {
+    const p = pendientesActo({ fecha: '', instrumento_publico: '', tipo_acto: '', datos_acto: {} });
+    const campos = p.map((x) => x.campo);
+    expect(campos).toContain('instrumento_publico');
+    expect(campos).toContain('fecha_operacion');
+    expect(campos).toContain('tipo_actividad');
+  });
+
+  it('con el acto identificado, lo que queda es de la rama', () => {
+    // Es lo que el botón de diferir deja pasar: todo cuelga del subárbol del
+    // tipo de acto, no de la identidad del acto.
+    const p = pendientesActo({
+      fecha: '2026-08-18',
+      instrumento_publico: '45321',
+      tipo_acto: 'otorgamiento_poder',
+      datos_acto: {},
+    }).filter((x) => x.gravedad === 'bloquea_aviso');
+    expect(p.length).toBeGreaterThan(0);
+    for (const x of p) expect(x.no.startsWith('3.6.1.3.')).toBe(true);
   });
 });

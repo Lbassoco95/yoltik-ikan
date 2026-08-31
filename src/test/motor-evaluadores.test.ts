@@ -825,3 +825,60 @@ describe("umbral sobre la contraprestación", () => {
     expect(r[0].operation_id).toBe("b");
   });
 });
+
+describe('una regla agregada nombra TODAS las operaciones de su ventana', () => {
+  // El motor marca `requiere_aviso` desde los candidatos, y un recorrido
+  // completo además DESMARCA lo que no salga marcado. Si el candidato sólo
+  // nombrara la operación que cierra la ventana, las demás del mismo hecho
+  // quedarían fuera del aviso —y activamente desmarcadas—, aunque la
+  // obligación haya nacido de la suma de todas.
+  const UMBRAL = tip('XII-05', {
+    tipo: 'agregado',
+    ventana: '6M',
+    agrupar_por: 'client_id',
+    condicion: { count: { op: '>=', valor: 1 }, suma_monto_uma: { op: '>=', valor: 4000 } },
+  });
+
+  it('el payload trae las operaciones que suman, no sólo la última', () => {
+    // Dos actos que por separado no alcanzan y juntos sí.
+    const ops = [
+      op({ id: 'a', fecha: '2026-08-10T12:00:00Z', monto_mxn: 3000 * UMA_PRUEBA }),
+      op({ id: 'b', fecha: '2026-08-15T12:00:00Z', monto_mxn: 3000 * UMA_PRUEBA }),
+    ];
+    const c = evaluarTipologia(UMBRAL, ops, ctx());
+    expect(c).toHaveLength(1);
+
+    const dentro = (c[0].regla_payload as { operaciones?: string[] }).operaciones;
+    expect(dentro).toEqual(['a', 'b']);
+    // Y la que ancla el hallazgo es una de ellas, no una tercera.
+    expect(dentro).toContain(c[0].operation_id);
+  });
+
+  it('el conjunto que hay que marcar sale del ancla más el payload', () => {
+    // Es exactamente lo que hace el motor al construir `opsAviso`. Se prueba
+    // aquí porque index.ts depende de Deno y no se puede importar.
+    const ops = [
+      op({ id: 'a', fecha: '2026-08-10T12:00:00Z', monto_mxn: 3000 * UMA_PRUEBA }),
+      op({ id: 'b', fecha: '2026-08-15T12:00:00Z', monto_mxn: 3000 * UMA_PRUEBA }),
+    ];
+    const candidatos = evaluarTipologia(UMBRAL, ops, ctx());
+
+    const marcar = new Set<string>();
+    for (const c of candidatos) {
+      if (c.operation_id) marcar.add(c.operation_id);
+      const dentro = (c.regla_payload as { operaciones?: unknown }).operaciones;
+      if (Array.isArray(dentro)) for (const id of dentro) if (typeof id === 'string') marcar.add(id);
+    }
+    expect([...marcar].sort()).toEqual(['a', 'b']);
+  });
+
+  it('no arrastra operaciones de otro cliente', () => {
+    const ops = [
+      op({ id: 'a', fecha: '2026-08-10T12:00:00Z', monto_mxn: 5000 * UMA_PRUEBA }),
+      op({ id: 'z', client_id: CLIENTE_B, fecha: '2026-08-11T12:00:00Z', monto_mxn: 100 }),
+    ];
+    const c = evaluarTipologia(UMBRAL, ops, ctx());
+    expect(c).toHaveLength(1);
+    expect((c[0].regla_payload as { operaciones?: string[] }).operaciones).toEqual(['a']);
+  });
+});

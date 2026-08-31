@@ -2,32 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
 import { canalDeActo } from '@/lib/perfil-actividad';
 import type { OperacionDelPeriodo, HallazgoDelPeriodo } from '@/lib/aviso-mensual';
-import type { ActoParaXml, EntradaAviso } from '@/lib/aviso/generador-xml';
-
-/**
- * La referencia con la que un acto entra al aviso (campo 3.1 del layout).
- *
- * Hasta 14 caracteres alfanuméricos, y tiene que identificar SIEMPRE al mismo
- * acto: es por donde el SAT liga un aviso modificatorio con el original, y por
- * donde se explica meses después de qué instrumento salió un renglón.
- *
- * Se pedía `operation.folio` con un respaldo por posición en el periodo. La
- * columna no existe —nunca existió, y la consulta entera fallaba con «column
- * operation.folio does not exist», así que la pantalla del aviso no cargaba—,
- * de modo que el respaldo era en realidad el único camino. Y ese respaldo es
- * peor que el error: la posición cambia en cuanto se captura otro acto del
- * mismo mes, así que regenerar el aviso de agosto en septiembre le habría dado
- * al mismo instrumento una referencia distinta. Dos avisos del mismo acto sin
- * nada que los relacione.
- *
- * El id de la operación no se mueve nunca. Seis dígitos del periodo y ocho del
- * uuid caben justo en los catorce y se leen: AAAAMM + 8 hexadecimales.
- */
-export function referenciaDelActo(periodo: string, operationId: string): string {
-  const mes = periodo.replace(/[^0-9]/g, '').slice(0, 6);
-  const id = operationId.replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase();
-  return `${mes}${id}`.slice(0, 14);
-}
+import { referenciaDelActo, type ActoParaXml, type EntradaAviso } from '@/lib/aviso/generador-xml';
 
 /** Primer y último día del periodo AAAA-MM, en ISO. */
 function rangoDelMes(periodo: string): { desde: string; hasta: string } {

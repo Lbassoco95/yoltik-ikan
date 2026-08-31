@@ -39,8 +39,19 @@ export type Origen = 'sujeto_obligado' | 'compareciente' | 'acto' | 'aviso';
  * Gravedad para el usuario. NO es la obligatoriedad del layout: un campo
  * "Obligatorio" del instructivo puede ser condicional (ver `bloqueante` en las
  * reglas de RFC/CURP/fecha de nacimiento).
+ *
+ *   'bloquea_aviso'       El portal del SAT rechaza el aviso sin esto. Es una
+ *                         afirmación fuerte y sólo la merecen los campos del
+ *                         layout: si aquí se colara algo que el portal sí
+ *                         acepta, la lista dejaría de ser creíble entera.
+ *   'bloquea_expediente'  La ley lo exige pero el layout no lo transporta. El
+ *                         aviso sale y pasa la validación; el expediente no
+ *                         está completo. La identificación del artículo 18 es
+ *                         el caso: el XML no tiene un campo «verificado», y aun
+ *                         así un expediente sin identificar no cumple.
+ *   'recomendado'         Ni una cosa ni la otra: el expediente queda pobre.
  */
-export type Gravedad = 'bloquea_aviso' | 'recomendado';
+export type Gravedad = 'bloquea_aviso' | 'bloquea_expediente' | 'recomendado';
 
 export interface Pendiente {
   /** Número del campo en el instructivo. Es la trazabilidad de la regla. */
@@ -272,6 +283,78 @@ export function pendientesActo(a: ActoParaAviso): Pendiente[] {
   else out.push(...pendientesDelSubarbol(String(a.tipo_acto), a.datos_acto ?? {}));
 
   return out;
+}
+
+// =====================================================================
+// Identificación del compareciente (art. 18 LFPIORPI)
+// =====================================================================
+
+/**
+ * Falta identificar a la persona.
+ *
+ * Va aparte de los campos del layout, y la distinción no es cosmética. El XML
+ * del SPPLD no tiene un campo que diga si al compareciente lo identificaron:
+ * un aviso de alguien sin verificar pasa la validación del portal igual de
+ * bien. Meterlo en «frena el aviso» sería decir una cosa falsa sobre el portal
+ * y, peor, contagiar de duda a los renglones que sí son ciertos.
+ *
+ * Lo que sí es cierto es que el expediente no está completo. El artículo 18
+ * fracción I pide identificar al cliente y conservar constancia; el 32 del
+ * Reglamento pone la conservación en diez años para la fracción XII. Un
+ * expediente sin identificación no cumple, y el día que la autoridad lo revise
+ * la pregunta no será por el XML.
+ *
+ * `verificada` es null cuando nunca se abrió una verificación, y el estado de
+ * Didit cuando sí. Sólo 'aprobada' cierra el pendiente: 'en_progreso' es una
+ * verificación que la persona todavía no termina, y 'rechazada' es peor que no
+ * tenerla —significa que NO se pudo comprobar que sea quien dice ser.
+ */
+export function pendientesIdentificacion(
+  estado: string | null | undefined,
+  opciones: {
+    /**
+     * Sólo se identifica a personas físicas. Didit comprueba documento, prueba
+     * de vida y face match: una sociedad no tiene ninguna de las tres, y el
+     * propio diálogo de envío se niega a abrirle una verificación. Exigirla
+     * sería un pendiente que nadie puede cerrar nunca, y un pendiente
+     * imposible enseña a ignorar la lista.
+     *
+     * Lo que se identifica de una persona moral son las personas físicas
+     * detrás. Eso vive en el bloque de beneficiario controlador, que todavía
+     * no existe.
+     */
+    tipoPersona?: 'fisica' | 'moral';
+    /**
+     * El estado todavía no llega del servidor. Distinto de «no hay
+     * verificación»: mientras carga no se sabe, y afirmar que a la persona
+     * nunca se le pidió es afirmar algo que puede ser falso —y que parpadea a
+     * verde medio segundo después.
+     */
+    cargando?: boolean;
+  } = {},
+): Pendiente[] {
+  if (opciones.cargando) return [];
+  if (opciones.tipoPersona === 'moral') return [];
+  if (estado === 'aprobada') return [];
+
+  const detalle =
+    estado == null
+      ? 'No se le ha pedido la verificación de identidad. El expediente no está identificado.'
+      : estado === 'rechazada'
+        ? 'La verificación de identidad NO pasó. No se comprobó que la persona sea quien dice ser.'
+        : 'La verificación de identidad está abierta pero sin resolver. Todavía no identifica a nadie.';
+
+  return [
+    {
+      // No lleva número de instructivo: no sale del layout, sale de la ley.
+      no: 'art. 18',
+      campo: 'identificacion',
+      detalle,
+      origen: 'compareciente',
+      momento: 'captura',
+      gravedad: 'bloquea_expediente',
+    },
+  ];
 }
 
 // =====================================================================

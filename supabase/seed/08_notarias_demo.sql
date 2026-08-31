@@ -44,19 +44,45 @@ values
 on conflict (organization_id, iso2, fuente, vigente_desde) do nothing;
 
 -- =================== Comparecientes / otorgantes ===================
+-- El nombre va PARTIDO, no sólo en `nombre_razon_social`. El layout de fe
+-- pública pide nombre, apellido paterno y apellido materno en campos separados
+-- (3.5.1 a 3.5.3), y la migration 0019 añadió las columnas. El seed se quedó
+-- con el nombre completo en una sola cadena, así que la compareciente del demo
+-- nacía incompleta: al generar el aviso de agosto salían «falta el nombre del
+-- compareciente» y «falta el apellido paterno» por cada acto suyo. Un demo cuyo
+-- camino feliz no llega al final no demuestra nada.
+--
+-- Y la fecha de nacimiento tiene que CUADRAR con el RFC y la CURP: las tres
+-- llevan los mismos AAMMDD dentro, y el validador del layout compara. 900202 en
+-- la clave es el 2 de febrero de 1990; ponerle otra fecha reproduciría el error
+-- que la regla VC354R4 existe para cazar.
 insert into client (id, organization_id, tipo_persona, nombre_razon_social,
+                    nombre, apellido_paterno, apellido_materno, fecha_nacimiento,
                     curp, rfc, nacionalidad, entidad_federativa, pais_residencia_iso2,
                     datos_kyc, nivel_kyc, activo)
 values
   ('77777777-0000-0000-0000-000000000001',
    '12121212-1212-1212-1212-121212121212', 'fisica',
-   'María Fernanda Ruiz Demo (DEMO)',
+   -- Sin «(DEMO)» pegado al nombre, y no por descuido: el trigger
+   -- componer_nombre_cliente (migration 0019) recompone nombre_razon_social
+   -- desde las partes en cuanto existen, así que el marcador se perdía en el
+   -- insert y esta cadena quedaba mintiendo sobre lo que hay en la base.
+   -- Meterlo en las partes tampoco sirve: nombre y apellidos VIAJAN AL XML del
+   -- aviso, y ahí un «(DEMO)» sería un dato falso presentado a la autoridad.
+   -- Que el expediente es de prueba lo dice organizations.es_demostracion
+   -- (migration 0034): la barra ámbar en cada pantalla y el candado que impide
+   -- firmar el aviso. Ése es el mecanismo, no un sufijo en un nombre.
+   'María Fernanda Ruiz Demo',
+   'María Fernanda', 'Ruiz', 'Demo', date '1990-02-02',
    'RUFM900202MJCXXX01', 'RUFM900202AB1', 'Mexicana', 'Jalisco', 'MX',
-   '{"ocupacion": "Empresaria", "origen_recursos": "Actividad empresarial"}'::jsonb,
+   '{"ocupacion": "Empresaria", "origen_recursos": "Actividad empresarial", "email": "maria.ruiz@demo.mx", "telefono": "+523300000001"}'::jsonb,
    'N1', true),
   ('77777777-0000-0000-0000-000000000002',
    '12121212-1212-1212-1212-121212121212', 'moral',
    'Inmobiliaria Demo del Bajío S.A. de C.V. (DEMO)',
+   -- Una persona moral no lleva apellidos ni fecha de nacimiento: lleva fecha
+   -- de constitución, y el layout la pide en otro campo.
+   null, null, null, null,
    null, 'IDB240101XX2', 'Mexicana', 'Jalisco', 'MX',
    '{"giro": "Desarrollo inmobiliario"}'::jsonb,
    'N1', true)

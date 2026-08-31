@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { listarClientes } from "@/lib/api/clientes";
+import { verificacionesVigentes } from "@/lib/api/verificacion";
 import {
   listarOperaciones,
   crearOperacion,
@@ -50,6 +51,7 @@ import type { Operation } from "@/types/domain";
 import {
   catalogosPendientes,
   pendientesActo,
+  pendientesIdentificacion,
   pendientesCompareciente,
   pendientesSujetoObligado,
 } from "@/lib/aviso/completitud";
@@ -128,6 +130,17 @@ export default function OperationsPage() {
     queryFn: listarOperaciones,
   });
   const { data: clientes = [] } = useQuery({ queryKey: ["clientes"], queryFn: listarClientes });
+
+  // Se comparte la misma clave de caché que Comparecientes e Identidad: las
+  // tres pantallas tienen que decir lo mismo del mismo compareciente.
+  const { data: verificaciones, isLoading: cargandoVerificaciones } = useQuery({
+    queryKey: ["verificaciones-vigentes"],
+    queryFn: async () => {
+      const filas = await verificacionesVigentes();
+      return new Map(filas.map((v) => [v.client_id, v.estado]));
+    },
+    enabled: esNotarias,
+  });
   // Las claves del padrón se revisan una vez, no acto por acto: si faltan,
   // ningún aviso de la organización se puede generar.
   const { data: clavesPadron } = useQuery({
@@ -192,7 +205,11 @@ export default function OperationsPage() {
     (nombrePorCliente.get(o.client_id) ?? "").toLowerCase().includes(search.toLowerCase()),
   );
 
-  function enviar() {
+  /**
+   * `diferir` sólo lo pasa el botón secundario, y es una decisión explícita de
+   * quien captura: registrar el acto ahora y completar su expediente después.
+   */
+  function enviar(diferirExpediente = false) {
     if (!form.client_id) {
       toast.error(esNotarias ? "Seleccione un compareciente" : "Seleccione un cliente");
       return;
@@ -217,6 +234,46 @@ export default function OperationsPage() {
     if (instrumento && !/^[0-9A-Z_-]{1,20}$/.test(instrumento)) {
       toast.error(
         "El número de instrumento sólo admite letras, dígitos, guion medio y guion bajo",
+      );
+      return;
+    }
+
+    // Lo que el acto necesita para poder entrar al aviso, exigido AHORA.
+    //
+    // Estos datos están en el instrumento que se acaba de firmar: el tipo de
+    // poder, el tipo de persona de cada compareciente, el capital social. El
+    // día 17 no están en ninguna parte más que en el protocolo, y quien captura
+    // ya no tiene a nadie a quien preguntarle. Dejarlos pasar por omisión es
+    // mover el trabajo al peor momento posible y con menos información.
+    //
+    // Se exige SÓLO lo del acto. Lo que le falte al compareciente se exige en
+    // su alta, y las claves del padrón en la configuración: cada registro
+    // responde por lo suyo. Bloquear el acto porque a otra persona le falta el
+    // RFC dejaría el instrumento SIN REGISTRAR, y un acto que no está en el
+    // sistema no se ve, no se persigue y no aparece en ninguna bandeja.
+    //
+    // Y por lo mismo el bloqueo no es absoluto. Una modificación patrimonial
+    // pide trece campos de su rama; si el que captura no tiene uno a mano a las
+    // seis de la tarde, la alternativa a diferirlo no es que lo complete: es
+    // que el acto no exista en Ikán. Así que se puede diferir a propósito, con
+    // un botón aparte que dice lo que hace, y el acto queda contado como
+    // incompleto en la lista y en el aviso hasta que alguien lo cierre.
+    //
+    // Lo que NO se difiere son la fecha, el instrumento y el tipo de acto: sin
+    // ellos el registro no identifica nada y no habría ni a qué volver. Ésos se
+    // validan arriba y no tienen escape.
+    const faltanDelActo = pendientesActo({
+      fecha: form.fecha,
+      instrumento_publico: form.instrumento_publico,
+      tipo_acto: form.tipo_acto,
+      datos_acto: form.datos_acto,
+    }).filter((p) => p.gravedad === "bloquea_aviso" && p.momento === "captura");
+
+    if (esNotarias && faltanDelActo.length > 0 && !diferirExpediente) {
+      toast.error(
+        faltanDelActo.length === 1
+          ? faltanDelActo[0].detalle
+          : `Faltan ${faltanDelActo.length} datos del acto. Están en la lista de abajo.`,
       );
       return;
     }
@@ -284,6 +341,15 @@ export default function OperationsPage() {
         ...(comparecienteSeleccionado
           ? pendientesCompareciente(comparecienteSeleccionado)
           : []),
+        // Que falte identificar al compareciente NO impide registrar el acto:
+        // el instrumento ya se firmó y no registrarlo sería peor. Pero se dice
+        // aquí, mientras la persona sigue enfrente y todavía se le puede pedir.
+        ...(comparecienteSeleccionado
+          ? pendientesIdentificacion(verificaciones?.get(comparecienteSeleccionado.id), {
+              tipoPersona: comparecienteSeleccionado.tipo_persona,
+              cargando: cargandoVerificaciones,
+            })
+          : []),
         ...pendientesActo({
           fecha: form.fecha,
           instrumento_publico: form.instrumento_publico,
@@ -292,6 +358,22 @@ export default function OperationsPage() {
         }),
       ]
     : [];
+  /**
+   * Lo que le falta al ACTO, que es lo único que puede diferirse.
+   *
+   * Se recalcula aquí para el botón. Lo del compareciente y lo del sujeto
+   * obligado no entran: no son de este registro y no se arreglan en esta
+   * pantalla.
+   */
+  const faltanDelActoAhora = esNotarias
+    ? pendientesActo({
+        fecha: form.fecha,
+        instrumento_publico: form.instrumento_publico,
+        tipo_acto: form.tipo_acto,
+        datos_acto: form.datos_acto,
+      }).filter((p) => p.gravedad === "bloquea_aviso" && p.momento === "captura")
+    : [];
+
   const catalogosDelActo = form.tipo_acto ? catalogosPendientes(form.tipo_acto) : [];
   const canal = form.tipo_acto ? canalDeActo(form.tipo_acto) : undefined;
 
@@ -689,8 +771,11 @@ export default function OperationsPage() {
                     Expediente del acto — {labelTipoActo(form.tipo_acto)}
                   </p>
                   <p className="text-[13px] text-muted-foreground">
-                    Lo que pide el formato de fe pública para esta rama. Lo que no se sepa hoy se
-                    completa antes del cierre del mes; el acto queda registrado igual.
+                    Lo que pide el formato de fe pública para esta rama. Está todo en el
+                    instrumento que se acaba de firmar; el día 17 ya no lo está, y quien capture
+                    entonces no tendrá a quién preguntarle. Si algo no lo tiene a la mano,
+                    «Registrar y completar después» guarda el acto y lo deja contado como
+                    incompleto hasta que alguien lo cierre.
                   </p>
                   <CapturaActo
                     tipoActo={form.tipo_acto}
@@ -708,18 +793,35 @@ export default function OperationsPage() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="sm:justify-between gap-2">
             <Button variant="outline" onClick={() => setDialogAbierto(false)}>
               Cancelar
             </Button>
-            <Button
-              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
-              onClick={enviar}
-              disabled={alta.isPending}
-            >
-              {alta.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              Registrar
-            </Button>
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
+              {/* La salida, y sólo cuando hace falta. Aparece nada más si lo que
+                  falta es del expediente del acto: la fecha, el instrumento y
+                  el tipo no se difieren nunca, porque sin ellos el registro no
+                  identifica nada y no habría ni a qué volver. */}
+              {faltanDelActoAhora.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => enviar(true)}
+                  disabled={alta.isPending}
+                  className="gap-2"
+                  title="El acto queda registrado y su expediente cuenta como incompleto hasta que alguien lo cierre."
+                >
+                  Registrar y completar después
+                </Button>
+              )}
+              <Button
+                className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+                onClick={() => enviar()}
+                disabled={alta.isPending}
+              >
+                {alta.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                Registrar
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
