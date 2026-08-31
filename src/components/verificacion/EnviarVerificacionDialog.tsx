@@ -20,6 +20,7 @@ import {
   type CanalVerificacion,
 } from "@/lib/api/verificacion";
 import { cn } from "@/lib/utils";
+import type { TipoPersona } from "@/types/domain";
 
 /**
  * Enviar la verificación de identidad a un compareciente.
@@ -36,6 +37,17 @@ import { cn } from "@/lib/utils";
 interface Props {
   clienteId: string | null;
   clienteNombre: string;
+  /**
+   * Qué se está verificando.
+   *
+   * No es un detalle de presentación. Didit comprueba que una PERSONA es quien
+   * dice ser: documento oficial, prueba de vida, face match. Una sociedad no
+   * tiene cara ni INE. Sin esta distinción se podía abrir una verificación
+   * contra una persona moral, y lo que salía de ahí era una sesión pidiéndole
+   * a una empresa que se tomara una selfie —gastada, sin resultado posible y
+   * con la apariencia de que el trámite iba en curso.
+   */
+  tipoPersona?: TipoPersona;
   correoSugerido?: string | null;
   telefonoSugerido?: string | null;
   nombreOrganizacion: string;
@@ -67,6 +79,7 @@ const CANALES: { valor: CanalVerificacion; etiqueta: string; ayuda: string; icon
 export function EnviarVerificacionDialog({
   clienteId,
   clienteNombre,
+  tipoPersona,
   correoSugerido,
   telefonoSugerido,
   nombreOrganizacion,
@@ -111,6 +124,43 @@ export function EnviarVerificacionDialog({
   }
 
   const correoInvalido = canal === "correo" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo.trim());
+
+  // Una persona moral no se verifica: se verifica a alguien de carne y hueso
+  // detrás de ella. Decirlo y parar es más útil que abrir una sesión que no
+  // puede terminar bien.
+  if (tipoPersona === "moral") {
+    return (
+      <Dialog open={clienteId !== null} onOpenChange={(v) => !v && cerrar()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{clienteNombre} es una persona moral</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2 text-left">
+                <p>
+                  La verificación de identidad comprueba que una persona es quien dice ser:
+                  identificación oficial, prueba de vida y comparación con la foto del documento.
+                  Una sociedad no tiene ninguna de las tres.
+                </p>
+                <p>
+                  Lo que se verifica de una persona moral son las personas físicas detrás: quien
+                  comparece en su representación, y quienes resulten sus beneficiarios
+                  controladores.
+                </p>
+                <p className="text-xs text-warning">
+                  Capturar esa estructura —socios, porcentajes y las personas morales
+                  intermedias— todavía no está en Ikán. Por ahora, da de alta a cada persona
+                  física por separado y verifícala desde su propio expediente.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={cerrar}>Entendido</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={clienteId !== null} onOpenChange={(v) => !v && cerrar()}>

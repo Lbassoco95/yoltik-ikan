@@ -103,8 +103,9 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
    reaprovechan. Su diseño se conserva; sus DATOS ya salen de Supabase. `src/data/`
    se borró cuando la última página dejó de usarlo: un archivo de datos inventados
    vivo en el repo es un accidente esperando pasar. Lo único que sigue siendo
-   maqueta declarada son las dos secciones de reglas de `RulesEnginePage` y el
-   flujo previsto de `VerificationPage`, ambas con banner ámbar.
+   maqueta declarada son las dos secciones de reglas de `RulesEnginePage`, con
+   banner ámbar. `VerificationPage` dejó de serlo: lee las verificaciones reales
+   de Didit (migration 0032) y desde ahí se abren.
 
 ## Comandos
 
