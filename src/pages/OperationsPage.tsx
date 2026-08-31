@@ -611,7 +611,7 @@ export default function OperationsPage() {
               )}
               <div>
                 <Label>
-                  {esNotarias ? "País del socio / contraparte (ISO2)" : "País contraparte (ISO2)"}
+                  {esNotarias ? "País del socio o contraparte" : "País de la contraparte"}
                 </Label>
                 <Input
                   placeholder="MX, IR…"

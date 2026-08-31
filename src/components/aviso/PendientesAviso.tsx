@@ -24,11 +24,26 @@ const ORIGEN_LABEL: Record<Pendiente["origen"], string> = {
 export function PendientesAviso({
   pendientes,
   compacto = false,
+  mostrarReferencias = false,
   className,
 }: {
   pendientes: Pendiente[];
   /** Sin la sección de cierre de mes: para el diálogo de alta, donde estorba. */
   compacto?: boolean;
+  /**
+   * Enseña el número de campo del instructivo y su etiqueta XML —«campo 3.5.1
+   * <nombre>»— junto a cada pendiente.
+   *
+   * Apagado por omisión. Esa referencia es trazabilidad de verdad y sirve
+   * cuando el portal rechaza un aviso y hay que saber qué campo del layout
+   * falló, pero a quien está dando de alta a un compareciente no le dice nada:
+   * lee como una fuga de las tripas del sistema, o directamente como un error.
+   *
+   * No se borra, se guarda: sigue disponible en el `title` de cada renglón para
+   * quien la busque, y esta bandera la saca a la vista en las pantallas donde
+   * se depura un aviso.
+   */
+  mostrarReferencias?: boolean;
   className?: string;
 }) {
   const bloquean = pendientes.filter((p) => p.gravedad === "bloquea_aviso");
@@ -47,8 +62,9 @@ export function PendientesAviso({
         <Bloque
           icono={<AlertTriangle className="w-4 h-4 text-warning shrink-0" />}
           titulo={`Frena el aviso · ${bloquean.length}`}
-          descripcion="Sin estos datos el XML no pasa la validación del portal."
+          descripcion="Sin estos datos el aviso no pasa la validación del portal del SAT."
           items={bloquean}
+          mostrarReferencias={mostrarReferencias}
         />
       )}
 
@@ -58,6 +74,7 @@ export function PendientesAviso({
           titulo={`Recomendado · ${recomendados.length}`}
           descripcion="El formato del aviso los admite vacíos, pero el expediente queda incompleto."
           items={recomendados}
+          mostrarReferencias={mostrarReferencias}
         />
       )}
 
@@ -67,6 +84,7 @@ export function PendientesAviso({
           titulo="Se llena al cierre del mes"
           descripcion="No se captura hoy: nace con el aviso, no con el acto."
           items={CAMPOS_DEL_CIERRE}
+          mostrarReferencias={mostrarReferencias}
           atenuado
         />
       )}
@@ -80,12 +98,14 @@ function Bloque({
   descripcion,
   items,
   atenuado = false,
+  mostrarReferencias = false,
 }: {
   icono: React.ReactNode;
   titulo: string;
   descripcion: string;
   items: Pendiente[];
   atenuado?: boolean;
+  mostrarReferencias?: boolean;
 }) {
   return (
     <div className={cn("rounded-lg bg-muted/40 p-3", atenuado && "opacity-80")}>
@@ -98,14 +118,23 @@ function Bloque({
         {items.map((p) => (
           // La clave incluye la repetición: el RFC del primer apoderado y el
           // del segundo son el mismo campo del instructivo.
-          <li key={clavePendiente(p)} className="text-xs text-foreground">
+          // El `title` lleva la referencia del instructivo siempre, se enseñe
+          // o no: quien la necesita la encuentra sin que le estorbe a quien no.
+          <li
+            key={clavePendiente(p)}
+            className="text-xs text-foreground"
+            title={`Instructivo del layout · campo ${p.no} <${p.campo}>`}
+          >
             <span className="text-muted-foreground">
               {p.contexto ?? ORIGEN_LABEL[p.origen]} ·{" "}
             </span>
-            {p.detalle}{" "}
-            <span className="text-muted-foreground">
-              (campo {p.no} <code>&lt;{p.campo}&gt;</code>)
-            </span>
+            {p.detalle}
+            {mostrarReferencias && (
+              <span className="text-muted-foreground">
+                {" "}
+                (campo {p.no} <code>&lt;{p.campo}&gt;</code>)
+              </span>
+            )}
           </li>
         ))}
       </ul>

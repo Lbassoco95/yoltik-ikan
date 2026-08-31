@@ -439,9 +439,10 @@ export default function ClientsPage() {
               onChange={(v) => setForm({ ...form, entidad_federativa_clave: v })}
             />
             <div>
-              <Label>País de residencia (ISO2)</Label>
+              <Label>País de residencia</Label>
               <Input
                 value={form.pais_residencia_iso2}
+                placeholder="MX"
                 maxLength={2}
                 onChange={(e) =>
                   setForm({ ...form, pais_residencia_iso2: e.target.value.toUpperCase() })
