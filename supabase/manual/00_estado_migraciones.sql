@@ -139,7 +139,19 @@ lateral (values
          and not exists (select 1 from pg_policies
                           where schemaname='public' and tablename='parametro_regulatorio'
                             and cmd <> 'SELECT'),
-       'apply_0029_parametros.sql')
+       'apply_0029_parametros.sql'),
+  -- Se comprueba la REGLA, no el parámetro: el umbral que el motor aplica vive
+  -- en regla_dsl de la tipología. Un catálogo con 8,000 y una tipología con
+  -- 16,000 se ve corregido y no lo está.
+  (30, '0030 · umbrales de fe pública al régimen vigente (fracción XII)',
+       not exists (select 1 from tipologia_av
+                    where sector = 'XII' and codigo = 'XII-01' and activa
+                      and (regla_dsl->'condicion'->'suma_monto_uma'->>'valor')::numeric <> 8000)
+         and (not exists (select 1 from organizations
+                           where id = '12121212-1212-1212-1212-121212121212')
+              or exists (select 1 from tipologia_av
+                          where sector = 'XII' and codigo = 'XII-04' and activa)),
+       'apply_0030_umbrales_fe_publica.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -249,7 +261,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0029'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0030'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')

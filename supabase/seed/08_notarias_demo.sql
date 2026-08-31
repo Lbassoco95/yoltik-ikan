@@ -8,11 +8,16 @@
 -- Requiere que la migration 0006 ya esté aplicada (enum 'XII' + columna
 -- perfil_actividad). Datos ficticios, no corresponden a personas reales.
 --
--- Los umbrales de la fracción XII son de REFERENCIA (16,000 UMA inmuebles,
--- "siempre" en poderes irrevocables, 8,025 UMA personas morales), sujetos a
--- confirmación con Kawiil-Cumplimiento — así viajan en regla_dsl.nota y el
--- motor los copia a regla_payload.nota_referencia del hallazgo.
--- 16,000 UMA × 113.07 ≈ 1,809,120 MXN.
+-- Los umbrales son los del régimen VIGENTE tras la reforma DOF 16/07/2025,
+-- según el informe técnico de Kawiil-Cumplimiento del 31/08/2026:
+--   inciso a) inmuebles          ≥ 8,000 UMA   (antes 16,000)
+--   inciso b) poder irrevocable  siempre, sin umbral
+--   inciso c) personas morales   siempre, sin umbral   (antes 8,025 UMA)
+--   inciso d) fideicomisos       ≥ 4,000 UMA   (antes 8,025 y sólo inmuebles)
+--
+-- Este seed sembraba los ANTERIORES. Estuvieron en producción y el motor
+-- calculó con ellos; la migration 0030 los corrigió allí y dejó el asiento.
+-- 8,000 UMA × 117.31 = 938,480 MXN.
 -- =====================================================================
 
 -- =================== Organización notaría demo ===================
@@ -71,7 +76,7 @@ on conflict (id) do nothing;
 insert into operation (id, organization_id, client_id, tipo, monto_mxn, moneda_origen,
                        activo_virtual, contraparte, fecha)
 values
-  -- XII-01 · Compraventa de inmueble ≈ $2,000,000 (> 16,000 UMA)
+  -- XII-01 · Compraventa de inmueble ≈ $2,000,000 (> 8,000 UMA)
   ('88888888-0000-0000-0000-000000000001',
    '12121212-1212-1212-1212-121212121212', '77777777-0000-0000-0000-000000000001',
    'otro', 2000000.00, 'MXN', null,
@@ -108,19 +113,19 @@ insert into tipologia_av (id, organization_id, sector, codigo, nombre, descripci
 values
   ('33333333-0012-0000-0000-000000000001',
    '12121212-1212-1212-1212-121212121212',
-   'XII', 'XII-01', 'Transmisión de inmueble ≥ 16,000 UMA',
-   'Aviso por transmisión de propiedad de bienes inmuebles cuyo valor alcance o supere 16,000 UMA.',
+   'XII', 'XII-01', 'Transmisión de inmueble ≥ 8,000 UMA',
+   'Aviso por transmisión o constitución de derechos reales sobre inmuebles cuyo valor alcance o supere 8,000 UMA. La base es el MAYOR entre precio pactado, valor catastral, valor comercial y monto garantizado por suerte principal, sin contribuciones ni accesorios (art. 6 del Reglamento).',
    '{
       "tipo": "agregado",
       "ventana": "1M",
       "agrupar_por": "client_id",
       "condicion": {
         "count": { "op": ">=", "valor": 1 },
-        "suma_monto_uma": { "op": ">=", "valor": 16000 }
+        "suma_monto_uma": { "op": ">=", "valor": 8000 }
       },
-      "nota": "Umbral de referencia (16,000 UMA), sujeto a confirmación con Kawiil-Cumplimiento."
+      "nota": "Art. 17 fr. XII apartado A inciso a) LFPIORPI, reforma DOF 16/07/2025."
     }'::jsonb,
-   'alta', 1, 'Art. 17 fr. XII LFPIORPI (referencia, sin confirmar)'),
+   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.'),
 
   ('33333333-0012-0000-0000-000000000002',
    '12121212-1212-1212-1212-121212121212',
@@ -130,9 +135,9 @@ values
       "tipo": "lookup",
       "campo": "contraparte.tipo_acto",
       "valores": ["otorgamiento_poder"],
-      "nota": "Aviso siempre (sin umbral), de referencia, sujeto a confirmación con Kawiil-Cumplimiento."
+      "nota": "Art. 17 fr. XII apartado A inciso b) LFPIORPI: aviso siempre, sin umbral de monto."
     }'::jsonb,
-   'alta', 1, 'Art. 17 fr. XII LFPIORPI (referencia, sin confirmar)'),
+   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.'),
 
   ('33333333-0012-0000-0000-000000000003',
    '12121212-1212-1212-1212-121212121212',
@@ -144,5 +149,36 @@ values
       "fuentes": ["gafi_negra", "gafi_gris", "ofac_sancionado", "onu"],
       "nota": "Señal de referencia, sujeta a confirmación con Kawiil-Cumplimiento."
     }'::jsonb,
-   'critica', 1, 'GAFI · OFAC · ONU (snapshot en BD)')
+   'critica', 1, 'GAFI · OFAC · ONU (snapshot en BD)'),
+
+  -- Los dos supuestos que la reforma DOF 16/07/2025 cambió de fondo y que este
+  -- seed no cubría. El acto de fideicomiso ya estaba sembrado arriba y ninguna
+  -- tipología lo miraba: se capturaba y no producía nada.
+  ('33333333-0012-0000-0000-000000000004',
+   '12121212-1212-1212-1212-121212121212',
+   'XII', 'XII-04', 'Persona moral: constitución o cambio patrimonial (aviso siempre)',
+   'Aviso por constitución de personas morales, modificación patrimonial por aumento o disminución de capital social, fusión, escisión y compraventa de acciones o partes sociales. Sin umbral de monto.',
+   '{
+      "tipo": "lookup",
+      "campo": "contraparte.tipo_acto",
+      "valores": ["constitucion_personas_morales"],
+      "nota": "Art. 17 fr. XII apartado A inciso c) LFPIORPI, reforma DOF 16/07/2025: siempre objeto de Aviso, sin umbral. Antes de la reforma tenía umbral de 8,025 UMA."
+    }'::jsonb,
+   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.'),
+
+  ('33333333-0012-0000-0000-000000000005',
+   '12121212-1212-1212-1212-121212121212',
+   'XII', 'XII-05', 'Fideicomiso traslativo o de garantía ≥ 4,000 UMA',
+   'Aviso por constitución o modificación de fideicomisos traslativos de dominio o de garantía cuyo valor alcance o supere 4,000 UMA. Ya no se limita a inmuebles.',
+   '{
+      "tipo": "agregado",
+      "ventana": "6M",
+      "agrupar_por": "client_id",
+      "condicion": {
+        "count": { "op": ">=", "valor": 1 },
+        "suma_monto_uma": { "op": ">=", "valor": 4000 }
+      },
+      "nota": "Art. 17 fr. XII apartado A inciso d) LFPIORPI, reforma DOF 16/07/2025. Bajó de 8,025 a 4,000 UMA y se suprimió la limitación a inmuebles."
+    }'::jsonb,
+   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.')
 on conflict (organization_id, sector, codigo, version) do nothing;

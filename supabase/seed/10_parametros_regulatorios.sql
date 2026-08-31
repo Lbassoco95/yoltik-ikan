@@ -89,13 +89,41 @@ insert into parametro_regulatorio
   (codigo, nombre, valor_numerico, unidad, sector, vigente_desde,
    fuente, confirmado_por, notas)
 select * from (values
-  ('umbral_xii_inmueble_uma', 'Transmisión de inmueble · umbral de aviso', 16000.0000, 'uma', 'XII',
-   date '2026-01-01', 'Art. 17 fr. XII LFPIORPI (referencia, sin confirmar)', null::text,
-   'PENDIENTE_CONFIRMAR con Kawiil-Cumplimiento. Proviene de fuentes secundarias no cruzadas con el texto legal vigente.'),
+  -- La vigencia es la LEGAL: 17/07/2025, cuando entró en vigor la reforma. No
+  -- la fecha en que nosotros nos enteramos. Un catálogo con vigencias que
+  -- empiezan el día que alguien lo cargó no sirve para juzgar un acto pasado,
+  -- que es justo para lo que existe.
+  ('umbral_xii_inmueble_uma',
+   'Transmisión o constitución de derechos reales sobre inmuebles · umbral de Aviso',
+   8000.0000, 'uma', 'XII',
+   date '2025-07-17', 'Art. 17 fr. XII apartado A inciso a) LFPIORPI, reforma DOF 16/07/2025. Informe técnico Kawiil-Cumplimiento 31/08/2026.', null::text,
+   'Base de cálculo (art. 6 del Reglamento, DOF 27/03/2026): el MAYOR entre precio pactado, valor catastral, valor comercial y monto garantizado por suerte principal, sin contribuciones ni accesorios. Excluye garantías a favor del sistema financiero u organismos públicos de vivienda.'),
 
-  ('umbral_xii_persona_moral_uma', 'Constitución de persona moral · umbral de aviso', 8025.0000, 'uma', 'XII',
-   date '2026-01-01', 'Art. 17 fr. XII LFPIORPI (referencia, sin confirmar)', null::text,
-   'PENDIENTE_CONFIRMAR con Kawiil-Cumplimiento. Proviene de fuentes secundarias no cruzadas con el texto legal vigente.')
+  ('umbral_xii_fideicomiso_uma',
+   'Constitución o modificación de fideicomisos traslativos o de garantía · umbral de Aviso',
+   4000.0000, 'uma', 'XII',
+   date '2025-07-17', 'Art. 17 fr. XII apartado A inciso d) LFPIORPI, reforma DOF 16/07/2025. Informe técnico Kawiil-Cumplimiento 31/08/2026.', null::text,
+   'La reforma bajó el umbral de 8,025 a 4,000 UMA y suprimió la limitación a inmuebles.'),
+
+  -- Art. 32, prohibición de efectivo. NO son umbrales de Aviso y no deben
+  -- unificarse con ellos: el de Aviso para inmuebles es 8,000 UMA y el de
+  -- efectivo 8,025. La asimetría es deliberada y el informe la advierte.
+  ('umbral_efectivo_inmueble_uma', 'Prohibición de pago en efectivo · inmuebles',
+   8025.0000, 'uma', 'XII',
+   date '2025-07-17', 'Art. 32 LFPIORPI, reforma DOF 16/07/2025. Informe técnico Kawiil-Cumplimiento 31/08/2026.', null::text,
+   'Se mide con la UMA vigente AL DÍA DEL PAGO, no a la fecha del instrumento.'),
+
+  ('umbral_efectivo_acciones_uma', 'Prohibición de pago en efectivo · acciones y partes sociales',
+   3210.0000, 'uma', 'XII',
+   date '2025-07-17', 'Art. 32 LFPIORPI, reforma DOF 16/07/2025. Informe técnico Kawiil-Cumplimiento 31/08/2026.', null::text,
+   'Se mide con la UMA vigente al día del pago. El fedatario debe identificar la forma de pago y dejar constancia.')
+
+  -- NO se siembra umbral_xii_persona_moral_uma. Tras la reforma DOF 16/07/2025
+  -- la constitución de personas morales, el cambio patrimonial, la fusión, la
+  -- escisión y la compraventa de acciones son SIEMPRE objeto de Aviso: no hay
+  -- cifra que poner. El supuesto lo resuelve la tipología XII-04, no un umbral.
+  -- Sembrar 0 UMA sería una forma rebuscada de decir «siempre» que el primero
+  -- que la leyera tomaría por un error.
 ) as v(codigo, nombre, valor_numerico, unidad, sector, vigente_desde,
        fuente, confirmado_por, notas)
 where not exists (

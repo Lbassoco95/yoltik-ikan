@@ -542,3 +542,105 @@ describe("clasificacionUrgencia", () => {
     expect(res.candidatos[0].clasificacion_urgencia).toBe("24_horas");
   });
 });
+
+// ---------------------------------------------------------------------
+// Fracción XII · fe pública, umbrales del régimen vigente (migration 0030)
+// ---------------------------------------------------------------------
+// Estas pruebas existen por un error que estuvo en producción: el seed sembró
+// los umbrales ANTERIORES a la reforma DOF 16/07/2025 —16,000 UMA para
+// inmuebles y 8,025 para personas morales— y el motor los aplicó tal cual.
+//
+// Lo que se demuestra aquí no es que la regla nueva funcione, sino DÓNDE
+// estaba el hueco: una transmisión que la regla vieja dejaba pasar y la nueva
+// atrapa. Sin la primera prueba, la segunda no dice nada.
+describe("fracción XII · umbrales de fe pública", () => {
+  // 8,000 UMA es el umbral vigente; 16,000 el del régimen anterior. Una
+  // operación de 10,000 UMA cae justo entre los dos: es el rango donde está la
+  // mayor parte de la vivienda media del país.
+  const EN_EL_HUECO = 10_000 * UMA_PRUEBA;
+
+  const inmueble = (umbral: number): Tipologia["regla_dsl"] => ({
+    tipo: "agregado",
+    ventana: "6M",
+    agrupar_por: "client_id",
+    condicion: {
+      count: { op: ">=", valor: 1 },
+      suma_monto_uma: { op: ">=", valor: umbral },
+    },
+  });
+
+  const acto = (id: string, tipo_acto: string, monto_mxn: number) =>
+    op({ id, fecha: "2026-08-18T10:00:00Z", tipo: "otro", monto_mxn,
+         contraparte: { tipo_acto, pais_iso2: "MX" } });
+
+  it("el umbral viejo de 16,000 UMA DEJABA PASAR una transmisión de 10,000 UMA", () => {
+    const r = evaluarTipologia(
+      tip("XII-01", inmueble(16_000)),
+      [acto("a", "transmision_inmueble", EN_EL_HUECO)],
+      ctx(),
+    );
+    expect(r).toHaveLength(0);
+  });
+
+  it("con el umbral vigente de 8,000 UMA, esa misma transmisión sí dispara", () => {
+    const r = evaluarTipologia(
+      tip("XII-01", inmueble(8_000), { version: 2 }),
+      [acto("a", "transmision_inmueble", EN_EL_HUECO)],
+      ctx(),
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0].tipologia_codigo).toBe("XII-01");
+  });
+
+  it("por debajo de 8,000 UMA sigue sin disparar: el umbral bajó, no desapareció", () => {
+    const r = evaluarTipologia(
+      tip("XII-01", inmueble(8_000), { version: 2 }),
+      [acto("a", "transmision_inmueble", 7_999 * UMA_PRUEBA)],
+      ctx(),
+    );
+    expect(r).toHaveLength(0);
+  });
+
+  it("acumula seis meses por cliente: dos actos que solos no llegan, juntos sí", () => {
+    // Es el penúltimo párrafo del art. 17 y el art. 7 del Reglamento: el Aviso
+    // se presenta al realizarse la operación que cruza el umbral, no al cierre
+    // del semestre.
+    const r = evaluarTipologia(
+      tip("XII-01", inmueble(8_000), { version: 2 }),
+      [
+        op({ id: "a", fecha: "2026-05-02T10:00:00Z", tipo: "otro", monto_mxn: 5_000 * UMA_PRUEBA,
+             contraparte: { tipo_acto: "transmision_inmueble", pais_iso2: "MX" } }),
+        op({ id: "b", fecha: "2026-08-18T10:00:00Z", tipo: "otro", monto_mxn: 4_000 * UMA_PRUEBA,
+             contraparte: { tipo_acto: "transmision_inmueble", pais_iso2: "MX" } }),
+      ],
+      ctx(),
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0].operation_id).toBe("b"); // la que cruza el umbral
+  });
+
+  it("XII-04: la constitución de persona moral avisa SIEMPRE, sin importar el monto", () => {
+    // Tras la reforma dejó de tener umbral. Se prueba con un monto ridículo a
+    // propósito: si alguien reintroduce una condición de monto, esto falla.
+    const r = evaluarTipologia(
+      tip("XII-04", { tipo: "lookup", campo: "contraparte.tipo_acto",
+                      valores: ["constitucion_personas_morales"] }),
+      [acto("a", "constitucion_personas_morales", 1)],
+      ctx(),
+    );
+    expect(r).toHaveLength(1);
+  });
+
+  it("XII-05: el fideicomiso dispara desde 4,000 UMA y ya no sólo sobre inmuebles", () => {
+    const regla: Tipologia["regla_dsl"] = {
+      tipo: "agregado", ventana: "6M", agrupar_por: "client_id",
+      condicion: { count: { op: ">=", valor: 1 },
+                   suma_monto_uma: { op: ">=", valor: 4_000 } },
+    };
+    const acto_fid = (monto: number) =>
+      acto("a", "constitucion_modificacion_fideicomiso", monto);
+
+    expect(evaluarTipologia(tip("XII-05", regla), [acto_fid(4_000 * UMA_PRUEBA)], ctx())).toHaveLength(1);
+    expect(evaluarTipologia(tip("XII-05", regla), [acto_fid(3_999 * UMA_PRUEBA)], ctx())).toHaveLength(0);
+  });
+});
