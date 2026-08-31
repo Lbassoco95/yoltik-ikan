@@ -159,7 +159,14 @@ lateral (values
                            'constitucion_sociedad','fideicomiso'))
          and not exists (select 1 from organizations
                           where clave_sujeto_obligado is null and rfc is not null),
-       'apply_0031_actos_y_clave.sql')
+       'apply_0031_actos_y_clave.sql'),
+  -- Lo que se comprueba es que la tabla NO admita escritura desde la app: la
+  -- crea y la actualiza la Edge Function con service_role, y con un update
+  -- abierto se podría marcar una verificación como aprobada sin hacerla.
+  (32, '0032 · verificación de identidad del compareciente (Didit)',
+       to_regclass('public.verificacion_identidad') is not null
+         and not has_table_privilege('authenticated', 'public.verificacion_identidad', 'update'),
+       'apply_0032_verificacion_identidad.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -280,7 +287,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0031'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0032'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')
