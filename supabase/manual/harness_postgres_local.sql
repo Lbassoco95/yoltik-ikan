@@ -54,6 +54,36 @@ create or replace function auth.uid() returns uuid
 create or replace function auth.jwt() returns jsonb
   language sql stable as $$ select '{}'::jsonb $$;
 
+-- Las columnas que GoTrue sí tiene y aquí faltaban. La 0028 lee `deleted_at`
+-- para no ofrecer usuarios dados de baja y `last_sign_in_at` para que quien
+-- opera vea si la persona alguna vez entró; sin ellas el banco de pruebas
+-- rechazaba una migration que en producción aplica.
+alter table auth.users add column if not exists last_sign_in_at timestamptz;
+alter table auth.users add column if not exists deleted_at timestamptz;
+
+-- Segundo factor y sesiones. Reducidas a lo que el código toca, pero con la
+-- misma forma: el estado del factor es un enum, no un texto libre, y las
+-- sesiones cuelgan del usuario con borrado en cascada.
+do $$ begin
+  create type auth.factor_status as enum ('unverified', 'verified');
+exception when duplicate_object then null; end $$;
+
+create table if not exists auth.mfa_factors (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  friendly_name text,
+  factor_type text not null default 'totp',
+  status auth.factor_status not null default 'unverified',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists auth.sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
 -- ---------------------------------------------------------------------
 -- 4. storage mínimo
 -- ---------------------------------------------------------------------

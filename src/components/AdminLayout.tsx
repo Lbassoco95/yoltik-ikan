@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { LogOut, ShieldCheck, Database, SlidersHorizontal, ListOrdered, Link2, UserPlus } from "lucide-react";
+import { LogOut, ShieldCheck, Database, SlidersHorizontal, ListOrdered, Link2, UserPlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ const SECCIONES = [
   { to: "/listas", label: "Listas restrictivas", icon: Database },
   { to: "/parametros", label: "Parámetros regulatorios", icon: SlidersHorizontal },
   { to: "/catalogos", label: "Catálogos del layout", icon: ListOrdered },
+  { to: "/usuarios", label: "Usuarios y 2FA", icon: Users },
   { to: "/bitacora", label: "Bitácora", icon: Link2 },
 ];
 

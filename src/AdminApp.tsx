@@ -14,6 +14,7 @@ import AdminListasPage from "@/pages/admin/AdminListasPage";
 import AdminProspectosPage from "@/pages/admin/AdminProspectosPage";
 import AdminParametrosPage from "@/pages/admin/AdminParametrosPage";
 import AdminCatalogosPage from "@/pages/admin/AdminCatalogosPage";
+import AdminUsuariosPage from "@/pages/admin/AdminUsuariosPage";
 import AdminBitacoraPage from "@/pages/admin/AdminBitacoraPage";
 
 /**
@@ -66,6 +67,7 @@ const AdminApp = () => (
               <Route path="/listas" element={<AdminListasPage />} />
               <Route path="/parametros" element={<AdminParametrosPage />} />
               <Route path="/catalogos" element={<AdminCatalogosPage />} />
+              <Route path="/usuarios" element={<AdminUsuariosPage />} />
               <Route path="/bitacora" element={<AdminBitacoraPage />} />
             </Route>
 

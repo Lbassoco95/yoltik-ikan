@@ -105,10 +105,30 @@ lateral (values
        to_regclass('public.anclaje') is not null
          and to_regprocedure('public.rango_por_anclar(uuid)') is not null,
        'apply_0026_anclaje.sql'),
+  -- Comprueba la FORMA de la política, no que el objeto exista: una política
+  -- puesta a mano con otro `using` dejaría la tabla abierta y este diagnóstico
+  -- diría que la 0027 ya está. Es la versión de Devin y es mejor que la mía;
+  -- se perdió en un merge y vuelve aquí.
   (27, '0027 · prospectos visibles para Kawiil',
-       to_regprocedure('public.marcar_prospecto(uuid,text,text)') is not null
+       (select count(*) from pg_policies
+         where schemaname = 'public' and tablename = 'prospect_intake') = 1
+         and exists (
+           select 1 from pg_policies
+            where schemaname = 'public' and tablename = 'prospect_intake'
+              and cmd = 'SELECT' and qual::text like '%es_admin_kawiil%')
+         and to_regprocedure('public.marcar_prospecto(uuid,text,text)') is not null
          and to_regclass('public.v_prospectos_resumen') is not null,
-       'apply_0027_prospectos.sql')
+       'apply_0027_prospectos.sql'),
+  -- Aquí lo que puede salir mal no es que falte la función, sino que quede
+  -- abierta: en Supabase el ALTER DEFAULT PRIVILEGES le da EXECUTE a anon sola.
+  -- Una reposición de segundo factor al alcance de anon es la peor puerta
+  -- posible, así que el diagnóstico la reporta como no aplicada si eso pasa.
+  (28, '0028 · reponer el segundo factor sin abrir la base',
+       to_regprocedure('public.reponer_segundo_factor(uuid,text)') is not null
+         and to_regprocedure('public.usuarios_de_plataforma()') is not null
+         and not has_function_privilege('anon', 'public.reponer_segundo_factor(uuid,text)', 'execute')
+         and not has_function_privilege('anon', 'public.usuarios_de_plataforma()', 'execute'),
+       'apply_0028_reposicion_factor.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -218,7 +238,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0027'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0028'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')
