@@ -76,7 +76,11 @@ export default function VerificationPage() {
     queryFn: listarClientes,
   });
 
-  const { data: verificaciones, refetch: recargar } = useQuery({
+  const {
+    data: verificaciones,
+    isLoading: cargandoVerificaciones,
+    refetch: recargar,
+  } = useQuery({
     queryKey: ["verificaciones-vigentes"],
     queryFn: async () => {
       const filas = await verificacionesVigentes();
@@ -93,7 +97,10 @@ export default function VerificationPage() {
     const delLayout = pendientesCompareciente(c).filter(
       (p) => p.gravedad === "bloquea_aviso",
     ).length;
-    const deIdentificacion = pendientesIdentificacion(estado).length;
+    const deIdentificacion = pendientesIdentificacion(estado, {
+      tipoPersona: c.tipo_persona,
+      cargando: cargandoVerificaciones,
+    }).length;
     return { cliente: c, faltan: delLayout + deIdentificacion, delLayout, estado };
   });
   const completos = conFaltantes.filter((x) => x.faltan === 0).length;

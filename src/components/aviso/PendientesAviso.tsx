@@ -66,7 +66,12 @@ export function PendientesAviso({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {bloquean.length === 0 && expediente.length === 0 ? (
+      {/* El mensaje de "no falta nada" mira las dos listas; el bloque de
+          "frena el aviso" sólo la suya. Con un ternario que las juntara, un
+          expediente al que sólo le falta identificar al compareciente sacaba un
+          «Frena el aviso · 0» vacío con el texto de que el portal lo rechaza:
+          justo la afirmación falsa que la gravedad nueva vino a evitar. */}
+      {bloquean.length === 0 && expediente.length === 0 && (
         canal === "declaranot" ? (
           <div className="flex items-start gap-2 rounded-lg bg-warning/10 p-3">
             <AlertTriangle className="w-4 h-4 mt-0.5 text-warning shrink-0" />
@@ -85,7 +90,9 @@ export function PendientesAviso({
             </p>
           </div>
         )
-      ) : (
+      )}
+
+      {bloquean.length > 0 && (
         <Bloque
           icono={<AlertTriangle className="w-4 h-4 text-warning shrink-0" />}
           titulo={`Frena el aviso · ${bloquean.length}`}

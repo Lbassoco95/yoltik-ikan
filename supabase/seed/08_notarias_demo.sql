@@ -63,7 +63,16 @@ insert into client (id, organization_id, tipo_persona, nombre_razon_social,
 values
   ('77777777-0000-0000-0000-000000000001',
    '12121212-1212-1212-1212-121212121212', 'fisica',
-   'María Fernanda Ruiz Demo (DEMO)',
+   -- Sin «(DEMO)» pegado al nombre, y no por descuido: el trigger
+   -- componer_nombre_cliente (migration 0019) recompone nombre_razon_social
+   -- desde las partes en cuanto existen, así que el marcador se perdía en el
+   -- insert y esta cadena quedaba mintiendo sobre lo que hay en la base.
+   -- Meterlo en las partes tampoco sirve: nombre y apellidos VIAJAN AL XML del
+   -- aviso, y ahí un «(DEMO)» sería un dato falso presentado a la autoridad.
+   -- Que el expediente es de prueba lo dice organizations.es_demostracion
+   -- (migration 0034): la barra ámbar en cada pantalla y el candado que impide
+   -- firmar el aviso. Ése es el mecanismo, no un sufijo en un nombre.
+   'María Fernanda Ruiz Demo',
    'María Fernanda', 'Ruiz', 'Demo', date '1990-02-02',
    'RUFM900202MJCXXX01', 'RUFM900202AB1', 'Mexicana', 'Jalisco', 'MX',
    '{"ocupacion": "Empresaria", "origen_recursos": "Actividad empresarial", "email": "maria.ruiz@demo.mx", "telefono": "+523300000001"}'::jsonb,

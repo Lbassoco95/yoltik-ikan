@@ -389,3 +389,22 @@ describe('la identificación del artículo 18 va aparte del layout', () => {
     expect(pendientesIdentificacion('rechazada')[0].detalle).toMatch(/no pasó/i);
   });
 });
+
+describe('la identificación no crea pendientes imposibles', () => {
+  it('una persona moral no se identifica con Didit', () => {
+    // El diálogo de envío se niega a abrirle una verificación —no tiene INE ni
+    // cara— así que exigirla sería un pendiente que nadie puede cerrar nunca. Y
+    // un pendiente imposible enseña a ignorar la lista entera.
+    expect(pendientesIdentificacion(null, { tipoPersona: 'moral' })).toEqual([]);
+    expect(pendientesIdentificacion('rechazada', { tipoPersona: 'moral' })).toEqual([]);
+    // La física sí.
+    expect(pendientesIdentificacion(null, { tipoPersona: 'fisica' })).toHaveLength(1);
+  });
+
+  it('mientras carga no afirma que no se le haya pedido', () => {
+    // Sin esto, un compareciente verificado aparecía medio segundo como si
+    // nunca se le hubiera pedido nada, y luego saltaba a verde.
+    expect(pendientesIdentificacion(undefined, { cargando: true })).toEqual([]);
+    expect(pendientesIdentificacion(undefined, { cargando: false })).toHaveLength(1);
+  });
+});

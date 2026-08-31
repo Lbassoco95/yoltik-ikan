@@ -78,14 +78,31 @@ Deno.serve(async (req: Request) => {
   }
 
   // --- 2. Operaciones (+ cliente) ------------------------------------
-  let opQuery = supabase
-    .from('operation')
-    .select('id, organization_id, client_id, tipo, monto_mxn, contraprestacion_mxn, activo_virtual, contraparte, fecha, client:client_id(datos_kyc)')
-    .eq('organization_id', input.organization_id);
-  if (input.operation_id) opQuery = opQuery.eq('id', input.operation_id);
-  const { data: operacionesRaw, error: errOps } = await opQuery;
-  if (errOps) {
-    return json({ error: errOps.message }, 500);
+  // Paginado, y no por prolijidad: PostgREST corta en su tope de filas por
+  // omisión y no avisa. Con la respuesta truncada, el motor evaluaría sólo las
+  // primeras operaciones de la organización —una regla agregada mediría su
+  // ventana con la mitad de los datos— y, desde que existe `evaluada_en`, las
+  // que quedaran fuera del corte NUNCA recibirían constancia: el aviso mensual
+  // se quedaría bloqueado y el botón "Evaluar ahora" no podría desbloquearlo
+  // por más veces que se pulsara.
+  const PAGINA = 1000;
+  const operacionesRaw: unknown[] = [];
+  for (let desde = 0; ; desde += PAGINA) {
+    let opQuery = supabase
+      .from('operation')
+      .select('id, organization_id, client_id, tipo, monto_mxn, contraprestacion_mxn, activo_virtual, contraparte, fecha, client:client_id(datos_kyc)')
+      .eq('organization_id', input.organization_id)
+      // Orden estable: sin él, dos páginas pueden repetir y omitir filas.
+      .order('id')
+      .range(desde, desde + PAGINA - 1);
+    if (input.operation_id) opQuery = opQuery.eq('id', input.operation_id);
+    const { data, error: errOps } = await opQuery;
+    if (errOps) {
+      return json({ error: errOps.message }, 500);
+    }
+    const lote = data ?? [];
+    operacionesRaw.push(...lote);
+    if (lote.length < PAGINA) break;
   }
 
   // --- 3. UMA vigente ------------------------------------------------
@@ -402,11 +419,24 @@ Deno.serve(async (req: Request) => {
   // riesgo": son críticas, el OC las mira primero, y no vuelven reportable un
   // acto que no rebasó umbral ni cae en supuesto.
   const generaAviso = new Map(tipologias.map((t) => [t.id, t.genera_aviso === true]));
-  const opsAviso = new Set(
-    candidatos
-      .filter((c) => c.operation_id && generaAviso.get(c.tipologia_id))
-      .map((c) => c.operation_id as string),
-  );
+
+  // TODAS las operaciones de la ventana que disparó, no sólo la que la cerró.
+  //
+  // Una regla agregada produce UN candidato por grupo, anclado en la operación
+  // que cierra la primera ventana que cumple; las demás de esa ventana viajan
+  // en `regla_payload.operaciones`. Si sólo se mirara `operation_id`, dos
+  // fideicomisos que juntos cruzan las 4,000 UMA dejarían uno marcado y el
+  // otro no —y desde que el recorrido completo es autoritativo, el otro se
+  // DESMARCARÍA activamente—, cuando la obligación nació de los dos.
+  const opsAviso = new Set<string>();
+  for (const c of candidatos) {
+    if (!generaAviso.get(c.tipologia_id)) continue;
+    if (c.operation_id) opsAviso.add(c.operation_id);
+    const dentro = (c.regla_payload as { operaciones?: unknown })?.operaciones;
+    if (Array.isArray(dentro)) {
+      for (const id of dentro) if (typeof id === 'string') opsAviso.add(id);
+    }
+  }
 
   // El motor sólo levantaba la marca, nunca la bajaba, y eso convertía la
   // determinación en un trinquete: una operación marcada por la heurística de

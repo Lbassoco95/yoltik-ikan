@@ -133,7 +133,7 @@ export default function OperationsPage() {
 
   // Se comparte la misma clave de caché que Comparecientes e Identidad: las
   // tres pantallas tienen que decir lo mismo del mismo compareciente.
-  const { data: verificaciones } = useQuery({
+  const { data: verificaciones, isLoading: cargandoVerificaciones } = useQuery({
     queryKey: ["verificaciones-vigentes"],
     queryFn: async () => {
       const filas = await verificacionesVigentes();
@@ -331,7 +331,10 @@ export default function OperationsPage() {
         // el instrumento ya se firmó y no registrarlo sería peor. Pero se dice
         // aquí, mientras la persona sigue enfrente y todavía se le puede pedir.
         ...(comparecienteSeleccionado
-          ? pendientesIdentificacion(verificaciones?.get(comparecienteSeleccionado.id))
+          ? pendientesIdentificacion(verificaciones?.get(comparecienteSeleccionado.id), {
+              tipoPersona: comparecienteSeleccionado.tipo_persona,
+              cargando: cargandoVerificaciones,
+            })
           : []),
         ...pendientesActo({
           fecha: form.fecha,
@@ -738,8 +741,10 @@ export default function OperationsPage() {
                     Expediente del acto — {labelTipoActo(form.tipo_acto)}
                   </p>
                   <p className="text-[13px] text-muted-foreground">
-                    Lo que pide el formato de fe pública para esta rama. Lo que no se sepa hoy se
-                    completa antes del cierre del mes; el acto queda registrado igual.
+                    Lo que pide el formato de fe pública para esta rama, y hace falta para
+                    registrar el acto. Está todo en el instrumento que se acaba de firmar; el
+                    día 17 ya no lo está, y quien capture entonces no tendrá a quién
+                    preguntarle.
                   </p>
                   <CapturaActo
                     tipoActo={form.tipo_acto}

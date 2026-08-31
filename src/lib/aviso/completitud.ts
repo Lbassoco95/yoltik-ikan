@@ -309,7 +309,32 @@ export function pendientesActo(a: ActoParaAviso): Pendiente[] {
  * verificación que la persona todavía no termina, y 'rechazada' es peor que no
  * tenerla —significa que NO se pudo comprobar que sea quien dice ser.
  */
-export function pendientesIdentificacion(estado: string | null | undefined): Pendiente[] {
+export function pendientesIdentificacion(
+  estado: string | null | undefined,
+  opciones: {
+    /**
+     * Sólo se identifica a personas físicas. Didit comprueba documento, prueba
+     * de vida y face match: una sociedad no tiene ninguna de las tres, y el
+     * propio diálogo de envío se niega a abrirle una verificación. Exigirla
+     * sería un pendiente que nadie puede cerrar nunca, y un pendiente
+     * imposible enseña a ignorar la lista.
+     *
+     * Lo que se identifica de una persona moral son las personas físicas
+     * detrás. Eso vive en el bloque de beneficiario controlador, que todavía
+     * no existe.
+     */
+    tipoPersona?: 'fisica' | 'moral';
+    /**
+     * El estado todavía no llega del servidor. Distinto de «no hay
+     * verificación»: mientras carga no se sabe, y afirmar que a la persona
+     * nunca se le pidió es afirmar algo que puede ser falso —y que parpadea a
+     * verde medio segundo después.
+     */
+    cargando?: boolean;
+  } = {},
+): Pendiente[] {
+  if (opciones.cargando) return [];
+  if (opciones.tipoPersona === 'moral') return [];
   if (estado === 'aprobada') return [];
 
   const detalle =
