@@ -1,3 +1,4 @@
+import { AvisoDemostracion } from "@/components/AvisoDemostracion";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -44,6 +45,7 @@ export default function AppLayout() {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
+        <AvisoDemostracion />
         <AppHeader
           onToggleSidebar={() => {
             setMenuMovil((v) => !v);

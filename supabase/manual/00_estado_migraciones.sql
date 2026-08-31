@@ -176,7 +176,15 @@ lateral (values
          and not exists (select 1 from parametro_regulatorio
                           where codigo in ('umbral_identificacion_uma','umbral_restriccion_uma')
                             and vigente_hasta is null),
-       'apply_0033_umbrales_cripto.sql')
+       'apply_0033_umbrales_cripto.sql'),
+  -- Se comprueba el TRIGGER, no la columna: sin él un aviso de demostración se
+  -- firma y puede acabar presentado al SAT. La marca sola no impide nada.
+  (34, '0034 · entorno de demostración (avisos que no se firman)',
+       exists (select 1 from pg_trigger
+                where tgrelid = to_regclass('public.aviso')
+                  and tgname = 'trg_aviso_no_firmar_demo' and not tgisinternal)
+         and to_regprocedure('public.retirar_datos_de_demostracion(uuid,text)') is not null,
+       'apply_0034_demostracion.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -297,7 +305,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0033'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0034'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')

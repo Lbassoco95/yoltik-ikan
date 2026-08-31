@@ -59,6 +59,9 @@ export interface UserProfile {
    *  matriz de riesgo se muestra: una notaría (XII) no ve la de un exchange
    *  (XVI). Vacío si el remoto todavía no tiene la columna. */
   organization_sectores?: SectorAV[];
+  /** La organización es un entorno de demostración. Se enseña en pantalla y
+   *  bloquea la firma de avisos (migration 0034). */
+  organization_es_demostracion?: boolean;
   email: string;
   nombre: string;
   roles: RolUsuario[];

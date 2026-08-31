@@ -109,10 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let orgNombre = "Ixim Pay";
         let perfil: PerfilActividad = "generico";
         let sectores: SectorAV[] = [];
+        let esDemostracion = false;
         try {
           const { data: org } = await supabase
             .from("organizations")
-            .select("razon_social, perfil_actividad, sectores")
+            .select("razon_social, perfil_actividad, sectores, es_demostracion")
             .eq("id", p.organization_id)
             .maybeSingle();
           if (org) {
@@ -120,10 +121,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               razon_social: string | null;
               perfil_actividad: string | null;
               sectores: SectorAV[] | null;
+              es_demostracion: boolean | null;
             };
             orgNombre = o.razon_social ?? orgNombre;
             perfil = resolverPerfil(o.perfil_actividad);
             sectores = o.sectores ?? [];
+            // Ante la duda, NO es de demostración: marcar de más pone un aviso
+            // que no toca; marcar de menos deja pasar un expediente inventado
+            // por real. El segundo error es el caro, pero la columna puede no
+            // existir en un remoto sin migrar y ahí `false` es lo correcto.
+            esDemostracion = o.es_demostracion === true;
           }
         } catch {
           // La columna perfil_actividad puede no existir en un remoto sin migrar.
@@ -135,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           organization_id: p.organization_id,
           organization_name: orgNombre,
           organization_sectores: sectores,
+          organization_es_demostracion: esDemostracion,
           email: p.email ?? user.email ?? "",
           nombre: p.nombre ?? user.email?.split("@")[0] ?? "Usuario",
           roles: rolesFinal,
