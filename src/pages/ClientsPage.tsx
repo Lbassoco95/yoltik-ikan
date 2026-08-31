@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { EnviarVerificacionDialog } from "@/components/verificacion/EnviarVerificacionDialog";
+import {
+  ETIQUETA_ESTADO,
+  verificacionesVigentes,
+  type EstadoVerificacion,
+} from "@/lib/api/verificacion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Filter, Loader2 } from "lucide-react";
+import { Search, Plus, Filter, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +79,7 @@ export default function ClientsPage() {
   // El buscador del encabezado navega aquí con ?q=. Se toma como valor
   // INICIAL, no como fuente de verdad: a partir de ahí manda el campo de esta
   // pantalla, y escribir en él no reescribe la URL a cada tecla.
+  const [aVerificar, setAVerificar] = useState<{ id: string; nombre: string } | null>(null);
   const [parametrosUrl] = useSearchParams();
   const [search, setSearch] = useState(() => parametrosUrl.get("q") ?? "");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -80,7 +87,7 @@ export default function ClientsPage() {
   const [form, setForm] = useState(FORM_INICIAL);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { perfilActividad } = useAuth();
+  const { perfilActividad, profile } = useAuth();
   const L = LABELS[perfilActividad];
 
   const { data: clientes = [], isLoading, isError, error } = useQuery({
@@ -94,6 +101,18 @@ export default function ClientsPage() {
     queryKey: ["evaluaciones", clientes.map((c) => c.id).join(",")],
     queryFn: () => ultimasEvaluaciones(clientes.map((c) => c.id)),
     enabled: clientes.length > 0,
+  });
+
+  // El estado de identidad de cada compareciente. Va en una consulta aparte y
+  // no en el join de clientes: es una vista distinta con su propia RLS, y si
+  // Didit todavía no está configurado esto falla solo, sin tumbar la lista.
+  const { data: verificaciones, refetch: recargarVerificaciones } = useQuery({
+    queryKey: ["verificaciones-vigentes"],
+    queryFn: async () => {
+      const filas = await verificacionesVigentes();
+      return new Map(filas.map((v) => [v.client_id, v.estado]));
+    },
+    retry: false,
   });
 
   const alta = useMutation({
@@ -223,7 +242,7 @@ export default function ClientsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                {["Nombre / Razón Social", "Tipo", "RFC", "Riesgo", "Nivel KYC", "Alto de oficio", ""].map((h) => (
+                {["Nombre / Razón Social", "Tipo", "RFC", "Riesgo", "Nivel KYC", "Alto de oficio", "Identidad", ""].map((h) => (
                   <th
                     key={h}
                     className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3"
@@ -265,12 +284,23 @@ export default function ClientsPage() {
                       <span className="text-sm text-muted-foreground">No</span>
                     )}
                   </td>
+                  {/* El clic de la fila navega al detalle, así que lo que hay
+                      aquí tiene que detener la propagación o el diálogo se abre
+                      y la página cambia debajo. */}
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <EstadoIdentidad
+                      estado={verificaciones?.get(client.id)}
+                      onVerificar={() =>
+                        setAVerificar({ id: client.id, nombre: client.nombre_razon_social })
+                      }
+                    />
+                  </td>
                   <td className="px-4 py-3 text-sm text-accent font-medium hover:underline">Ver</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                  <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground text-sm">
                     {L.clientesVacio}
                   </td>
                 </tr>
@@ -466,6 +496,65 @@ export default function ClientsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EnviarVerificacionDialog
+        clienteId={aVerificar?.id ?? null}
+        clienteNombre={aVerificar?.nombre ?? ""}
+        correoSugerido={null}
+        telefonoSugerido={null}
+        nombreOrganizacion={profile?.organization_name ?? "Su notaría"}
+        onCerrar={() => setAVerificar(null)}
+        onEnviada={() => void recargarVerificaciones()}
+      />
+    </div>
+  );
+}
+
+/**
+ * Estado de identidad de un compareciente.
+ *
+ * Sin verificación no se dice «no verificado», que suena a que falló: se
+ * ofrece hacerla. Y cuando está aprobada se dice «identidad verificada», nunca
+ * «identificado» a secas — identificar en el sentido del artículo 18 es
+ * integrar el expediente, y eso es más que verificar quién es alguien.
+ */
+function EstadoIdentidad({
+  estado,
+  onVerificar,
+}: {
+  estado: EstadoVerificacion | undefined;
+  onVerificar: () => void;
+}) {
+  if (!estado) {
+    return (
+      <Button size="sm" variant="ghost" className="gap-2" onClick={onVerificar}>
+        <ShieldCheck className="w-4 h-4" /> Verificar
+      </Button>
+    );
+  }
+
+  // El color refuerza; el texto lleva el significado.
+  const clase =
+    estado === "aprobada"
+      ? "bg-success/10 text-success"
+      : estado === "rechazada"
+        ? "bg-destructive/10 text-destructive"
+        : estado === "en_progreso" || estado === "no_iniciada" || estado === "en_revision"
+          ? "bg-accent/10 text-accent"
+          : "bg-warning/10 text-warning";
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className={cn("status-badge text-xs whitespace-nowrap", clase)}>
+        {ETIQUETA_ESTADO[estado]}
+      </span>
+      {/* Se puede reintentar salvo cuando ya está aprobada: volver a pedirla
+          ahí sólo gasta una verificación y confunde a la persona. */}
+      {estado !== "aprobada" && (
+        <Button size="sm" variant="ghost" onClick={onVerificar} className="h-7 px-2 text-xs">
+          Reenviar
+        </Button>
+      )}
     </div>
   );
 }
