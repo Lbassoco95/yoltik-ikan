@@ -19,10 +19,12 @@ declare
   v_real   uuid := 'eeeeeeee-0000-0000-0000-000000000034';
   v_cli    uuid;
   v_aviso  uuid;
+  v_aviso_real uuid;
   v_msg    text;
   v_n      int;
   v_res    jsonb;
   v_eventos_antes bigint;
+  v_retiros_antes bigint;
 begin
   insert into auth.users (id, email) values (v_kawiil, 'kawiil34@prueba.mx') on conflict do nothing;
   insert into platform_admin (user_id, nombre) values (v_kawiil, 'Kawiil') on conflict do nothing;
@@ -48,8 +50,9 @@ begin
   -- ------------------------------------------------------------------
   -- 2. Y un aviso de una organización real NO se marca
   -- ------------------------------------------------------------------
-  insert into aviso (organization_id, tipo, payload) values (v_real, 'mensual', '{}'::jsonb);
-  select count(*) into v_n from aviso where organization_id = v_real and de_demostracion;
+  insert into aviso (organization_id, tipo, payload)
+  values (v_real, 'mensual', '{}'::jsonb) returning id into v_aviso_real;
+  select count(*) into v_n from aviso where id = v_aviso_real and de_demostracion;
   insert into resultado values (2, 'El de una organización real no', '0', v_n::text, v_n = 0);
 
   -- ------------------------------------------------------------------
@@ -69,9 +72,11 @@ begin
   -- 4. El de la organización real sí se firma: el candado es del demo
   -- ------------------------------------------------------------------
   begin
-    update aviso set firmado_por = v_kawiil, firmado_en = now()
-     where organization_id = v_real;
-    select count(*) into v_n from aviso where organization_id = v_real and firmado_por is not null;
+    -- Acotado al aviso de ESTA corrida. Contando por organización, la segunda
+    -- vez que se corre la suite salen los de la anterior: el mismo defecto que
+    -- ya se corrigió en probar_0028 y se repitió aquí.
+    update aviso set firmado_por = v_kawiil, firmado_en = now() where id = v_aviso_real;
+    select count(*) into v_n from aviso where id = v_aviso_real and firmado_por is not null;
     insert into resultado values (4, 'El de una organización real sí', '1', v_n::text, v_n = 1);
   exception when others then
     get stacked diagnostics v_msg = message_text;
@@ -107,6 +112,8 @@ begin
   -- 7. Con motivo sí, y dice qué retiró
   -- ------------------------------------------------------------------
   select count(*) into v_eventos_antes from evento_auditoria where organization_id = v_demo;
+  select count(*) into v_retiros_antes from evento_auditoria
+   where organization_id = v_demo and tipo = 'datos_de_demostracion_retirados';
 
   select public.retirar_datos_de_demostracion(
     v_demo, 'La notaría contrató y va a cargar información real') into v_res;
@@ -125,10 +132,14 @@ begin
   insert into resultado values (9, 'La bitácora sobrevive al vaciado',
     'más que antes (' || v_eventos_antes || ')', v_n::text, v_n > v_eventos_antes);
 
+  -- Contra el conteo previo, no contra un reloj: registrar_evento sella con
+  -- now(), que es el inicio de la transacción y por tanto ANTERIOR a cualquier
+  -- clock_timestamp() tomado dentro del bloque. Filtrar por tiempo daba cero.
   select count(*) into v_n from evento_auditoria
    where organization_id = v_demo and tipo = 'datos_de_demostracion_retirados'
      and payload->>'motivo' like 'La notaría contrató%';
-  insert into resultado values (10, 'Y explica el hueco que deja', '1', v_n::text, v_n = 1);
+  insert into resultado values (10, 'Y explica el hueco que deja',
+    'uno más que antes', (v_n - v_retiros_antes)::text, v_n = v_retiros_antes + 1);
 
   select count(*) into v_n from public.verificar_cadena(v_demo);
   insert into resultado values (11, 'La cadena sigue íntegra', '0 roturas', v_n::text, v_n = 0);
