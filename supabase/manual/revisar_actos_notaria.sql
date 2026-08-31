@@ -41,6 +41,10 @@ select '2 · Tipologías activas', row_number() over (order by t.codigo)::int,
                             || coalesce((t.regla_dsl->'valores')::text, (t.regla_dsl->'fuentes')::text, '?')
          when 'agregado' then 'suma ' || (t.regla_dsl->'ventana')::text || ' >= '
                             || coalesce(t.regla_dsl->'condicion'->'suma_monto_uma'->>'valor', '?') || ' UMA'
+                            -- Sin filtro, una regla de monto suma TODOS los actos del cliente
+                            -- sin mirar de cuál se trata. Hay que poder verlo de un vistazo.
+                            || coalesce(', sólo ' || (t.regla_dsl->'filtro'->'valores')::text,
+                                        '  ← SIN FILTRO: suma todos los actos del cliente')
          else t.regla_dsl->>'tipo'
        end,
        t.nombre

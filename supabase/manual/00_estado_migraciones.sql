@@ -151,7 +151,15 @@ lateral (values
                            where id = '12121212-1212-1212-1212-121212121212')
               or exists (select 1 from tipologia_av
                           where sector = 'XII' and codigo = 'XII-04' and activa)),
-       'apply_0030_umbrales_fe_publica.sql')
+       'apply_0030_umbrales_fe_publica.sql'),
+  (31, '0031 · tipos de acto oficiales, filtro por tipo y clave del padrón',
+       not exists (select 1 from operation
+                    where contraparte->>'tipo_acto' in
+                          ('compraventa_inmueble','poder_irrevocable',
+                           'constitucion_sociedad','fideicomiso'))
+         and not exists (select 1 from organizations
+                          where clave_sujeto_obligado is null and rfc is not null),
+       'apply_0031_actos_y_clave.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -261,7 +269,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0030'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0031'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')

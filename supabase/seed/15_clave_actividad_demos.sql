@@ -7,11 +7,20 @@
 -- 0InformeEnCeros.xlsm — "FEP, FE PUBLICA" y "AVI, OPERACIONES CON ACTIVOS
 -- VIRTUALES" (ver seed 14).
 --
--- Las otras dos —clave_sujeto_obligado y clave_entidad_colegiada— NO se
--- siembran: el SAT las asigna a cada sujeto obligado al inscribirse en el
--- padrón, no se derivan de nada, y ponerles un valor plausible sería fabricar
--- la identidad con la que se reporta. Se quedan en null y la pantalla de
--- pendientes las reclama.
+-- clave_sujeto_obligado SÍ se deriva, y esta nota decía lo contrario. El
+-- instructivo del layout lo fija en su regla VC22R1: «La clave del campo debe
+-- ser el Registro Federal de Contribuyentes (RFC) con Homoclave del Sujeto
+-- Obligado.» La pone la migration 0031 a partir del RFC de la organización.
+--
+-- El matiz que sí importa fuera de la demo: el sujeto obligado de la fracción
+-- XII es el FEDATARIO, persona física, y su RFC es de 13 caracteres. Una
+-- organización dada de alta con RFC de persona moral valida contra el patrón
+-- igual, pero el RFC correcto para reportar es el del notario.
+--
+-- clave_entidad_colegiada sí se queda en null, y ahí el razonamiento original
+-- se sostiene: sólo aplica cuando quien reporta es un colegio en nombre de sus
+-- miembros (reglas VC22R2 y VC22R3), no se deriva de ningún dato que tengamos,
+-- y ponerle un valor plausible sería fabricar bajo qué entidad se reporta.
 -- =====================================================================
 
 update organizations

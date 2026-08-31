@@ -36,6 +36,25 @@ export type ReglaDsl =
       tipo: 'agregado';
       ventana: string;
       agrupar_por: string;
+      /**
+       * Acota la regla a ciertas operaciones ANTES de agrupar y sumar.
+       *
+       * Sin esto, una regla llamada «transmisión de inmueble ≥ 8,000 UMA» suma
+       * también los poderes, los fideicomisos y las constituciones del mismo
+       * cliente, y levanta un hallazgo de transmisión de inmueble por actos que
+       * no lo son. Se cazó el 31/08/2026: una constitución de sociedad de
+       * $1,000,000 estaba disparando XII-01.
+       *
+       * Además es lo que pide la ley. El penúltimo párrafo del art. 17 de la
+       * LFPIORPI acumula los actos de un mismo cliente POR TIPO DE ACTO U
+       * OPERACIÓN, no todos juntos: sumar tipos distintos produce avisos que no
+       * proceden.
+       *
+       * Opcional a propósito: las reglas de estructuración del sector XVI sí
+       * suman todo lo del cliente, y ahí el comportamiento sin filtro es el
+       * correcto.
+       */
+      filtro?: { campo: string; valores: string[] };
       condicion: Record<string, Condicion>;
     }
   | {
@@ -393,7 +412,15 @@ function evalAgregado(
   ctx: MotorContext,
 ): HallazgoCandidato[] {
   const win = ventanaAMs(regla.ventana);
-  const grupos = agrupar(ops, (o) => String(valorEnCampo(o, regla.agrupar_por) ?? o.client_id));
+
+  // El filtro se aplica ANTES de agrupar: lo que queda fuera no cuenta para la
+  // suma ni puede cerrar una ventana.
+  const filtro = regla.filtro;
+  const aplicables = filtro
+    ? ops.filter((o) => filtro.valores.includes(String(valorEnCampo(o, filtro.campo) ?? '')))
+    : ops;
+
+  const grupos = agrupar(aplicables, (o) => String(valorEnCampo(o, regla.agrupar_por) ?? o.client_id));
   const out: HallazgoCandidato[] = [];
 
   for (const [clave, lista] of grupos) {

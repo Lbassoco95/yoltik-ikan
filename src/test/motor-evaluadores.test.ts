@@ -644,3 +644,86 @@ describe("fracción XII · umbrales de fe pública", () => {
     expect(evaluarTipologia(tip("XII-05", regla), [acto_fid(3_999 * UMA_PRUEBA)], ctx())).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------
+// Filtro por tipo de acto en las reglas agregadas
+// ---------------------------------------------------------------------
+// Se cazó el 31/08/2026 con el ensayo en seco del demo de notaría: una
+// constitución de sociedad de $1,000,000 estaba disparando XII-01, que se
+// llama «Transmisión de inmueble ≥ 8,000 UMA». La regla agregada sumaba TODO
+// lo del cliente en la ventana sin mirar de qué acto se trataba.
+//
+// No es sólo un nombre engañoso: el penúltimo párrafo del art. 17 de la
+// LFPIORPI acumula POR TIPO DE ACTO U OPERACIÓN. Sumar tipos distintos produce
+// avisos que no proceden.
+describe("agregado con filtro por tipo de acto", () => {
+  const regla = (filtro?: { campo: string; valores: string[] }): Tipologia["regla_dsl"] => ({
+    tipo: "agregado",
+    ventana: "6M",
+    agrupar_por: "client_id",
+    ...(filtro ? { filtro } : {}),
+    condicion: {
+      count: { op: ">=", valor: 1 },
+      suma_monto_uma: { op: ">=", valor: 8_000 },
+    },
+  });
+
+  const soloInmuebles = { campo: "contraparte.tipo_acto", valores: ["transmision_inmueble"] };
+
+  const actos = [
+    op({ id: "soc", fecha: "2026-08-19T10:00:00Z", tipo: "otro", monto_mxn: 8_524 * UMA_PRUEBA,
+         contraparte: { tipo_acto: "constitucion_personas_morales", pais_iso2: "MX" } }),
+  ];
+
+  it("SIN filtro, una constitución de sociedad dispara una regla de inmuebles", () => {
+    // El comportamiento que había. Se deja escrito para que se vea el bug.
+    expect(evaluarTipologia(tip("XII-01", regla()), actos, ctx())).toHaveLength(1);
+  });
+
+  it("CON filtro, esa misma constitución ya no la dispara", () => {
+    expect(evaluarTipologia(tip("XII-01", regla(soloInmuebles)), actos, ctx())).toHaveLength(0);
+  });
+
+  it("y la transmisión de inmueble sí sigue disparando", () => {
+    const inmueble = [
+      op({ id: "inm", fecha: "2026-08-19T10:00:00Z", tipo: "otro", monto_mxn: 8_524 * UMA_PRUEBA,
+           contraparte: { tipo_acto: "transmision_inmueble", pais_iso2: "MX" } }),
+    ];
+    expect(evaluarTipologia(tip("XII-01", regla(soloInmuebles)), inmueble, ctx())).toHaveLength(1);
+  });
+
+  it("lo filtrado no suma: dos actos de tipos distintos no se acumulan entre sí", () => {
+    // Es la parte legal del asunto. 5,000 + 4,000 UMA cruzan el umbral sólo si
+    // se suman, y la ley no permite sumarlos porque son actos de tipo distinto.
+    const mezcla = [
+      op({ id: "a", fecha: "2026-05-02T10:00:00Z", tipo: "otro", monto_mxn: 5_000 * UMA_PRUEBA,
+           contraparte: { tipo_acto: "transmision_inmueble", pais_iso2: "MX" } }),
+      op({ id: "b", fecha: "2026-08-18T10:00:00Z", tipo: "otro", monto_mxn: 4_000 * UMA_PRUEBA,
+           contraparte: { tipo_acto: "constitucion_modificacion_fideicomiso", pais_iso2: "MX" } }),
+    ];
+    expect(evaluarTipologia(tip("XII-01", regla(soloInmuebles)), mezcla, ctx())).toHaveLength(0);
+  });
+
+  it("pero dos del MISMO tipo sí se acumulan, que es lo que la ley pide", () => {
+    const dosInmuebles = [
+      op({ id: "a", fecha: "2026-05-02T10:00:00Z", tipo: "otro", monto_mxn: 5_000 * UMA_PRUEBA,
+           contraparte: { tipo_acto: "transmision_inmueble", pais_iso2: "MX" } }),
+      op({ id: "b", fecha: "2026-08-18T10:00:00Z", tipo: "otro", monto_mxn: 4_000 * UMA_PRUEBA,
+           contraparte: { tipo_acto: "transmision_inmueble", pais_iso2: "MX" } }),
+    ];
+    const r = evaluarTipologia(tip("XII-01", regla(soloInmuebles)), dosInmuebles, ctx());
+    expect(r).toHaveLength(1);
+    expect(r[0].operation_id).toBe("b");
+  });
+
+  it("sin filtro sigue sumando todo: el sector XVI lo necesita así", () => {
+    // XVI-01 (estructuración) suma las operaciones del cliente sin distinguir
+    // tipo, y ahí ese comportamiento es el correcto. El filtro es opcional
+    // justamente para no romperlo.
+    const cripto = [
+      op({ id: "a", fecha: "2026-08-18T10:00:00Z", monto_mxn: 4_000 * UMA_PRUEBA }),
+      op({ id: "b", fecha: "2026-08-18T15:00:00Z", monto_mxn: 4_000 * UMA_PRUEBA }),
+    ];
+    expect(evaluarTipologia(tip("XVI-01", regla()), cripto, ctx())).toHaveLength(1);
+  });
+});
