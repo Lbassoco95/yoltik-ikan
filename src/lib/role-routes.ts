@@ -8,6 +8,7 @@ import {
   Shield,
   SlidersHorizontal,
   Grid3x3,
+  ScanLine,
   ClipboardCheck,
   Settings,
   type LucideIcon,
@@ -39,11 +40,16 @@ export const NAV_ENTRIES: NavEntry[] = [
   { to: '/listas',       label: 'Listas',          icon: Shield,             roles: ['admin'],                   section: 'main' },
   { to: '/reglas',       label: 'Motor de Reglas', icon: SlidersHorizontal,  roles: ['admin'],                   section: 'main' },
   { to: '/matriz',       label: 'Matriz de riesgo', icon: Grid3x3,           roles: ['oc', 'admin'],             section: 'main' },
-  // "ID No Presencial" (/verificacion) es maqueta del scaffold Lovable, sin
-  // integración (Moffin/KYC es mock hasta post-demo). Se oculta del menú para no
-  // confundir en pruebas; la ruta sigue existiendo en App.tsx. Reactivar cuando
-  // se integre la verificación de identidad real.
-  // { to: '/verificacion', label: 'ID No Presencial', icon: ScanLine,          roles: ['operador', 'oc'],          section: 'main' },
+  // Estuvo oculta mientras fue maqueta del scaffold, con la nota de reactivarla
+  // "cuando se integre la verificación de identidad real". Ya se integró —Didit,
+  // migration 0032— y la entrada se quedó comentada: la verificación existía,
+  // funcionaba desde Comparecientes, y no había manera de llegar a su pantalla
+  // desde el menú.
+  //
+  // El nombre tampoco se queda: "ID No Presencial" es jerga del andamiaje y
+  // además describe mal lo que hace, porque en una notaría el caso más común es
+  // que el compareciente esté ahí enfrente.
+  { to: '/verificacion', label: 'Identidad',       icon: ScanLine,           roles: ['operador', 'oc'],          section: 'main' },
   { to: '/auditoria',    label: 'Auditoría',       icon: ClipboardCheck,     roles: ['oc', 'admin'],             section: 'secondary' },
   { to: '/configuracion',label: 'Configuración',   icon: Settings,           roles: ['admin'],                   section: 'secondary' },
 ];
