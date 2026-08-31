@@ -97,6 +97,18 @@ Deno.serve(async (req) => {
 
     const sesion = await respuesta.json();
 
+    // Qué dijo Didit del correo. La sesión se crea igual aunque el envío no
+    // salga —el 200 es de la sesión, no del correo—, así que sin esto un correo
+    // que nunca se manda es indistinguible de uno entregado. Se anota en el log
+    // de la función, que es donde se puede revisar sin abrir la base.
+    if (canal === 'correo') {
+      console.log(
+        '[didit] sesión', sesion.session_id, 'creada con envío por correo solicitado.',
+        'Respuesta de Didit sobre contacto:',
+        JSON.stringify(sesion.contact_details ?? sesion.contact ?? null),
+      );
+    }
+
     const comoServicio = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: fila, error: errFila } = await comoServicio
       .from('verificacion_identidad')
