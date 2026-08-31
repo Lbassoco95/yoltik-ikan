@@ -166,7 +166,17 @@ lateral (values
   (32, '0032 · verificación de identidad del compareciente (Didit)',
        to_regclass('public.verificacion_identidad') is not null
          and not has_table_privilege('authenticated', 'public.verificacion_identidad', 'update'),
-       'apply_0032_verificacion_identidad.sql')
+       'apply_0032_verificacion_identidad.sql'),
+  -- Se comprueba la REGLA, no el parámetro: el umbral que el motor aplica vive
+  -- en regla_dsl. Y el 645 estaba quince veces por encima del vigente.
+  (33, '0033 · umbrales de activos virtuales al régimen vigente (fracción XVI)',
+       not exists (select 1 from tipologia_av
+                    where sector = 'XVI' and codigo = 'XVI-01' and activa
+                      and (regla_dsl->'condicion'->'suma_monto_uma'->>'valor')::numeric <> 210)
+         and not exists (select 1 from parametro_regulatorio
+                          where codigo in ('umbral_identificacion_uma','umbral_restriccion_uma')
+                            and vigente_hasta is null),
+       'apply_0033_umbrales_cripto.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -287,7 +297,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0032'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0033'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')

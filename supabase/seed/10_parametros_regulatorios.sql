@@ -64,40 +64,20 @@ insert into parametro_regulatorio
   (codigo, nombre, valor_numerico, unidad, sector, vigente_desde,
    fuente, confirmado_por, notas)
 select * from (values
-  ('umbral_identificacion_uma', 'Umbral de identificación', 645.0000, 'uma', '*',
-   date '2026-01-01', 'Art. 17 LFPIORPI (cita heredada de src/lib/utils.ts)', null::text,
-   'Trasladado del código sin cambiar su valor ni su alcance. Confirmar fecha de vigencia de origen y si aplica a todas las fracciones.'),
+  -- La reforma DOF 16/07/2025 reescribió la fracción XVI: 645 UMA de
+  -- identificación y 3,210 de Aviso ya no existen en el texto vigente. Los
+  -- sustituyen 210 UMA por operación y 4 UMA sobre la contraprestación.
+  ('umbral_xvi_operacion_uma',
+   'Operación de intercambio de activos virtuales por cliente · umbral de Aviso',
+   210.0000, 'uma', 'XVI',
+   date '2025-07-17', 'Art. 17 fr. XVI inciso a) LFPIORPI, reforma DOF 16/07/2025. Criterio Kawiil-Cumplimiento 31/08/2026.', null::text,
+   'Confirmado en Ley, PENDIENTE DE COTEJO contra el folleto oficial del SAT de la fracción XVI.'),
 
-  ('umbral_restriccion_uma', 'Umbral de restricción', 3210.0000, 'uma', '*',
-   date '2026-01-01', 'Heredado de src/pages/OperationsPage.tsx', null::text,
-   'Trasladado del código. El repo lo usaba sin cita explícita; confirmar fundamento y alcance.')
-) as v(codigo, nombre, valor_numerico, unidad, sector, vigente_desde,
-       fuente, confirmado_por, notas)
-where not exists (
-  select 1 from parametro_regulatorio p
-  where p.codigo = v.codigo and p.sector = v.sector and p.vigente_desde = v.vigente_desde
-);
-
--- ---------------------------------------------------------------------
--- Umbrales de la fracción XII (fe pública) — SIN CONFIRMAR
--- ---------------------------------------------------------------------
--- Vienen marcados como "referencia sujeta a confirmación" desde que se
--- sembraron en 08_notarias_demo.sql. Al entrar aquí dejan de ser una nota en
--- un comentario y pasan a poder decidir avisos, así que la marca importa más:
--- `confirmado_por` null es lo que hace que la UI los muestre con banner.
-insert into parametro_regulatorio
-  (codigo, nombre, valor_numerico, unidad, sector, vigente_desde,
-   fuente, confirmado_por, notas)
-select * from (values
-  -- La vigencia es la LEGAL: 17/07/2025, cuando entró en vigor la reforma. No
-  -- la fecha en que nosotros nos enteramos. Un catálogo con vigencias que
-  -- empiezan el día que alguien lo cargó no sirve para juzgar un acto pasado,
-  -- que es justo para lo que existe.
-  ('umbral_xii_inmueble_uma',
-   'Transmisión o constitución de derechos reales sobre inmuebles · umbral de Aviso',
-   8000.0000, 'uma', 'XII',
-   date '2025-07-17', 'Art. 17 fr. XII apartado A inciso a) LFPIORPI, reforma DOF 16/07/2025. Informe técnico Kawiil-Cumplimiento 31/08/2026.', null::text,
-   'Base de cálculo (art. 6 del Reglamento, DOF 27/03/2026): el MAYOR entre precio pactado, valor catastral, valor comercial y monto garantizado por suerte principal, sin contribuciones ni accesorios. Excluye garantías a favor del sistema financiero u organismos públicos de vivienda.'),
+  ('umbral_xvi_contraprestacion_uma',
+   'Contraprestación cobrada por el servicio · umbral de Aviso',
+   4.0000, 'uma', 'XVI',
+   date '2025-07-17', 'Art. 17 fr. XVI inciso b) LFPIORPI, reforma DOF 16/07/2025. Criterio Kawiil-Cumplimiento 31/08/2026.', null::text,
+   'Se mide sobre la COMISIÓN cobrada, no sobre el monto de la operación. Son $469.24 con la UMA de 2026: en la práctica un umbral cercano a cero. Confirmado en Ley, pendiente de cotejo.'),
 
   ('umbral_xii_fideicomiso_uma',
    'Constitución o modificación de fideicomisos traslativos o de garantía · umbral de Aviso',

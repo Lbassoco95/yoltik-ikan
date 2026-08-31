@@ -104,7 +104,12 @@ export type ReglaDsl =
 export type ClasificacionUrgencia = '24_horas' | 'por_umbral';
 
 /** Métricas de `condicion` que representan un umbral de MONTO (no de conteo). */
-const METRICAS_MONTO = ['suma_monto_uma', 'suma_monto_mxn', 'monto_uma', 'monto_mxn'];
+const METRICAS_MONTO = [
+  'suma_monto_uma', 'suma_monto_mxn', 'monto_uma', 'monto_mxn',
+  // La contraprestación es un umbral de monto igual que los demás: lo que la
+  // distingue es sobre qué se mide, no cómo se clasifica.
+  'contraprestacion_uma', 'contraprestacion_mxn',
+];
 
 /** Deriva el SLA operativo del hallazgo a partir de la forma de la regla que
  *  lo generó. Espejo exacto de `public.urgencia_de_regla(jsonb)` en la
@@ -138,6 +143,13 @@ export interface OperacionEval {
   client_id: string;
   tipo: string; // enum tipo_operacion
   monto_mxn: number;
+  /**
+   * Comisión o contraprestación cobrada por el servicio, cualquiera que sea su
+   * denominación. Es la base del inciso b) de la fracción XVI, cuyo umbral son
+   * 4 UMA: se mide sobre lo que cobra el sujeto obligado, no sobre lo que mueve
+   * el cliente, así que no se puede derivar de `monto_mxn`.
+   */
+  contraprestacion_mxn?: number | null;
   activo_virtual?: string | null;
   contraparte?: Record<string, unknown> | null;
   fecha: string; // ISO 8601
@@ -156,7 +168,22 @@ export interface Tipologia {
 
 export interface MotorContext {
   /** Valor de la UMA en MXN. */
+  /** UMA vigente hoy. Se conserva como respaldo y para las reglas que no
+   *  dependen de la fecha de un acto concreto. */
   umaMxn: number;
+  /**
+   * Histórico de la UMA, de la más nueva a la más vieja.
+   *
+   * Hace falta porque la UMA cambia cada 1 de febrero y la ley mide cada acto
+   * con la vigente EN SU FECHA, no con la del día en que se revisa. Sin esto,
+   * un acto de enero de 2026 se juzgaba con la UMA que entró en febrero: el
+   * mismo acto cruzaba o no el umbral según cuándo corriera el motor.
+   *
+   * Opcional: sin ella se usa `umaMxn` para todo, que es el comportamiento
+   * anterior y sigue siendo correcto cuando todos los actos son del año en
+   * curso.
+   */
+  umaVigencias?: { desde: string; valor: number }[];
   /** Momento de referencia para ventanas relativas (`desviacion`). */
   ahora: Date;
   /** Membresía país→lista: fuente (gafi_negra, ofac_sancionado, ...) → set de iso2. */
@@ -395,12 +422,40 @@ function candidato(
 // Evaluadores por tipo
 // ---------------------------------------------------------------------
 
+/**
+ * La UMA que aplica a un acto, según su fecha.
+ *
+ * Recorre el histórico de la más nueva a la más vieja y se queda con la primera
+ * cuya vigencia empezó en o antes del acto. Si el acto es anterior a todo lo que
+ * conocemos, se usa la más antigua que hay: es lo más cercano a la verdad que
+ * podemos decir, y mejor que dividir por la de hoy.
+ */
+export function umaEnFecha(ctx: MotorContext, fechaIso: string): number {
+  const vig = ctx.umaVigencias;
+  if (!vig || vig.length === 0) return ctx.umaMxn;
+  const dia = fechaIso.slice(0, 10);
+  for (const v of vig) if (v.desde <= dia) return v.valor;
+  return vig[vig.length - 1].valor;
+}
+
 function metricasVentana(ops: OperacionEval[], ctx: MotorContext): Record<string, number> {
   const suma_monto_mxn = ops.reduce((s, o) => s + o.monto_mxn, 0);
+
+  // Cada operación se convierte a UMA con la SUYA y después se suman. Dividir
+  // la suma por un solo valor daría otro número cuando la ventana cruza un 1 de
+  // febrero, que es justo lo que la ventana de seis meses hace la mitad del año.
+  const suma_monto_uma = ops.reduce((s, o) => s + o.monto_mxn / umaEnFecha(ctx, o.fecha), 0);
+
+  const contraprestacion_mxn = ops.reduce((s, o) => s + (o.contraprestacion_mxn ?? 0), 0);
+  const contraprestacion_uma = ops.reduce(
+    (s, o) => s + (o.contraprestacion_mxn ?? 0) / umaEnFecha(ctx, o.fecha), 0);
+
   return {
     count: ops.length,
     suma_monto_mxn,
-    suma_monto_uma: suma_monto_mxn / ctx.umaMxn,
+    suma_monto_uma,
+    contraprestacion_mxn,
+    contraprestacion_uma,
     count_ip_anonima: ops.filter((o) => o.contraparte?.ip_anonima === true).length,
   };
 }
@@ -657,7 +712,7 @@ function evalDesviacion(
 
     const delMes = lista.filter((o) => ms(o.fecha) >= inicioMes && ms(o.fecha) <= finRef);
     if (delMes.length === 0) continue;
-    const sumaUma = delMes.reduce((s, o) => s + o.monto_mxn, 0) / ctx.umaMxn;
+    const sumaUma = delMes.reduce((s, o) => s + o.monto_mxn / umaEnFecha(ctx, o.fecha), 0);
 
     if (sumaUma > base * regla.factor) {
       const rep = [...delMes].sort((a, b) => ms(b.fecha) - ms(a.fecha))[0];

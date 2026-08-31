@@ -79,7 +79,7 @@ Deno.serve(async (req: Request) => {
   // --- 2. Operaciones (+ cliente) ------------------------------------
   let opQuery = supabase
     .from('operation')
-    .select('id, organization_id, client_id, tipo, monto_mxn, activo_virtual, contraparte, fecha, client:client_id(datos_kyc)')
+    .select('id, organization_id, client_id, tipo, monto_mxn, contraprestacion_mxn, activo_virtual, contraparte, fecha, client:client_id(datos_kyc)')
     .eq('organization_id', input.organization_id);
   if (input.operation_id) opQuery = opQuery.eq('id', input.operation_id);
   const { data: operacionesRaw, error: errOps } = await opQuery;
@@ -104,6 +104,23 @@ Deno.serve(async (req: Request) => {
     return json({ error: `No se pudo leer la UMA vigente: ${errUma.message}` }, 500);
   }
   const umaMxn = Number(umaRow);
+
+  // El histórico de la UMA, no sólo la de hoy. La ley mide cada acto con la
+  // vigente EN SU FECHA (art. 17 y criterio de cumplimiento del 31/08/2026), y
+  // la UMA cambia cada 1 de febrero: sin esto, un acto de enero se juzgaba con
+  // la UMA que entró en febrero y el mismo acto cruzaba o no el umbral según
+  // cuándo corriera el motor.
+  const { data: vigenciasUma } = await supabase
+    .from('parametro_regulatorio')
+    .select('valor_numerico, vigente_desde')
+    .eq('codigo', 'uma_diaria')
+    .eq('sector', '*')
+    .order('vigente_desde', { ascending: false });
+
+  const umaVigencias = (vigenciasUma ?? []).map((v) => ({
+    desde: String(v.vigente_desde),
+    valor: Number(v.valor_numerico),
+  }));
   if (!Number.isFinite(umaMxn) || umaMxn <= 0) {
     return json(
       {
@@ -142,6 +159,10 @@ Deno.serve(async (req: Request) => {
       client_id: String(o.client_id),
       tipo: String(o.tipo),
       monto_mxn: Number(o.monto_mxn),
+      // Null se conserva como null, no como cero: «no se capturó la comisión»
+      // y «la comisión fue cero» son cosas distintas, y la regla del inciso b)
+      // de la fracción XVI sólo debe disparar sobre lo primero si se capturó.
+      contraprestacion_mxn: o.contraprestacion_mxn == null ? null : Number(o.contraprestacion_mxn),
       activo_virtual: (o.activo_virtual as string | null) ?? null,
       contraparte: (o.contraparte as Record<string, unknown> | null) ?? null,
       fecha: String(o.fecha),
@@ -236,6 +257,7 @@ Deno.serve(async (req: Request) => {
 
   const ctx: MotorContext = {
     umaMxn,
+    umaVigencias,
     ahora: new Date(),
     paisPorFuente,
     perfilMensualUmaPorCliente,

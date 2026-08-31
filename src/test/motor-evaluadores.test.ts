@@ -12,6 +12,7 @@ import {
   type Tipologia,
   type OperacionEval,
   type MotorContext,
+  umaEnFecha,
 } from "../../supabase/functions/motor-pld/evaluadores";
 
 // ---------------------------------------------------------------------
@@ -725,5 +726,102 @@ describe("agregado con filtro por tipo de acto", () => {
       op({ id: "b", fecha: "2026-08-18T15:00:00Z", monto_mxn: 4_000 * UMA_PRUEBA }),
     ];
     expect(evaluarTipologia(tip("XVI-01", regla()), cripto, ctx())).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------
+// La UMA de la fecha del acto, no la de hoy
+// ---------------------------------------------------------------------
+// El criterio de cumplimiento del 31/08/2026 lo pide en su punto 1.2: «Valor
+// diario de la UMA vigente en la fecha del acto, no en la fecha del Aviso. La
+// UMA cambia cada 1 de febrero, de modo que el sistema necesita una tabla
+// histórica de valores, no un solo número.»
+//
+// El motor dividía la suma de la ventana por UN solo valor. Con ventanas de
+// seis meses, la mitad del año cruza un 1 de febrero.
+describe("UMA por fecha del acto", () => {
+  const VIGENCIAS = [
+    { desde: "2026-02-01", valor: 117.31 },
+    { desde: "2025-02-01", valor: 113.14 },
+  ];
+  const conHistorico = () => ctx({ umaMxn: 117.31, umaVigencias: VIGENCIAS });
+
+  it("un acto de 2025 se mide con la UMA de 2025", () => {
+    expect(umaEnFecha(conHistorico(), "2025-06-15T00:00:00Z")).toBe(113.14);
+  });
+
+  it("un acto de 2026 se mide con la UMA de 2026", () => {
+    expect(umaEnFecha(conHistorico(), "2026-06-15T00:00:00Z")).toBe(117.31);
+  });
+
+  it("el 1 de febrero ya cuenta con la nueva: la vigencia abre ese día", () => {
+    expect(umaEnFecha(conHistorico(), "2026-02-01T00:00:00Z")).toBe(117.31);
+    expect(umaEnFecha(conHistorico(), "2026-01-31T23:59:59Z")).toBe(113.14);
+  });
+
+  it("un acto anterior a todo lo que conocemos usa la más antigua", () => {
+    // Mejor eso que dividir por la de hoy, que es la más lejana de la verdad.
+    expect(umaEnFecha(conHistorico(), "2019-01-01T00:00:00Z")).toBe(113.14);
+  });
+
+  it("sin histórico se comporta como antes", () => {
+    expect(umaEnFecha(ctx({ umaMxn: 100 }), "2019-01-01T00:00:00Z")).toBe(100);
+  });
+
+  it("una ventana que cruza el 1 de febrero suma cada acto con SU UMA", () => {
+    // 1,000,000 en enero de 2026 son 8,838 UMA con la de 2025 (113.14).
+    // 1,000,000 en marzo de 2026 son 8,524 UMA con la de 2026 (117.31).
+    // Juntos, 17,362 UMA. Dividiendo la suma por la de hoy salían 17,049:
+    // 313 UMA de diferencia, y el umbral no se mueve para acomodarse.
+    const regla: Tipologia["regla_dsl"] = {
+      tipo: "agregado", ventana: "6M", agrupar_por: "client_id",
+      condicion: { suma_monto_uma: { op: ">=", valor: 17_200 } },
+    };
+    const ops = [
+      op({ id: "a", fecha: "2026-01-15T10:00:00Z", monto_mxn: 1_000_000 }),
+      op({ id: "b", fecha: "2026-03-15T10:00:00Z", monto_mxn: 1_000_000 }),
+    ];
+    // Con el histórico cruza el umbral…
+    expect(evaluarTipologia(tip("X", regla), ops, conHistorico())).toHaveLength(1);
+    // …y sin él, con la UMA de hoy para todo, no lo cruza.
+    expect(evaluarTipologia(tip("X", regla), ops, ctx({ umaMxn: 117.31 }))).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------
+// Fracción XVI · contraprestación cobrada (inciso b)
+// ---------------------------------------------------------------------
+describe("umbral sobre la contraprestación", () => {
+  const regla: Tipologia["regla_dsl"] = {
+    tipo: "agregado", ventana: "6M", agrupar_por: "client_id",
+    condicion: { contraprestacion_uma: { op: ">=", valor: 4 } },
+  };
+
+  it("se mide sobre la comisión, no sobre el monto de la operación", () => {
+    // Un millón de pesos movidos con comisión de $100: la operación es enorme
+    // y la comisión no llega a 4 UMA. El inciso b) mira la comisión.
+    const chica = [op({ id: "a", fecha: "2026-08-18T10:00:00Z", monto_mxn: 1_000_000, contraprestacion_mxn: 100 })];
+    expect(evaluarTipologia(tip("XVI-09", regla), chica, ctx({ umaMxn: 117.31 }))).toHaveLength(0);
+
+    // 4 UMA con la de 2026 son $469.24.
+    const justa = [op({ id: "b", fecha: "2026-08-18T10:00:00Z", monto_mxn: 5_000, contraprestacion_mxn: 470 })];
+    expect(evaluarTipologia(tip("XVI-09", regla), justa, ctx({ umaMxn: 117.31 }))).toHaveLength(1);
+  });
+
+  it("una operación sin comisión capturada no dispara", () => {
+    // Null no es cero pesos de comisión: es que no se capturó. Tratarlo como
+    // cero es lo conservador aquí, porque lo contrario inventaría avisos.
+    const ops = [op({ id: "a", fecha: "2026-08-18T10:00:00Z", monto_mxn: 1_000_000 })];
+    expect(evaluarTipologia(tip("XVI-09", regla), ops, ctx({ umaMxn: 117.31 }))).toHaveLength(0);
+  });
+
+  it("la contraprestación se acumula entre operaciones del cliente", () => {
+    const ops = [
+      op({ id: "a", fecha: "2026-07-01T10:00:00Z", monto_mxn: 1_000, contraprestacion_mxn: 250 }),
+      op({ id: "b", fecha: "2026-08-01T10:00:00Z", monto_mxn: 1_000, contraprestacion_mxn: 250 }),
+    ];
+    const r = evaluarTipologia(tip("XVI-09", regla), ops, ctx({ umaMxn: 117.31 }));
+    expect(r).toHaveLength(1);
+    expect(r[0].operation_id).toBe("b");
   });
 });
