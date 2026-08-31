@@ -107,14 +107,26 @@ where u.deleted_at is null;
 -- ---------------------------------------------------------------------
 -- Lo que hay que saber sin leer la lista entera
 -- ---------------------------------------------------------------------
+-- El conteo de factores se saca de auth.mfa_factors, NO del veredicto.
+--
+-- La primera versión contaba `veredicto = 'entra normal'` y lo rotulaba «con
+-- su segundo factor puesto». En cuanto el caso de roles cruzados pasó a ganarle
+-- al de factor puesto en el `case`, alguien que SÍ tenía su factor dejó de
+-- contarse y el resumen bajó de 2 a 1 sin que nadie hubiera perdido nada. Un
+-- resumen que mide una cosa y dice otra asusta en la dirección equivocada.
 insert into ikan_usuarios
 select '0 · Resumen', 1,
-       count(*) || ' usuarios activos',
-       count(*) filter (where veredicto = 'entra normal') || ' con su segundo factor puesto',
+       (select count(*) from auth.users where deleted_at is null) || ' usuarios activos',
+       (select count(distinct f.user_id)
+          from auth.mfa_factors f
+          join auth.users u on u.id = f.user_id and u.deleted_at is null
+         where f.status = 'verified') || ' con su segundo factor puesto',
        count(*) filter (where veredicto like 'REVISAR%') || ' para revisar',
        case when count(*) filter (where veredicto like 'REVISAR%') = 0
             then 'nada urgente: los pendientes se resuelven al entrar'
-            else 'mira las filas que dicen REVISAR' end,
+            -- «Para revisar» no quiere decir «sin factor»: un usuario con
+            -- roles en dos organizaciones se revisa aunque su 2FA esté bien.
+            else 'mira las filas que dicen REVISAR (no todas son por falta de factor)' end,
        ''
 from ikan_usuarios where seccion = '1 · Usuarios';
 
