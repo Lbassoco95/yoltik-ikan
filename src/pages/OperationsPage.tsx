@@ -221,6 +221,36 @@ export default function OperationsPage() {
       return;
     }
 
+    // Lo que el acto necesita para poder entrar al aviso, exigido AHORA.
+    //
+    // Estos datos están en el instrumento que se acaba de firmar: el tipo de
+    // poder, el tipo de persona de cada compareciente, el capital social. El
+    // día 17 no están en ninguna parte más que en el protocolo, y quien captura
+    // ya no tiene a nadie a quien preguntarle. Dejarlos pasar aquí es mover el
+    // trabajo al peor momento posible y con menos información.
+    //
+    // Se exige SÓLO lo del acto. Lo que le falte al compareciente se exige en
+    // el alta del compareciente, y las claves del padrón en la configuración:
+    // cada registro responde por lo suyo. Bloquear el acto porque a otra
+    // persona le falta el RFC dejaría el instrumento SIN REGISTRAR, que es peor
+    // que registrarlo incompleto —un acto que no está en el sistema no se ve,
+    // no se persigue y no aparece en ninguna bandeja.
+    const faltanDelActo = pendientesActo({
+      fecha: form.fecha,
+      instrumento_publico: form.instrumento_publico,
+      tipo_acto: form.tipo_acto,
+      datos_acto: form.datos_acto,
+    }).filter((p) => p.gravedad === "bloquea_aviso" && p.momento === "captura");
+
+    if (esNotarias && faltanDelActo.length > 0) {
+      toast.error(
+        faltanDelActo.length === 1
+          ? faltanDelActo[0].detalle
+          : `Faltan ${faltanDelActo.length} datos del acto. Están en la lista de abajo.`,
+      );
+      return;
+    }
+
     // Las señales (país, tipo de acto) viajan en contraparte (jsonb).
     const contraparte: Record<string, unknown> = {};
     if (form.pais_iso2.trim()) contraparte.pais_iso2 = form.pais_iso2.trim().toUpperCase();

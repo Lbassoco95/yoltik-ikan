@@ -192,6 +192,27 @@ export default function ClientsPage() {
       );
       return;
     }
+    // Lo que le falta al compareciente para poder entrar a un aviso, exigido
+    // AHORA, que es cuando la persona está enfrente y trae su identificación en
+    // la mano. El día 17 esos datos no están en ninguna parte y ya no hay a
+    // quién preguntarle: la falta se arrastra hasta que el portal rechaza el
+    // aviso completo por un apellido.
+    //
+    // Sólo lo del compareciente. Lo del acto se exige al registrar el acto y
+    // las claves del padrón en la configuración: cada registro responde por lo
+    // suyo, y así ninguno queda sin capturar por lo que le falte a otro.
+    const faltan = pendientes.filter(
+      (p) => p.gravedad === "bloquea_aviso" && p.momento === "captura",
+    );
+    if (perfilActividad === "notarias" && faltan.length > 0) {
+      toast.error(
+        faltan.length === 1
+          ? faltan[0].detalle
+          : `Faltan ${faltan.length} datos del compareciente. Están en la lista de abajo.`,
+      );
+      return;
+    }
+
     const datos_kyc: Record<string, unknown> = {};
     if (form.email) datos_kyc.email = form.email;
     if (form.telefono) datos_kyc.telefono = form.telefono;

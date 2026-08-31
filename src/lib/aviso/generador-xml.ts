@@ -169,6 +169,39 @@ export interface ResultadoXml {
 const INSTRUMENTO_VALIDO = /^[0-9A-Z_-]{1,20}$/;
 const REFERENCIA_VALIDA = /^[A-ZÑ0-9]{1,14}$/;
 
+/**
+ * La referencia con la que un acto entra al aviso (campo 3.1 del layout).
+ *
+ * Hasta 14 caracteres alfanuméricos, y tiene que identificar SIEMPRE al mismo
+ * acto: es por donde el SAT liga un aviso modificatorio con el original, y por
+ * donde se explica meses después de qué instrumento salió un renglón.
+ *
+ * Se pedía `operation.folio` con un respaldo por posición en el periodo. La
+ * columna no existe —nunca existió, y la consulta entera fallaba con «column
+ * operation.folio does not exist», así que la pantalla del aviso no cargaba—,
+ * de modo que el respaldo era en realidad el único camino. Y ese respaldo es
+ * peor que el error: la posición cambia en cuanto se captura otro acto del
+ * mismo mes, así que regenerar el aviso de agosto en septiembre le habría dado
+ * al mismo instrumento una referencia distinta. Dos avisos del mismo acto sin
+ * nada que los relacione.
+ *
+ * El id de la operación no se mueve nunca. Seis dígitos del periodo y ocho del
+ * uuid caben justo en los catorce y se leen: AAAAMM + 8 hexadecimales.
+ *
+ * Se toman los ÚLTIMOS ocho, no los primeros. Con los primeros, los cuatro
+ * actos del demo —cuyos ids son deterministas y empiezan igual: 88888888-0000-…—
+ * salían los cuatro con la misma referencia. En un aviso con dos actos que se
+ * llaman igual, el SAT no puede distinguirlos y un modificatorio no sabe a cuál
+ * corrige. Con uuids aleatorios daba lo mismo, pero que un caso real del
+ * producto lo reventara a la primera dice que la elección estaba mal.
+ */
+export function referenciaDelActo(periodo: string, operationId: string): string {
+  const mes = periodo.replace(/[^0-9]/g, '').slice(0, 6);
+  const id = operationId.replace(/[^A-Za-z0-9]/g, '').slice(-8).toUpperCase();
+  return `${mes}${id}`.slice(0, 14);
+}
+
+
 const et = (nombre: string, valor: string, sangria: number) =>
   `${' '.repeat(sangria)}<${nombre}>${escaparXml(valor)}</${nombre}>`;
 
@@ -208,6 +241,27 @@ export function generarAvisoXml(entrada: EntradaAviso): ResultadoXml {
   l.push('  </sujeto_obligado>');
 
   const actosValidos = new Set(actosDelSppld().map((a) => a.value));
+
+  // Dos actos con la misma referencia dentro de un aviso. El portal puede
+  // aceptarlo —es un campo libre de catorce caracteres— y ahí está el problema:
+  // la referencia es por donde un aviso modificatorio dice a cuál de los actos
+  // corrige, y con dos iguales no hay respuesta. Pasó de verdad: los ids
+  // deterministas del demo empiezan igual y una referencia derivada de los
+  // primeros dígitos salía idéntica para los cuatro actos.
+  const vistas = new Map<string, number>();
+  entrada.actos.forEach((a, i) => {
+    const ref = claveLayout(a.referencia_aviso).replace(/&/g, '');
+    if (!ref) return;
+    const antes = vistas.get(ref);
+    if (antes !== undefined) {
+      errores.push(
+        `Acto ${i + 1}: repite la referencia «${ref}» del acto ${antes + 1}. Cada acto del ` +
+          'aviso necesita la suya: es por donde se identifica si después hay que corregirlo.',
+      );
+    } else {
+      vistas.set(ref, i);
+    }
+  });
 
   entrada.actos.forEach((a, i) => {
     const donde = `Acto ${i + 1} (${a.referencia_aviso || 'sin referencia'})`;

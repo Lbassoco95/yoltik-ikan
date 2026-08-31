@@ -5,6 +5,7 @@ import {
   fechaLayout,
   generarAvisoXml,
   mesLayout,
+  referenciaDelActo,
   textoLayout,
   type EntradaAviso,
 } from '@/lib/aviso/generador-xml';
@@ -337,5 +338,53 @@ describe('rama del tipo de acto', () => {
       actos: [{ ...ACTO, tipo_acto: 'transmision_inmueble' }],
     });
     expect(r.xml).toBeNull();
+  });
+});
+
+describe('la referencia identifica un acto y sólo uno', () => {
+  it('rechaza dos actos con la misma referencia', () => {
+    // El portal puede aceptarlo —son catorce caracteres libres— y ahí está el
+    // problema: la referencia es por donde un modificatorio dice a cuál acto
+    // corrige, y con dos iguales no hay respuesta.
+    const r = generarAvisoXml({
+      ...BASE,
+      actos: [ACTO, { ...ACTO, instrumento_publico: '45322' }],
+    });
+    expect(r.xml).toBeNull();
+    expect(r.errores.join(' ')).toMatch(/repite la referencia/i);
+  });
+
+  it('no se queja cuando cada acto trae la suya', () => {
+    const r = generarAvisoXml({
+      ...BASE,
+      actos: [ACTO, { ...ACTO, referencia_aviso: 'IKAN2608002', instrumento_publico: '45322' }],
+    });
+    expect(r.errores.join(' ')).not.toMatch(/repite la referencia/i);
+  });
+});
+
+describe('referenciaDelActo', () => {
+  it('distingue actos cuyos ids empiezan igual', () => {
+    // Los ids del demo son deterministas y comparten los primeros ocho
+    // caracteres. Una referencia sacada del principio del uuid daba la misma
+    // para los cuatro actos del mes.
+    const ids = [
+      '88888888-0000-0000-0000-000000000001',
+      '88888888-0000-0000-0000-000000000002',
+      '88888888-0000-0000-0000-000000000003',
+      '88888888-0000-0000-0000-000000000004',
+    ];
+    const refs = ids.map((id) => referenciaDelActo('2026-08', id));
+    expect(new Set(refs).size).toBe(4);
+  });
+
+  it('cabe en los catorce caracteres del campo 3.1 y no cambia', () => {
+    const id = '0f3c19ab-77d2-4e51-9c30-a1b2c3d4e5f6';
+    const ref = referenciaDelActo('2026-08', id);
+    expect(ref).toHaveLength(14);
+    expect(ref).toMatch(/^[A-Z0-9]{14}$/);
+    expect(ref.startsWith('202608')).toBe(true);
+    // Estable: el mismo acto, la misma referencia, corra cuando corra.
+    expect(referenciaDelActo('2026-08', id)).toBe(ref);
   });
 });
