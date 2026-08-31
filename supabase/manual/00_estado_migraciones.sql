@@ -196,7 +196,18 @@ begin
     execute 'select count(*)::text from organizations' into v_t;
     insert into ikan_estado values ('2 · Datos', 3, 'clave de actividad vulnerable',
       v_n || ' de ' || v_t || ' organizaciones',
-      'las otras dos claves del padrón las asigna el SAT: quedan en null a propósito');
+      -- Esta línea decía que «las otras dos claves del padrón las asigna el
+      -- SAT y quedan en null a propósito». De clave_sujeto_obligado era falso:
+      -- la regla VC22R1 del instructivo del layout dice que es el RFC con
+      -- homoclave, y la 0031 la deriva de ahí. Sólo clave_entidad_colegiada se
+      -- queda en null, y esa sí no se deriva de nada.
+      'clave_entidad_colegiada queda en null a propósito: sólo aplica cuando reporta un colegio');
+
+    -- Y se comprueba aparte, porque sin ella el XML del aviso no se genera.
+    execute 'select count(*) from organizations where clave_sujeto_obligado is null and rfc is not null' into v_n;
+    insert into ikan_estado values ('2 · Datos', 4, 'clave del sujeto obligado (el RFC)',
+      case when v_n = 0 then 'puesta en todas' else v_n || ' organización(es) SIN ella' end,
+      case when v_n = 0 then '' else 'sin esto el aviso no genera XML: apply_0031_actos_y_clave.sql' end);
   end if;
 
   if to_regprocedure('public.registrar_evento(uuid,text,text,uuid,jsonb,text,uuid,jsonb)') is null then
