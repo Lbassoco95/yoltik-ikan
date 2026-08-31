@@ -105,12 +105,9 @@ lateral (values
        to_regclass('public.anclaje') is not null
          and to_regprocedure('public.rango_por_anclar(uuid)') is not null,
        'apply_0026_anclaje.sql'),
-  -- La tabla existía sin lectura para nadie. Ahora Kawiil la puede leer para
-  -- seguimiento comercial, pero la escritura sigue siendo sólo de service_role.
-  (27, '0027 · prospect_intake: lectura sólo para Kawiil',
-       (select count(*) from pg_policies where schemaname='public' and tablename='prospect_intake') = 1
-         and exists (select 1 from pg_policies where schemaname='public' and tablename='prospect_intake'
-                      and cmd='SELECT' and qual::text like '%es_admin_kawiil%'),
+  (27, '0027 · prospectos visibles para Kawiil',
+       to_regprocedure('public.marcar_prospecto(uuid,text,text)') is not null
+         and to_regclass('public.v_prospectos_resumen') is not null,
        'apply_0027_prospectos.sql')
 ) as m(orden, migration, aplicada, bundle);
 
