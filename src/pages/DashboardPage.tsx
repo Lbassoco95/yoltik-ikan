@@ -112,7 +112,7 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground first-letter:uppercase">
           {new Date().toLocaleDateString("es-MX", { dateStyle: "long" })}
           {umaMxn != null && (
-            <span> · UMA vigente {formatMxn(umaMxn)}</span>
+            <span> · UMA vigente {formatMxn(umaMxn, true)}</span>
           )}
         </p>
       </div>

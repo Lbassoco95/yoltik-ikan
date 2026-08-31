@@ -34,10 +34,26 @@ export interface ParametroVigente {
  *  un parámetro nace en la base, no en una pantalla. */
 export const PARAM = {
   UMA_DIARIA: 'uma_diaria',
-  UMBRAL_IDENTIFICACION: 'umbral_identificacion_uma',
-  UMBRAL_RESTRICCION: 'umbral_restriccion_uma',
+
+  // Fe pública (fracción XII), régimen vigente desde la reforma DOF 16/07/2025.
   XII_INMUEBLE: 'umbral_xii_inmueble_uma',
-  XII_PERSONA_MORAL: 'umbral_xii_persona_moral_uma',
+  XII_FIDEICOMISO: 'umbral_xii_fideicomiso_uma',
+
+  // Prohibición de pago en efectivo (art. 32). NO son umbrales de Aviso y no
+  // deben mezclarse con ellos: el de Aviso para inmuebles son 8,000 UMA y el
+  // de efectivo 8,025. La asimetría es de la ley, no una errata.
+  EFECTIVO_INMUEBLE: 'umbral_efectivo_inmueble_uma',
+  EFECTIVO_ACCIONES: 'umbral_efectivo_acciones_uma',
+
+  // Activos virtuales (fracción XVI), mismo régimen.
+  XVI_OPERACION: 'umbral_xvi_operacion_uma',
+  XVI_CONTRAPRESTACION: 'umbral_xvi_contraprestacion_uma',
+
+  // Retirados por la reforma. Se conservan sólo para poder leer registros
+  // históricos del catálogo; NINGUNA pantalla debe publicarlos como vigentes.
+  //   umbral_identificacion_uma  645 UMA   · derogado
+  //   umbral_restriccion_uma   3,210 UMA   · derogado
+  //   umbral_xii_persona_moral_uma 8,025   · derogado: ahora el Aviso es siempre
 } as const;
 
 /**

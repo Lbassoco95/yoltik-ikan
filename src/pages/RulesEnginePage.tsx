@@ -27,10 +27,16 @@ const correlationRules = [
 /** Umbrales que el producto muestra en pesos. Todos salen de
  *  `parametro_regulatorio`; la página no declara ninguna cifra propia. */
 const UMBRALES_MOSTRADOS = [
-  { codigo: PARAM.UMBRAL_IDENTIFICACION, sector: "*" },
-  { codigo: PARAM.UMBRAL_RESTRICCION, sector: "*" },
+  // Fe pública. La constitución de personas morales YA NO aparece: desde la
+  // reforma DOF 16/07/2025 el Aviso procede siempre y no hay cifra que mostrar.
   { codigo: PARAM.XII_INMUEBLE, sector: "XII" },
-  { codigo: PARAM.XII_PERSONA_MORAL, sector: "XII" },
+  { codigo: PARAM.XII_FIDEICOMISO, sector: "XII" },
+  // Activos virtuales. Sustituyen a los 645 y 3,210 UMA, derogados.
+  { codigo: PARAM.XVI_OPERACION, sector: "XVI" },
+  { codigo: PARAM.XVI_CONTRAPRESTACION, sector: "XVI" },
+  // Artículo 32: prohibición de pago en efectivo. NO son umbrales de Aviso.
+  { codigo: PARAM.EFECTIVO_INMUEBLE, sector: "XII" },
+  { codigo: PARAM.EFECTIVO_ACCIONES, sector: "XII" },
 ];
 
 export default function RulesEnginePage() {
@@ -62,7 +68,7 @@ export default function RulesEnginePage() {
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="text-sm font-semibold text-foreground">UMA vigente:</span>
             <span className="text-sm font-mono font-semibold text-accent">
-              {formatMxn(uma.valor_numerico)}
+              {formatMxn(uma.valor_numerico, true)}
             </span>
             <span className="text-xs text-muted-foreground">
               desde el {new Date(uma.vigente_desde).toLocaleDateString("es-MX")} · {uma.fuente}
