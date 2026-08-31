@@ -11,6 +11,7 @@ import {
   fechasIncoherentes,
   pendientesActo,
   pendientesCompareciente,
+  pendientesIdentificacion,
   pendientesSujetoObligado,
   resumenExpediente,
   subarbolDeActo,
@@ -352,5 +353,39 @@ describe('resumen del expediente', () => {
       expect.arrayContaining(['curp', 'pais_nacionalidad']),
     );
     expect(r.bloqueanElAviso.every((p) => p.origen === 'acto')).toBe(true);
+  });
+});
+
+describe('la identificación del artículo 18 va aparte del layout', () => {
+  it('sin verificación, el expediente no está completo', () => {
+    const p = pendientesIdentificacion(null);
+    expect(p).toHaveLength(1);
+    expect(p[0].gravedad).toBe('bloquea_expediente');
+  });
+
+  it('NUNCA se presenta como algo que el portal rechace', () => {
+    // El XML del SPPLD no tiene un campo que diga si al compareciente lo
+    // identificaron: un aviso de alguien sin verificar pasa la validación igual
+    // de bien. Decir lo contrario contagiaría de duda a los renglones ciertos.
+    for (const estado of [null, 'no_iniciada', 'en_progreso', 'rechazada', 'expirada']) {
+      for (const x of pendientesIdentificacion(estado)) {
+        expect(x.gravedad).not.toBe('bloquea_aviso');
+      }
+    }
+  });
+
+  it('sólo «aprobada» cierra el pendiente', () => {
+    expect(pendientesIdentificacion('aprobada')).toEqual([]);
+    // En progreso es una verificación que la persona no ha terminado, y
+    // rechazada es peor que no tenerla: significa que NO se comprobó.
+    expect(pendientesIdentificacion('en_progreso')).toHaveLength(1);
+    expect(pendientesIdentificacion('rechazada')).toHaveLength(1);
+    expect(pendientesIdentificacion('expirada')).toHaveLength(1);
+  });
+
+  it('distingue no pedida, sin resolver y rechazada', () => {
+    expect(pendientesIdentificacion(null)[0].detalle).toMatch(/no se le ha pedido/i);
+    expect(pendientesIdentificacion('en_progreso')[0].detalle).toMatch(/sin resolver/i);
+    expect(pendientesIdentificacion('rechazada')[0].detalle).toMatch(/no pasó/i);
   });
 });

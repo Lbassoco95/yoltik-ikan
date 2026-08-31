@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { listarClientes } from "@/lib/api/clientes";
+import { verificacionesVigentes } from "@/lib/api/verificacion";
 import {
   listarOperaciones,
   crearOperacion,
@@ -50,6 +51,7 @@ import type { Operation } from "@/types/domain";
 import {
   catalogosPendientes,
   pendientesActo,
+  pendientesIdentificacion,
   pendientesCompareciente,
   pendientesSujetoObligado,
 } from "@/lib/aviso/completitud";
@@ -128,6 +130,17 @@ export default function OperationsPage() {
     queryFn: listarOperaciones,
   });
   const { data: clientes = [] } = useQuery({ queryKey: ["clientes"], queryFn: listarClientes });
+
+  // Se comparte la misma clave de caché que Comparecientes e Identidad: las
+  // tres pantallas tienen que decir lo mismo del mismo compareciente.
+  const { data: verificaciones } = useQuery({
+    queryKey: ["verificaciones-vigentes"],
+    queryFn: async () => {
+      const filas = await verificacionesVigentes();
+      return new Map(filas.map((v) => [v.client_id, v.estado]));
+    },
+    enabled: esNotarias,
+  });
   // Las claves del padrón se revisan una vez, no acto por acto: si faltan,
   // ningún aviso de la organización se puede generar.
   const { data: clavesPadron } = useQuery({
@@ -313,6 +326,12 @@ export default function OperationsPage() {
         ...pendientesSujetoObligado(clavesPadron ?? {}),
         ...(comparecienteSeleccionado
           ? pendientesCompareciente(comparecienteSeleccionado)
+          : []),
+        // Que falte identificar al compareciente NO impide registrar el acto:
+        // el instrumento ya se firmó y no registrarlo sería peor. Pero se dice
+        // aquí, mientras la persona sigue enfrente y todavía se le puede pedir.
+        ...(comparecienteSeleccionado
+          ? pendientesIdentificacion(verificaciones?.get(comparecienteSeleccionado.id))
           : []),
         ...pendientesActo({
           fecha: form.fecha,

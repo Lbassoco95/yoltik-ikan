@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Clock, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Info, ShieldAlert } from "lucide-react";
 import { CAMPOS_DEL_CIERRE, clavePendiente, type Pendiente } from "@/lib/aviso/completitud";
 import { cn } from "@/lib/utils";
 
@@ -59,11 +59,14 @@ export function PendientesAviso({
   className?: string;
 }) {
   const bloquean = pendientes.filter((p) => p.gravedad === "bloquea_aviso");
+  // Su propio bloque, y NO mezclado con los de arriba: decir que el portal
+  // rechaza algo que el portal acepta le quita crédito a la lista entera.
+  const expediente = pendientes.filter((p) => p.gravedad === "bloquea_expediente");
   const recomendados = pendientes.filter((p) => p.gravedad === "recomendado");
 
   return (
     <div className={cn("space-y-4", className)}>
-      {bloquean.length === 0 ? (
+      {bloquean.length === 0 && expediente.length === 0 ? (
         canal === "declaranot" ? (
           <div className="flex items-start gap-2 rounded-lg bg-warning/10 p-3">
             <AlertTriangle className="w-4 h-4 mt-0.5 text-warning shrink-0" />
@@ -88,6 +91,16 @@ export function PendientesAviso({
           titulo={`Frena el aviso · ${bloquean.length}`}
           descripcion="Sin estos datos el aviso no pasa la validación del portal del SAT."
           items={bloquean}
+          mostrarReferencias={mostrarReferencias}
+        />
+      )}
+
+      {expediente.length > 0 && (
+        <Bloque
+          icono={<ShieldAlert className="w-4 h-4 text-warning shrink-0" />}
+          titulo={`Frena el expediente · ${expediente.length}`}
+          descripcion="El aviso sale igual, pero el expediente no cumple. Esto no lo pide el layout: lo pide la ley."
+          items={expediente}
           mostrarReferencias={mostrarReferencias}
         />
       )}

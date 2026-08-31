@@ -11,7 +11,7 @@ import {
   type EstadoVerificacion,
   type VerificacionVigente,
 } from "@/lib/api/verificacion";
-import { pendientesCompareciente } from "@/lib/aviso/completitud";
+import { pendientesCompareciente, pendientesIdentificacion } from "@/lib/aviso/completitud";
 import { useAuth } from "@/lib/auth-context";
 import type { TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
@@ -84,11 +84,18 @@ export default function VerificationPage() {
     },
   });
 
-  const conFaltantes = clientes.map((c) => ({
-    cliente: c,
-    faltan: pendientesCompareciente(c).filter((p) => p.gravedad === "bloquea_aviso").length,
-    estado: verificaciones?.get(c.id),
-  }));
+  // El expediente cuenta las dos cosas: los campos que el layout exige y la
+  // identificación que exige el artículo 18. Un compareciente con todos sus
+  // datos capturados y sin identificar no está completo, aunque su aviso pase
+  // la validación del portal sin una queja.
+  const conFaltantes = clientes.map((c) => {
+    const estado = verificaciones?.get(c.id);
+    const delLayout = pendientesCompareciente(c).filter(
+      (p) => p.gravedad === "bloquea_aviso",
+    ).length;
+    const deIdentificacion = pendientesIdentificacion(estado).length;
+    return { cliente: c, faltan: delLayout + deIdentificacion, delLayout, estado };
+  });
   const completos = conFaltantes.filter((x) => x.faltan === 0).length;
   const verificados = conFaltantes.filter((x) => x.estado === "aprobada").length;
   const enCurso = conFaltantes.filter(
@@ -112,8 +119,9 @@ export default function VerificationPage() {
             de la CURP contra RENAPO y la consulta de listas (OFAC, ONU, PEP, 69-B).
           </p>
           <p className="text-[13px] text-muted-foreground mt-1">
-            Por eso un compareciente puede aparecer con la identidad verificada y el expediente
-            incompleto. Son dos columnas distintas a propósito.
+            La identificación sí cuenta para el expediente: un compareciente con todos sus datos
+            capturados y sin verificar aparece incompleto, aunque su aviso pase la validación del
+            portal sin una queja. El portal no pregunta; la autoridad, cuando revise, sí.
           </p>
         </div>
       </div>
@@ -154,7 +162,7 @@ export default function VerificationPage() {
                 </tr>
               </thead>
               <tbody>
-                {conFaltantes.map(({ cliente, faltan, estado }) => {
+                {conFaltantes.map(({ cliente, faltan, delLayout, estado }) => {
                   const nivel = NIVEL_KYC[cliente.nivel_kyc] ?? {
                     etiqueta: cliente.nivel_kyc,
                     detalle: "",
@@ -184,7 +192,11 @@ export default function VerificationPage() {
                               : "bg-warning/10 text-warning",
                           )}
                         >
-                          {faltan === 0 ? "Completo" : `Faltan ${faltan}`}
+                          {faltan === 0
+                            ? "Completo"
+                            : delLayout === 0
+                              ? "Falta identificar"
+                              : `Faltan ${faltan}`}
                         </span>
                       </td>
                       <td className="px-4 py-3">
