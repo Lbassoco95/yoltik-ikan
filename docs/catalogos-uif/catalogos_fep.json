@@ -1,0 +1,3873 @@
+{
+ "tipo_alerta": {
+  "origen": "FedatarioPoder_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 1,
+  "valores": [
+   {
+    "clave": "100",
+    "descripcion": "Sin alerta."
+   },
+   {
+    "clave": "3501",
+    "descripcion": "Los sujetos o partes involucradas se rehúsan a proporcionar documentos personales que los identifiquen."
+   },
+   {
+    "clave": "3502",
+    "descripcion": "La operación no es acorde con la actividad económica o giro mercantil declarado por el cliente."
+   },
+   {
+    "clave": "3503",
+    "descripcion": "Hay indicios, o certeza, que los sujetos o partes involucradas no están actuando en nombre propio y están tratando de ocultar la identidad del beneficiario o controlador real."
+   },
+   {
+    "clave": "3504",
+    "descripcion": "La información y documentación presentada por las partes involucradas es inconsistente o de difícil verificación por parte del Sujeto Obligado."
+   },
+   {
+    "clave": "3505",
+    "descripcion": "Los sujetos o partes involucradas intentan sobornar, extorsionar o amenazan con el fin de realizar la operación fuera de los parámetros establecidos, o con la finalidad de evitar el envío del Aviso."
+   },
+   {
+    "clave": "3506",
+    "descripcion": "De acuerdo con medios informativos u otras fuentes de información pública, se tiene conocimiento o sospecha de que el cliente, un familiar o persona relacionada, está vinculado con actividades ilícitas o se encuentra bajo proceso de investigación."
+   },
+   {
+    "clave": "3507",
+    "descripcion": "El cliente o partes involucradas no quiere(n) ser relacionado(s) con la operación realizada."
+   },
+   {
+    "clave": "3508",
+    "descripcion": "Los sujetos o partes involucradas realizan múltiples operaciones en un periodo muy corto de tiempo sin justificación aparente."
+   },
+   {
+    "clave": "3509",
+    "descripcion": "Los sujetos o partes involucradas hacen uso de un intermediario (ejemplo: apoderado o representante legal) para realizar la operación o acto sin que exista una causa que lo justifique."
+   },
+   {
+    "clave": "3510",
+    "descripcion": "El cliente desea liquidar la operación con monedas virtuales."
+   },
+   {
+    "clave": "3511",
+    "descripcion": "Se constituye una Sociedad por Acciones Simplificadas (SAS), en la que no hay forma de corroborar la identidad de los accionistas."
+   },
+   {
+    "clave": "3512",
+    "descripcion": "Hay indicios, o certeza de que una de las partes involucradas está siendo presionada para que realice la operación."
+   },
+   {
+    "clave": "3513",
+    "descripcion": "Hay indicios de que existe suplantación de identidad de alguna de las partes involucradas en la operación."
+   },
+   {
+    "clave": "3514",
+    "descripcion": "El cliente realiza múltiples operaciones de constitución de personas morales en un periodo corto de tiempo."
+   },
+   {
+    "clave": "3515",
+    "descripcion": "Se tiene conocimiento de que otro notario se negó a realizar la operación."
+   },
+   {
+    "clave": "3516",
+    "descripcion": "El pago de la operación es realizado por un tercero sin relación aparente con el cliente o alguna de las partes involucradas."
+   },
+   {
+    "clave": "3517",
+    "descripcion": "El cliente (personas físicas y morales), declara una ocupación o actividad distinta a la que aparece en su Cédula de Identificación Fiscal."
+   },
+   {
+    "clave": "9999",
+    "descripcion": "Otra alerta."
+   }
+  ]
+ },
+ "pais": {
+  "origen": "FedatarioPoder_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 3,
+  "valores": [
+   {
+    "clave": "AF",
+    "descripcion": "AFGANISTAN"
+   },
+   {
+    "clave": "AL",
+    "descripcion": "ALBANIA"
+   },
+   {
+    "clave": "DE",
+    "descripcion": "ALEMANIA"
+   },
+   {
+    "clave": "AD",
+    "descripcion": "ANDORRA"
+   },
+   {
+    "clave": "AO",
+    "descripcion": "ANGOLA"
+   },
+   {
+    "clave": "AI",
+    "descripcion": "ANGUILA"
+   },
+   {
+    "clave": "AQ",
+    "descripcion": "ANTARTIDA"
+   },
+   {
+    "clave": "AG",
+    "descripcion": "ANTIGUA Y BARBUDA"
+   },
+   {
+    "clave": "AN",
+    "descripcion": "ANTILLAS NEERLANDESAS"
+   },
+   {
+    "clave": "SA",
+    "descripcion": "ARABIA SAUDI"
+   },
+   {
+    "clave": "DZ",
+    "descripcion": "ARGELIA"
+   },
+   {
+    "clave": "AR",
+    "descripcion": "ARGENTINA"
+   },
+   {
+    "clave": "AM",
+    "descripcion": "ARMENIA"
+   },
+   {
+    "clave": "AW",
+    "descripcion": "ARUBA"
+   },
+   {
+    "clave": "AU",
+    "descripcion": "AUSTRALIA"
+   },
+   {
+    "clave": "AT",
+    "descripcion": "AUSTRIA"
+   },
+   {
+    "clave": "AZ",
+    "descripcion": "AZERBAIYAN"
+   },
+   {
+    "clave": "BS",
+    "descripcion": "BAHAMAS"
+   },
+   {
+    "clave": "BH",
+    "descripcion": "BAHREIN"
+   },
+   {
+    "clave": "BD",
+    "descripcion": "BANGLADESH"
+   },
+   {
+    "clave": "BB",
+    "descripcion": "BARBADOS"
+   },
+   {
+    "clave": "BY",
+    "descripcion": "BELARUS"
+   },
+   {
+    "clave": "BE",
+    "descripcion": "BELGICA"
+   },
+   {
+    "clave": "BZ",
+    "descripcion": "BELICE"
+   },
+   {
+    "clave": "BJ",
+    "descripcion": "BENIN"
+   },
+   {
+    "clave": "BM",
+    "descripcion": "BERMUDAS"
+   },
+   {
+    "clave": "BT",
+    "descripcion": "BHUTAN"
+   },
+   {
+    "clave": "BO",
+    "descripcion": "BOLIVIA"
+   },
+   {
+    "clave": "BA",
+    "descripcion": "BOSNIA Y HERZEGOVINA"
+   },
+   {
+    "clave": "BW",
+    "descripcion": "BOTSUANA"
+   },
+   {
+    "clave": "BR",
+    "descripcion": "BRASIL"
+   },
+   {
+    "clave": "BN",
+    "descripcion": "BRUNEI"
+   },
+   {
+    "clave": "BG",
+    "descripcion": "BULGARIA"
+   },
+   {
+    "clave": "BF",
+    "descripcion": "BURKINA FASO"
+   },
+   {
+    "clave": "BI",
+    "descripcion": "BURUNDI"
+   },
+   {
+    "clave": "CV",
+    "descripcion": "CABO VERDE"
+   },
+   {
+    "clave": "KH",
+    "descripcion": "CAMBOYA"
+   },
+   {
+    "clave": "CM",
+    "descripcion": "CAMERUN"
+   },
+   {
+    "clave": "CA",
+    "descripcion": "CANADA"
+   },
+   {
+    "clave": "TD",
+    "descripcion": "CHAD"
+   },
+   {
+    "clave": "CZ",
+    "descripcion": "CHEQUIA"
+   },
+   {
+    "clave": "CL",
+    "descripcion": "CHILE"
+   },
+   {
+    "clave": "CN",
+    "descripcion": "CHINA"
+   },
+   {
+    "clave": "CY",
+    "descripcion": "CHIPRE"
+   },
+   {
+    "clave": "CP",
+    "descripcion": "CLIPPERTON"
+   },
+   {
+    "clave": "CO",
+    "descripcion": "COLOMBIA"
+   },
+   {
+    "clave": "KM",
+    "descripcion": "COMORAS"
+   },
+   {
+    "clave": "CG",
+    "descripcion": "CONGO"
+   },
+   {
+    "clave": "KP",
+    "descripcion": "COREA DEL NORTE"
+   },
+   {
+    "clave": "KR",
+    "descripcion": "COREA DEL SUR"
+   },
+   {
+    "clave": "CI",
+    "descripcion": "COSTA DE MARFIL"
+   },
+   {
+    "clave": "CR",
+    "descripcion": "COSTA RICA"
+   },
+   {
+    "clave": "HR",
+    "descripcion": "CROACIA"
+   },
+   {
+    "clave": "CU",
+    "descripcion": "CUBA"
+   },
+   {
+    "clave": "CW",
+    "descripcion": "CURAZAO"
+   },
+   {
+    "clave": "DK",
+    "descripcion": "DINAMARCA"
+   },
+   {
+    "clave": "DM",
+    "descripcion": "DOMINICA"
+   },
+   {
+    "clave": "EC",
+    "descripcion": "ECUADOR"
+   },
+   {
+    "clave": "EG",
+    "descripcion": "EGIPTO"
+   },
+   {
+    "clave": "SV",
+    "descripcion": "EL SALVADOR"
+   },
+   {
+    "clave": "AE",
+    "descripcion": "EMIRATOS ARABES UNIDOS"
+   },
+   {
+    "clave": "ER",
+    "descripcion": "ERITREA"
+   },
+   {
+    "clave": "SK",
+    "descripcion": "ESLOVAQUIA"
+   },
+   {
+    "clave": "SI",
+    "descripcion": "ESLOVENIA"
+   },
+   {
+    "clave": "ES",
+    "descripcion": "ESPAÑA"
+   },
+   {
+    "clave": "US",
+    "descripcion": "ESTADOS UNIDOS"
+   },
+   {
+    "clave": "EE",
+    "descripcion": "ESTONIA"
+   },
+   {
+    "clave": "ET",
+    "descripcion": "ETIOPIA"
+   },
+   {
+    "clave": "PH",
+    "descripcion": "FILIPINAS"
+   },
+   {
+    "clave": "FI",
+    "descripcion": "FINLANDIA"
+   },
+   {
+    "clave": "FJ",
+    "descripcion": "FIYI"
+   },
+   {
+    "clave": "FR",
+    "descripcion": "FRANCIA"
+   },
+   {
+    "clave": "GA",
+    "descripcion": "GABON"
+   },
+   {
+    "clave": "GM",
+    "descripcion": "GAMBIA"
+   },
+   {
+    "clave": "GE",
+    "descripcion": "GEORGIA"
+   },
+   {
+    "clave": "GS",
+    "descripcion": "GEORGIA DEL SUR E ISLAS SANDWICH DEL SUR"
+   },
+   {
+    "clave": "GH",
+    "descripcion": "GHANA"
+   },
+   {
+    "clave": "GI",
+    "descripcion": "GIBRALTAR"
+   },
+   {
+    "clave": "GD",
+    "descripcion": "GRANADA"
+   },
+   {
+    "clave": "EL",
+    "descripcion": "GRECIA"
+   },
+   {
+    "clave": "GL",
+    "descripcion": "GROENLANDIA"
+   },
+   {
+    "clave": "GP",
+    "descripcion": "GUADALUPE"
+   },
+   {
+    "clave": "GU",
+    "descripcion": "GUAM"
+   },
+   {
+    "clave": "GT",
+    "descripcion": "GUATEMALA"
+   },
+   {
+    "clave": "GF",
+    "descripcion": "GUAYANA FRANCESA"
+   },
+   {
+    "clave": "GG",
+    "descripcion": "GUERNESEY"
+   },
+   {
+    "clave": "GN",
+    "descripcion": "GUINEA"
+   },
+   {
+    "clave": "GQ",
+    "descripcion": "GUINEA ECUATORIAL"
+   },
+   {
+    "clave": "GW",
+    "descripcion": "GUINEA-BISSAU"
+   },
+   {
+    "clave": "GY",
+    "descripcion": "GUYANA"
+   },
+   {
+    "clave": "HT",
+    "descripcion": "HAITI"
+   },
+   {
+    "clave": "HN",
+    "descripcion": "HONDURAS"
+   },
+   {
+    "clave": "HK",
+    "descripcion": "HONG KONG"
+   },
+   {
+    "clave": "HU",
+    "descripcion": "HUNGRIA"
+   },
+   {
+    "clave": "IN",
+    "descripcion": "INDIA"
+   },
+   {
+    "clave": "ID",
+    "descripcion": "INDONESIA"
+   },
+   {
+    "clave": "IR",
+    "descripcion": "IRAN"
+   },
+   {
+    "clave": "IQ",
+    "descripcion": "IRAQ"
+   },
+   {
+    "clave": "IE",
+    "descripcion": "IRLANDA"
+   },
+   {
+    "clave": "BV",
+    "descripcion": "ISLA BOUVET"
+   },
+   {
+    "clave": "CX",
+    "descripcion": "ISLA CHRISTMAS"
+   },
+   {
+    "clave": "IM",
+    "descripcion": "ISLA DE MAN"
+   },
+   {
+    "clave": "NF",
+    "descripcion": "ISLA NORFOLK"
+   },
+   {
+    "clave": "IS",
+    "descripcion": "ISLANDIA"
+   },
+   {
+    "clave": "AX",
+    "descripcion": "ISLAS ÅLAND"
+   },
+   {
+    "clave": "KY",
+    "descripcion": "ISLAS CAIMAN"
+   },
+   {
+    "clave": "CC",
+    "descripcion": "ISLAS COCOS"
+   },
+   {
+    "clave": "CK",
+    "descripcion": "ISLAS COOK"
+   },
+   {
+    "clave": "FO",
+    "descripcion": "ISLAS FEROE"
+   },
+   {
+    "clave": "HM",
+    "descripcion": "ISLAS HEARD Y MCDONALD"
+   },
+   {
+    "clave": "FK",
+    "descripcion": "ISLAS MALVINAS"
+   },
+   {
+    "clave": "MP",
+    "descripcion": "ISLAS MARIANAS DEL NORTE"
+   },
+   {
+    "clave": "MH",
+    "descripcion": "ISLAS MARSHALL"
+   },
+   {
+    "clave": "UM",
+    "descripcion": "ISLAS MENORES ALEJADAS DE LOS ESTADOS UNIDOS"
+   },
+   {
+    "clave": "PN",
+    "descripcion": "ISLAS PITCAIRN"
+   },
+   {
+    "clave": "SB",
+    "descripcion": "ISLAS SALOMON"
+   },
+   {
+    "clave": "TC",
+    "descripcion": "ISLAS TURCAS Y CAICOS"
+   },
+   {
+    "clave": "VG",
+    "descripcion": "ISLAS VIRGENES BRITANICAS"
+   },
+   {
+    "clave": "VI",
+    "descripcion": "ISLAS VIRGENES DE LOS ESTADOS UNIDOS"
+   },
+   {
+    "clave": "IL",
+    "descripcion": "ISRAEL"
+   },
+   {
+    "clave": "IT",
+    "descripcion": "ITALIA"
+   },
+   {
+    "clave": "JM",
+    "descripcion": "JAMAICA"
+   },
+   {
+    "clave": "JP",
+    "descripcion": "JAPON"
+   },
+   {
+    "clave": "JE",
+    "descripcion": "JERSEY"
+   },
+   {
+    "clave": "JO",
+    "descripcion": "JORDANIA"
+   },
+   {
+    "clave": "KZ",
+    "descripcion": "KAZAJSTAN"
+   },
+   {
+    "clave": "KE",
+    "descripcion": "KENIA"
+   },
+   {
+    "clave": "KG",
+    "descripcion": "KIRGUISTAN"
+   },
+   {
+    "clave": "KI",
+    "descripcion": "KIRIBATI"
+   },
+   {
+    "clave": "XK",
+    "descripcion": "KOSOVO"
+   },
+   {
+    "clave": "KW",
+    "descripcion": "KUWAIT"
+   },
+   {
+    "clave": "LA",
+    "descripcion": "LAOS"
+   },
+   {
+    "clave": "LS",
+    "descripcion": "LESOTHO"
+   },
+   {
+    "clave": "LV",
+    "descripcion": "LETONIA"
+   },
+   {
+    "clave": "LB",
+    "descripcion": "LIBANO"
+   },
+   {
+    "clave": "LR",
+    "descripcion": "LIBERIA"
+   },
+   {
+    "clave": "LY",
+    "descripcion": "LIBIA"
+   },
+   {
+    "clave": "LI",
+    "descripcion": "LIECHTENSTEIN"
+   },
+   {
+    "clave": "LT",
+    "descripcion": "LITUANIA"
+   },
+   {
+    "clave": "LU",
+    "descripcion": "LUXEMBURGO"
+   },
+   {
+    "clave": "MO",
+    "descripcion": "MACAO"
+   },
+   {
+    "clave": "MK",
+    "descripcion": "MACEDONIA"
+   },
+   {
+    "clave": "MG",
+    "descripcion": "MADAGASCAR"
+   },
+   {
+    "clave": "MY",
+    "descripcion": "MALASIA"
+   },
+   {
+    "clave": "MW",
+    "descripcion": "MALAWI"
+   },
+   {
+    "clave": "MV",
+    "descripcion": "MALDIVAS"
+   },
+   {
+    "clave": "ML",
+    "descripcion": "MALI"
+   },
+   {
+    "clave": "MT",
+    "descripcion": "MALTA"
+   },
+   {
+    "clave": "MA",
+    "descripcion": "MARRUECOS"
+   },
+   {
+    "clave": "MQ",
+    "descripcion": "MARTINICA"
+   },
+   {
+    "clave": "MU",
+    "descripcion": "MAURICIO"
+   },
+   {
+    "clave": "MR",
+    "descripcion": "MAURITANIA"
+   },
+   {
+    "clave": "YT",
+    "descripcion": "MAYOTTE"
+   },
+   {
+    "clave": "MX",
+    "descripcion": "MEXICO"
+   },
+   {
+    "clave": "FM",
+    "descripcion": "MICRONESIA"
+   },
+   {
+    "clave": "MD",
+    "descripcion": "MOLDOVA"
+   },
+   {
+    "clave": "MC",
+    "descripcion": "MONACO"
+   },
+   {
+    "clave": "MN",
+    "descripcion": "MONGOLIA"
+   },
+   {
+    "clave": "ME",
+    "descripcion": "MONTENEGRO"
+   },
+   {
+    "clave": "MS",
+    "descripcion": "MONTSERRAT"
+   },
+   {
+    "clave": "MZ",
+    "descripcion": "MOZAMBIQUE"
+   },
+   {
+    "clave": "MM",
+    "descripcion": "MYANMAR"
+   },
+   {
+    "clave": "NA",
+    "descripcion": "NAMIBIA"
+   },
+   {
+    "clave": "NR",
+    "descripcion": "NAURU"
+   },
+   {
+    "clave": "NP",
+    "descripcion": "NEPAL"
+   },
+   {
+    "clave": "NI",
+    "descripcion": "NICARAGUA"
+   },
+   {
+    "clave": "NE",
+    "descripcion": "NIGER"
+   },
+   {
+    "clave": "NG",
+    "descripcion": "NIGERIA"
+   },
+   {
+    "clave": "NU",
+    "descripcion": "NIUE"
+   },
+   {
+    "clave": "NO",
+    "descripcion": "NORUEGA"
+   },
+   {
+    "clave": "NC",
+    "descripcion": "NUEVA CALEDONIA"
+   },
+   {
+    "clave": "NZ",
+    "descripcion": "NUEVA ZELANDA"
+   },
+   {
+    "clave": "OM",
+    "descripcion": "OMAN"
+   },
+   {
+    "clave": "NL",
+    "descripcion": "PAISES BAJOS"
+   },
+   {
+    "clave": "PK",
+    "descripcion": "PAKISTAN"
+   },
+   {
+    "clave": "PW",
+    "descripcion": "PALAOS"
+   },
+   {
+    "clave": "PA",
+    "descripcion": "PANAMA"
+   },
+   {
+    "clave": "PG",
+    "descripcion": "PAPUA NUEVA GUINEA"
+   },
+   {
+    "clave": "PY",
+    "descripcion": "PARAGUAY"
+   },
+   {
+    "clave": "PE",
+    "descripcion": "PERU"
+   },
+   {
+    "clave": "PF",
+    "descripcion": "POLINESIA FRANCESA"
+   },
+   {
+    "clave": "PL",
+    "descripcion": "POLONIA"
+   },
+   {
+    "clave": "PT",
+    "descripcion": "PORTUGAL"
+   },
+   {
+    "clave": "PR",
+    "descripcion": "PUERTO RICO"
+   },
+   {
+    "clave": "QA",
+    "descripcion": "QATAR"
+   },
+   {
+    "clave": "UK",
+    "descripcion": "REINO UNIDO"
+   },
+   {
+    "clave": "CF",
+    "descripcion": "REPUBLICA CENTROAFRICANA"
+   },
+   {
+    "clave": "CD",
+    "descripcion": "REPUBLICA DEMOCRATICA DEL CONGO"
+   },
+   {
+    "clave": "DO",
+    "descripcion": "REPUBLICA DOMINICANA"
+   },
+   {
+    "clave": "RE",
+    "descripcion": "REUNION"
+   },
+   {
+    "clave": "RW",
+    "descripcion": "RUANDA"
+   },
+   {
+    "clave": "RO",
+    "descripcion": "RUMANIA"
+   },
+   {
+    "clave": "RU",
+    "descripcion": "RUSIA"
+   },
+   {
+    "clave": "EH",
+    "descripcion": "SAHARA OCCIDENTAL"
+   },
+   {
+    "clave": "WS",
+    "descripcion": "SAMOA"
+   },
+   {
+    "clave": "AS",
+    "descripcion": "SAMOA AMERICANA"
+   },
+   {
+    "clave": "BL",
+    "descripcion": "SAN BARTOLOME"
+   },
+   {
+    "clave": "KN",
+    "descripcion": "SAN CRISTOBAL Y NIEVES"
+   },
+   {
+    "clave": "SM",
+    "descripcion": "SAN MARINO"
+   },
+   {
+    "clave": "MF",
+    "descripcion": "SAN MARTIN"
+   },
+   {
+    "clave": "PM",
+    "descripcion": "SAN PEDRO Y MIQUELON"
+   },
+   {
+    "clave": "VC",
+    "descripcion": "SAN VICENTE Y LAS GRANADINAS"
+   },
+   {
+    "clave": "SH",
+    "descripcion": "SANTA ELENA"
+   },
+   {
+    "clave": "LC",
+    "descripcion": "SANTA LUCIA"
+   },
+   {
+    "clave": "VA",
+    "descripcion": "SANTA SEDE / ESTADO DE LA CIUDAD DEL VATICANO"
+   },
+   {
+    "clave": "ST",
+    "descripcion": "SANTO TOME Y PRINCIPE"
+   },
+   {
+    "clave": "SN",
+    "descripcion": "SENEGAL"
+   },
+   {
+    "clave": "RS",
+    "descripcion": "SERBIA"
+   },
+   {
+    "clave": "SC",
+    "descripcion": "SEYCHELLES"
+   },
+   {
+    "clave": "SL",
+    "descripcion": "SIERRA LEONA"
+   },
+   {
+    "clave": "SG",
+    "descripcion": "SINGAPUR"
+   },
+   {
+    "clave": "SY",
+    "descripcion": "SIRIA"
+   },
+   {
+    "clave": "SO",
+    "descripcion": "SOMALIA"
+   },
+   {
+    "clave": "LK",
+    "descripcion": "SRI LANKA"
+   },
+   {
+    "clave": "SZ",
+    "descripcion": "SUAZILANDIA"
+   },
+   {
+    "clave": "ZA",
+    "descripcion": "SUDAFRICA"
+   },
+   {
+    "clave": "SD",
+    "descripcion": "SUDAN"
+   },
+   {
+    "clave": "SE",
+    "descripcion": "SUECIA"
+   },
+   {
+    "clave": "CH",
+    "descripcion": "SUIZA"
+   },
+   {
+    "clave": "SR",
+    "descripcion": "SURINAM"
+   },
+   {
+    "clave": "SJ",
+    "descripcion": "SVALBARD Y JAN MAYEN"
+   },
+   {
+    "clave": "TH",
+    "descripcion": "TAILANDIA"
+   },
+   {
+    "clave": "TW",
+    "descripcion": "TAIWAN"
+   },
+   {
+    "clave": "TZ",
+    "descripcion": "TANZANIA"
+   },
+   {
+    "clave": "TJ",
+    "descripcion": "TAYIKISTAN"
+   },
+   {
+    "clave": "IO",
+    "descripcion": "TERRITORIO BRITANICO DEL OCEANO INDICO"
+   },
+   {
+    "clave": "TF",
+    "descripcion": "TERRITORIOS AUSTRALES FRANCESES"
+   },
+   {
+    "clave": "PS",
+    "descripcion": "TERRITORIOS PALESTINOS"
+   },
+   {
+    "clave": "TL",
+    "descripcion": "TIMOR ORIENTAL"
+   },
+   {
+    "clave": "TG",
+    "descripcion": "TOGO"
+   },
+   {
+    "clave": "TK",
+    "descripcion": "TOKELAU"
+   },
+   {
+    "clave": "TO",
+    "descripcion": "TONGA"
+   },
+   {
+    "clave": "TT",
+    "descripcion": "TRINIDAD Y TOBAGO"
+   },
+   {
+    "clave": "TN",
+    "descripcion": "TUNEZ"
+   },
+   {
+    "clave": "TM",
+    "descripcion": "TURKMENISTAN"
+   },
+   {
+    "clave": "TR",
+    "descripcion": "TURQUIA"
+   },
+   {
+    "clave": "TV",
+    "descripcion": "TUVALU"
+   },
+   {
+    "clave": "UA",
+    "descripcion": "UCRANIA"
+   },
+   {
+    "clave": "UG",
+    "descripcion": "UGANDA"
+   },
+   {
+    "clave": "UY",
+    "descripcion": "URUGUAY"
+   },
+   {
+    "clave": "UZ",
+    "descripcion": "UZBEKISTAN"
+   },
+   {
+    "clave": "VU",
+    "descripcion": "VANUATU"
+   },
+   {
+    "clave": "VE",
+    "descripcion": "VENEZUELA"
+   },
+   {
+    "clave": "VN",
+    "descripcion": "VIETNAM"
+   },
+   {
+    "clave": "WF",
+    "descripcion": "WALLIS Y FUTUNA"
+   },
+   {
+    "clave": "YE",
+    "descripcion": "YEMEN"
+   },
+   {
+    "clave": "DJ",
+    "descripcion": "YIBUTI"
+   },
+   {
+    "clave": "ZM",
+    "descripcion": "ZAMBIA"
+   },
+   {
+    "clave": "ZW",
+    "descripcion": "ZIMBABUE"
+   }
+  ]
+ },
+ "actividad_economica": {
+  "origen": "FedatarioPoder_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 5,
+  "valores": [
+   {
+    "clave": "1000000",
+    "descripcion": "NO APLICA"
+   },
+   {
+    "clave": "1110100",
+    "descripcion": "AGRICULTURA Y SILVICULTURA - ADMINISTRADORES O TRABAJADORES AGRICOLAS"
+   },
+   {
+    "clave": "1110400",
+    "descripcion": "AGRICULTURA Y SILVICULTURA - ADMINISTRADORES O TRABAJADORES SILVICOLAS Y FORESTALES"
+   },
+   {
+    "clave": "1220100",
+    "descripcion": "GANADERIA - APICULTORES"
+   },
+   {
+    "clave": "1220200",
+    "descripcion": "GANADERIA - ADMINISTRADORES, CRIADORES O SUPERVISORES AVICOLAS Y GANADEROS"
+   },
+   {
+    "clave": "1330200",
+    "descripcion": "PESCA Y ACUACULTURA - PESCADORES Y TRABAJADORES EN LA CRIA Y CULTIVO DE ESPECIES MARINAS"
+   },
+   {
+    "clave": "2130100",
+    "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - TECNICOS GEOLOGICOS Y DE MINERALES"
+   },
+   {
+    "clave": "2140100",
+    "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - INGENIEROS, OPERADORES O AYUDANTES EN LA EXTRACCION Y REFINACION MINERA"
+   },
+   {
+    "clave": "2210100",
+    "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - AYUDANTES EN LA PERFORACION DE POZOS DE PETROLEO Y GAS NATURAL"
+   },
+   {
+    "clave": "2240200",
+    "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - INGENIEROS PETROLEROS"
+   },
+   {
+    "clave": "2420100",
+    "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - OPERADORES DE CENTRALES O SISTEMAS DE ENERGIA ELECTRICAS"
+   },
+   {
+    "clave": "2420200",
+    "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - OPERADORES DE MAQUINAS DE VAPOR"
+   },
+   {
+    "clave": "2530100",
+    "descripcion": "MINERIA, EXTRACCION Y SUMINISTRO - GERENTE, SUPERVISOR U OPERADORES DE TRATAMIENTO Y POTABILIZACION, ABASTECIMIENTO Y RECOLECCION DE AGUA"
+   },
+   {
+    "clave": "3130100",
+    "descripcion": "CONSTRUCCION - DECORADORES DE INTERIORES"
+   },
+   {
+    "clave": "3130300",
+    "descripcion": "CONSTRUCCION - INGENIEROS, TECNICOS Y OPERADORES DE LA CONSTRUCCION"
+   },
+   {
+    "clave": "3310300",
+    "descripcion": "CONSTRUCCION - COLOCADORES DE PRODUCTOS PREFABRICADOS EN INMUEBLES"
+   },
+   {
+    "clave": "3310400",
+    "descripcion": "CONSTRUCCION - PINTORES"
+   },
+   {
+    "clave": "3310600",
+    "descripcion": "CONSTRUCCION - VIDRIEROS"
+   },
+   {
+    "clave": "3410200",
+    "descripcion": "CONSTRUCCION - REPARADORES DE VIAS DE COMUNICACION"
+   },
+   {
+    "clave": "3420100",
+    "descripcion": "CONSTRUCCION - PLOMEROS E INSTALADORES DE TUBERIA"
+   },
+   {
+    "clave": "3420200",
+    "descripcion": "CONSTRUCCION - ARQUITECTOS"
+   },
+   {
+    "clave": "4130300",
+    "descripcion": "MECANICA - MECANICOS DE EQUIPO PESADO"
+   },
+   {
+    "clave": "4130500",
+    "descripcion": "MECANICA - INGENIERO O MECANICOS INSTALADORES DE MAQUINARIA INDUSTRIAL"
+   },
+   {
+    "clave": "4131000",
+    "descripcion": "MECANICA - INGENIERO O TECNICO EN MECANICA DE VEHICULOS TERRESTRES, AEREOS Y ACUATICOS"
+   },
+   {
+    "clave": "4230200",
+    "descripcion": "ELECTRICIDAD - INGENIEROS O TECNICOS ELECTRICISTAS"
+   },
+   {
+    "clave": "4230500",
+    "descripcion": "ELECTRICIDAD - TECNICOS EN REFRIGERACION, AIRE ACONDICIONADO Y CALEFACCION"
+   },
+   {
+    "clave": "4330100",
+    "descripcion": "ELECTRONICA - MECANICOS DE INSTRUMENTOS INDUSTRIALES"
+   },
+   {
+    "clave": "4330200",
+    "descripcion": "ELECTRONICA - INGENIERO O TECNICOS EN ELECTRONICA"
+   },
+   {
+    "clave": "4430200",
+    "descripcion": "INFORMATICA - INGENIERO O TECNICOS PROGRAMADORES EN INFORMATICA"
+   },
+   {
+    "clave": "4440100",
+    "descripcion": "INFORMATICA - PROFESIONISTAS O TECNICOS DE SISTEMAS DE INFORMACION Y PROCESAMIENTO DE DATOS"
+   },
+   {
+    "clave": "4530200",
+    "descripcion": "TELECOMUNICACIONES - INGENIERO, INSTALADORES Y REPARADORES DE EQUIPOS Y ACCESORIOS DE TELECOMUNICACIONES"
+   },
+   {
+    "clave": "4530500",
+    "descripcion": "TELECOMUNICACIONES - TELEGRAFISTAS Y RADIO-OPERADORES"
+   },
+   {
+    "clave": "4630100",
+    "descripcion": "PROCESOS INDUSTRIALES - INGENIERO O TECNICOS INDUSTRIAL Y DE PRODUCCION"
+   },
+   {
+    "clave": "4640300",
+    "descripcion": "PROCESOS INDUSTRIALES - INGENIEROS METALURGICOS Y DE MATERIALES"
+   },
+   {
+    "clave": "5110100",
+    "descripcion": "MINERALES NO METALICOS - OPERADORES O TRABAJADORES DE VIDRIO Y CONCRETO"
+   },
+   {
+    "clave": "5121300",
+    "descripcion": "MINERALES NO METALICOS - OPERADORES DE MAQUINAS PROCESADORAS DE MINERALES NO METALICOS"
+   },
+   {
+    "clave": "5210100",
+    "descripcion": "METALES - SUPERVISORES U OPERADORES DE PROCESAMIENTO Y FUNDICION DE METALES"
+   },
+   {
+    "clave": "5310700",
+    "descripcion": "ALIMENTOS Y BEBIDAS - TRABAJADORES EN LA ELABORACION Y PROCESAMIENTO DE ALIMENTOS, BEBIDAS Y TABACO"
+   },
+   {
+    "clave": "5410100",
+    "descripcion": "TEXTILES Y PRENDAS DE VESTIR - TRABAJADORES EN LA PRODUCCION DE TEXTILES, PRENDAS DE VESTIR Y CALZADO"
+   },
+   {
+    "clave": "5420700",
+    "descripcion": "TEXTILES Y PRENDAS DE VESTIR - TRABAJADORES DE REPARACION DE PRENDAS DE VESTIR Y CALZADO"
+   },
+   {
+    "clave": "5510100",
+    "descripcion": "MADERA, PAPEL, Y PIEL - TRABAJADORES EN LA FABRICACION DE MUEBLES O PRODUCTOS DE MADERA Y/O PIEL"
+   },
+   {
+    "clave": "5610200",
+    "descripcion": "PRODUCTOS QUIMICOS - TRABAJADORES EN EL PROCESAMIENTO Y FABRICACION DE PRODUCTOS QUIMICOS Y FARMACOQUIMICAS"
+   },
+   {
+    "clave": "5710200",
+    "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - TRABAJADORES EN LA FABRICACION DE PRODUCTOS METALICOS, DE HULE Y PLASTICOS"
+   },
+   {
+    "clave": "5720800",
+    "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - ENSAMBLADORES Y ACABADORES DE PRODUCTOS DE PLASTICO"
+   },
+   {
+    "clave": "5720900",
+    "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - FABRICANTES DE HERRAMIENTAS Y TROQUELES"
+   },
+   {
+    "clave": "5721000",
+    "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - HERREROS Y FORJADORES"
+   },
+   {
+    "clave": "5721100",
+    "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - JOYEROS Y ORFEBRES"
+   },
+   {
+    "clave": "5722900",
+    "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - SOLDADORES Y OXICORTADORES"
+   },
+   {
+    "clave": "5730600",
+    "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - TRABAJADORES EN EL ENSAMBLADO DE VEHICULOS, MOLDEADO, LAMINADO Y MONTAJE DE PIEZAS METALICAS, HULE O PLASTICO"
+   },
+   {
+    "clave": "5731100",
+    "descripcion": "PRODUCTOS METALICOS Y DE HULE Y PLASTICO - SUPERVISORES EN LA FABRICACION Y MONTAJE DE ARTICULOS DEPORTIVOS, DE JUGUETES Y SIMILARES"
+   },
+   {
+    "clave": "5810200",
+    "descripcion": "PRODUCTOS ELECTRICOS Y ELECTRONICOS - TRABAJADORES EN LA FABRICACION DE PRODUCTOS ELECTRICOS Y ELECTRONICOS"
+   },
+   {
+    "clave": "5910400",
+    "descripcion": "PRODUCTOS IMPRESOS - TRABAJADORES EN LA ELABORACION DE PRODUCTOS IMPRESOS"
+   },
+   {
+    "clave": "6120100",
+    "descripcion": "TRANSPORTE FERROVIARIO - CONDUCTORES Y OPERADORES DE TREN SUBTERRANEO Y DE TREN LIGERO"
+   },
+   {
+    "clave": "6120200",
+    "descripcion": "TRANSPORTE FERROVIARIO - TRABAJADORES DE FERROCARRILES"
+   },
+   {
+    "clave": "6220100",
+    "descripcion": "TRANSPORTE TERRESTRE - CONDUCTORES DE VEHICULOS DE TRANSPORTE, SERVICIOS DE CARGA Y/O REPARTO"
+   },
+   {
+    "clave": "6330100",
+    "descripcion": "TRANSPORTE AEREO - COORDINADORES Y SUPERVISORES EN SERVICIOS DE TRANSPORTE AEREO"
+   },
+   {
+    "clave": "6330200",
+    "descripcion": "TRANSPORTE AEREO - DESPACHADORES DE VUELO Y ESPECIALISTAS EN SERVICIOS AEREOS"
+   },
+   {
+    "clave": "6330400",
+    "descripcion": "TRANSPORTE AEREO - SUPERVISORES DE SISTEMAS DE COMUNICACION PARA LA AERONAVEGACION"
+   },
+   {
+    "clave": "6330500",
+    "descripcion": "TRANSPORTE AEREO - PILOTOS DE AVIACION E INSTRUCTORES DE VUELO"
+   },
+   {
+    "clave": "6330600",
+    "descripcion": "TRANSPORTE AEREO - SOBRECARGOS"
+   },
+   {
+    "clave": "6420100",
+    "descripcion": "TRANSPORTE MARITIMO Y FLUVIAL - CONDUCTORES DE EMBARCACIONES"
+   },
+   {
+    "clave": "6430100",
+    "descripcion": "TRANSPORTE MARITIMO Y FLUVIAL - JEFES Y CONTROLADORES DE TRAFICO MARITIMO"
+   },
+   {
+    "clave": "6430300",
+    "descripcion": "TRANSPORTE MARITIMO Y FLUVIAL - PILOTOS, CAPITANES DE PUERTOS Y OFICIALES DE CUBIERTA"
+   },
+   {
+    "clave": "7110200",
+    "descripcion": "COMERCIO - DESPACHADORES DE GASOLINERA"
+   },
+   {
+    "clave": "7110300",
+    "descripcion": "COMERCIO - EMPACADORES DE MERCANCIAS"
+   },
+   {
+    "clave": "7110500",
+    "descripcion": "COMERCIO - TAQUILLEROS"
+   },
+   {
+    "clave": "7110600",
+    "descripcion": "COMERCIO - VENDEDORES AMBULANTES"
+   },
+   {
+    "clave": "7120100",
+    "descripcion": "COMERCIO - CAJEROS REGISTRADORES"
+   },
+   {
+    "clave": "7130200",
+    "descripcion": "COMERCIO - REPRESENTANTES DE VENTAS POR TELEFONO O POR TELEVISION"
+   },
+   {
+    "clave": "7130400",
+    "descripcion": "COMERCIO - VENDEDORES ESPECIALIZADOS"
+   },
+   {
+    "clave": "7140100",
+    "descripcion": "COMERCIO - GERENTES O SUPERVISOR DE ESTABLECIMIENTO COMERCIAL"
+   },
+   {
+    "clave": "7140200",
+    "descripcion": "COMERCIO - GERENTES O EMPLEADOS DE VENTAS"
+   },
+   {
+    "clave": "7210100",
+    "descripcion": "ALIMENTACION Y HOSPEDAJE - TRABAJADORES DE SERVICIO DE ALIMENTOS Y BEBIDAS"
+   },
+   {
+    "clave": "7230200",
+    "descripcion": "ALIMENTACION Y HOSPEDAJE - JEFES DE COCINA, RESTAURANTE Y/O BAR"
+   },
+   {
+    "clave": "7240200",
+    "descripcion": "ALIMENTACION Y HOSPEDAJE - TRABAJADORES DE SERVICIOS DE ALOJAMIENTO"
+   },
+   {
+    "clave": "7330200",
+    "descripcion": "TURISMO - COORDINADORES DE OPERACIONES EN AGENCIAS DE VIAJES"
+   },
+   {
+    "clave": "7330300",
+    "descripcion": "TURISMO - GUIAS DE EXCURSIONES O ECOTURISTICO"
+   },
+   {
+    "clave": "7430100",
+    "descripcion": "DEPORTE Y ESPARCIMIENTO - ANIMADORES RECREATIVOS"
+   },
+   {
+    "clave": "7430200",
+    "descripcion": "DEPORTE Y ESPARCIMIENTO - ATLETAS, ENTRENADORES O INSTRUCTORES EN DEPORTE Y RECREACION"
+   },
+   {
+    "clave": "7430400",
+    "descripcion": "DEPORTE Y ESPARCIMIENTO - OFICIALES, JUECES Y ARBITROS DEPORTIVOS"
+   },
+   {
+    "clave": "7530100",
+    "descripcion": "SERVICIOS PERSONALES - ESTILISTAS, ESTETICISTAS Y MASAJISTAS"
+   },
+   {
+    "clave": "7540100",
+    "descripcion": "SERVICIOS PERSONALES - TRBAJADORES DE SERVICIOS FUNERARIOS O CEMENTERIOS"
+   },
+   {
+    "clave": "7620100",
+    "descripcion": "REPARACION DE ARTICULOS DE USO DOMESTICO Y PERSONAL - CERRAJEROS"
+   },
+   {
+    "clave": "7620200",
+    "descripcion": "REPARACION DE ARTICULOS DE USO DOMESTICO Y PERSONAL - REPARADORES DE ARTICULOS DE HULE"
+   },
+   {
+    "clave": "7630100",
+    "descripcion": "REPARACION DE ARTICULOS DE USO DOMESTICO Y PERSONAL - RELOJEROS Y REPARADORES DE RELOJES"
+   },
+   {
+    "clave": "7630200",
+    "descripcion": "REPARACION DE ARTICULOS DE USO DOMESTICO Y PERSONAL - REPARADORES DE APARATOS ELECTRICOS"
+   },
+   {
+    "clave": "7720100",
+    "descripcion": "LIMPIEZA - SERVICIOS DE CAMARISTAS Y ASEADORES"
+   },
+   {
+    "clave": "7720200",
+    "descripcion": "LIMPIEZA - TRABAJADORES DE TINTORERIA Y LAVANDERIA"
+   },
+   {
+    "clave": "7720300",
+    "descripcion": "LIMPIEZA - FUMIGADORES DE PLAGAS"
+   },
+   {
+    "clave": "7810200",
+    "descripcion": "SERVICIO POSTAL Y MENSAJERIA - EMPLEADOS DE SERVICIOS DE MENSAJERIA"
+   },
+   {
+    "clave": "8120100",
+    "descripcion": "BOLSA, BANCA Y SEGUROS - GERENTES O TRABAJADORES DE SERVICIOS Y PRODUCTOS FINANCIEROS"
+   },
+   {
+    "clave": "8130500",
+    "descripcion": "BOLSA, BANCA Y SEGUROS - VALUADORES"
+   },
+   {
+    "clave": "8140100",
+    "descripcion": "BOLSA, BANCA Y SEGUROS - AGENTES DE VALORES, PROMOTORES Y CORREDORES DE INVERSION"
+   },
+   {
+    "clave": "8210100",
+    "descripcion": "ADMINISTRACION - TRABAJADORES DE ARCHIVO, ALMACEN DE INVENTARIOS"
+   },
+   {
+    "clave": "8220400",
+    "descripcion": "ADMINISTRACION - CAPTURISTA Y OPERADORES DE TELEFONO"
+   },
+   {
+    "clave": "8220600",
+    "descripcion": "ADMINISTRACION - PAGADORES Y COBRADORES"
+   },
+   {
+    "clave": "8230300",
+    "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES Y EMPLEADOS DE COMPRAS, FINANZAS, RECURSOS HUMANOS Y SERVICIOS ADMINISTRATIVOS"
+   },
+   {
+    "clave": "8240100",
+    "descripcion": "ADMINISTRACION - ASISTENTES ADMINISTRATIVOS"
+   },
+   {
+    "clave": "8240200",
+    "descripcion": "ADMINISTRACION - CONTADORES Y AUDITORES"
+   },
+   {
+    "clave": "8240600",
+    "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES Y EMPLEADOS DE PRODUCCION"
+   },
+   {
+    "clave": "8240700",
+    "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES Y EMPLEADOS DE SERVICIOS DE TRANSPORTE"
+   },
+   {
+    "clave": "8250100",
+    "descripcion": "ADMINISTRACION - CONSULTORES"
+   },
+   {
+    "clave": "8250200",
+    "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES Y EMPLEADOS DE COMERCIALIZACION"
+   },
+   {
+    "clave": "8250800",
+    "descripcion": "ADMINISTRACION - DIRECTORES, GERENTES Y EMPELADOS ADMINISTRATIVOS"
+   },
+   {
+    "clave": "8340100",
+    "descripcion": "SERVICIOS LEGALES - ABOGADOS Y ASESORES LEGALES"
+   },
+   {
+    "clave": "8340300",
+    "descripcion": "SERVICIOS LEGALES - NOTARIOS Y CORREDORES PUBLICOS"
+   },
+   {
+    "clave": "9120700",
+    "descripcion": "SERVICIOS MEDICOS - ENFERMERAS Y/O PARAMEDICOS"
+   },
+   {
+    "clave": "9130300",
+    "descripcion": "SERVICIOS MEDICOS - DIETISTAS Y NUTRIOLOGOS"
+   },
+   {
+    "clave": "9131200",
+    "descripcion": "SERVICIOS MEDICOS - TECNICOS DE LABORATORIO MEDICO"
+   },
+   {
+    "clave": "9140200",
+    "descripcion": "SERVICIOS MEDICOS - DIRECTORES DE INSTITUCIONES EN EL CUIDADO DE LA SALUD"
+   },
+   {
+    "clave": "9140400",
+    "descripcion": "SERVICIOS MEDICOS - FARMACEUTICOS"
+   },
+   {
+    "clave": "9140500",
+    "descripcion": "SERVICIOS MEDICOS - FISIOTERAPEUTAS Y QUIROPRACTICOS"
+   },
+   {
+    "clave": "9140700",
+    "descripcion": "SERVICIOS MEDICOS - MEDICOS ESPECIALISTAS"
+   },
+   {
+    "clave": "9140800",
+    "descripcion": "SERVICIOS MEDICOS - MEDICOS GENERALES Y FAMILIARES"
+   },
+   {
+    "clave": "9230100",
+    "descripcion": "INSPECCION - INSPECTORES DE SALUD AMBIENTAL, SANIDAD Y DEL TRABAJO"
+   },
+   {
+    "clave": "9230200",
+    "descripcion": "INSPECCION - INSPECTORES DE TRANSPORTE DE CARGA Y DE PASAJEROS"
+   },
+   {
+    "clave": "9230300",
+    "descripcion": "INSPECCION - INSPECTORES FISCALES Y DE PRECIOS"
+   },
+   {
+    "clave": "9230400",
+    "descripcion": "INSPECCION - INSPECTORES SANITARIOS Y DE CONTROL DE CALIDAD DE PRODUCTOS CARNICOS, PESQUEROS Y AGRICOLAS"
+   },
+   {
+    "clave": "9330100",
+    "descripcion": "SEGURIDAD SOCIAL - CONSEJEROS DE EMPLEO"
+   },
+   {
+    "clave": "9330300",
+    "descripcion": "SEGURIDAD SOCIAL - TRABAJADORES DE SERVICIO SOCIAL Y DE LA COMUNIDAD"
+   },
+   {
+    "clave": "9420100",
+    "descripcion": "PROTECCION DE BIENES Y/O PERSONAS - BOMBEROS"
+   },
+   {
+    "clave": "9420300",
+    "descripcion": "PROTECCION DE BIENES Y/O PERSONAS - GUARDIAS DE SEGURIDAD"
+   },
+   {
+    "clave": "9430100",
+    "descripcion": "PROTECCION DE BIENES Y/O PERSONAS - DETECTIVES PRIVADOS"
+   },
+   {
+    "clave": "1014010",
+    "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - DISEÑADORES GRAFICOS"
+   },
+   {
+    "clave": "1014030",
+    "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - EDITORES, PERIODISTAS, REPORTEROS Y REDACTORES"
+   },
+   {
+    "clave": "1023010",
+    "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - ASISTENTES Y/U OPERADORES DE PRODUCCION DE CINE, RADIO Y TELEVISION"
+   },
+   {
+    "clave": "1023070",
+    "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - LOCUTORES, COMENTARISTAS Y CRONISTAS DE RADIO Y TELEVISION"
+   },
+   {
+    "clave": "1024020",
+    "descripcion": "RADIO, CINE, TELEVISION Y TEATRO - PRODUCTORES Y DIRECTORES DE CINE, TELEVISION Y TEATRO"
+   },
+   {
+    "clave": "1033010",
+    "descripcion": "INTERPRETACION ARTISTICA - ACTORES, BAILARINES, MUSICOS, ESCRITORES"
+   },
+   {
+    "clave": "1033020",
+    "descripcion": "INTERPRETACION ARTISTICA - ARTESANOS"
+   },
+   {
+    "clave": "1033040",
+    "descripcion": "INTERPRETACION ARTISTICA - FOTOGRAFOS"
+   },
+   {
+    "clave": "1034010",
+    "descripcion": "INTERPRETACION ARTISTICA - ARTISTAS PLASTICOS"
+   },
+   {
+    "clave": "1044010",
+    "descripcion": "TRADUCCION E INTERPRETACION LINGüISTICA - INTERPRETES Y/O TRADUCTORES"
+   },
+   {
+    "clave": "1052010",
+    "descripcion": "PUBLICIDAD, PROPAGANDA Y RELACIONES PUBLICAS - MODELOS Y EDECANES"
+   },
+   {
+    "clave": "1054010",
+    "descripcion": "PUBLICIDAD, PROPAGANDA Y RELACIONES PUBLICAS - DIRECTORES, GERENTES Y EMPLEADOS DE PUBLICIDAD"
+   },
+   {
+    "clave": "1112010",
+    "descripcion": "INVESTIGACION - ENCUESTADORES Y CODIFICADORES"
+   },
+   {
+    "clave": "1113010",
+    "descripcion": "INVESTIGACION - ASISTENTES DE INVESTIGADORES"
+   },
+   {
+    "clave": "1113020",
+    "descripcion": "INVESTIGACION - QUIMICOS Y/O TECNICOS EN QUIMICA"
+   },
+   {
+    "clave": "1114010",
+    "descripcion": "INVESTIGACION - BIOLOGOS Y CIENTIFICOS RELACIONADOS"
+   },
+   {
+    "clave": "1114020",
+    "descripcion": "INVESTIGACION - ECONOMISTAS Y POLITOLOGOS (NO FUNCIONARIOS PUBLICOS)"
+   },
+   {
+    "clave": "1114030",
+    "descripcion": "INVESTIGACION - FISICOS ASTRONOMOS"
+   },
+   {
+    "clave": "1114040",
+    "descripcion": "INVESTIGACION - GEOLOGOS, GEOQUIMICOS, GEOFISICOS Y GEOGRAFOS"
+   },
+   {
+    "clave": "1114050",
+    "descripcion": "INVESTIGACION - INVESTIGADORES Y CONSULTORES EN MERCADOTECNIA"
+   },
+   {
+    "clave": "1114060",
+    "descripcion": "INVESTIGACION - MATEMATICOS, ESTADISTICOS Y ACTUARIOS"
+   },
+   {
+    "clave": "1114070",
+    "descripcion": "INVESTIGACION - METEOROLOGOS"
+   },
+   {
+    "clave": "1114090",
+    "descripcion": "INVESTIGACION - SOCIOLOGOS, ANTROPOLOGOS E HISTORIADORES"
+   },
+   {
+    "clave": "1123020",
+    "descripcion": "ENSEÑANZA - CAPACITADORES E INSTRUCTORES"
+   },
+   {
+    "clave": "1124070",
+    "descripcion": "ENSEÑANZA - PROFESORES O DOCENTES"
+   },
+   {
+    "clave": "1125010",
+    "descripcion": "ENSEÑANZA - DIRECTORES GENERALES DE EDUCACION"
+   },
+   {
+    "clave": "1133010",
+    "descripcion": "DIFUSION CULTURAL - PROMOTORES DE DIFUSION CULTURAL"
+   },
+   {
+    "clave": "1134010",
+    "descripcion": "DIFUSION CULTURAL - TRABAJADORES DE BIBLIOTECA, ARCHIVO, MUSEO Y GALERIA DE ARTE"
+   },
+   {
+    "clave": "1135010",
+    "descripcion": "OTRAS OCUPACIONES - ESTUDIANTE O MENOR DE EDAD SIN OCUPACION"
+   },
+   {
+    "clave": "1135080",
+    "descripcion": "OTRAS OCUPACIONES - PROPIETARIO, ACCIONISTA O SOCIO"
+   },
+   {
+    "clave": "1135020",
+    "descripcion": "OTRAS OCUPACIONES - DESEMPLEADO"
+   },
+   {
+    "clave": "1135030",
+    "descripcion": "OTRAS OCUPACIONES - JUBILADO O PENSIONADO"
+   },
+   {
+    "clave": "1135050",
+    "descripcion": "OTRAS OCUPACIONES - AMA DE CASA O QUEHACERES DEL HOGAR"
+   },
+   {
+    "clave": "1135060",
+    "descripcion": "OTRAS OCUPACIONES - MINISTROS DE CULTO RELIGIOSO (SACERDOTE, PASTOR, MONJA, ETC)"
+   },
+   {
+    "clave": "1135070",
+    "descripcion": "OTRAS OCUPACIONES - AGENTE ADUANAL"
+   },
+   {
+    "clave": "1136010",
+    "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER EJECUTIVO FEDERAL"
+   },
+   {
+    "clave": "1136020",
+    "descripcion": "SECTOR PUBLICO - EMPLEADO PODER EJECUTIVO ESTATAL O DEL DISTRITO FEDERAL"
+   },
+   {
+    "clave": "1136030",
+    "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER EJECUTIVO MUNICIPAL O DELEGACIONAL"
+   },
+   {
+    "clave": "1136040",
+    "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER JUDICIAL FEDERAL"
+   },
+   {
+    "clave": "1136070",
+    "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER JUDICIAL ESTATAL O DEL DISTRITO FEDERAL"
+   },
+   {
+    "clave": "1136050",
+    "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER LEGISLATIVO FEDERAL"
+   },
+   {
+    "clave": "1136060",
+    "descripcion": "SECTOR PUBLICO - EMPLEADO DEL PODER LEGISLATIVO ESTATAL O DEL DISTRITO FEDERAL"
+   },
+   {
+    "clave": "1136090",
+    "descripcion": "SECTOR PUBLICO - EJERCITO, ARMADA Y FUERZA AEREA"
+   },
+   {
+    "clave": "1136080",
+    "descripcion": "ORGANISMOS INTERNACIONALES Y EXTRATERRITORIALES - EMPLEADOS DE ORGANISMOS INTERNACIONALES Y EXTRATERRITORIALES"
+   }
+  ]
+ },
+ "giro_mercantil": {
+  "origen": "FedatarioConstitucionPM_v4_4.xlsm",
+  "hoja": "Combos",
+  "columna": 7,
+  "valores": [
+   {
+    "clave": "1000000",
+    "descripcion": "NO APLICA"
+   },
+   {
+    "clave": "1100001",
+    "descripcion": "SECTOR PRIMARIO - AGRICULTURA"
+   },
+   {
+    "clave": "1200001",
+    "descripcion": "SECTOR PRIMARIO - GANADERIA"
+   },
+   {
+    "clave": "1300001",
+    "descripcion": "SECTOR PRIMARIO - EXPLOTACION DE OTROS ANIMALES (AVICULTURA, APICULTURA, ETC.)"
+   },
+   {
+    "clave": "1400002",
+    "descripcion": "SECTOR PRIMARIO - APROVECHAMIENTO FORESTAL"
+   },
+   {
+    "clave": "1500001",
+    "descripcion": "SECTOR PRIMARIO - PESCA"
+   },
+   {
+    "clave": "2100002",
+    "descripcion": "MINERIA - MINERIA DE OTROS RECURSOS"
+   },
+   {
+    "clave": "2200002",
+    "descripcion": "MINERIA - ACTIVIDADES RELACIONADAS CON EL PETROLEO Y EL GAS"
+   },
+   {
+    "clave": "2300003",
+    "descripcion": "MINERIA - ORO"
+   },
+   {
+    "clave": "2400002",
+    "descripcion": "MINERIA - PLATA"
+   },
+   {
+    "clave": "2500002",
+    "descripcion": "MINERIA - PIEDRAS PRECIOSAS"
+   },
+   {
+    "clave": "2600003",
+    "descripcion": "GENERACION, TRANSMISION Y DISTRIBUCION DE ENERGIA ELECTRICA, SUMINISTRO DE AGUA Y DE GAS"
+   },
+   {
+    "clave": "2710004",
+    "descripcion": "CONSTRUCCION - OTRAS ACTIVIDADES RELACIONADAS CON LA CONSTRUCCION"
+   },
+   {
+    "clave": "2720004",
+    "descripcion": "CONSTRUCCION - EDIFICACION RESIDENCIAL Y NO RESIDENCIAL"
+   },
+   {
+    "clave": "2730004",
+    "descripcion": "CONSTRUCCION - OBRAS DE INGENIERIA CIVIL"
+   },
+   {
+    "clave": "2740004",
+    "descripcion": "CONSTRUCCION - TRABAJOS ESPECIALIZADOS PARA LA CONSTRUCCION"
+   },
+   {
+    "clave": "2754004",
+    "descripcion": "CONSTRUCCION - SERVICIOS DE BLINDAJE PARCIAL O TOTAL DE INMUEBLES"
+   },
+   {
+    "clave": "3110005",
+    "descripcion": "INDUSTRIA - ALIMENTARIA"
+   },
+   {
+    "clave": "3120005",
+    "descripcion": "INDUSTRIA - BEBIDAS Y DEL TABACO"
+   },
+   {
+    "clave": "3140005",
+    "descripcion": "INDUSTRIA - PRODUCTOS TEXTILES"
+   },
+   {
+    "clave": "3150005",
+    "descripcion": "INDUSTRIA - PRENDAS DE VESTIR"
+   },
+   {
+    "clave": "3210005",
+    "descripcion": "INDUSTRIA - MADERA"
+   },
+   {
+    "clave": "3220005",
+    "descripcion": "INDUSTRIA - PAPEL"
+   },
+   {
+    "clave": "3230005",
+    "descripcion": "INDUSTRIA - IMPRESION E INDUSTRIAS CONEXAS"
+   },
+   {
+    "clave": "3240005",
+    "descripcion": "INDUSTRIA - PRODUCTOS DERIVADOS DEL PETROLEO Y DEL CARBON"
+   },
+   {
+    "clave": "3250005",
+    "descripcion": "INDUSTRIA - QUIMICA"
+   },
+   {
+    "clave": "3260005",
+    "descripcion": "INDUSTRIA - PLASTICO Y DEL HULE"
+   },
+   {
+    "clave": "3270005",
+    "descripcion": "INDUSTRIA - PRODUCTOS A BASE DE MINERALES NO METALICOS (ALFARERIA, PORCELANA, LOZA, VIDRIO, CEMENTO)"
+   },
+   {
+    "clave": "3310005",
+    "descripcion": "INDUSTRIA - METALICAS BASICAS"
+   },
+   {
+    "clave": "3320005",
+    "descripcion": "INDUSTRIA - PRODUCTOS METALICOS (HERRAMIENTAS, UTENSILIOS, ESTRUCTURAS, PIEZAS)"
+   },
+   {
+    "clave": "3330005",
+    "descripcion": "INDUSTRIA - MAQUINARIA Y EQUIPO"
+   },
+   {
+    "clave": "3340005",
+    "descripcion": "INDUSTRIA - EQUIPO DE COMPUTACION, COMUNICACION, MEDICION Y DE OTROS EQUIPOS, COMPONENTES Y ACCESORIOS ELECTRONICOS"
+   },
+   {
+    "clave": "3350005",
+    "descripcion": "INDUSTRIA - ACCESORIOS, APARATOS ELECTRICOS Y EQUIPO DE GENERACION DE ENERGIA ELECTRICA"
+   },
+   {
+    "clave": "3360005",
+    "descripcion": "INDUSTRIA - EQUIPO DE TRANSPORTE SIN MOTOR"
+   },
+   {
+    "clave": "3370005",
+    "descripcion": "INDUSTRIA - AUTOMOTRIZ"
+   },
+   {
+    "clave": "3380005",
+    "descripcion": "INDUSTRIA - VEHICULOS BLINDADOS Y EQUIPO PARA EL BLINDAJE DE VEHICULOS"
+   },
+   {
+    "clave": "3410005",
+    "descripcion": "INDUSTRIA - MUEBLES, COLCHONES Y PERSIANAS"
+   },
+   {
+    "clave": "3420005",
+    "descripcion": "INDUSTRIA - OTRAS INDUSTRIAS MANUFACTURERAS"
+   },
+   {
+    "clave": "3430005",
+    "descripcion": "INDUSTRIA - ORFEBRERIA Y JOYERIA DE METALES Y PIEDRAS PRECIOSOS"
+   },
+   {
+    "clave": "3440005",
+    "descripcion": "INDUSTRIA - JOYERIA DE METALES Y PIEDRAS NO PRECIOSOS Y DE OTROS MATERIALES"
+   },
+   {
+    "clave": "4310006",
+    "descripcion": "COMERCIO - ABARROTES, ALIMENTOS, BEBIDAS, HIELO Y TABACO"
+   },
+   {
+    "clave": "4320006",
+    "descripcion": "COMERCIO - PRODUCTOS FARMACEUTICOS, DE PERFUMERIA, ARTICULOS PARA EL ESPARCIMIENTO, ELECTRODOMESTICOS Y APARATOS DE LINEA BLANCA"
+   },
+   {
+    "clave": "4330006",
+    "descripcion": "COMERCIO - MATERIAS PRIMAS AGROPECUARIAS Y FORESTALES, PARA LA INDUSTRIA, Y MATERIALES DE DESECHO"
+   },
+   {
+    "clave": "4340006",
+    "descripcion": "COMERCIO - MAQUINARIA, EQUIPO DE COMPUTO Y MOBILIARIO DE USO GENERAL"
+   },
+   {
+    "clave": "4620006",
+    "descripcion": "COMERCIO - TIENDAS DE AUTOSERVICIO Y DEPARTAMENTALES"
+   },
+   {
+    "clave": "4630006",
+    "descripcion": "COMERCIO - PRODUCTOS TEXTILES, BISUTERIA, ACCESORIOS DE VESTIR Y CALZADO"
+   },
+   {
+    "clave": "4650006",
+    "descripcion": "COMERCIO - ARTICULOS DE PAPELERIA"
+   },
+   {
+    "clave": "4660026",
+    "descripcion": "COMERCIO - ARTICULOS DE JOYERIA Y RELOJES"
+   },
+   {
+    "clave": "4670006",
+    "descripcion": "COMERCIO - ARTICULOS PARA LA DECORACION DE INTERIORES"
+   },
+   {
+    "clave": "4680006",
+    "descripcion": "COMERCIO - ANTIGÜEDADES Y OBRAS DE ARTE"
+   },
+   {
+    "clave": "4710006",
+    "descripcion": "COMERCIO - ARTICULOS DE FERRETERIA, TLAPALERIA Y VIDRIOS"
+   },
+   {
+    "clave": "4720006",
+    "descripcion": "COMERCIO - VEHICULOS NUEVOS"
+   },
+   {
+    "clave": "4730006",
+    "descripcion": "COMERCIO - VEHICULOS USADOS"
+   },
+   {
+    "clave": "4740006",
+    "descripcion": "COMERCIO - PARTES Y REFACCIONES PARA VEHICULOS"
+   },
+   {
+    "clave": "4750006",
+    "descripcion": "COMERCIO - COMBUSTIBLES Y LUBRICANTES"
+   },
+   {
+    "clave": "4760006",
+    "descripcion": "COMERCIO - A TRAVES DE INTERNET, Y CATALOGOS IMPRESOS, TELEVISION Y SIMILARES"
+   },
+   {
+    "clave": "4810007",
+    "descripcion": "TRANSPORTE - AEREO"
+   },
+   {
+    "clave": "4820007",
+    "descripcion": "TRANSPORTE - FERROVIARIO"
+   },
+   {
+    "clave": "4830007",
+    "descripcion": "TRANSPORTE - MARITIMO Y FLUVIAL"
+   },
+   {
+    "clave": "4850007",
+    "descripcion": "TRANSPORTE - TERRESTRE"
+   },
+   {
+    "clave": "4860007",
+    "descripcion": "TRANSPORTE - TRANSPORTACION Y DISTRIBUCION POR DUCTOS"
+   },
+   {
+    "clave": "4880007",
+    "descripcion": "TRANSPORTE - SERVICIOS RELACIONADOS CON EL TRANSPORTE"
+   },
+   {
+    "clave": "4890007",
+    "descripcion": "TRANSPORTE - SERVICIOS DE AGENCIAS ADUANALES"
+   },
+   {
+    "clave": "4840007",
+    "descripcion": "TRANSPORTE - SERVICIOS DE TRANSPORTE Y/O CUSTODIA DE VALORES"
+   },
+   {
+    "clave": "4910008",
+    "descripcion": "SERVICIOS POSTALES"
+   },
+   {
+    "clave": "4920009",
+    "descripcion": "SERVICIOS DE MENSAJERIA Y PAQUETERIA"
+   },
+   {
+    "clave": "4930010",
+    "descripcion": "SERVICIOS DE ALMACENAMIENTO"
+   },
+   {
+    "clave": "5100011",
+    "descripcion": "INFORMACION EN MEDIOS MASIVOS"
+   },
+   {
+    "clave": "5180012",
+    "descripcion": "PROCESAMIENTO ELECTRONICO DE INFORMACION Y OTROS SERVICIOS WEB"
+   },
+   {
+    "clave": "5210013",
+    "descripcion": "SERVICIOS FINANCIEROS - BANCA CENTRAL"
+   },
+   {
+    "clave": "5220013",
+    "descripcion": "SERVICIOS FINANCIEROS - BANCA MULTIPLE"
+   },
+   {
+    "clave": "5230013",
+    "descripcion": "SERVICIOS FINANCIEROS - BANCA DE DESARROLLO"
+   },
+   {
+    "clave": "5240013",
+    "descripcion": "SERVICIOS FINANCIEROS - FONDOS Y FIDEICOMISOS FINANCIEROS"
+   },
+   {
+    "clave": "5250013",
+    "descripcion": "SERVICIOS FINANCIEROS - UNIONES DE CREDITO"
+   },
+   {
+    "clave": "5260013",
+    "descripcion": "SREVICIOS FINANCIEROS - CAJAS DE AHORRO POPULAR"
+   },
+   {
+    "clave": "5270013",
+    "descripcion": "SERVICIOS FINANCIEROS - OTRAS INSTITUCIONES DE INTERMEDIACION CREDITICIA Y FINANCIERA NO BURSATIL (OPERACION Y PROMOCION DE TARJETAS DE CREDITO NO BANCARIAS, FINANCIAMIENTO DE BIENES DURADEROS), SOCIEDADES FINANCIERAS DE OBJETO LIMITADO"
+   },
+   {
+    "clave": "5280013",
+    "descripcion": "SERVICIOS FINANCIEROS - OTRAS INSTITUCIONES DE AHORRO Y PRESTAMO"
+   },
+   {
+    "clave": "5290013",
+    "descripcion": "SERVICIOS FINANCIEROS - COMPAÑIAS DE AUTOFINANCIAMIENTO"
+   },
+   {
+    "clave": "5310013",
+    "descripcion": "SERVICIOS FINANCIEROS - MONTEPIOS"
+   },
+   {
+    "clave": "5320013",
+    "descripcion": "SERVICIOS FINANCIEROS - CASAS DE EMPEÑO"
+   },
+   {
+    "clave": "5330013",
+    "descripcion": "SERVICIOS FINANCIEROS - SOCIEDADES FINANCIERAS DE OBJETO MULTIPLE"
+   },
+   {
+    "clave": "5350013",
+    "descripcion": "SERVICIOS FINANCIEROS - CASAS DE BOLSA"
+   },
+   {
+    "clave": "5360013",
+    "descripcion": "SERVICIOS FINANCIEROS - CASAS DE CAMBIO Y CENTROS CAMBIARIOS"
+   },
+   {
+    "clave": "5370013",
+    "descripcion": "SERVICIOS FINANCIEROS - TRANSMISORES DE DINERO"
+   },
+   {
+    "clave": "5390013",
+    "descripcion": "SERVICIOS FINANCIEROS - OTROS SERVICIOS RELACIONADOS CON LA INTERMEDIACION BURSATIL"
+   },
+   {
+    "clave": "5410013",
+    "descripcion": "SERVICIOS FINANCIEROS - COMPAÑIAS DE SEGUROS"
+   },
+   {
+    "clave": "5420013",
+    "descripcion": "SERVICIOS FINANCIEROS - COMPAÑIAS AFIANZADORAS"
+   },
+   {
+    "clave": "5430013",
+    "descripcion": "SERVICIOS FINANCIEROS - AGENTES, AJUSTADORES Y GESTORES DE SEGUROS Y FIANZAS"
+   },
+   {
+    "clave": "5440013",
+    "descripcion": "SERVICIOS FINANCIEROS - ADMINISTRACION DE FONDOS PARA EL RETIRO"
+   },
+   {
+    "clave": "5450013",
+    "descripcion": "SERVICIOS FINANCIEROS - EMISORA Y/O COMERCIALIZACION DE CHEQUES DE VIAJERO"
+   },
+   {
+    "clave": "5340013",
+    "descripcion": "OTRAS EMPRESAS DE INTERMEDIACION CREDITICIA NO FINANCIERAS"
+   },
+   {
+    "clave": "5510014",
+    "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - ALQUILER SIN INTERMEDIACION DE BIENES RAICES"
+   },
+   {
+    "clave": "5520014",
+    "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - INMOBILIARIAS Y CORREDORES DE BIENES RAICES"
+   },
+   {
+    "clave": "5530014",
+    "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - SERVICIOS DE ALQUILER DE BIENES MUEBLES EXCEPTO VEHICULOS"
+   },
+   {
+    "clave": "5540014",
+    "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - ALQUILER DE VEHICULOS"
+   },
+   {
+    "clave": "5550014",
+    "descripcion": "SERVICIOS INMOBILIARIOS Y DE ALQUILER - SERVICIOS DE ALQUILER DE MARCAS REGISTRADAS, PATENTES Y FRANQUICIAS"
+   },
+   {
+    "clave": "5610015",
+    "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - SERVICIOS JURIDICOS"
+   },
+   {
+    "clave": "5620015",
+    "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - NOTARIA Y CORREDURIA PUBLICA"
+   },
+   {
+    "clave": "5690015",
+    "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - CONTABILIDAD Y AUDITORIA"
+   },
+   {
+    "clave": "5630015",
+    "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - ARQUITECTURA, INGENIERIA Y ACTIVIDADES RELACIONADAS"
+   },
+   {
+    "clave": "5640015",
+    "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - DISEÑO DE SISTEMAS DE COMPUTO Y SERVICIOS RELACIONADOS"
+   },
+   {
+    "clave": "5650015",
+    "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - CONSULTORIA ADMINISTRATIVA, CIENTIFICA Y TECNICA"
+   },
+   {
+    "clave": "5660015",
+    "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - INVESTIGACION CIENTIFICA Y DESARROLLO"
+   },
+   {
+    "clave": "5670015",
+    "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - PUBLICIDAD Y ACTIVIDADES RELACIONADAS"
+   },
+   {
+    "clave": "5680015",
+    "descripcion": "SERVICIOS PROFESIONALES Y TECNICOS - OTROS SERVICIOS DE OUTSOURCING"
+   },
+   {
+    "clave": "5710016",
+    "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - SERVICIOS DE ADMINISTRACION DE NEGOCIOS"
+   },
+   {
+    "clave": "5720016",
+    "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - AGENCIAS DE COBRANZA, DESPACHOS DE INVESTIGACION"
+   },
+   {
+    "clave": "5730016",
+    "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - SERVICIOS DE PROTECCION Y SEGURIDAD"
+   },
+   {
+    "clave": "5740016",
+    "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - SERVICIOS DE LIMPIEZA Y MANTENIMIENTO"
+   },
+   {
+    "clave": "5750016",
+    "descripcion": "SERVICIOS DE APOYO A LOS NEGOCIOS - OTROS SERVICIOS"
+   },
+   {
+    "clave": "6100017",
+    "descripcion": "SERVICIOS EDUCATIVOS"
+   },
+   {
+    "clave": "6200018",
+    "descripcion": "SERVICIOS DE SALUD Y DE ASISTENCIA SOCIAL"
+   },
+   {
+    "clave": "7110019",
+    "descripcion": "SERVICIOS DE ESPARCIMIENTO CULTURALES Y DEPORTIVOS, Y OTROS SERVICIOS RECREATIVOS"
+   },
+   {
+    "clave": "7120019",
+    "descripcion": "SERVICIOS DE ESPARCIMIENTO - MUSEOS, SITIOS HISTORICOS, ZOOLOGICOS Y SIMILARES"
+   },
+   {
+    "clave": "7130019",
+    "descripcion": "SERVICIOS DE ESPARCIMIENTO - CASAS DE JUEGOS ELECTRONICOS"
+   },
+   {
+    "clave": "7140019",
+    "descripcion": "SERVICIOS DE ESPARCIMIENTO - CASINOS O CENTROS DE APUESTA"
+   },
+   {
+    "clave": "7150019",
+    "descripcion": "SERVICIOS DE ESPARCIMIENTO - VENTA DE BILLETES DE LOTERIA, PRONOSTICOS DEPORTIVOS U OTROS SORTEOS"
+   },
+   {
+    "clave": "7200020",
+    "descripcion": "SERVICIOS DE ALOJAMIENTO TEMPORAL Y DE PREPARACION DE ALIMENTOS Y BEBIDAS"
+   },
+   {
+    "clave": "8100021",
+    "descripcion": "SERVICIOS DE REPARACION Y MANTENIMIENTO - EQUIPO INDUSTRIAL, COMERCIAL, SERVICIOS Y AUTOMOTRIZ"
+   },
+   {
+    "clave": "8200022",
+    "descripcion": "SERVICIOS PERSONALES - LAVANDERIAS, SERVICIOS FUNERARIOS, BAÑOS PUBLICOS, SERVICIOS DE ESTACIONAMIENTO, REVELADO E IMPRESION DE FOTOGRAFIAS"
+   },
+   {
+    "clave": "8310023",
+    "descripcion": "ASOCIACIONES - ORGANIZACIONES Y CAMARAS DE PRODUCTORES, COMERCIANTES Y PRESTADORES DE SERVICIOS"
+   },
+   {
+    "clave": "8320023",
+    "descripcion": "ASOCIACIONES - ORGANIZACIONES LABORALES Y SINDICALES"
+   },
+   {
+    "clave": "8330023",
+    "descripcion": "ASOCIACIONES - ORGANIZACIONES DE PROFESIONISTAS"
+   },
+   {
+    "clave": "8340023",
+    "descripcion": "ASOCIACIONES - ORGANIZACIONES DE ACTIVIDADES RECREATIVAS"
+   },
+   {
+    "clave": "8350023",
+    "descripcion": "ASOCIACIONES - ORGANIZACIONES RELIGIOSAS"
+   },
+   {
+    "clave": "8360023",
+    "descripcion": "ASOCIACIONES - ORGANIZACIONES POLITICAS"
+   },
+   {
+    "clave": "8370023",
+    "descripcion": "ASOCIACIONES - ORGANIZACIONES CIVILES"
+   },
+   {
+    "clave": "9100025",
+    "descripcion": "ORGANISMOS INTERNACIONALES Y EXTRATERRITORIALES"
+   },
+   {
+    "clave": "9810024",
+    "descripcion": "SECTOR PUBLICO - PODER EJECUTIVO FEDERAL"
+   },
+   {
+    "clave": "9820024",
+    "descripcion": "SECTOR PUBLICO - PODER EJECUTIVO ESTATAL Y DEL DISTRITO FEDERAL"
+   },
+   {
+    "clave": "9830024",
+    "descripcion": "SECTOR PUBLICO - PODER EJECUTIVO MUNICIPAL Y DELEGACIONAL"
+   },
+   {
+    "clave": "9840024",
+    "descripcion": "SECTOR PUBLICO - PODER JUDICIAL FEDERAL"
+   },
+   {
+    "clave": "9850024",
+    "descripcion": "SECTOR PUBLICO - PODER JUDICIAL ESTATAL Y DEL DISTRITO FEDERAL"
+   },
+   {
+    "clave": "9860024",
+    "descripcion": "SECTOR PUBLICO - PODER LEGISLATIVO FEDERAL"
+   },
+   {
+    "clave": "9870024",
+    "descripcion": "SECTOR PUBLICO - PODER LEGISLATIVO ESTATAL Y DEL DISTRITO FEDERAL"
+   },
+   {
+    "clave": "9880024",
+    "descripcion": "SECTOR PUBLICO - ORGANOS AUTONOMOS Y ENTIDADES PARAESTATALES"
+   }
+  ]
+ },
+ "instrumentos_monetarios": {
+  "origen": "FedatarioCompraVenta_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 24,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Efectivo"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Tarjeta de Crédito"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Tarjeta de Debito"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Tarjeta de Prepago"
+   },
+   {
+    "clave": "5",
+    "descripcion": "Cheque Nominativo"
+   },
+   {
+    "clave": "6",
+    "descripcion": "Cheque de Caja"
+   },
+   {
+    "clave": "7",
+    "descripcion": "Cheques de Viajero"
+   },
+   {
+    "clave": "8",
+    "descripcion": "Transferencia Interbancaria"
+   },
+   {
+    "clave": "9",
+    "descripcion": "Transferencia Misma Institución"
+   },
+   {
+    "clave": "10",
+    "descripcion": "Transferencia Internacional"
+   },
+   {
+    "clave": "11",
+    "descripcion": "Orden de Pago"
+   },
+   {
+    "clave": "12",
+    "descripcion": "Giro"
+   },
+   {
+    "clave": "13",
+    "descripcion": "Oro o Platino Amonedados"
+   },
+   {
+    "clave": "14",
+    "descripcion": "Plata Amonedada"
+   },
+   {
+    "clave": "15",
+    "descripcion": "Metales Preciosos"
+   },
+   {
+    "clave": "16",
+    "descripcion": "Activos Virtuales"
+   },
+   {
+    "clave": "99",
+    "descripcion": "Otros"
+   }
+  ]
+ },
+ "monedas_o_divisas": {
+  "origen": "FedatarioCompraVenta_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 26,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Peso mexicano"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Dólar estadounidense"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Euro"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Dirham de los Emiratos Árabes Unidos"
+   },
+   {
+    "clave": "5",
+    "descripcion": "Afgani afgano"
+   },
+   {
+    "clave": "6",
+    "descripcion": "Lek albanés"
+   },
+   {
+    "clave": "7",
+    "descripcion": "Dram armenio"
+   },
+   {
+    "clave": "8",
+    "descripcion": "Florín antillano neerlandés"
+   },
+   {
+    "clave": "9",
+    "descripcion": "Kwanza angoleño"
+   },
+   {
+    "clave": "10",
+    "descripcion": "Peso argentino"
+   },
+   {
+    "clave": "11",
+    "descripcion": "Dólar australiano"
+   },
+   {
+    "clave": "12",
+    "descripcion": "Florín arubeño"
+   },
+   {
+    "clave": "13",
+    "descripcion": "Manat azerbaiyano"
+   },
+   {
+    "clave": "14",
+    "descripcion": "Manat azerbaiyano"
+   },
+   {
+    "clave": "15",
+    "descripcion": "Marco convertible de Bosnia-Herzegovina"
+   },
+   {
+    "clave": "16",
+    "descripcion": "Dólar de Barbados"
+   },
+   {
+    "clave": "17",
+    "descripcion": "Taka de Bangladesh"
+   },
+   {
+    "clave": "18",
+    "descripcion": "Lev búlgaro"
+   },
+   {
+    "clave": "19",
+    "descripcion": "Dinar bahreiní"
+   },
+   {
+    "clave": "20",
+    "descripcion": "Franco burundés"
+   },
+   {
+    "clave": "21",
+    "descripcion": "Dólar de Bermuda"
+   },
+   {
+    "clave": "22",
+    "descripcion": "Dólar de Brunéi"
+   },
+   {
+    "clave": "23",
+    "descripcion": "Boliviano"
+   },
+   {
+    "clave": "24",
+    "descripcion": "Real brasileño"
+   },
+   {
+    "clave": "25",
+    "descripcion": "Dólar bahameño"
+   },
+   {
+    "clave": "26",
+    "descripcion": "Ngultrum de Bután"
+   },
+   {
+    "clave": "27",
+    "descripcion": "Pula de Botsuana"
+   },
+   {
+    "clave": "28",
+    "descripcion": "Rublo bielorruso"
+   },
+   {
+    "clave": "29",
+    "descripcion": "Dólar de Belice"
+   },
+   {
+    "clave": "30",
+    "descripcion": "Dólar canadiense"
+   },
+   {
+    "clave": "31",
+    "descripcion": "Franco congoleño, o congolés"
+   },
+   {
+    "clave": "32",
+    "descripcion": "Franco suizo"
+   },
+   {
+    "clave": "33",
+    "descripcion": "Peso chileno"
+   },
+   {
+    "clave": "34",
+    "descripcion": "Yuan chino"
+   },
+   {
+    "clave": "35",
+    "descripcion": "Peso colombiano"
+   },
+   {
+    "clave": "36",
+    "descripcion": "Colón costarricense"
+   },
+   {
+    "clave": "37",
+    "descripcion": "Dinar serbio"
+   },
+   {
+    "clave": "38",
+    "descripcion": "Peso cubano convertible"
+   },
+   {
+    "clave": "39",
+    "descripcion": "Peso cubano"
+   },
+   {
+    "clave": "40",
+    "descripcion": "Escudo caboverdiano"
+   },
+   {
+    "clave": "41",
+    "descripcion": "Koruna checa"
+   },
+   {
+    "clave": "42",
+    "descripcion": "Franco yibutiano"
+   },
+   {
+    "clave": "43",
+    "descripcion": "Corona danesa"
+   },
+   {
+    "clave": "44",
+    "descripcion": "Peso dominicano"
+   },
+   {
+    "clave": "45",
+    "descripcion": "Dinar algerino"
+   },
+   {
+    "clave": "46",
+    "descripcion": "Libra egipcia"
+   },
+   {
+    "clave": "47",
+    "descripcion": "Nakfa eritreo"
+   },
+   {
+    "clave": "48",
+    "descripcion": "Birr etíope"
+   },
+   {
+    "clave": "49",
+    "descripcion": "Dólar fiyiano"
+   },
+   {
+    "clave": "50",
+    "descripcion": "Libra malvinense"
+   },
+   {
+    "clave": "51",
+    "descripcion": "Libra esterlina (libra de Gran Bretaña)"
+   },
+   {
+    "clave": "52",
+    "descripcion": "Lari georgiano"
+   },
+   {
+    "clave": "53",
+    "descripcion": "Cedi ghanés"
+   },
+   {
+    "clave": "54",
+    "descripcion": "Libra de Gibraltar"
+   },
+   {
+    "clave": "55",
+    "descripcion": "Dalasi gambiano"
+   },
+   {
+    "clave": "56",
+    "descripcion": "Franco guineano"
+   },
+   {
+    "clave": "57",
+    "descripcion": "Quetzal guatemalteco"
+   },
+   {
+    "clave": "58",
+    "descripcion": "Dólar guyanés"
+   },
+   {
+    "clave": "59",
+    "descripcion": "Dólar de Hong Kong"
+   },
+   {
+    "clave": "60",
+    "descripcion": "Lempira hondureño"
+   },
+   {
+    "clave": "61",
+    "descripcion": "Kuna croata"
+   },
+   {
+    "clave": "62",
+    "descripcion": "Gourde haitiano"
+   },
+   {
+    "clave": "63",
+    "descripcion": "Forint húngaro"
+   },
+   {
+    "clave": "64",
+    "descripcion": "Rupiah indonesia"
+   },
+   {
+    "clave": "65",
+    "descripcion": "Nuevo shéquel israelí"
+   },
+   {
+    "clave": "66",
+    "descripcion": "Rupia india"
+   },
+   {
+    "clave": "67",
+    "descripcion": "Dinar iraquí"
+   },
+   {
+    "clave": "68",
+    "descripcion": "Rial iraní"
+   },
+   {
+    "clave": "69",
+    "descripcion": "Króna islandesa"
+   },
+   {
+    "clave": "70",
+    "descripcion": "Dólar jamaicano"
+   },
+   {
+    "clave": "71",
+    "descripcion": "Dinar jordano"
+   },
+   {
+    "clave": "72",
+    "descripcion": "Yen japonés"
+   },
+   {
+    "clave": "73",
+    "descripcion": "Chelín keniata"
+   },
+   {
+    "clave": "74",
+    "descripcion": "Som kirguís (de Kirguistán)"
+   },
+   {
+    "clave": "75",
+    "descripcion": "Riel camboyano"
+   },
+   {
+    "clave": "76",
+    "descripcion": "Franco comoriano (de Comoras)"
+   },
+   {
+    "clave": "77",
+    "descripcion": "Won norcoreano"
+   },
+   {
+    "clave": "78",
+    "descripcion": "Won surcoreano"
+   },
+   {
+    "clave": "79",
+    "descripcion": "Dinar kuwaití"
+   },
+   {
+    "clave": "80",
+    "descripcion": "Dólar caimano (de Islas Caimán)"
+   },
+   {
+    "clave": "81",
+    "descripcion": "Tenge kazajo"
+   },
+   {
+    "clave": "82",
+    "descripcion": "Kip lao"
+   },
+   {
+    "clave": "83",
+    "descripcion": "Libra libanesa"
+   },
+   {
+    "clave": "84",
+    "descripcion": "Rupia de Sri Lanka"
+   },
+   {
+    "clave": "85",
+    "descripcion": "Dólar liberiano"
+   },
+   {
+    "clave": "86",
+    "descripcion": "Loti lesotense"
+   },
+   {
+    "clave": "87",
+    "descripcion": "Litas lituano"
+   },
+   {
+    "clave": "88",
+    "descripcion": "Lat letón"
+   },
+   {
+    "clave": "89",
+    "descripcion": "Dinar libio"
+   },
+   {
+    "clave": "90",
+    "descripcion": "Dirham marroquí"
+   },
+   {
+    "clave": "91",
+    "descripcion": "Leu moldavo"
+   },
+   {
+    "clave": "92",
+    "descripcion": "Ariary malgache"
+   },
+   {
+    "clave": "93",
+    "descripcion": "Denar macedonio"
+   },
+   {
+    "clave": "94",
+    "descripcion": "Kyat birmano"
+   },
+   {
+    "clave": "95",
+    "descripcion": "Tughrik mongol"
+   },
+   {
+    "clave": "96",
+    "descripcion": "Pataca de Macao"
+   },
+   {
+    "clave": "97",
+    "descripcion": "Ouguiya mauritana"
+   },
+   {
+    "clave": "98",
+    "descripcion": "Rupia mauricia"
+   },
+   {
+    "clave": "99",
+    "descripcion": "Rufiyaa maldiva"
+   },
+   {
+    "clave": "100",
+    "descripcion": "Kwacha malauí"
+   },
+   {
+    "clave": "101",
+    "descripcion": "Ringgit malayo"
+   },
+   {
+    "clave": "102",
+    "descripcion": "Metical mozambiqueño"
+   },
+   {
+    "clave": "103",
+    "descripcion": "Dólar namibio"
+   },
+   {
+    "clave": "104",
+    "descripcion": "Naira nigeriana"
+   },
+   {
+    "clave": "105",
+    "descripcion": "Córdoba nicaragüense"
+   },
+   {
+    "clave": "106",
+    "descripcion": "Corona noruega"
+   },
+   {
+    "clave": "107",
+    "descripcion": "Rupia nepalesa"
+   },
+   {
+    "clave": "108",
+    "descripcion": "Dólar neozelandés"
+   },
+   {
+    "clave": "109",
+    "descripcion": "Rial omaní"
+   },
+   {
+    "clave": "110",
+    "descripcion": "Balboa panameña"
+   },
+   {
+    "clave": "111",
+    "descripcion": "Nuevo sol peruano"
+   },
+   {
+    "clave": "112",
+    "descripcion": "Kina de Papúa Nueva Guinea"
+   },
+   {
+    "clave": "113",
+    "descripcion": "Peso filipino"
+   },
+   {
+    "clave": "114",
+    "descripcion": "Rupia pakistaní"
+   },
+   {
+    "clave": "115",
+    "descripcion": "zloty polaco"
+   },
+   {
+    "clave": "116",
+    "descripcion": "Guaraní paraguayo"
+   },
+   {
+    "clave": "117",
+    "descripcion": "Rial qatarí"
+   },
+   {
+    "clave": "118",
+    "descripcion": "Leu rumano"
+   },
+   {
+    "clave": "119",
+    "descripcion": "Dinar serbio"
+   },
+   {
+    "clave": "120",
+    "descripcion": "Rublo ruso"
+   },
+   {
+    "clave": "121",
+    "descripcion": "Franco ruandés"
+   },
+   {
+    "clave": "122",
+    "descripcion": "Riyal saudí"
+   },
+   {
+    "clave": "123",
+    "descripcion": "Dólar de las Islas Salomón"
+   },
+   {
+    "clave": "124",
+    "descripcion": "Rupia de Seychelles"
+   },
+   {
+    "clave": "125",
+    "descripcion": "Dinar sudanés"
+   },
+   {
+    "clave": "126",
+    "descripcion": "Corona sueca"
+   },
+   {
+    "clave": "127",
+    "descripcion": "Dólar de Singapur"
+   },
+   {
+    "clave": "128",
+    "descripcion": "Libra de Santa Helena"
+   },
+   {
+    "clave": "129",
+    "descripcion": "Leone de Sierra Leona"
+   },
+   {
+    "clave": "130",
+    "descripcion": "Chelín somalí"
+   },
+   {
+    "clave": "131",
+    "descripcion": "Dólar surinamés"
+   },
+   {
+    "clave": "132",
+    "descripcion": "Libra de Sudán del Sur"
+   },
+   {
+    "clave": "133",
+    "descripcion": "Dobra de Santo Tomé y Príncipe"
+   },
+   {
+    "clave": "134",
+    "descripcion": "Colón Salvadoreño"
+   },
+   {
+    "clave": "135",
+    "descripcion": "Libra siria"
+   },
+   {
+    "clave": "136",
+    "descripcion": "Lilangeni suazi"
+   },
+   {
+    "clave": "137",
+    "descripcion": "Baht tailandés"
+   },
+   {
+    "clave": "138",
+    "descripcion": "Somoni tayik (de Tayikistán)"
+   },
+   {
+    "clave": "139",
+    "descripcion": "Manat turcomano"
+   },
+   {
+    "clave": "140",
+    "descripcion": "Dinar tunecino"
+   },
+   {
+    "clave": "141",
+    "descripcion": "Pa'anga tongano"
+   },
+   {
+    "clave": "142",
+    "descripcion": "Lira turca"
+   },
+   {
+    "clave": "143",
+    "descripcion": "Dólar de Trinidad y Tobago"
+   },
+   {
+    "clave": "144",
+    "descripcion": "Dólar taiwanés"
+   },
+   {
+    "clave": "145",
+    "descripcion": "Chelín tanzano"
+   },
+   {
+    "clave": "146",
+    "descripcion": "Grivna ucraniana"
+   },
+   {
+    "clave": "147",
+    "descripcion": "Chelín ugandés"
+   },
+   {
+    "clave": "148",
+    "descripcion": "Peso uruguayo"
+   },
+   {
+    "clave": "149",
+    "descripcion": "Som uzbeko"
+   },
+   {
+    "clave": "150",
+    "descripcion": "Bolívar fuerte venezolano"
+   },
+   {
+    "clave": "151",
+    "descripcion": "Dong vietnamita"
+   },
+   {
+    "clave": "152",
+    "descripcion": "Vatu vanuatense"
+   },
+   {
+    "clave": "153",
+    "descripcion": "Tala samoana"
+   },
+   {
+    "clave": "154",
+    "descripcion": "Rial yemení (de Yemen)"
+   },
+   {
+    "clave": "155",
+    "descripcion": "Rand sudafricano"
+   },
+   {
+    "clave": "156",
+    "descripcion": "Kwacha zambiano"
+   },
+   {
+    "clave": "157",
+    "descripcion": "Kwacha zambiano"
+   },
+   {
+    "clave": "158",
+    "descripcion": "Dólar zimbabuense"
+   },
+   {
+    "clave": "159",
+    "descripcion": "CENTENARIO"
+   },
+   {
+    "clave": "160",
+    "descripcion": "AZTECA"
+   },
+   {
+    "clave": "161",
+    "descripcion": "HIDALGO"
+   },
+   {
+    "clave": "162",
+    "descripcion": "1/2 HIDALGO"
+   },
+   {
+    "clave": "163",
+    "descripcion": "1/4 HIDALGO"
+   },
+   {
+    "clave": "164",
+    "descripcion": "1/5 HIDALGO"
+   },
+   {
+    "clave": "165",
+    "descripcion": "1 OZ LIBERTAD DE ORO"
+   },
+   {
+    "clave": "166",
+    "descripcion": "1/2 OZ LIBERTAD DE ORO"
+   },
+   {
+    "clave": "167",
+    "descripcion": "1/4 OZ LIBERTAD DE ORO"
+   },
+   {
+    "clave": "168",
+    "descripcion": "1/10 OZ LIBERTAD DE ORO"
+   },
+   {
+    "clave": "169",
+    "descripcion": "1/20 OZ LIBERTAD DE ORO"
+   },
+   {
+    "clave": "170",
+    "descripcion": "1 OZ LIBERTAD DE PLATA"
+   },
+   {
+    "clave": "171",
+    "descripcion": "1/2 OZ LIBERTAD DE PLATA"
+   },
+   {
+    "clave": "172",
+    "descripcion": "1/4 OZ LIBERTAD DE PLATA"
+   },
+   {
+    "clave": "173",
+    "descripcion": "1/10 OZ LIBERTAD DE PLATA"
+   },
+   {
+    "clave": "174",
+    "descripcion": "1/20 OZ LIBERTAD DE PLATA"
+   },
+   {
+    "clave": "175",
+    "descripcion": "Onza de plata"
+   },
+   {
+    "clave": "176",
+    "descripcion": "Onza de oro"
+   },
+   {
+    "clave": "177",
+    "descripcion": "Franco de oro (Special settlement currency)"
+   },
+   {
+    "clave": "178",
+    "descripcion": "Onza de paladio"
+   },
+   {
+    "clave": "179",
+    "descripcion": "Onza de platino"
+   },
+   {
+    "clave": "180",
+    "descripcion": "Franco CFA de África Central"
+   },
+   {
+    "clave": "181",
+    "descripcion": "Dólar del Caribe Oriental"
+   },
+   {
+    "clave": "182",
+    "descripcion": "Franco UIC (Special settlement currency)"
+   },
+   {
+    "clave": "183",
+    "descripcion": "Franco CFA de África Occidental"
+   },
+   {
+    "clave": "184",
+    "descripcion": "Franco CFP"
+   }
+  ]
+ },
+ "prioridad": {
+  "origen": "FedatarioPoder_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 28,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "NORMAL"
+   },
+   {
+    "clave": "2",
+    "descripcion": "24 HORAS CON OPERACIONES"
+   }
+  ]
+ },
+ "entidad_federativa": {
+  "origen": "FedatarioConstitucionPM_v4_4.xlsm",
+  "hoja": "Combos",
+  "columna": 36,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "AGUASCALIENTES"
+   },
+   {
+    "clave": "2",
+    "descripcion": "BAJA CALIFORNIA"
+   },
+   {
+    "clave": "3",
+    "descripcion": "BAJA CALIFORNIA SUR"
+   },
+   {
+    "clave": "4",
+    "descripcion": "CAMPECHE"
+   },
+   {
+    "clave": "5",
+    "descripcion": "COAHUILA DE ZARAGOZA"
+   },
+   {
+    "clave": "6",
+    "descripcion": "COLIMA"
+   },
+   {
+    "clave": "7",
+    "descripcion": "CHIAPAS"
+   },
+   {
+    "clave": "8",
+    "descripcion": "CHIHUAHUA"
+   },
+   {
+    "clave": "9",
+    "descripcion": "DISTRITO FEDERAL"
+   },
+   {
+    "clave": "10",
+    "descripcion": "DURANGO"
+   },
+   {
+    "clave": "11",
+    "descripcion": "GUANAJUATO"
+   },
+   {
+    "clave": "12",
+    "descripcion": "GUERRERO"
+   },
+   {
+    "clave": "13",
+    "descripcion": "HIDALGO"
+   },
+   {
+    "clave": "14",
+    "descripcion": "JALISCO"
+   },
+   {
+    "clave": "15",
+    "descripcion": "MÉXICO"
+   },
+   {
+    "clave": "16",
+    "descripcion": "MICHOACÁN DE OCAMPO"
+   },
+   {
+    "clave": "17",
+    "descripcion": "MORELOS"
+   },
+   {
+    "clave": "18",
+    "descripcion": "NAYARIT"
+   },
+   {
+    "clave": "19",
+    "descripcion": "NUEVO LEÓN"
+   },
+   {
+    "clave": "20",
+    "descripcion": "OAXACA"
+   },
+   {
+    "clave": "21",
+    "descripcion": "PUEBLA"
+   },
+   {
+    "clave": "22",
+    "descripcion": "QUERÉTARO"
+   },
+   {
+    "clave": "23",
+    "descripcion": "QUINTANA ROO"
+   },
+   {
+    "clave": "24",
+    "descripcion": "SAN LUIS POTOSÍ"
+   },
+   {
+    "clave": "25",
+    "descripcion": "SINALOA"
+   },
+   {
+    "clave": "26",
+    "descripcion": "SONORA"
+   },
+   {
+    "clave": "27",
+    "descripcion": "TABASCO"
+   },
+   {
+    "clave": "28",
+    "descripcion": "TAMAULIPAS"
+   },
+   {
+    "clave": "29",
+    "descripcion": "TLAXCALA"
+   },
+   {
+    "clave": "30",
+    "descripcion": "VERACRUZ DE IGNACIO DE LA LLAVE"
+   },
+   {
+    "clave": "31",
+    "descripcion": "YUCATÁN"
+   },
+   {
+    "clave": "32",
+    "descripcion": "ZACATECAS"
+   }
+  ]
+ },
+ "tipos_de_inmueble": {
+  "origen": "FedatarioConstitucionFid_v4_8.xlsm",
+  "hoja": "Combos",
+  "columna": 62,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Casa /Casa en condominio"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Departamento"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Edificio habitacional"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Edificio comercial"
+   },
+   {
+    "clave": "5",
+    "descripcion": "Edificio oficinas"
+   },
+   {
+    "clave": "6",
+    "descripcion": "Local comercial independiente"
+   },
+   {
+    "clave": "7",
+    "descripcion": "Local en centro comercial"
+   },
+   {
+    "clave": "8",
+    "descripcion": "Oficina"
+   },
+   {
+    "clave": "9",
+    "descripcion": "Bodega comercial"
+   },
+   {
+    "clave": "10",
+    "descripcion": "Bodega industrial"
+   },
+   {
+    "clave": "11",
+    "descripcion": "Nave Industrial"
+   },
+   {
+    "clave": "12",
+    "descripcion": "Terreno urbano habitacional"
+   },
+   {
+    "clave": "13",
+    "descripcion": "Terreno no urbano habitacional"
+   },
+   {
+    "clave": "14",
+    "descripcion": "Terreno urbano comercial o industrial"
+   },
+   {
+    "clave": "15",
+    "descripcion": "Terreno no urbano comercial o industrial"
+   },
+   {
+    "clave": "16",
+    "descripcion": "Terreno ejidal"
+   },
+   {
+    "clave": "17",
+    "descripcion": "Rancho/Hacienda/Quinta"
+   },
+   {
+    "clave": "18",
+    "descripcion": "Huerta"
+   },
+   {
+    "clave": "99",
+    "descripcion": "Otro"
+   }
+  ]
+ },
+ "tipo_de_poder": {
+  "origen": "FedatarioPoder_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 64,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "de administración"
+   },
+   {
+    "clave": "2",
+    "descripcion": "de dominio"
+   },
+   {
+    "clave": "3",
+    "descripcion": "de administración y de dominio"
+   }
+  ]
+ },
+ "tipo_fusion": {
+  "origen": "FedatarioFusion_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 64,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Absorción"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Integración"
+   }
+  ]
+ },
+ "tipo_de_persona_moral": {
+  "origen": "FedatarioConstitucionPM_v4_4.xlsm",
+  "hoja": "Combos",
+  "columna": 64,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Asociación Civil (A.C.)"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Sociedad Civil (S.C.)"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Sociedad en Nombre Colectivo"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Comandita Simple (S. en C.)"
+   },
+   {
+    "clave": "5",
+    "descripcion": "Comandita por Acciones (S. en C. por A.)"
+   },
+   {
+    "clave": "6",
+    "descripcion": "Sociedad Anónima (S.A.)"
+   },
+   {
+    "clave": "7",
+    "descripcion": "Sociedad de Responsabilidad Limitada (S. de R. L.)"
+   },
+   {
+    "clave": "8",
+    "descripcion": "Sociedad Cooperativa Limitada (S. C. L.)"
+   },
+   {
+    "clave": "9",
+    "descripcion": "Sociedad Cooperativa Suplementada (S. C. S.)"
+   },
+   {
+    "clave": "11",
+    "descripcion": "Sociedad Mutualista de Seguros de Vida o de Daño"
+   },
+   {
+    "clave": "12",
+    "descripcion": "Sociedad Nacional de Crédito y/o Institución Bancaria de Desarrollo (S. N. C.)"
+   },
+   {
+    "clave": "13",
+    "descripcion": "Sociedad de Solidaridad Social (S. de S. S.)"
+   },
+   {
+    "clave": "14",
+    "descripcion": "Sociedad de Producción Rural de Responsabilidad Limitada"
+   },
+   {
+    "clave": "15",
+    "descripcion": "Sociedad de Producción Rural de Responsabilidad Ilimitada"
+   },
+   {
+    "clave": "16",
+    "descripcion": "Sociedad de Producción Rural de Responsabilidad Suplementada"
+   },
+   {
+    "clave": "99",
+    "descripcion": "Otra (especificar)"
+   }
+  ]
+ },
+ "cargo_de_accionista": {
+  "origen": "FedatarioConstitucionPM_v4_4.xlsm",
+  "hoja": "Combos",
+  "columna": 66,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Administrador único"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Presidente del consejo de administración u órgano equivalente"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Otro miembro del consejo de administración u órgano equivalente"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Comisario o Miembro del consejo de vigilancia u órgano equivalente"
+   },
+   {
+    "clave": "5",
+    "descripcion": "No aplica"
+   }
+  ]
+ },
+ "tipo_de_movimiento": {
+  "origen": "FedatarioConstitucionFid_v4_8.xlsm",
+  "hoja": "Combos",
+  "columna": 67,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Constitucion"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Modificación - Aumento del patrimonio"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Modificación - Disminución del patrimonio"
+   },
+   {
+    "clave": "6",
+    "descripcion": "Modificación de incorporación y/o destitución sin cambios al patrimonio"
+   }
+  ]
+ },
+ "motivo_cosntitucion_modificacion": {
+  "origen": "FedatarioConstitucionPM_v4_4.xlsm",
+  "hoja": "Combos",
+  "columna": 68,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Fusión"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Escisión"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Contrato privado"
+   }
+  ]
+ },
+ "tipo_de_modificacion_patrimonial": {
+  "origen": "FedatarioModifPatrimonial_v4_4.xlsm",
+  "hoja": "Combos",
+  "columna": 69,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Aumento"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Disminución"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Sin modificación"
+   }
+  ]
+ },
+ "tipo_de_fideicomiso": {
+  "origen": "FedatarioConstitucionFid_v4_8.xlsm",
+  "hoja": "Combos",
+  "columna": 69,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Traslativo de Dominio"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Garantía sobre Inmuebles"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Traslativo de domino y garantía sobre inmuebles"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Otro (Especificar)"
+   }
+  ]
+ },
+ "tipo_movimiento_fideicomitente": {
+  "origen": "FedatarioConstitucionFid_v4_8.xlsm",
+  "hoja": "Combos",
+  "columna": 71,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Incorporación"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Destitución"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Sin modificación"
+   }
+  ]
+ },
+ "tipo_movimiento_fideicomisario": {
+  "origen": "FedatarioConstitucionFid_v4_8.xlsm",
+  "hoja": "Combos",
+  "columna": 71,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Incorporación"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Destitución"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Sin modificación"
+   }
+  ]
+ },
+ "tipo_de_cesion": {
+  "origen": "FedatarioCesion_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 79,
+  "valores": [
+   {
+    "clave": "3",
+    "descripcion": "Cesión de derechos del fideicomitente a título oneroso"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Cesión de derechos del fideicomitente a título gratuito"
+   },
+   {
+    "clave": "5",
+    "descripcion": "Cesión de derechos del fideicomisario a título oneroso"
+   },
+   {
+    "clave": "6",
+    "descripcion": "Cesión de derechos del fideicomisario a título gratuito"
+   }
+  ]
+ },
+ "tipos_de_otorgamiento": {
+  "origen": "FedatarioMutuo_v4_4.xlsm",
+  "hoja": "Combos",
+  "columna": 82,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Otorgamiento de Mutuo, Préstamo o Crédito sin Garantía"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Otorgamiento de Mutuo, Préstamo o Crédito con Garantía"
+   }
+  ]
+ },
+ "tipos_de_garantia": {
+  "origen": "FedatarioMutuo_v4_4.xlsm",
+  "hoja": "Combos",
+  "columna": 84,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Sin garantía"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Inmueble"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Vehículo terrestre"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Vehículo aéreo"
+   },
+   {
+    "clave": "5",
+    "descripcion": "Vehículo marítimo"
+   },
+   {
+    "clave": "6",
+    "descripcion": "Priedras Preciosas"
+   },
+   {
+    "clave": "7",
+    "descripcion": "Metales Preciosos"
+   },
+   {
+    "clave": "8",
+    "descripcion": "Joyas o relojes"
+   },
+   {
+    "clave": "9",
+    "descripcion": "Obras de arte o antigüedades"
+   },
+   {
+    "clave": "10",
+    "descripcion": "Acciones o partes sociales"
+   },
+   {
+    "clave": "11",
+    "descripcion": "Derechos fiduciarios"
+   },
+   {
+    "clave": "12",
+    "descripcion": "Derechos de crédito"
+   },
+   {
+    "clave": "15",
+    "descripcion": "Garantía Quirografaria"
+   },
+   {
+    "clave": "99",
+    "descripcion": "Otro (Especificar)"
+   }
+  ]
+ },
+ "tipo_de_bien_donado": {
+  "origen": "FedatarioAvaluo_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 86,
+  "valores": [
+   {
+    "clave": "2",
+    "descripcion": "Vehículo terrestre"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Vehículo aéreo"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Vehículo marítimo"
+   },
+   {
+    "clave": "5",
+    "descripcion": "Priedras Preciosas"
+   },
+   {
+    "clave": "6",
+    "descripcion": "Metales Preciosos"
+   },
+   {
+    "clave": "7",
+    "descripcion": "Joyas o relojes"
+   },
+   {
+    "clave": "8",
+    "descripcion": "Obras de arte o antigüedades"
+   },
+   {
+    "clave": "99",
+    "descripcion": "Otro (Especificar)"
+   }
+  ]
+ },
+ "tipos_de_operacion": {
+  "origen": "FedatarioCompraVenta_v4_3.xlsm",
+  "hoja": "Combos",
+  "columna": 5,
+  "valores": [
+   {
+    "clave": "1",
+    "descripcion": "Contado"
+   },
+   {
+    "clave": "2",
+    "descripcion": "Diferido o en parcialidades"
+   },
+   {
+    "clave": "3",
+    "descripcion": "Dación en pago"
+   },
+   {
+    "clave": "4",
+    "descripcion": "Préstamo o crédito"
+   },
+   {
+    "clave": "5",
+    "descripcion": "Permuta"
+   }
+  ]
+ },
+ "actividades_vulnerables": {
+  "origen": "0InformeEnCeros.xlsm",
+  "hoja": "Combos",
+  "columna": 1,
+  "valores": [
+   {
+    "clave": "ADU",
+    "descripcion": "SERVICIOS DE COMERCIO EXTERIOR"
+   },
+   {
+    "clave": "ARI",
+    "descripcion": "DERECHOS PERSONALES DE USO O GOCE DE INMUEBLES"
+   },
+   {
+    "clave": "AVI",
+    "descripcion": "OPERACIONES CON ACTIVOS VIRTUALES"
+   },
+   {
+    "clave": "BLI",
+    "descripcion": "SERVICIO DE BLINDAJE"
+   },
+   {
+    "clave": "CHV",
+    "descripcion": "CHEQUES DE VIAJERO"
+   },
+   {
+    "clave": "DIN",
+    "descripcion": "DESARROLLOS INMOBILIARIOS"
+   },
+   {
+    "clave": "DON",
+    "descripcion": "RECEPCION DE DONATIVOS"
+   },
+   {
+    "clave": "FEP",
+    "descripcion": "FE PUBLICA"
+   },
+   {
+    "clave": "FES",
+    "descripcion": "SERVIDORES PUBLICOS"
+   },
+   {
+    "clave": "INM",
+    "descripcion": "TRANSMISION DE DERECHOS SOBRE BIENES INMUEBLES"
+   },
+   {
+    "clave": "JYS",
+    "descripcion": "JUEGOS CON APUESTAS, CONCURSOS O SORTEOS"
+   },
+   {
+    "clave": "MJR",
+    "descripcion": "METALES Y PIEDRAS PRECIOSOS, JOYAS O RELOJES"
+   },
+   {
+    "clave": "MPC",
+    "descripcion": "MUTUO, PRESTAMOS O CREDITO"
+   },
+   {
+    "clave": "OBA",
+    "descripcion": "OBRAS DE ARTE"
+   },
+   {
+    "clave": "SPR",
+    "descripcion": "SERVICIOS PROFESIONALES"
+   },
+   {
+    "clave": "TCV",
+    "descripcion": "TRASLADO O CUSTODIA DE DINERO O VALORES"
+   },
+   {
+    "clave": "TDR",
+    "descripcion": "MONEDEROS Y CERTIFICADOS DE DEVOLUCIONES O RECOMPENSAS"
+   },
+   {
+    "clave": "TPP",
+    "descripcion": "TARJETAS PREPAGADAS, VALES O CUPONES"
+   },
+   {
+    "clave": "TSC",
+    "descripcion": "TARJETAS DE SERVICIO O DE CREDITO"
+   },
+   {
+    "clave": "VEH",
+    "descripcion": "VEHICULOS AEREOS, MARITIMOS O TERRESTRES"
+   }
+  ]
+ }
+}

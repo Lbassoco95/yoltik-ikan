@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoginPage } from "@/pages/auth/Login";
 import { RecuperarPasswordPage } from "@/pages/auth/RecuperarPassword";
 import { RestablecerPasswordPage } from "@/pages/auth/RestablecerPassword";
+import AltaSegundoFactorPage from "@/pages/auth/AltaSegundoFactor";
 import DashboardPage from "@/pages/DashboardPage";
 import ClientsPage from "@/pages/ClientsPage";
 import ClientDetailPage from "@/pages/ClientDetailPage";
@@ -43,6 +44,16 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/recuperar" element={<RecuperarPasswordPage />} />
             <Route path="/restablecer" element={<RestablecerPasswordPage />} />
+            {/* Fuera del layout y sin barra lateral: hasta activar el segundo
+                factor no se llega a ninguna pantalla con datos. */}
+            <Route
+              path="/seguridad/2fa"
+              element={
+                <ProtectedRoute>
+                  <AltaSegundoFactorPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Rutas protegidas */}
             <Route

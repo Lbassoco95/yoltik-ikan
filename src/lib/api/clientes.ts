@@ -1,6 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
-import type { Client, ClientRiskTemplate, NuevoClienteInput } from '@/types/domain';
+import type {
+  ClasificacionRiesgo,
+  Client,
+  ClientRiskTemplate,
+  NuevoClienteInput,
+  SectorAV,
+} from '@/types/domain';
 import { evaluarMatriz, respuestasCompletas, type ResultadoEvaluacion } from '@/lib/riesgo/matriz';
 
 /** Lista los clientes visibles para el usuario (RLS filtra por rol/organización). */
@@ -27,6 +33,17 @@ export async function crearCliente(input: NuevoClienteInput): Promise<Client> {
     organization_id: organizationId,
     tipo_persona: input.tipo_persona,
     nombre_razon_social: input.nombre_razon_social,
+    // Campos que el aviso pide por separado (layout fep 3.5.x, migration 0019).
+    // Se mandan siempre, incluso en null, para que un alta corregida borre lo
+    // que ya no aplica en vez de arrastrarlo.
+    nombre: input.nombre ?? null,
+    apellido_paterno: input.apellido_paterno ?? null,
+    apellido_materno: input.apellido_materno ?? null,
+    fecha_nacimiento: input.fecha_nacimiento ?? null,
+    fecha_constitucion: input.fecha_constitucion ?? null,
+    pais_nacionalidad_clave: input.pais_nacionalidad_clave ?? null,
+    actividad_economica_clave: input.actividad_economica_clave ?? null,
+    entidad_federativa_clave: input.entidad_federativa_clave ?? null,
     rfc: input.rfc ?? null,
     curp: input.curp ?? null,
     nacionalidad: input.nacionalidad ?? null,
@@ -47,11 +64,23 @@ export async function crearCliente(input: NuevoClienteInput): Promise<Client> {
  *  Así sirve igual a Ixim Pay (XVI) que a la notaría (XII) sin condicionales
  *  por perfil.
  *  TODO[Sprint D-3]: recibir el sector cuando una organización opere más de uno. */
-export async function getPlantillaRiesgoActiva(): Promise<ClientRiskTemplate | null> {
+/**
+ * Plantilla vigente para un sector.
+ *
+ * El sector es OBLIGATORIO. Antes esta función tomaba cualquier plantilla
+ * activa de la organización, pero el índice único de la 0010 es
+ * `(organization_id, sector) where activa`: una organización puede tener una
+ * matriz activa POR SECTOR. Sin filtrar, una notaría con una plantilla XVI
+ * espuria podía evaluar a un compareciente con la matriz de un exchange.
+ */
+export async function getPlantillaRiesgoActiva(
+  sector: SectorAV,
+): Promise<ClientRiskTemplate | null> {
   const { data, error } = await supabase
     .from('client_risk_template')
     .select('*')
     .eq('activa', true)
+    .eq('sector', sector)
     .order('version', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -61,6 +90,62 @@ export async function getPlantillaRiesgoActiva(): Promise<ClientRiskTemplate | n
 
 export interface EvaluacionGuardada extends ResultadoEvaluacion {
   id: string;
+}
+
+/** Una evaluación tal como quedó guardada. */
+export interface EvaluacionPersistida {
+  id: string;
+  client_id: string;
+  template_id: string;
+  respuestas: Record<string, number>;
+  score_total: number;
+  clasificacion: ClasificacionRiesgo;
+  motivo_alto_de_oficio: string | null;
+  evaluado_en: string;
+}
+
+/**
+ * La última evaluación de un compareciente.
+ *
+ * Se escribía y nunca se leía: al reabrir el expediente la matriz salía en
+ * blanco, como si nadie lo hubiera evaluado. Un expediente de PLD que no
+ * muestra la calificación vigente de su cliente no sirve de mucho.
+ */
+export async function ultimaEvaluacion(clientId: string): Promise<EvaluacionPersistida | null> {
+  const { data, error } = await supabase
+    .from('client_risk_assessment')
+    .select('id, client_id, template_id, respuestas, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
+    .eq('client_id', clientId)
+    .order('evaluado_en', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as unknown as EvaluacionPersistida) ?? null;
+}
+
+/**
+ * La última evaluación de varios comparecientes, para la lista.
+ *
+ * Una consulta y no una por fila: con doscientos clientes, doscientas consultas
+ * hacen la pantalla inusable. Se traen las evaluaciones ordenadas y se queda la
+ * primera de cada cliente.
+ */
+export async function ultimasEvaluaciones(
+  clientIds: string[],
+): Promise<Map<string, EvaluacionPersistida>> {
+  if (clientIds.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from('client_risk_assessment')
+    .select('id, client_id, template_id, respuestas, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
+    .in('client_id', clientIds)
+    .order('evaluado_en', { ascending: false });
+  if (error) throw error;
+
+  const porCliente = new Map<string, EvaluacionPersistida>();
+  for (const e of (data ?? []) as unknown as EvaluacionPersistida[]) {
+    if (!porCliente.has(e.client_id)) porCliente.set(e.client_id, e);
+  }
+  return porCliente;
 }
 
 /**

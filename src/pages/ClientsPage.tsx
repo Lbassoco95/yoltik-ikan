@@ -1,7 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { EnviarVerificacionDialog } from "@/components/verificacion/EnviarVerificacionDialog";
+import {
+  ETIQUETA_ESTADO,
+  verificacionesVigentes,
+  type EstadoVerificacion,
+} from "@/lib/api/verificacion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Filter, Loader2 } from "lucide-react";
+import { Search, Plus, Filter, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,21 +28,46 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { listarClientes, crearCliente } from "@/lib/api/clientes";
+import { listarClientes, crearCliente, ultimasEvaluaciones } from "@/lib/api/clientes";
+import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import type { NuevoClienteInput, TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS } from "@/lib/perfil-actividad";
+import { PendientesAviso } from "@/components/aviso/PendientesAviso";
+import { SIN_APELLIDO, pendientesCompareciente } from "@/lib/aviso/completitud";
+import { SelectCatalogo } from "@/components/aviso/SelectCatalogo";
+import { useCatalogo } from "@/hooks/useCatalogo";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
+/** Nombre de despliegue de una persona física: el mismo orden que arma la BD.
+ *  Se calcula aquí sólo para mostrarlo y para no mandar la columna vacía. */
+function nombreCompuesto(f: { nombre: string; apellido_paterno: string; apellido_materno: string }) {
+  return [f.nombre, f.apellido_paterno, f.apellido_materno]
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
 const FORM_INICIAL = {
   tipo_persona: "fisica" as TipoPersona,
-  nombre_razon_social: "",
+  // Persona física: el aviso pide las partes por separado (layout fep 3.5.1-3.5.3).
+  // `nombre_razon_social` deja de capturarse a mano en física: lo compone la BD.
+  nombre: "",
+  apellido_paterno: "",
+  apellido_materno: "",
+  fecha_nacimiento: "",
+  // Persona moral
+  razon_social: "",
+  fecha_constitucion: "",
   rfc: "",
   curp: "",
+  pais_nacionalidad_clave: "MX",
+  actividad_economica_clave: "",
   nacionalidad: "Mexicana",
   entidad_federativa: "",
+  entidad_federativa_clave: "",
   pais_residencia_iso2: "MX",
   email: "",
   telefono: "",
@@ -45,18 +76,43 @@ const FORM_INICIAL = {
 };
 
 export default function ClientsPage() {
-  const [search, setSearch] = useState("");
+  // El buscador del encabezado navega aquí con ?q=. Se toma como valor
+  // INICIAL, no como fuente de verdad: a partir de ahí manda el campo de esta
+  // pantalla, y escribir en él no reescribe la URL a cada tecla.
+  const [aVerificar, setAVerificar] = useState<{ id: string; nombre: string } | null>(null);
+  const [parametrosUrl] = useSearchParams();
+  const [search, setSearch] = useState(() => parametrosUrl.get("q") ?? "");
   const [typeFilter, setTypeFilter] = useState("all");
   const [dialogAbierto, setDialogAbierto] = useState(false);
   const [form, setForm] = useState(FORM_INICIAL);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { perfilActividad } = useAuth();
+  const { perfilActividad, profile } = useAuth();
   const L = LABELS[perfilActividad];
 
   const { data: clientes = [], isLoading, isError, error } = useQuery({
     queryKey: ["clientes"],
     queryFn: listarClientes,
+  });
+
+  // La calificación vigente de cada compareciente. Se escribía y no se leía:
+  // la lista mostraba a todos igual, evaluados o no.
+  const { data: evaluaciones } = useQuery({
+    queryKey: ["evaluaciones", clientes.map((c) => c.id).join(",")],
+    queryFn: () => ultimasEvaluaciones(clientes.map((c) => c.id)),
+    enabled: clientes.length > 0,
+  });
+
+  // El estado de identidad de cada compareciente. Va en una consulta aparte y
+  // no en el join de clientes: es una vista distinta con su propia RLS, y si
+  // Didit todavía no está configurado esto falla solo, sin tumbar la lista.
+  const { data: verificaciones, refetch: recargarVerificaciones } = useQuery({
+    queryKey: ["verificaciones-vigentes"],
+    queryFn: async () => {
+      const filas = await verificacionesVigentes();
+      return new Map(filas.map((v) => [v.client_id, v.estado]));
+    },
+    retry: false,
   });
 
   const alta = useMutation({
@@ -79,9 +135,33 @@ export default function ClientsPage() {
     return matchSearch && matchType;
   });
 
+  const esFisica = form.tipo_persona === "fisica";
+  // La etiqueta legible del estado se saca del catálogo, no se escribe a mano:
+  // así `entidad_federativa` y `entidad_federativa_clave` no se contradicen.
+  const catEntidades = useCatalogo("entidad_federativa");
+
+  /** Lo que ya se capturó, en la forma que espera el evaluador del layout. */
+  const comparecienteEnCurso = {
+    tipo_persona: form.tipo_persona,
+    nombre_razon_social: esFisica ? nombreCompuesto(form) : form.razon_social,
+    nombre: form.nombre,
+    apellido_paterno: form.apellido_paterno,
+    apellido_materno: form.apellido_materno,
+    fecha_nacimiento: form.fecha_nacimiento,
+    fecha_constitucion: form.fecha_constitucion,
+    rfc: form.rfc,
+    curp: form.curp,
+    pais_nacionalidad_clave: form.pais_nacionalidad_clave,
+    actividad_economica_clave: form.actividad_economica_clave,
+  };
+  const pendientes = pendientesCompareciente(comparecienteEnCurso);
+
   function enviar() {
-    if (!form.nombre_razon_social.trim()) {
-      toast.error("El nombre o razón social es obligatorio");
+    const nombreFinal = esFisica ? nombreCompuesto(form) : form.razon_social.trim();
+    if (!nombreFinal) {
+      toast.error(
+        esFisica ? "Capture al menos nombre y apellido paterno" : "La razón social es obligatoria",
+      );
       return;
     }
     const datos_kyc: Record<string, unknown> = {};
@@ -92,11 +172,23 @@ export default function ClientsPage() {
 
     alta.mutate({
       tipo_persona: form.tipo_persona,
-      nombre_razon_social: form.nombre_razon_social.trim(),
+      // La BD lo recompone desde las partes en persona física (migration 0019);
+      // se manda igual para que el insert nunca vaya con la columna vacía.
+      nombre_razon_social: nombreFinal,
+      nombre: esFisica ? form.nombre.trim() || undefined : undefined,
+      apellido_paterno: esFisica ? form.apellido_paterno.trim() || undefined : undefined,
+      apellido_materno: esFisica ? form.apellido_materno.trim() || undefined : undefined,
+      fecha_nacimiento: esFisica ? form.fecha_nacimiento || undefined : undefined,
+      fecha_constitucion: esFisica ? undefined : form.fecha_constitucion || undefined,
+      pais_nacionalidad_clave: form.pais_nacionalidad_clave.trim() || undefined,
+      actividad_economica_clave: form.actividad_economica_clave.trim() || undefined,
       rfc: form.rfc.trim() || undefined,
-      curp: form.tipo_persona === "fisica" ? form.curp.trim() || undefined : undefined,
+      curp: esFisica ? form.curp.trim() || undefined : undefined,
       nacionalidad: form.nacionalidad.trim() || undefined,
-      entidad_federativa: form.entidad_federativa.trim() || undefined,
+      entidad_federativa:
+        catEntidades.descripcionDe(form.entidad_federativa_clave) ??
+        (form.entidad_federativa.trim() || undefined),
+      entidad_federativa_clave: form.entidad_federativa_clave.trim() || undefined,
       pais_residencia_iso2: form.pais_residencia_iso2.trim() || undefined,
       datos_kyc,
     });
@@ -150,7 +242,7 @@ export default function ClientsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                {["Nombre / Razón Social", "Tipo", "RFC", "Nivel KYC", "Alto de oficio", ""].map((h) => (
+                {["Nombre / Razón Social", "Tipo", "RFC", "Riesgo", "Nivel KYC", "Alto de oficio", "Identidad", ""].map((h) => (
                   <th
                     key={h}
                     className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3"
@@ -178,6 +270,12 @@ export default function ClientsPage() {
                   <td className="px-4 py-3 text-sm font-mono text-muted-foreground">
                     {client.rfc ?? "—"}
                   </td>
+                  <td className="px-4 py-3">
+                    <BadgeRiesgo
+                      clasificacion={evaluaciones?.get(client.id)?.clasificacion}
+                      score={evaluaciones?.get(client.id)?.score_total}
+                    />
+                  </td>
                   <td className="px-4 py-3 text-sm">{client.nivel_kyc}</td>
                   <td className="px-4 py-3">
                     {client.alto_de_oficio ? (
@@ -186,12 +284,23 @@ export default function ClientsPage() {
                       <span className="text-sm text-muted-foreground">No</span>
                     )}
                   </td>
+                  {/* El clic de la fila navega al detalle, así que lo que hay
+                      aquí tiene que detener la propagación o el diálogo se abre
+                      y la página cambia debajo. */}
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <EstadoIdentidad
+                      estado={verificaciones?.get(client.id)}
+                      onVerificar={() =>
+                        setAVerificar({ id: client.id, nombre: client.nombre_razon_social })
+                      }
+                    />
+                  </td>
                   <td className="px-4 py-3 text-sm text-accent font-medium hover:underline">Ver</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                  <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground text-sm">
                     {L.clientesVacio}
                   </td>
                 </tr>
@@ -202,7 +311,7 @@ export default function ClientsPage() {
       </div>
 
       <Dialog open={dialogAbierto} onOpenChange={setDialogAbierto}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{L.clienteAltaTitulo}</DialogTitle>
             <DialogDescription>
@@ -228,27 +337,93 @@ export default function ClientsPage() {
               </Select>
             </div>
 
-            <div className="col-span-2">
-              <Label>{form.tipo_persona === "fisica" ? "Nombre completo" : "Razón social"}</Label>
-              <Input
-                value={form.nombre_razon_social}
-                onChange={(e) => setForm({ ...form, nombre_razon_social: e.target.value })}
-              />
-            </div>
+            {esFisica ? (
+              <>
+                <div className="col-span-2">
+                  <Label>Nombre(s)</Label>
+                  <Input
+                    value={form.nombre}
+                    onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Apellido paterno</Label>
+                  <Input
+                    value={form.apellido_paterno}
+                    onChange={(e) => setForm({ ...form, apellido_paterno: e.target.value })}
+                  />
+                  <p className="text-[13px] text-muted-foreground mt-1">
+                    Si no tiene, captura {SIN_APELLIDO}.
+                  </p>
+                </div>
+                <div>
+                  <Label>Apellido materno</Label>
+                  <Input
+                    value={form.apellido_materno}
+                    onChange={(e) => setForm({ ...form, apellido_materno: e.target.value })}
+                  />
+                  <p className="text-[13px] text-muted-foreground mt-1">
+                    Si no tiene, captura {SIN_APELLIDO}.
+                  </p>
+                </div>
+                <div>
+                  <Label>Fecha de nacimiento</Label>
+                  <Input
+                    type="date"
+                    value={form.fecha_nacimiento}
+                    onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>CURP</Label>
+                  <Input
+                    value={form.curp}
+                    maxLength={18}
+                    onChange={(e) => setForm({ ...form, curp: e.target.value.toUpperCase() })}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="col-span-2">
+                  <Label>Razón social</Label>
+                  <Input
+                    value={form.razon_social}
+                    onChange={(e) => setForm({ ...form, razon_social: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Fecha de constitución</Label>
+                  <Input
+                    type="date"
+                    value={form.fecha_constitucion}
+                    onChange={(e) => setForm({ ...form, fecha_constitucion: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
 
             <div>
               <Label>RFC</Label>
-              <Input value={form.rfc} onChange={(e) => setForm({ ...form, rfc: e.target.value })} />
+              <Input
+                value={form.rfc}
+                maxLength={13}
+                onChange={(e) => setForm({ ...form, rfc: e.target.value.toUpperCase() })}
+              />
             </div>
-            {form.tipo_persona === "fisica" && (
-              <div>
-                <Label>CURP</Label>
-                <Input
-                  value={form.curp}
-                  onChange={(e) => setForm({ ...form, curp: e.target.value })}
-                />
-              </div>
-            )}
+
+            <SelectCatalogo
+              catalogo="pais"
+              etiqueta="País de nacionalidad"
+              valor={form.pais_nacionalidad_clave}
+              onChange={(v) => setForm({ ...form, pais_nacionalidad_clave: v })}
+            />
+            <SelectCatalogo
+              catalogo={esFisica ? "actividad_economica" : "giro_mercantil"}
+              etiqueta={esFisica ? "Actividad económica" : "Giro mercantil"}
+              valor={form.actividad_economica_clave}
+              onChange={(v) => setForm({ ...form, actividad_economica_clave: v })}
+            />
 
             <div>
               <Label>Nacionalidad</Label>
@@ -257,17 +432,17 @@ export default function ClientsPage() {
                 onChange={(e) => setForm({ ...form, nacionalidad: e.target.value })}
               />
             </div>
+            <SelectCatalogo
+              catalogo="entidad_federativa"
+              etiqueta="Entidad federativa"
+              valor={form.entidad_federativa_clave}
+              onChange={(v) => setForm({ ...form, entidad_federativa_clave: v })}
+            />
             <div>
-              <Label>Entidad federativa</Label>
-              <Input
-                value={form.entidad_federativa}
-                onChange={(e) => setForm({ ...form, entidad_federativa: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>País de residencia (ISO2)</Label>
+              <Label>País de residencia</Label>
               <Input
                 value={form.pais_residencia_iso2}
+                placeholder="MX"
                 maxLength={2}
                 onChange={(e) =>
                   setForm({ ...form, pais_residencia_iso2: e.target.value.toUpperCase() })
@@ -305,6 +480,8 @@ export default function ClientsPage() {
             </div>
           </div>
 
+          <PendientesAviso pendientes={pendientes} compacto />
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogAbierto(false)}>
               Cancelar
@@ -320,6 +497,65 @@ export default function ClientsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EnviarVerificacionDialog
+        clienteId={aVerificar?.id ?? null}
+        clienteNombre={aVerificar?.nombre ?? ""}
+        correoSugerido={null}
+        telefonoSugerido={null}
+        nombreOrganizacion={profile?.organization_name ?? "Su notaría"}
+        onCerrar={() => setAVerificar(null)}
+        onEnviada={() => void recargarVerificaciones()}
+      />
+    </div>
+  );
+}
+
+/**
+ * Estado de identidad de un compareciente.
+ *
+ * Sin verificación no se dice «no verificado», que suena a que falló: se
+ * ofrece hacerla. Y cuando está aprobada se dice «identidad verificada», nunca
+ * «identificado» a secas — identificar en el sentido del artículo 18 es
+ * integrar el expediente, y eso es más que verificar quién es alguien.
+ */
+function EstadoIdentidad({
+  estado,
+  onVerificar,
+}: {
+  estado: EstadoVerificacion | undefined;
+  onVerificar: () => void;
+}) {
+  if (!estado) {
+    return (
+      <Button size="sm" variant="ghost" className="gap-2" onClick={onVerificar}>
+        <ShieldCheck className="w-4 h-4" /> Verificar
+      </Button>
+    );
+  }
+
+  // El color refuerza; el texto lleva el significado.
+  const clase =
+    estado === "aprobada"
+      ? "bg-success/10 text-success"
+      : estado === "rechazada"
+        ? "bg-destructive/10 text-destructive"
+        : estado === "en_progreso" || estado === "no_iniciada" || estado === "en_revision"
+          ? "bg-accent/10 text-accent"
+          : "bg-warning/10 text-warning";
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className={cn("status-badge text-xs whitespace-nowrap", clase)}>
+        {ETIQUETA_ESTADO[estado]}
+      </span>
+      {/* Se puede reintentar salvo cuando ya está aprobada: volver a pedirla
+          ahí sólo gasta una verificación y confunde a la persona. */}
+      {estado !== "aprobada" && (
+        <Button size="sm" variant="ghost" onClick={onVerificar} className="h-7 px-2 text-xs">
+          Reenviar
+        </Button>
+      )}
     </div>
   );
 }

@@ -23,3 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 supabase/.temp/
+
+# Secretos. `*.local` ya cubre .env.local, pero no los demás: un .env suelto
+# con la llave de servicio de Supabase da acceso total a la base de producción.
+.env
+.env.*
+!.env.example
+*.pat
+secrets/

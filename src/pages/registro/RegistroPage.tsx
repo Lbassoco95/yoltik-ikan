@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ACTIVIDADES_VULNERABLES as CATALOGO_ACTIVIDADES } from "@/lib/actividades-vulnerables";
 
 const ESTADOS_MX = [
   "Aguascalientes", "Baja California", "Baja California Sur", "Campeche", 
@@ -38,21 +39,13 @@ const REGIMENES_FISCALES = [
   { value: "626", label: "626 - Régimen Simplificado de Confianza" }
 ];
 
-const ACTIVIDADES_VULNERABLES = [
-  { value: "IV", label: "IV", descripcion: "Mutuo, préstamo, crédito con o sin garantía (SOFOMs, fintech de crédito)" },
-  { value: "V", label: "V", descripcion: "Inmuebles (compraventa, corretaje)" },
-  { value: "V_BIS", label: "V Bis", descripcion: "Desarrollo inmobiliario (nuevo 2026)" },
-  { value: "VII", label: "VII", descripcion: "Metales preciosos, joyas, piedras" },
-  { value: "VIII", label: "VIII", descripcion: "Vehículos aéreos, marítimos, terrestres" },
-  { value: "IX", label: "IX", descripcion: "Blindaje" },
-  { value: "X", label: "X", descripcion: "Traslado de valores" },
-  { value: "XI", label: "XI", descripcion: "Servicios profesionales (despachos)" },
-  { value: "XII", label: "XII", descripcion: "Fe pública (notarios, corredores, facilitadores MASC)" },
-  { value: "XIII", label: "XIII", descripcion: "Donativos" },
-  { value: "XIV", label: "XIV", descripcion: "Comercio exterior" },
-  { value: "XV", label: "XV", descripcion: "Arrendamiento" },
-  { value: "XVI", label: "XVI", descripcion: "Activos virtuales (exchanges, custodios)" }
-];
+// El catálogo vive en un solo lugar: tenerlo duplicado fue justo lo que
+// permitió que ConfigPage numerara mal las fracciones durante meses.
+const ACTIVIDADES_VULNERABLES = CATALOGO_ACTIVIDADES.map((a) => ({
+  value: a.sector ?? a.fraccion.replace(/\s+/g, "_").toUpperCase(),
+  label: a.fraccion,
+  descripcion: `${a.nombre} — ${a.descripcion}`,
+}));
 
 const prospectSchema = z.object({
   razon_social: z.string().min(1, "Razón social requerida"),
@@ -60,7 +53,7 @@ const prospectSchema = z.object({
   regimen_fiscal: z.string().optional(),
   ciudad: z.string().optional(),
   estado_republica: z.string().optional(),
-  actividad_vulnerable: z.array(z.string()).min(1, "Selecciona al menos una actividad vulnerable"),
+  actividad_vulnerable: z.array(z.string()).min(1, "Seleccione al menos una actividad vulnerable"),
   estado_operacion: z.string().optional(),
   volumen_ops_mes: z.coerce.number().int().min(0).optional().nullable(),
   clientes_activos: z.coerce.number().int().min(0).optional().nullable(),
@@ -298,7 +291,7 @@ const RegistroPage = ({
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecciona tu régimen fiscal" />
+                                <SelectValue placeholder="Seleccione su régimen fiscal" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -338,7 +331,7 @@ const RegistroPage = ({
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecciona estado" />
+                                <SelectValue placeholder="Seleccione estado" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -367,7 +360,7 @@ const RegistroPage = ({
                       render={() => (
                         <FormItem>
                           <div className="mb-4">
-                            <FormLabel className="text-base">Selecciona las actividades que aplican a tu operación *</FormLabel>
+                            <FormLabel className="text-base">Seleccione las actividades que aplican a su operación *</FormLabel>
                             <FormDescription>Puedes seleccionar múltiples opciones</FormDescription>
                           </div>
                           <div className="space-y-3">
@@ -423,7 +416,7 @@ const RegistroPage = ({
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecciona estado de operación" />
+                                <SelectValue placeholder="Seleccione estado de operación" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -464,7 +457,7 @@ const RegistroPage = ({
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
-                                      <SelectValue placeholder="Selecciona entidad" />
+                                      <SelectValue placeholder="Seleccione entidad" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
@@ -489,7 +482,7 @@ const RegistroPage = ({
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
-                                      <SelectValue placeholder="Selecciona tipo" />
+                                      <SelectValue placeholder="Seleccione tipo" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>

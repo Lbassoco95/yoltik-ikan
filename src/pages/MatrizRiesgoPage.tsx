@@ -41,11 +41,11 @@ function Elemento({ el }: { el: MatrizElemento }) {
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-mono font-bold">{el.codigo}</span>
         <span className="text-sm font-semibold">{el.nombre}</span>
-        <span className="status-badge bg-muted text-muted-foreground text-[10px]">
+        <span className="status-badge bg-muted text-muted-foreground text-xs">
           {el.variables.length} variable{el.variables.length === 1 ? '' : 's'}
         </span>
         {el.aplica_si && (
-          <span className="status-badge bg-primary/10 text-primary text-[10px]" title="Predicado de aplicabilidad">
+          <span className="status-badge bg-primary/10 text-primary text-xs" title="Predicado de aplicabilidad">
             {el.aplica_si}
           </span>
         )}
@@ -66,13 +66,23 @@ function Elemento({ el }: { el: MatrizElemento }) {
 export default function MatrizRiesgoPage() {
   const { profile, activeRole } = useAuth();
   const queryClient = useQueryClient();
-  // TODO[Sprint D-3]: selector de sector cuando una organización opere más de uno.
-  const [sector] = useState<SectorAV>('XVI');
   const esOc = activeRole === 'oc';
+
+  // El sector sale de la ORGANIZACIÓN, no de una constante. Antes estaba
+  // clavado a 'XVI', así que una notaría pedía la matriz de un exchange: no
+  // encontraba la suya y, si alguien creaba un borrador, lo creaba en el
+  // sector equivocado. Si la organización opera más de uno, se elige.
+  const sectoresOrg = useMemo<SectorAV[]>(
+    () => profile?.organization_sectores ?? [],
+    [profile?.organization_sectores],
+  );
+  const [sectorElegido, setSectorElegido] = useState<SectorAV | null>(null);
+  const sector: SectorAV | null = sectorElegido ?? sectoresOrg[0] ?? null;
 
   const { data: versiones = [], isLoading, isError, error } = useQuery({
     queryKey: ['matriz', sector],
-    queryFn: () => listarVersionesMatriz(sector),
+    queryFn: () => listarVersionesMatriz(sector as SectorAV),
+    enabled: sector != null,
   });
 
   const activa = useMemo(() => versiones.find((v) => v.activa), [versiones]);
@@ -81,7 +91,7 @@ export default function MatrizRiesgoPage() {
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['matriz', sector] });
 
   const crear = useMutation({
-    mutationFn: () => crearBorradorMatriz(profile!.organization_id, sector),
+    mutationFn: () => crearBorradorMatriz(profile!.organization_id, sector as SectorAV),
     onSuccess: (t) => {
       invalidar();
       toast.success(`Borrador v${t.version} creado a partir de la versión vigente.`);
@@ -118,17 +128,42 @@ export default function MatrizRiesgoPage() {
         )}
       </div>
 
-      {/* El puntaje sigue pendiente por decisión explícita: la ponderación vive
-          en el Excel de Ixim Pay y está en revisión con Kawiil-Cumplimiento. */}
+      {/* La ponderación NO está validada, pero el cálculo sí existe: la matriz
+          evalúa y persiste el assessment desde 864ec92. El aviso anterior decía
+          que no calculaba, y era falso. */}
       <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
         <span>
-          <strong>Cálculo de puntaje pendiente.</strong> La fórmula de ponderación
-          (<span className="font-mono text-xs">score_total</span> y clasificación) está en
-          revisión con Kawiil-Cumplimiento. Esta pantalla configura la estructura de la
-          matriz; todavía no calcula el riesgo de un cliente.
+          <strong>Ponderación sin validar.</strong> El puntaje sí se calcula y se guarda
+          al evaluar a un cliente, pero los pesos y las bandas de esta plantilla son una
+          propuesta pendiente de validación con Kawiil-Cumplimiento.
         </span>
       </div>
+
+      {sectoresOrg.length > 1 && (
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">Fracción:</span>
+          <div className="flex gap-2">
+            {sectoresOrg.map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={s === sector ? 'default' : 'outline'}
+                onClick={() => setSectorElegido(s)}
+              >
+                {s}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {sector == null && !isLoading && (
+        <div className="glass-card p-6 text-sm text-muted-foreground">
+          La organización no tiene ninguna fracción registrada, así que no se puede saber
+          qué matriz mostrar. Revisa <span className="font-mono text-xs">organizations.sectores</span>.
+        </div>
+      )}
 
       {isLoading ? (
         <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
@@ -151,7 +186,7 @@ export default function MatrizRiesgoPage() {
                   <span className="text-sm font-semibold">Versión {mostrada.version}</span>
                   <span
                     className={cn(
-                      'status-badge text-[10px]',
+                      'status-badge text-xs',
                       mostrada.estado === 'borrador'
                         ? 'bg-warning/20 text-warning'
                         : 'bg-jade/15 text-jade',
@@ -160,7 +195,7 @@ export default function MatrizRiesgoPage() {
                     {mostrada.estado === 'borrador' ? 'Borrador' : 'Publicada'}
                   </span>
                   {mostrada.activa && (
-                    <span className="status-badge bg-primary/10 text-primary text-[10px]">Vigente</span>
+                    <span className="status-badge bg-primary/10 text-primary text-xs">Vigente</span>
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground">

@@ -10,16 +10,15 @@
 // documentados en docs/MOTOR_PLD.md más las dos variantes realmente
 // sembradas (lookup por `valores`, agregado con `count_ip_anonima`).
 //
-// NO inventa umbrales: cada valor viene de la tipología (regla_dsl) o de la
-// operación. El valor de la UMA es la única constante y se toma de la misma
-// referencia que el front (src/lib/utils.ts).
+// NO inventa umbrales: cada valor viene de la tipología (regla_dsl), de la
+// operación, o del contexto que recibe. Este módulo no declara ninguna cifra
+// regulatoria propia.
 // =====================================================================
 
-// UMA 2026 — referencia. Espejo de src/lib/utils.ts (UMA_MXN). Verificar al
-// cierre de cada año con INEGI.
-// TODO[RCG-0]: unificar esta constante con el front en una sola fuente de verdad
-// cuando el motor y el front compartan un paquete común.
-export const UMA_MXN = 113.07;
+// La UMA ya NO se declara aquí. Este módulo es puro: recibe el valor vigente
+// en `MotorContext.umaMxn`, y quien lo invoca (index.ts) lo lee de
+// `parametro_regulatorio` (migration 0011). Así el motor y el front no pueden
+// volver a desincronizarse, que es exactamente lo que pasaba antes.
 
 // ---------------------------------------------------------------------
 // Tipos de dominio
@@ -37,6 +36,25 @@ export type ReglaDsl =
       tipo: 'agregado';
       ventana: string;
       agrupar_por: string;
+      /**
+       * Acota la regla a ciertas operaciones ANTES de agrupar y sumar.
+       *
+       * Sin esto, una regla llamada «transmisión de inmueble ≥ 8,000 UMA» suma
+       * también los poderes, los fideicomisos y las constituciones del mismo
+       * cliente, y levanta un hallazgo de transmisión de inmueble por actos que
+       * no lo son. Se cazó el 31/08/2026: una constitución de sociedad de
+       * $1,000,000 estaba disparando XII-01.
+       *
+       * Además es lo que pide la ley. El penúltimo párrafo del art. 17 de la
+       * LFPIORPI acumula los actos de un mismo cliente POR TIPO DE ACTO U
+       * OPERACIÓN, no todos juntos: sumar tipos distintos produce avisos que no
+       * proceden.
+       *
+       * Opcional a propósito: las reglas de estructuración del sector XVI sí
+       * suman todo lo del cliente, y ahí el comportamiento sin filtro es el
+       * correcto.
+       */
+      filtro?: { campo: string; valores: string[] };
       condicion: Record<string, Condicion>;
     }
   | {
@@ -64,7 +82,21 @@ export type ReglaDsl =
   | {
       tipo: 'desviacion';
       factor: number;
+      /** Contra qué se compara:
+       *    'perfil_declarado'            el que el cliente declaró al alta.
+       *    'promedio_historico_mensual'  el suyo propio, calculado.
+       *  Cualquier otro valor cae al perfil declarado, que es el
+       *  comportamiento conservador. */
       comparar: string;
+      /** Madurez exigida antes de que la regla signifique algo. Sin esto, una
+       *  regla de comportamiento dispara en la primera operación de cualquier
+       *  cliente, cuando todavía no hay patrón del cual desviarse.
+       *
+       *  `min_dias_historial` es la unidad preferida: un patrón puede formarse
+       *  en días y exigir meses lo vuelve invisible. */
+      min_operaciones?: number;
+      min_dias_historial?: number;
+      min_meses_historial?: number;
     };
 
 /** SLA operativo interno de la bandeja del OC (columna
@@ -72,13 +104,19 @@ export type ReglaDsl =
 export type ClasificacionUrgencia = '24_horas' | 'por_umbral';
 
 /** Métricas de `condicion` que representan un umbral de MONTO (no de conteo). */
-const METRICAS_MONTO = ['suma_monto_uma', 'suma_monto_mxn', 'monto_uma', 'monto_mxn'];
+const METRICAS_MONTO = [
+  'suma_monto_uma', 'suma_monto_mxn', 'monto_uma', 'monto_mxn',
+  // La contraprestación es un umbral de monto igual que los demás: lo que la
+  // distingue es sobre qué se mide, no cómo se clasifica.
+  'contraprestacion_uma', 'contraprestacion_mxn',
+];
 
 /** Deriva el SLA operativo del hallazgo a partir de la forma de la regla que
  *  lo generó. Espejo exacto de `public.urgencia_de_regla(jsonb)` en la
  *  migration 0007 — si cambia una, cambia la otra.
  *
- *  · `desviacion` compara contra el perfil transaccional declarado: umbral
+ *  · `desviacion` compara contra una referencia monetaria (perfil declarado
+ *    o promedio histórico del propio cliente): umbral
  *    monetario → `por_umbral`.
  *  · Una `condicion` sobre una métrica de monto es un umbral monetario
  *    → `por_umbral` (caso XII-01, transmisión de inmueble ≥ 16,000 UMA).
@@ -105,6 +143,13 @@ export interface OperacionEval {
   client_id: string;
   tipo: string; // enum tipo_operacion
   monto_mxn: number;
+  /**
+   * Comisión o contraprestación cobrada por el servicio, cualquiera que sea su
+   * denominación. Es la base del inciso b) de la fracción XVI, cuyo umbral son
+   * 4 UMA: se mide sobre lo que cobra el sujeto obligado, no sobre lo que mueve
+   * el cliente, así que no se puede derivar de `monto_mxn`.
+   */
+  contraprestacion_mxn?: number | null;
   activo_virtual?: string | null;
   contraparte?: Record<string, unknown> | null;
   fecha: string; // ISO 8601
@@ -123,13 +168,113 @@ export interface Tipologia {
 
 export interface MotorContext {
   /** Valor de la UMA en MXN. */
+  /** UMA vigente hoy. Se conserva como respaldo y para las reglas que no
+   *  dependen de la fecha de un acto concreto. */
   umaMxn: number;
+  /**
+   * Histórico de la UMA, de la más nueva a la más vieja.
+   *
+   * Hace falta porque la UMA cambia cada 1 de febrero y la ley mide cada acto
+   * con la vigente EN SU FECHA, no con la del día en que se revisa. Sin esto,
+   * un acto de enero de 2026 se juzgaba con la UMA que entró en febrero: el
+   * mismo acto cruzaba o no el umbral según cuándo corriera el motor.
+   *
+   * Opcional: sin ella se usa `umaMxn` para todo, que es el comportamiento
+   * anterior y sigue siendo correcto cuando todos los actos son del año en
+   * curso.
+   */
+  umaVigencias?: { desde: string; valor: number }[];
   /** Momento de referencia para ventanas relativas (`desviacion`). */
   ahora: Date;
   /** Membresía país→lista: fuente (gafi_negra, ofac_sancionado, ...) → set de iso2. */
   paisPorFuente: Record<string, Set<string>>;
   /** Perfil transaccional mensual declarado por cliente, en UMA (para `desviacion`). */
   perfilMensualUmaPorCliente: Record<string, number>;
+  /** Trayectoria de cada cliente ANTES de las operaciones que se evalúan.
+   *  Sin esto el motor no puede distinguir un patrón anómalo de una primera
+   *  operación, que es la diferencia entre un hallazgo y un falso positivo. */
+  historialPorCliente: Record<string, HistorialCliente>;
+}
+
+/**
+ * Lo que el motor sabe del cliente antes de juzgar sus operaciones.
+ *
+ * Existe porque una regla de comportamiento no significa nada sin una línea
+ * base: si un cliente lleva tres operaciones en su vida, «se desvió de su
+ * patrón» es una afirmación sin sustento. Con esto, una regla puede exigir
+ * madurez antes de disparar, y todo hallazgo lleva el contexto para que el OC
+ * sepa si nació de una trayectoria o de un primer día.
+ */
+export interface HistorialCliente {
+  /** Operaciones registradas antes de la ventana que se evalúa. */
+  operacionesPrevias: number;
+  /** Días desde la primera operación. 0 si es cliente nuevo. */
+  diasDeHistorial: number;
+  /** Meses con al menos una operación. Sigue siendo útil para reglas de
+   *  volumen mensual, pero NO es la unidad por omisión: un patrón puede
+   *  formarse en días. Alguien que otorga varios poderes en una semana para
+   *  tomar el control de una sociedad, o que compra joyas cada tres días,
+   *  arma un patrón que esperar al mes vuelve invisible. */
+  mesesConActividad: number;
+  /** Días distintos con actividad. Es la medida fina, y la que permite exigir
+   *  trayectoria sin obligar a esperar un mes. */
+  diasConActividad: number;
+  /** Si declaró un perfil transaccional al darse de alta. */
+  tienePerfilDeclarado: boolean;
+  /** Si tiene la matriz de riesgo evaluada. Un hallazgo sobre un cliente sin
+   *  clasificar le dice al OC que la debida diligencia va incompleta. */
+  tieneMatrizEvaluada: boolean;
+  /** Promedio mensual en UMA de los meses ANTERIORES al actual. Excluye el mes
+   *  en curso a propósito: incluirlo haría que la operación bajo examen
+   *  inflara su propia referencia y la regla nunca dispararía. */
+  promedioMensualUmaHistorico: number;
+  /** Clasificación de la matriz de riesgo del cliente.
+   *
+   *  Es la LÍNEA BASE QUE SÍ EXISTE DESDE EL DÍA UNO. El historial
+   *  transaccional tarda en formarse, pero la calificación del onboarding
+   *  está desde que se integra el expediente, y es lo que permite juzgar una
+   *  primera operación sin inventar un patrón: la misma operación no significa
+   *  lo mismo en un cliente de riesgo bajo que en uno de riesgo alto. */
+  clasificacionRiesgo: 'bajo' | 'medio' | 'alto' | 'alto_oficio' | null;
+}
+
+export const HISTORIAL_VACIO: HistorialCliente = {
+  operacionesPrevias: 0,
+  diasDeHistorial: 0,
+  mesesConActividad: 0,
+  tienePerfilDeclarado: false,
+  tieneMatrizEvaluada: false,
+  promedioMensualUmaHistorico: 0,
+  diasConActividad: 0,
+  clasificacionRiesgo: null,
+};
+
+/**
+ * ¿El cliente tiene suficiente trayectoria para que una regla de
+ * comportamiento signifique algo?
+ *
+ * Devuelve el motivo cuando NO la tiene, para poder decirlo en vez de callar.
+ * Una regla que no exige línea base (los umbrales de ley, por ejemplo)
+ * siempre pasa: 645 UMA son 645 UMA en la primera operación y en la mil.
+ */
+export function faltaLineaBase(
+  regla: { min_operaciones?: number; min_dias_historial?: number; min_meses_historial?: number },
+  h: HistorialCliente,
+): string | null {
+  const minOps = regla.min_operaciones ?? 0;
+  const minDias = regla.min_dias_historial ?? 0;
+  const minMeses = regla.min_meses_historial ?? 0;
+
+  if (minOps > 0 && h.operacionesPrevias < minOps) {
+    return `El cliente tiene ${h.operacionesPrevias} operaciones previas y la regla exige al menos ${minOps}.`;
+  }
+  if (minDias > 0 && h.diasConActividad < minDias) {
+    return `El cliente tiene ${h.diasConActividad} días con actividad y la regla exige al menos ${minDias}.`;
+  }
+  if (minMeses > 0 && h.mesesConActividad < minMeses) {
+    return `El cliente tiene ${h.mesesConActividad} meses con actividad y la regla exige al menos ${minMeses}.`;
+  }
+  return null;
 }
 
 export interface HallazgoCandidato {
@@ -236,7 +381,30 @@ function candidato(
   tip: Tipologia,
   clientId: string | null,
   payload: Record<string, unknown>,
+  ctx?: MotorContext,
 ): HallazgoCandidato {
+  // El contexto del cliente viaja DENTRO del hallazgo, no se consulta después:
+  // es el estado al momento de evaluar, y es lo que permite al OC distinguir
+  // «cambió su patrón» de «es su primera operación».
+  const h = clientId ? ctx?.historialPorCliente[clientId] : undefined;
+  const contexto = h
+    ? {
+        contexto_cliente: {
+          operaciones_previas: h.operacionesPrevias,
+          dias_de_historial: h.diasDeHistorial,
+          dias_con_actividad: h.diasConActividad,
+          meses_con_actividad: h.mesesConActividad,
+          // La calificación del onboarding es la línea base que sí existe
+          // desde el día uno: la misma operación no significa lo mismo en un
+          // cliente de riesgo bajo que en uno de riesgo alto.
+          clasificacion_riesgo: h.clasificacionRiesgo,
+          perfil_declarado: h.tienePerfilDeclarado,
+          matriz_evaluada: h.tieneMatrizEvaluada,
+          sin_linea_base: h.operacionesPrevias === 0,
+        },
+      }
+    : {};
+
   return {
     operation_id: op?.id ?? null,
     client_id: clientId,
@@ -245,7 +413,7 @@ function candidato(
     tipologia_nombre: tip.nombre,
     tipologia_version: tip.version,
     severidad: tip.severidad,
-    regla_payload: { evaluado_en: 'motor-pld', ...payload },
+    regla_payload: { evaluado_en: 'motor-pld', ...contexto, ...payload },
     clasificacion_urgencia: clasificacionUrgencia(tip.regla_dsl),
   };
 }
@@ -254,12 +422,40 @@ function candidato(
 // Evaluadores por tipo
 // ---------------------------------------------------------------------
 
+/**
+ * La UMA que aplica a un acto, según su fecha.
+ *
+ * Recorre el histórico de la más nueva a la más vieja y se queda con la primera
+ * cuya vigencia empezó en o antes del acto. Si el acto es anterior a todo lo que
+ * conocemos, se usa la más antigua que hay: es lo más cercano a la verdad que
+ * podemos decir, y mejor que dividir por la de hoy.
+ */
+export function umaEnFecha(ctx: MotorContext, fechaIso: string): number {
+  const vig = ctx.umaVigencias;
+  if (!vig || vig.length === 0) return ctx.umaMxn;
+  const dia = fechaIso.slice(0, 10);
+  for (const v of vig) if (v.desde <= dia) return v.valor;
+  return vig[vig.length - 1].valor;
+}
+
 function metricasVentana(ops: OperacionEval[], ctx: MotorContext): Record<string, number> {
   const suma_monto_mxn = ops.reduce((s, o) => s + o.monto_mxn, 0);
+
+  // Cada operación se convierte a UMA con la SUYA y después se suman. Dividir
+  // la suma por un solo valor daría otro número cuando la ventana cruza un 1 de
+  // febrero, que es justo lo que la ventana de seis meses hace la mitad del año.
+  const suma_monto_uma = ops.reduce((s, o) => s + o.monto_mxn / umaEnFecha(ctx, o.fecha), 0);
+
+  const contraprestacion_mxn = ops.reduce((s, o) => s + (o.contraprestacion_mxn ?? 0), 0);
+  const contraprestacion_uma = ops.reduce(
+    (s, o) => s + (o.contraprestacion_mxn ?? 0) / umaEnFecha(ctx, o.fecha), 0);
+
   return {
     count: ops.length,
     suma_monto_mxn,
-    suma_monto_uma: suma_monto_mxn / ctx.umaMxn,
+    suma_monto_uma,
+    contraprestacion_mxn,
+    contraprestacion_uma,
     count_ip_anonima: ops.filter((o) => o.contraparte?.ip_anonima === true).length,
   };
 }
@@ -271,7 +467,15 @@ function evalAgregado(
   ctx: MotorContext,
 ): HallazgoCandidato[] {
   const win = ventanaAMs(regla.ventana);
-  const grupos = agrupar(ops, (o) => String(valorEnCampo(o, regla.agrupar_por) ?? o.client_id));
+
+  // El filtro se aplica ANTES de agrupar: lo que queda fuera no cuenta para la
+  // suma ni puede cerrar una ventana.
+  const filtro = regla.filtro;
+  const aplicables = filtro
+    ? ops.filter((o) => filtro.valores.includes(String(valorEnCampo(o, filtro.campo) ?? '')))
+    : ops;
+
+  const grupos = agrupar(aplicables, (o) => String(valorEnCampo(o, regla.agrupar_por) ?? o.client_id));
   const out: HallazgoCandidato[] = [];
 
   for (const [clave, lista] of grupos) {
@@ -290,7 +494,7 @@ function evalAgregado(
             grupo: clave,
             metricas: met,
             operaciones: enVentana.map((o) => o.id),
-          }),
+          }, ctx),
         );
         break; // un hallazgo por grupo (primera ventana que dispara)
       }
@@ -303,6 +507,7 @@ function evalSecuencia(
   tip: Tipologia,
   regla: Extract<ReglaDsl, { tipo: 'secuencia' }>,
   ops: OperacionEval[],
+  ctx: MotorContext,
 ): HallazgoCandidato[] {
   const win = ventanaAMs(regla.ventana);
   const grupos = agrupar(ops, (o) => o.client_id);
@@ -337,7 +542,7 @@ function evalSecuencia(
               secuencia,
               metricas,
               operacion_inicial: sorted[i].id,
-            }),
+            }, ctx),
           );
           break; // un hallazgo por grupo
         }
@@ -351,6 +556,7 @@ function evalScore(
   tip: Tipologia,
   regla: Extract<ReglaDsl, { tipo: 'score' }>,
   ops: OperacionEval[],
+  ctx: MotorContext,
 ): HallazgoCandidato[] {
   const out: HallazgoCandidato[] = [];
   const condExp = regla.condicion.exposicion_pct;
@@ -374,7 +580,7 @@ function evalScore(
           nota: 'DEMO — analítica on-chain simulada, sin proveedor real',
           exposicion_pct: Number.isNaN(exposicion) ? null : exposicion,
           categorias,
-        }),
+        }, ctx),
       );
     }
   }
@@ -396,7 +602,7 @@ function evalLookup(
       // Variante por lista de valores (ej. XVI-08 privacy coins sobre activo_virtual).
       if (regla.valores.includes(String(valor))) {
         out.push(
-          candidato(o, tip, o.client_id, { campo: regla.campo, valor: String(valor), match: 'valores' }),
+          candidato(o, tip, o.client_id, { campo: regla.campo, valor: String(valor), match: 'valores' }, ctx),
         );
       }
     } else if (regla.fuentes && regla.fuentes.length) {
@@ -411,7 +617,7 @@ function evalLookup(
             fuentes: fuentesMatch,
             fuente_mock: true, // DEMO — listas como snapshot versionado en BD, no en tiempo real
             nota: 'DEMO — listas OFAC/GAFI como snapshot en BD, sin consulta en tiempo real',
-          }),
+          }, ctx),
         );
       }
     }
@@ -423,6 +629,7 @@ function evalDuplicado(
   tip: Tipologia,
   regla: Extract<ReglaDsl, { tipo: 'duplicado' }>,
   ops: OperacionEval[],
+  ctx: MotorContext,
 ): HallazgoCandidato[] {
   const out: HallazgoCandidato[] = [];
   // campo → valor → { clientes, operaciones }
@@ -454,7 +661,7 @@ function evalDuplicado(
               valor,
               cuentas: [...bucket.clientes],
               umbral_cuentas: regla.umbral_cuentas,
-            }),
+            }, ctx),
           );
         }
       }
@@ -475,23 +682,49 @@ function evalDesviacion(
   const grupos = agrupar(ops, (o) => o.client_id);
 
   for (const [clientId, lista] of grupos) {
-    const base = ctx.perfilMensualUmaPorCliente[clientId];
-    if (base == null || base <= 0) continue; // sin perfil declarado → no dispara (fail-closed)
+    const h = ctx.historialPorCliente[clientId] ?? HISTORIAL_VACIO;
+
+    // Una regla de comportamiento sobre un cliente sin trayectoria no mide
+    // nada: «se desvió de su patrón» exige que exista un patrón. Si la regla
+    // pide madurez y el cliente no la tiene, no dispara.
+    if (faltaLineaBase(regla, h)) continue;
+
+    // Contra qué se compara. Antes el DSL decía `promedio_historico_mensual`
+    // pero el código usaba el perfil DECLARADO: la regla decía una cosa y
+    // hacía otra. Ahora cada modo hace lo que su nombre dice.
+    let base: number | undefined;
+    let origenBase: string;
+
+    if (regla.comparar === 'promedio_historico_mensual') {
+      // Promedio real del cliente, excluyendo el mes en curso: incluirlo haría
+      // que la operación bajo examen inflara su propia referencia.
+      if (h.mesesConActividad < 1) continue;
+      base = h.promedioMensualUmaHistorico;
+      origenBase = 'promedio histórico del cliente';
+    } else {
+      base = ctx.perfilMensualUmaPorCliente[clientId];
+      origenBase = 'perfil transaccional declarado';
+    }
+
+    // Fail-closed: sin referencia no se inventa una. No disparar es correcto;
+    // lo que no sería correcto es compararlo contra cero.
+    if (base == null || base <= 0) continue;
 
     const delMes = lista.filter((o) => ms(o.fecha) >= inicioMes && ms(o.fecha) <= finRef);
     if (delMes.length === 0) continue;
-    const sumaUma = delMes.reduce((s, o) => s + o.monto_mxn, 0) / ctx.umaMxn;
+    const sumaUma = delMes.reduce((s, o) => s + o.monto_mxn / umaEnFecha(ctx, o.fecha), 0);
 
     if (sumaUma > base * regla.factor) {
       const rep = [...delMes].sort((a, b) => ms(b.fecha) - ms(a.fecha))[0];
       out.push(
         candidato(rep, tip, clientId, {
           comparar: regla.comparar,
+          origen_base: origenBase,
           factor: regla.factor,
           base_uma: base,
           suma_mes_uma: sumaUma,
           operaciones: delMes.map((o) => o.id),
-        }),
+        }, ctx),
       );
     }
   }
@@ -513,13 +746,13 @@ export function evaluarTipologia(
     case 'agregado':
       return evalAgregado(tip, regla, ops, ctx);
     case 'secuencia':
-      return evalSecuencia(tip, regla, ops);
+      return evalSecuencia(tip, regla, ops, ctx);
     case 'score':
-      return evalScore(tip, regla, ops);
+      return evalScore(tip, regla, ops, ctx);
     case 'lookup':
       return evalLookup(tip, regla, ops, ctx);
     case 'duplicado':
-      return evalDuplicado(tip, regla, ops);
+      return evalDuplicado(tip, regla, ops, ctx);
     case 'desviacion':
       return evalDesviacion(tip, regla, ops, ctx);
     default:

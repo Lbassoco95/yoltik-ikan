@@ -1,0 +1,206 @@
+/**
+ * Verificación de identidad con Didit: lo que decide si una entrega es
+ * auténtica.
+ *
+ * Se separa de la Edge Function para poder probarlo. Un webhook mal verificado
+ * no falla ruidosamente: acepta cualquier cosa que le manden, y aquí lo que le
+ * mandan es «este compareciente quedó aprobado».
+ */
+
+/** Estados que Didit manda, literales y sensibles a mayúsculas. */
+export type EstadoDidit =
+  | 'Not Started' | 'In Progress' | 'Awaiting User' | 'In Review'
+  | 'Approved' | 'Declined' | 'Resubmitted' | 'Abandoned'
+  | 'Expired' | 'Kyc Expired';
+
+/** El enum de la migration 0032. */
+export type EstadoIkan =
+  | 'no_iniciada' | 'en_progreso' | 'en_revision' | 'aprobada'
+  | 'rechazada' | 'reenviada' | 'abandonada' | 'expirada' | 'error';
+
+/**
+ * Traduce el estado de Didit al nuestro.
+ *
+ * Un estado que no reconocemos NO cae a 'error' ni a 'aprobada': se queda en
+ * 'en_progreso', que es la lectura conservadora. Si Didit añade un estado
+ * mañana, lo peor que pasa es que una verificación se vea pendiente de más;
+ * lo contrario sería darla por buena sin saber qué dijo.
+ */
+export function estadoDeDidit(s: string): EstadoIkan {
+  switch (s) {
+    case 'Approved':      return 'aprobada';
+    case 'Declined':      return 'rechazada';
+    case 'In Review':     return 'en_revision';
+    case 'Resubmitted':   return 'reenviada';
+    case 'Abandoned':     return 'abandonada';
+    case 'Expired':
+    case 'Kyc Expired':   return 'expirada';
+    case 'Not Started':   return 'no_iniciada';
+    case 'In Progress':
+    case 'Awaiting User': return 'en_progreso';
+    default:              return 'en_progreso';
+  }
+}
+
+/** Un estado es final cuando ya no va a cambiar solo. */
+export function esFinal(e: EstadoIkan): boolean {
+  return e === 'aprobada' || e === 'rechazada' || e === 'expirada' || e === 'abandonada';
+}
+
+/**
+ * Enteros que viajan como flotantes (1.0) vuelven a entero.
+ *
+ * En JavaScript esto NO hace nada, y es correcto que no haga nada: `JSON.parse`
+ * ya convierte `1.0` en `1`, y `Number.isInteger(1.0)` es `true`. El paso
+ * existe porque el canónico de Didit se define sobre Python, donde `1.0` es un
+ * float distinto de `1`.
+ *
+ * Se deja escrito en vez de omitirlo para que quien lea el canónico lo
+ * encuentre donde el contrato dice que está, y para que nadie lo «arregle»
+ * pensando que falta.
+ */
+export function acortarFlotantes(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(acortarFlotantes);
+  if (v && typeof v === 'object') {
+    return Object.fromEntries(
+      Object.entries(v as Record<string, unknown>).map(([k, x]) => [k, acortarFlotantes(x)]),
+    );
+  }
+  if (typeof v === 'number' && !Number.isInteger(v) && v % 1 === 0) return Math.trunc(v);
+  return v;
+}
+
+/** Claves ordenadas alfabéticamente, en profundidad. El orden de los arreglos
+ *  se respeta: ahí la posición es significativa. */
+export function ordenarClaves(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(ordenarClaves);
+  if (v && typeof v === 'object') {
+    return Object.keys(v as object).sort().reduce<Record<string, unknown>>((acc, k) => {
+      acc[k] = ordenarClaves((v as Record<string, unknown>)[k]);
+      return acc;
+    }, {});
+  }
+  return v;
+}
+
+/** El texto exacto sobre el que Didit calcula la firma. */
+export function canonico(cuerpoCrudo: string): string {
+  return JSON.stringify(ordenarClaves(acortarFlotantes(JSON.parse(cuerpoCrudo))));
+}
+
+/** Comparación en tiempo constante. Con `===` sobre cadenas, el tiempo de
+ *  respuesta filtra cuántos caracteres iniciales acertó quien prueba. */
+export function igualEnTiempoConstante(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let dif = 0;
+  for (let i = 0; i < a.length; i++) dif |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return dif === 0;
+}
+
+async function hmacHex(secreto: string, texto: string): Promise<string> {
+  const cripto = globalThis.crypto;
+  const llave = await cripto.subtle.importKey(
+    'raw', new TextEncoder().encode(secreto),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  const firma = await cripto.subtle.sign('HMAC', llave, new TextEncoder().encode(texto));
+  return Array.from(new Uint8Array(firma)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export interface ResultadoVerificacion {
+  ok: boolean;
+  /** Por qué NO es válida. Se distingue el motivo para poder registrarlo: una
+   *  firma mala y una entrega vieja son incidentes distintos. */
+  motivo?: 'sin_firma' | 'sin_fecha' | 'caducada' | 'firma_invalida' | 'cuerpo_ilegible';
+}
+
+/** Ventana de frescura, en segundos. La fija Didit. */
+export const VENTANA_SEGUNDOS = 300;
+
+/**
+ * Comprueba que la entrega viene de Didit y es reciente.
+ *
+ * El orden importa: primero la frescura, que es barata, y después el HMAC. Y la
+ * frescura va en valor absoluto a propósito — una marca de tiempo en el futuro
+ * es tan sospechosa como una vieja.
+ */
+export async function verificarWebhook(
+  cuerpoCrudo: string,
+  firma: string | null,
+  marcaTiempo: string | null,
+  secreto: string,
+  ahoraSegundos: number = Date.now() / 1000,
+): Promise<ResultadoVerificacion> {
+  if (!firma) return { ok: false, motivo: 'sin_firma' };
+
+  const ts = Number(marcaTiempo);
+  if (!marcaTiempo || !Number.isFinite(ts)) return { ok: false, motivo: 'sin_fecha' };
+  if (Math.abs(ahoraSegundos - ts) > VENTANA_SEGUNDOS) return { ok: false, motivo: 'caducada' };
+
+  let texto: string;
+  try {
+    texto = canonico(cuerpoCrudo);
+  } catch {
+    return { ok: false, motivo: 'cuerpo_ilegible' };
+  }
+
+  const esperada = await hmacHex(secreto, texto);
+  return igualEnTiempoConstante(esperada, firma)
+    ? { ok: true }
+    : { ok: false, motivo: 'firma_invalida' };
+}
+
+/**
+ * Extrae de la decisión de Didit lo que sí guardamos.
+ *
+ * Deliberadamente corto. La decisión completa trae fotografía del documento,
+ * imagen de referencia de la prueba de vida y, en flujos activos, vídeo. Eso es
+ * biometría, y copiarla a nuestra base multiplica dónde vive sin que nadie lo
+ * haya pedido — más aún con la conservación a diez años de la fracción XII.
+ *
+ * Lo que queda es lo que permite operar y demostrar que la verificación
+ * ocurrió. Las imágenes se consultan en Didit, que es donde el compareciente
+ * consintió que estuvieran.
+ */
+export function resumirDecision(decision: unknown): Record<string, unknown> {
+  if (!decision || typeof decision !== 'object') return {};
+  const d = decision as Record<string, unknown>;
+
+  /** El primer nodo de un arreglo de módulo, o null. En V3 cada módulo puede
+   *  correr varias veces sobre nodos distintos del grafo; para el resumen basta
+   *  el primero, y si algún día hacen falta todos se indexa por `node_id`. */
+  const primero = (arr: unknown): Record<string, unknown> | null =>
+    Array.isArray(arr) && arr.length > 0 && arr[0] && typeof arr[0] === 'object'
+      ? (arr[0] as Record<string, unknown>)
+      : null;
+
+  const id = primero(d.id_verifications);
+  const vida = primero(d.liveness_checks);
+  const cara = primero(d.face_matches);
+  const aml = primero(d.aml_screenings);
+
+  const resumen: Record<string, unknown> = {};
+
+  if (id) {
+    resumen.documento = {
+      tipo: id.document_type ?? null,
+      pais: id.issuing_state ?? null,
+      nombre_leido: [id.first_name, id.last_name].filter(Boolean).join(' ') || null,
+      // El número del documento NO se guarda: identifica por sí solo y ya está
+      // en Didit. Si Kawiil-Cumplimiento lo pide para el expediente, se añade.
+      vence: id.expiration_date ?? null,
+      avisos: Array.isArray(id.warnings) ? id.warnings.length : 0,
+    };
+  }
+  if (vida) resumen.prueba_de_vida = { estado: vida.status ?? null, puntaje: vida.score ?? null };
+  if (cara) resumen.cotejo_facial = { estado: cara.status ?? null, puntaje: cara.score ?? null };
+  if (aml) {
+    resumen.listas = {
+      estado: aml.status ?? null,
+      coincidencias: aml.total_hits ?? 0,
+      // Las coincidencias en sí NO se copian: son datos de terceros y se
+      // consultan en el proveedor.
+    };
+  }
+  return resumen;
+}

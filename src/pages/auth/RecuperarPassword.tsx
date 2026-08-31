@@ -48,7 +48,7 @@ export function RecuperarPasswordPage() {
           <div className="space-y-4">
             <p className="text-sm text-foreground">
               Si <span className="font-semibold">{email.trim()}</span> corresponde a una cuenta
-              activa, te enviamos un correo con el enlace para restablecer tu contraseña.
+              activa, le enviamos un correo con el enlace para restablecer su contraseña.
             </p>
             <p className="text-sm text-muted-foreground">
               Revisa también la carpeta de no deseados. El enlace caduca por seguridad; si expira,

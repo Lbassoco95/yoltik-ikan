@@ -101,7 +101,7 @@ export function LoginPage() {
               to="/recuperar"
               className="block text-sm text-muted-foreground hover:text-foreground text-center"
             >
-              ¿Olvidaste tu contraseña?
+              ¿Olvidó su contraseña?
             </Link>
           </form>
         )}
@@ -110,7 +110,7 @@ export function LoginPage() {
           <form onSubmit={submitOtp} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Código de tu app de autenticación (TOTP)
+                Código de su app de autenticación (TOTP)
               </label>
               <input
                 type="text"

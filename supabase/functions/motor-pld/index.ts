@@ -15,20 +15,17 @@
 // puro, testeado con vitest en src/test/motor-evaluadores.test.ts).
 // =====================================================================
 
-// @ts-expect-error — Deno runtime, no Node.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   correrMotor,
-  UMA_MXN,
+  type HistorialCliente,
   type HallazgoCandidato,
   type MotorContext,
   type OperacionEval,
   type Tipologia,
 } from './evaluadores.ts';
 
-// @ts-expect-error — Deno runtime
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-// @ts-expect-error — Deno runtime
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 interface RunInput {
@@ -56,7 +53,6 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// @ts-expect-error — Deno.serve
 Deno.serve(async (req: Request) => {
   // Preflight CORS.
   if (req.method === 'OPTIONS') {
@@ -83,12 +79,56 @@ Deno.serve(async (req: Request) => {
   // --- 2. Operaciones (+ cliente) ------------------------------------
   let opQuery = supabase
     .from('operation')
-    .select('id, organization_id, client_id, tipo, monto_mxn, activo_virtual, contraparte, fecha, client:client_id(datos_kyc)')
+    .select('id, organization_id, client_id, tipo, monto_mxn, contraprestacion_mxn, activo_virtual, contraparte, fecha, client:client_id(datos_kyc)')
     .eq('organization_id', input.organization_id);
   if (input.operation_id) opQuery = opQuery.eq('id', input.operation_id);
   const { data: operacionesRaw, error: errOps } = await opQuery;
   if (errOps) {
     return json({ error: errOps.message }, 500);
+  }
+
+  // --- 3. UMA vigente ------------------------------------------------
+  // Antes era una constante en este archivo (113.07), duplicada en el front y
+  // contradicha por el mock que veía el usuario (132.59). Ahora sale de
+  // `parametro_regulatorio` (migration 0011), con la vigencia que corresponde.
+  //
+  // Se resuelve a la fecha de HOY, no a la del acto: el motor evalúa
+  // operaciones al momento de correr. Recalcular un acto viejo con la UMA que
+  // le tocaba es un caso aparte, y para eso está `parametro_vigente(codigo, fecha)`.
+  //
+  // Sin UMA vigente el motor NO corre. Fallar es correcto: calcular umbrales
+  // con un valor inventado produciría hallazgos falsos o los ocultaría.
+  const { data: umaRow, error: errUma } = await supabase
+    .rpc('parametro_vigente', { p_codigo: 'uma_diaria' });
+  if (errUma) {
+    return json({ error: `No se pudo leer la UMA vigente: ${errUma.message}` }, 500);
+  }
+  const umaMxn = Number(umaRow);
+
+  // El histórico de la UMA, no sólo la de hoy. La ley mide cada acto con la
+  // vigente EN SU FECHA (art. 17 y criterio de cumplimiento del 31/08/2026), y
+  // la UMA cambia cada 1 de febrero: sin esto, un acto de enero se juzgaba con
+  // la UMA que entró en febrero y el mismo acto cruzaba o no el umbral según
+  // cuándo corriera el motor.
+  const { data: vigenciasUma } = await supabase
+    .from('parametro_regulatorio')
+    .select('valor_numerico, vigente_desde')
+    .eq('codigo', 'uma_diaria')
+    .eq('sector', '*')
+    .order('vigente_desde', { ascending: false });
+
+  const umaVigencias = (vigenciasUma ?? []).map((v) => ({
+    desde: String(v.vigente_desde),
+    valor: Number(v.valor_numerico),
+  }));
+  if (!Number.isFinite(umaMxn) || umaMxn <= 0) {
+    return json(
+      {
+        error:
+          'No hay una UMA vigente en parametro_regulatorio. El motor no puede calcular umbrales sin ella.',
+      },
+      422,
+    );
   }
 
   // --- 3. Catálogo de países por fuente (para lookup XVI-04) ----------
@@ -119,19 +159,109 @@ Deno.serve(async (req: Request) => {
       client_id: String(o.client_id),
       tipo: String(o.tipo),
       monto_mxn: Number(o.monto_mxn),
+      // Null se conserva como null, no como cero: «no se capturó la comisión»
+      // y «la comisión fue cero» son cosas distintas, y la regla del inciso b)
+      // de la fracción XVI sólo debe disparar sobre lo primero si se capturó.
+      contraprestacion_mxn: o.contraprestacion_mxn == null ? null : Number(o.contraprestacion_mxn),
       activo_virtual: (o.activo_virtual as string | null) ?? null,
       contraparte: (o.contraparte as Record<string, unknown> | null) ?? null,
       fecha: String(o.fecha),
     };
   });
 
+  // --- Historial de cada cliente ------------------------------------
+  // Una regla de comportamiento sobre un cliente sin trayectoria no mide nada:
+  // «se desvió de su patrón» exige que exista un patrón. Sin esto, las reglas
+  // dispararían en las primeras operaciones de todo cliente nuevo, que es
+  // justo el falso positivo que hay que evitar.
+  //
+  // Se consultan TODAS las operaciones de la organización, no sólo las que se
+  // están evaluando: el historial es precisamente lo que queda fuera de la
+  // ventana bajo examen.
+  // TODO[Sprint D-3]: mover a una vista materializada cuando el volumen lo pida.
+  const { data: historialRaw, error: errHist } = await supabase
+    .from('operation')
+    .select('client_id, fecha, monto_mxn')
+    .eq('organization_id', input.organization_id);
+  if (errHist) {
+    return json({ error: `No se pudo leer el historial: ${errHist.message}` }, 500);
+  }
+
+  // Qué clientes tienen su matriz de riesgo evaluada. Un hallazgo sobre un
+  // cliente sin clasificar le dice al OC que la debida diligencia va
+  // incompleta, y eso cambia cómo lo atiende.
+  // La calificación del onboarding es la línea base que SÍ existe desde el día
+  // uno: el historial transaccional tarda en formarse, pero la matriz está
+  // desde que se integra el expediente. Se toma la evaluación más reciente.
+  const { data: evaluados } = await supabase
+    .from('client_risk_assessment')
+    .select('client_id, clasificacion, evaluado_en')
+    .order('evaluado_en', { ascending: false });
+  const clasificacionPorCliente: Record<string, string> = {};
+  for (const e of (evaluados ?? []) as Record<string, unknown>[]) {
+    const cid = String(e.client_id);
+    if (!(cid in clasificacionPorCliente)) clasificacionPorCliente[cid] = String(e.clasificacion);
+  }
+  const conMatriz = new Set(Object.keys(clasificacionPorCliente));
+
+  const idsEvaluadas = new Set((operacionesRaw ?? []).map((o: Record<string, unknown>) => String(o.id)));
+  const porCliente: Record<string, { fechas: number[]; montos: number[] }> = {};
+  for (const h of (historialRaw ?? []) as Record<string, unknown>[]) {
+    const cid = String(h.client_id);
+    (porCliente[cid] ??= { fechas: [], montos: [] });
+    porCliente[cid].fechas.push(new Date(String(h.fecha)).getTime());
+    porCliente[cid].montos.push(Number(h.monto_mxn));
+  }
+
+  const inicioMesActual = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+  const historialPorCliente: Record<string, HistorialCliente> = {};
+
+  for (const [cid, datos] of Object.entries(porCliente)) {
+    const fechasPrevias = datos.fechas.filter((f) => f < inicioMesActual);
+    // Meses distintos con actividad: cincuenta operaciones en una semana no
+    // son cinco meses de patrón.
+    const meses = new Set(
+      fechasPrevias.map((f) => {
+        const d = new Date(f);
+        return `${d.getFullYear()}-${d.getMonth()}`;
+      }),
+    );
+    // Días distintos con actividad. Es la medida fina: un patrón puede armarse
+    // en una semana, y exigir meses lo volvería invisible.
+    const dias = new Set(fechasPrevias.map((f) => new Date(f).toISOString().slice(0, 10)));
+    const sumaPrevia = datos.fechas.reduce(
+      (s, f, i) => (f < inicioMesActual ? s + datos.montos[i] : s), 0,
+    );
+    const primera = datos.fechas.length ? Math.min(...datos.fechas) : Date.now();
+
+    historialPorCliente[cid] = {
+      // «Previas» = todo lo que no está en el lote que se evalúa ahora.
+      operacionesPrevias: datos.fechas.length - (
+        (operacionesRaw ?? []).filter(
+          (o: Record<string, unknown>) => String(o.client_id) === cid && idsEvaluadas.has(String(o.id)),
+        ).length
+      ),
+      diasDeHistorial: Math.max(0, Math.floor((Date.now() - primera) / 86400000)),
+      mesesConActividad: meses.size,
+      tienePerfilDeclarado: perfilMensualUmaPorCliente[cid] != null,
+      tieneMatrizEvaluada: conMatriz.has(cid),
+      promedioMensualUmaHistorico:
+        meses.size > 0 ? sumaPrevia / umaMxn / meses.size : 0,
+      diasConActividad: dias.size,
+      clasificacionRiesgo:
+        (clasificacionPorCliente[cid] as HistorialCliente['clasificacionRiesgo']) ?? null,
+    };
+  }
+
   const tipologias = (tipologiasRaw ?? []) as unknown as Tipologia[];
 
   const ctx: MotorContext = {
-    umaMxn: UMA_MXN,
+    umaMxn,
+    umaVigencias,
     ahora: new Date(),
     paisPorFuente,
     perfilMensualUmaPorCliente,
+    historialPorCliente,
   };
 
   // --- 4. Correr el motor --------------------------------------------

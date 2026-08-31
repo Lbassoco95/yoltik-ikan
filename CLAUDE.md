@@ -47,7 +47,13 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
 ## Stack
 
 - Front: Vite + React 18 + TypeScript + Tailwind 3 + shadcn/ui (ya instalado por Lovable)
-- Tipografía: **Plus Jakarta Sans** (heredada del Lovable; sustituye a `Sora` mencionado en docs históricos)
+- Tipografía: **Plus Jakarta Sans**, empaquetada con `@fontsource` (nunca desde el CDN de
+  Google: el nivel 3 de entrega es on-prem y no puede depender de una llamada saliente).
+  **Una sola familia en toda la aplicación** —cliente, consola y login— decidido el
+  30/08/2026: dos tipografías conviviendo es una inconsistencia que se ve y no compra nada.
+  Queda pendiente de Dirección si esa familia debe ser **Sora** (Brandbook v2.1 §06) en vez
+  de Plus Jakarta Sans; no bloquea nada y cambiarla son los `@import` de `src/index.css`,
+  `--font-sans` y `tailwind.config.ts`.
 - Auth: Supabase Auth con **2FA TOTP obligatorio**
 - BD: Supabase Postgres con **RLS multi-tenant por organización y por rol**
 - Edge Functions: Deno/TS (Motor PLD vive aquí en Sprint D-3)
@@ -74,10 +80,17 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
    - Tipologías XVI-01..XVI-08: `33333333-0000-0000-0000-00000000000{1..8}`
    - Plantilla matriz cliente XVI: `44444444-0000-0000-0000-000000000001`
    - Cliente demo Juan Pérez: `55555555-0000-0000-0000-000000000001`
-5. **Brand Yoltik v3.** Navy / Jade / Mint / Ámbar; tipografía Plus Jakarta Sans.
-   `tailwind.config.ts` ya tiene los tokens `ikan.*` apuntando a las CSS vars HSL
-   que shadcn usa. **Yoli (mascota) NO aparece en docs ni UI formales** — solo en
-   materiales informales si se solicita.
+5. **Brand Yoltik v3.** Navy Profundo `#0C2340` / Jade Turquesa `#00917C` / Verde Ikán
+   `#2A7F62` / Ámbar Cálido `#F0A500` / Electric Mint `#1DDBA8`.
+   **El color no decora, anuncia** — cuatro significados y ninguno más:
+   Jade = lo que se puede hacer · Verde Ikán = lo que está en orden ·
+   Ámbar = lo que le toca atender · rojo = lo que está roto.
+   Nunca dos verdes distintos juntos; el Mint no es un estado (hover, foco, «nuevo»).
+   **Todo estado lleva texto**: el color refuerza, no informa.
+   El rojo funcional `#B32B21` está APROBADO (Dirección, 30/08/2026) como color
+   **funcional, no de marca**: no va a piezas comerciales.
+   El producto se llama **Ikán**; **Yoltik** es el endoso («Por Yoltik»).
+   **Yoli (mascota) NO aparece en docs ni UI formales** — solo en materiales informales.
 6. **No mezclar con Kailash.** Repo separado, conceptos separados, nada de copiar
    patrones específicos de Kailash sin pensar si aplican.
 7. **Idioma**: UI y mensajes de usuario en **español de México**. Comentarios de
@@ -87,8 +100,11 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
    para que sean rastreables con `rg "TODO\[Sprint"`.
 9. **Preservar Lovable.** Las 12 páginas existentes (Clientes, Operaciones, Alertas,
    Reportes, Listas, RulesEngine, Verificacion, Auditoria, Configuracion, etc.) se
-   reaprovechan tal cual. NO se reescriben en Sprint D-1. La conexión a queries
-   reales en Supabase entra en Sprint D-2/D-3.
+   reaprovechan. Su diseño se conserva; sus DATOS ya salen de Supabase. `src/data/`
+   se borró cuando la última página dejó de usarlo: un archivo de datos inventados
+   vivo en el repo es un accidente esperando pasar. Lo único que sigue siendo
+   maqueta declarada son las dos secciones de reglas de `RulesEnginePage` y el
+   flujo previsto de `VerificationPage`, ambas con banner ámbar.
 
 ## Comandos
 
@@ -96,7 +112,7 @@ Para detalle, ver `docs/ROLES.md`, `docs/MOTOR_PLD.md`, `docs/ARCHITECTURE.md`.
 npm install                       # deps
 npm run dev                       # dev server (http://localhost:8080)
 npm run build                     # build prod
-npm run typecheck                 # tsc --noEmit
+npm run typecheck                 # tsc: app + node + supabase/functions
 npm run lint                      # eslint
 npm run format                    # prettier
 
@@ -127,14 +143,11 @@ Ver `README.md` para tree completo. Resumen:
 Lee `docs/SPRINT_D1_BACKLOG.md`. Ese archivo tiene los bloques ordenados por
 dependencias, cada uno con criterio de aceptación y validación.
 
-**Estado actual del bootstrap**:
-- ✅ D1.B0a — pre-trabajo sobre scaffold Lovable (lockfiles, lovable-tagger, tokens `ikan.*`).
-- 🟡 D1.B0b — contexto persistente y docs (este chunk).
-- ⏳ D1.B0c — schema (migrations + config + edge function stub).
-- ⏳ D1.B0d — seeds Ixim Pay.
-- ⏳ D1.B0e — configs (package.json, env, scripts).
-- ⏳ D1.B0f — front Ikán sobre Lovable (auth + roles + role-routes).
-- ⏳ D1.B1 — smoke test contra Supabase remoto.
+**Sprint D-1 CERRADO** el 30 de agosto de 2026 (`66a1b7c`). Las siete
+comprobaciones de aceptación pasaron en navegador contra producción, y la
+bitácora está anclada en el bloque 964750 de Bitcoin. El estado con evidencia,
+lo que se cazó al probar y las tres decisiones que siguen abiertas están en
+`docs/CIERRE_D1.md` — léelo antes de tocar nada de D-2.
 
 ## Lo que NO va al demo (postpónlo si te lo piden)
 

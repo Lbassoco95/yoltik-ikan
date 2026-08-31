@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Loader2, Save } from "lucide-react";
@@ -12,11 +12,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { evaluarRiesgoCliente, getCliente, getPlantillaRiesgoActiva } from "@/lib/api/clientes";
+import {
+  evaluarRiesgoCliente,
+  getCliente,
+  getPlantillaRiesgoActiva,
+  ultimaEvaluacion,
+} from "@/lib/api/clientes";
+import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import { elementosAplicables, evaluarMatriz, respuestasCompletas } from "@/lib/riesgo/matriz";
-import { formatMxn, UMA_MXN } from "@/lib/utils";
-import type { TipoPersona } from "@/types/domain";
+import { formatMxn } from "@/lib/utils";
+import { useParametros } from "@/hooks/useParametros";
+import { PARAM } from "@/lib/parametros";
+import type { SectorAV, TipoPersona } from "@/types/domain";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS, labelTipoActo } from "@/lib/perfil-actividad";
 
@@ -31,10 +39,17 @@ const riesgoClase: Record<"bajo" | "medio" | "alto", string> = {
 export default function ClientDetailPage() {
   const { id } = useParams();
   const [respuestas, setRespuestas] = useState<Record<string, number>>({});
-  const { perfilActividad } = useAuth();
+  // Marca de cuál evaluación ya se precargó, para no pisar lo que el usuario
+  // esté capturando cada vez que la consulta se revalide.
+  const [precargada, setPrecargada] = useState<string | null>(null);
+  const { perfilActividad, profile } = useAuth();
   const queryClient = useQueryClient();
   const L = LABELS[perfilActividad];
   const esNotarias = perfilActividad === "notarias";
+
+  // UMA vigente desde `parametro_regulatorio`, no desde una constante.
+  const { valor: valorParam } = useParametros();
+  const umaMxn = valorParam(PARAM.UMA_DIARIA);
 
   const { data: client, isLoading } = useQuery({
     queryKey: ["cliente", id],
@@ -48,15 +63,41 @@ export default function ClientDetailPage() {
   });
   // La plantilla vigente decide si hay matriz, no el perfil de actividad: así
   // no hay que tocar este archivo cuando entren joyerías, vehículos, etc.
+  //
+  // El sector viene de la ORGANIZACIÓN. Sin él, la consulta traía cualquier
+  // plantilla activa, y como puede haber una activa por sector, un
+  // compareciente de notaría podía evaluarse con la matriz de un exchange.
+  const sectorOrg = profile?.organization_sectores?.[0] ?? null;
   const { data: plantilla } = useQuery({
-    queryKey: ["plantilla-activa"],
-    queryFn: getPlantillaRiesgoActiva,
+    queryKey: ["plantilla-activa", sectorOrg],
+    queryFn: () => getPlantillaRiesgoActiva(sectorOrg as SectorAV),
+    enabled: sectorOrg != null,
   });
+
+  // La calificación vigente. Sin esto, reabrir el expediente mostraba la matriz
+  // en blanco como si nadie hubiera evaluado a este compareciente.
+  const { data: evaluacion } = useQuery({
+    queryKey: ["evaluacion", id],
+    queryFn: () => ultimaEvaluacion(id!),
+    enabled: !!id,
+  });
+
+  // Se abre con lo que se respondió la última vez. Volver a capturar veinte
+  // variables para cambiar una sola es la clase de fricción que hace que la
+  // matriz no se actualice nunca.
+  useEffect(() => {
+    if (evaluacion && evaluacion.id !== precargada) {
+      setRespuestas(evaluacion.respuestas ?? {});
+      setPrecargada(evaluacion.id);
+    }
+  }, [evaluacion, precargada]);
 
   const guardar = useMutation({
     mutationFn: () => evaluarRiesgoCliente(plantilla!, client!, respuestas),
     onSuccess: (r) => {
       queryClient.invalidateQueries({ queryKey: ["cliente", id] });
+      queryClient.invalidateQueries({ queryKey: ["evaluacion", id] });
+      queryClient.invalidateQueries({ queryKey: ["evaluaciones"] });
       for (const w of r.warnings) toast.warning(w);
       toast.success(
         `Evaluación guardada · score ${r.score_total} · riesgo ${r.clasificacion.toUpperCase()}` +
@@ -95,7 +136,25 @@ export default function ClientDetailPage() {
       </Link>
 
       <div className="glass-card p-6">
-        <h1 className="text-xl font-bold text-foreground">{client.nombre_razon_social}</h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-xl font-bold text-foreground">{client.nombre_razon_social}</h1>
+          <div className="text-right shrink-0">
+            <BadgeRiesgo
+              clasificacion={evaluacion?.clasificacion}
+              score={evaluacion?.score_total}
+            />
+            <p className="text-[13px] text-muted-foreground mt-1">
+              {evaluacion
+                ? `Evaluado el ${new Date(evaluacion.evaluado_en).toLocaleDateString("es-MX")}`
+                : "Sin matriz aplicada"}
+            </p>
+            {evaluacion?.motivo_alto_de_oficio && (
+              <p className="text-[13px] text-destructive mt-0.5 max-w-xs">
+                {evaluacion.motivo_alto_de_oficio}
+              </p>
+            )}
+          </div>
+        </div>
         <p className="text-sm text-muted-foreground mt-1">
           {tipoLabel[client.tipo_persona]} · {client.rfc ?? "sin RFC"} · Nivel {client.nivel_kyc}
           {client.alto_de_oficio && (
@@ -160,7 +219,7 @@ export default function ClientDetailPage() {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecciona…" />
+                            <SelectValue placeholder="Seleccione…" />
                           </SelectTrigger>
                           <SelectContent>
                             {v.opciones.map((o) => (
@@ -190,7 +249,7 @@ export default function ClientDetailPage() {
                       )}
                     </>
                   ) : (
-                    "Captura incompleta: responde todas las variables para calcular el riesgo."
+                    "Captura incompleta: responda todas las variables para calcular el riesgo."
                   )}
                 </p>
                 <Button
@@ -244,7 +303,9 @@ export default function ClientDetailPage() {
                     <td className="px-4 py-3 text-sm font-medium">{formatMxn(op.monto_mxn)}</td>
                     <td className="px-4 py-3 text-sm">
                       {esNotarias
-                        ? `${Math.round(op.monto_mxn / UMA_MXN).toLocaleString("es-MX")} UMA`
+                        ? umaMxn != null
+                          ? `${Math.round(op.monto_mxn / umaMxn).toLocaleString("es-MX")} UMA`
+                          : "—"
                         : (op.activo_virtual ?? "—")}
                     </td>
                     <td className="px-4 py-3">

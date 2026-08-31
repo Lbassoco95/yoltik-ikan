@@ -83,7 +83,7 @@ export default function AlertsPage() {
           <span>
             <strong>DEMO — sin integración real.</strong> Algunos hallazgos usan datos simulados
             (analítica on-chain y listas OFAC/GAFI como snapshot en BD), señalados con la etiqueta
-            <span className="mx-1 status-badge bg-warning/20 text-warning text-[10px]">DEMO</span>
+            <span className="mx-1 status-badge bg-warning/20 text-warning text-xs">DEMO</span>
             en la tarjeta.
           </span>
         </div>
@@ -124,14 +124,14 @@ export default function AlertsPage() {
                         </span>
                         {urgencia && (
                           <span
-                            className={cn("status-badge text-[10px]", URGENCIA_CLASS[urgencia])}
+                            className={cn("status-badge text-xs", URGENCIA_CLASS[urgencia])}
                             title={URGENCIA_NOTA}
                           >
                             {URGENCIA_LABEL[urgencia]}
                           </span>
                         )}
                         {esMock(h) && (
-                          <span className="status-badge bg-warning/20 text-warning text-[10px]">DEMO</span>
+                          <span className="status-badge bg-warning/20 text-warning text-xs">DEMO</span>
                         )}
                       </div>
                       <p className="text-sm font-semibold text-foreground mt-1">{h.tipologia_nombre}</p>
@@ -145,10 +145,10 @@ export default function AlertsPage() {
                         </p>
                       )}
                       <div className="flex items-center justify-between mt-3">
-                        <span className={cn("status-badge text-[10px]", SEVERIDAD_CLASS[h.severidad])}>
+                        <span className={cn("status-badge text-xs", SEVERIDAD_CLASS[h.severidad])}>
                           {h.severidad}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(h.creado_en).toLocaleDateString("es-MX")}
                         </span>
                       </div>

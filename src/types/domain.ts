@@ -55,6 +55,13 @@ export interface UserProfile {
   id: string;
   organization_id: string;
   organization_name?: string;
+  /** Fracciones que opera la organización. Decide, entre otras cosas, qué
+   *  matriz de riesgo se muestra: una notaría (XII) no ve la de un exchange
+   *  (XVI). Vacío si el remoto todavía no tiene la columna. */
+  organization_sectores?: SectorAV[];
+  /** La organización es un entorno de demostración. Se enseña en pantalla y
+   *  bloquea la firma de avisos (migration 0034). */
+  organization_es_demostracion?: boolean;
   email: string;
   nombre: string;
   roles: RolUsuario[];
@@ -76,7 +83,26 @@ export interface Client {
   id: string;
   organization_id: string;
   tipo_persona: TipoPersona;
+  /** Nombre de despliegue. En persona física lo recompone la BD desde las
+   *  partes (trigger de la migration 0019); en persona moral es la razón social. */
   nombre_razon_social: string;
+  /** Partes del nombre, separadas porque el aviso las pide así
+   *  (layout fep 3.5.1 a 3.5.3). Sólo persona física. */
+  nombre: string | null;
+  apellido_paterno: string | null;
+  apellido_materno: string | null;
+  /** Layout fep 3.5.4. Sólo persona física. */
+  fecha_nacimiento: string | null;
+  /** Sólo persona moral. */
+  fecha_constitucion: string | null;
+  /** Clave de 2 letras del catálogo de países de la UIF. Distinta de
+   *  `nacionalidad`, que guarda la etiqueta legible. */
+  pais_nacionalidad_clave: string | null;
+  /** 7 dígitos: <actividad_economica> en persona física, <giro_mercantil> en moral. */
+  actividad_economica_clave: string | null;
+  /** Clave del catálogo ENTIDAD FEDERATIVA. La etiqueta legible sigue en
+   *  `entidad_federativa`. */
+  entidad_federativa_clave: string | null;
   curp: string | null;
   rfc: string | null;
   nacionalidad: string | null;
@@ -96,6 +122,14 @@ export interface Client {
 export interface NuevoClienteInput {
   tipo_persona: TipoPersona;
   nombre_razon_social: string;
+  nombre?: string;
+  apellido_paterno?: string;
+  apellido_materno?: string;
+  fecha_nacimiento?: string;
+  fecha_constitucion?: string;
+  pais_nacionalidad_clave?: string;
+  actividad_economica_clave?: string;
+  entidad_federativa_clave?: string;
   rfc?: string;
   curp?: string;
   nacionalidad?: string;
@@ -113,7 +147,14 @@ export interface Operation {
   moneda_origen: string;
   activo_virtual: string | null;
   contraparte: Record<string, unknown> | null;
+  /** Fecha del acto u operación (layout fep 3.6.1.2). NO es la de captura:
+   *  ésa es `capturado_en`. */
   fecha: string;
+  /** Número de escritura o póliza (layout fep 3.6.1.1). No es único: una misma
+   *  escritura puede contener varios actos. */
+  instrumento_publico: string | null;
+  /** Subárbol de <tipo_actividad> del layout, según contraparte.tipo_acto. */
+  datos_acto: Record<string, unknown>;
   requiere_aviso: boolean;
   capturado_por: string | null;
   capturado_en: string;
@@ -127,6 +168,8 @@ export interface NuevaOperacionInput {
   activo_virtual?: string;
   contraparte?: Record<string, unknown>;
   fecha?: string;
+  instrumento_publico?: string;
+  datos_acto?: Record<string, unknown>;
 }
 
 // =====================================================================

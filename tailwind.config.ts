@@ -51,10 +51,6 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
-        vulnerable: {
-          DEFAULT: "hsl(var(--vulnerable))",
-          foreground: "hsl(var(--vulnerable-foreground))",
-        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",

@@ -9,11 +9,13 @@ import { navEntriesForRole } from "@/lib/role-routes";
 import { NAV_LABEL_OVERRIDES } from "@/lib/perfil-actividad";
 
 interface AppSidebarProps {
+  /** Para que el marco decida si va fija o superpuesta en un teléfono. */
+  className?: string;
   collapsed: boolean;
   onToggle: () => void;
 }
 
-export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
+export function AppSidebar({ collapsed, onToggle, className }: AppSidebarProps) {
   const location = useLocation();
   const { activeRole } = useActiveRole();
   const { perfilActividad } = useAuth();
@@ -35,7 +37,8 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
     <aside
       className={cn(
         "flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out shrink-0 relative",
-        collapsed ? "w-[68px]" : "w-[260px]"
+        collapsed ? "w-[68px]" : "w-[260px]",
+        className,
       )}
     >
       {/* Logo */}
@@ -43,7 +46,17 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
           <Heart className="w-4 h-4 text-accent-foreground" />
         </div>
-        {!collapsed && <span className="text-lg font-bold tracking-tight text-sidebar-accent-foreground">Yoltik</span>}
+        {/* La marca no se decidía: el login decía Ikán, la barra decía Yoltik
+            y la pestaña decía Yoltik RegTech. El producto es Ikán; Yoltik es
+            el endoso. */}
+        {!collapsed && (
+          <span className="flex flex-col leading-none">
+            <span className="text-lg font-bold tracking-tight text-sidebar-accent-foreground">
+              Ikán
+            </span>
+            <span className="text-xs text-sidebar-foreground/70">Por Yoltik</span>
+          </span>
+        )}
       </div>
 
       {/* Main Nav */}
@@ -70,7 +83,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
               {badge > 0 && (
                 <span className={cn(
                   "ml-auto bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center",
-                  collapsed ? "absolute -top-1 -right-1 w-4 h-4 text-[10px]" : "w-5 h-5"
+                  collapsed ? "absolute -top-1 -right-1 w-4 h-4 text-xs" : "w-5 h-5"
                 )}>
                   {badge}
                 </span>

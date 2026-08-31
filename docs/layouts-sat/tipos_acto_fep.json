@@ -1,0 +1,52 @@
+[
+  {
+    "ruta": "3.6.1.3.1",
+    "etiqueta_xml": "otorgamiento_poder",
+    "nombre": "Otorgamiento de poder irrevocable para actos de admnistración o para actos de dominio"
+  },
+  {
+    "ruta": "3.6.1.3.2",
+    "etiqueta_xml": "constitucion_personas_morales",
+    "nombre": "Constitución de personas Morales"
+  },
+  {
+    "ruta": "3.6.1.3.3",
+    "etiqueta_xml": "modificacion_patrimonial",
+    "nombre": "Modificacion patrimonial por aumento de capital o por disminucion de capital"
+  },
+  {
+    "ruta": "3.6.1.3.4",
+    "etiqueta_xml": "fusion",
+    "nombre": "Fusión"
+  },
+  {
+    "ruta": "3.6.1.3.5",
+    "etiqueta_xml": "escision",
+    "nombre": "Escisión"
+  },
+  {
+    "ruta": "3.6.1.3.6",
+    "etiqueta_xml": "compra_venta_acciones",
+    "nombre": "Compra o venta de acciones o partes sociales"
+  },
+  {
+    "ruta": "3.6.1.3.7",
+    "etiqueta_xml": "constitucion_modificacion_fideicomiso",
+    "nombre": "Constitución o Modificación de Fideicomiso traslativo de Dominio o en garantía sobre inmuebles"
+  },
+  {
+    "ruta": "3.6.1.3.8",
+    "etiqueta_xml": "cesion_derechos_fideicomitente_fideicomisario",
+    "nombre": "Cesión de derechos de fideicomitente Cesión de derechos de fideicomisario"
+  },
+  {
+    "ruta": "3.6.1.3.9",
+    "etiqueta_xml": "contrato_mutuo_credito",
+    "nombre": "Otorgamiento de contratos de mutuo o crédito con o sin garantía"
+  },
+  {
+    "ruta": "3.6.1.3.10",
+    "etiqueta_xml": "avaluo",
+    "nombre": "Realización de Avalúos"
+  }
+]

@@ -15,13 +15,21 @@
 |--------|-------------|--------|
 | RCG0.B0 | Evaluadores reales del Motor PLD (deuda D-3) | ✅ hecho |
 | **RCG0.B0.1** | **Ingesta propia de listas abiertas (OFAC + GAFI + 69-B)** | ⏳ **nuevo — intercalar según dependencias** |
-| **RCG0.B0b** | **Alta de cliente final por el Operador (Nivel 1)** | 🟡 captura hecha · matriz-score pendiente de fórmula |
+| **RCG0.B0b** | **Alta de cliente final por el Operador (Nivel 1)** | ✅ hecho · matriz con score, guardada y visible |
 | RCG0.B1 | SLA de 24h sobre hallazgos | ⏳ pendiente |
 | RCG0.B2 | Ajustes al piloto XVI (jurisdicción + comisión) | ⏳ pendiente |
 | RCG0.B3 | Modelo de datos para fideicomisos (solo modelo) | ⏳ pendiente |
 | RCG0.B4 | Rol "Representante Encargado de Cumplimiento" | ⏳ pendiente |
 | RCG0.B5 | Desarrollo Inmobiliario (V Bis) | ⛔ condicional — sin arrancar |
 | RCG0.B6 | Smoke test de Fase RCG-0 | ⏳ pendiente |
+| **RCG0.B3f** | **Expediente del acto: la captura alimenta el aviso** | ✅ **hecho** |
+| **RCG0.B3g** | **Catálogos del layout: la lista sale de la base** | ✅ **hecho · 25 de 26 cargados** |
+| **RCG0.B7** | **Consola de plataforma completa (admin de Ikán)** | ⏳ **nuevo — después de cerrar el demo** |
+| **RCG0.B8.1** | **Bitácora encadenada** | ✅ **hecho** |
+| **RCG0.B8.2** | **Anclaje en Bitcoin (OpenTimestamps)** | ⏳ **siguiente** |
+| **RCG0.B8.3** | **Constancia NOM-151 (requiere PSC)** | ⛔ después del demo |
+| **RCG0.B9** | **Cierre de fuga entre organizaciones (migration 0022)** | ✅ hecho · aplicado en producción |
+| **RCG0.B10** | **Generador del aviso XML + pantalla de Reportes** | 🟡 generador y pantalla hechos · falta el subárbol por tipo de acto |
 
 Decisiones confirmadas con Polo (2026-08-20):
 - **B1**: el contador de 24h basta con que sea **visible** en el panel del OC (contador
@@ -88,8 +96,14 @@ en paralelo si hiciera falta.
   PLD la evalúa (produce hallazgo si dispara alguna tipología).
 - Lo no integrado (Moffin/KYC externo) va con banner ámbar "DEMO — sin integración real".
 
-**Decisión de Polo (2026-08-20):** la matriz es **acción separada, no forzada** en el alta; y el
-alta se construye **sin score** por ahora (respuestas en crudo, score pendiente de fórmula).
+**Decisión de Polo (2026-08-20):** la matriz es **acción separada, no forzada** en el alta.
+
+**Cerrado (2026-08-30):** la fórmula entró en `864ec92` (`evaluarMatriz`, `clasificarPorBanda`,
+`triggersActivados`) y la evaluación se persiste en `client_risk_assessment`. Faltaba lo que
+cerró este bloque: la evaluación **se escribía y nunca se leía**. Al reabrir un expediente la
+matriz salía en blanco, como si nadie hubiera calificado a ese compareciente, y la lista los
+mostraba a todos igual. Ahora la lista trae una columna de riesgo —una consulta para todos, no
+una por fila— y el detalle abre con las respuestas de la última evaluación, su score y su fecha.
 
 **Estado real de lo entregado:**
 - ✅ Capa de API: `src/lib/api/{contexto,clientes,operaciones}.ts` (crear/listar clientes y
@@ -102,11 +116,7 @@ alta se construye **sin score** por ahora (respuestas en crudo, score pendiente 
   registrada"), `ClientDetailPage` (datos + operaciones reales + captura de matriz).
 - ✅ Helper puro `src/lib/riesgo/matriz.ts` + 5 tests (qué elementos/variables aplican por tipo
   de persona, captura completa).
-- ⏳ **Pendiente — score de matriz:** el cálculo `score_total`/`clasificacion` NO se implementó
-  (fórmula de ponderación no está en el repo; seed 06 inconsistente: subtotales 25 vs score 17).
-  La matriz captura y muestra respuestas con banner ámbar "DEMO — score pendiente"; no persiste
-  el assessment (además `client_risk_assessment` exige score NOT NULL). Se cierra cuando Polo
-  confirme la fórmula (Excel Ixim Pay).
+- ✅ **Score de matriz:** implementado y persistido. Ver la nota de cierre arriba.
 - ⏳ **Pendiente — smoke en vivo:** verificado con `typecheck/lint/build` + tests. El insert real
   contra RLS y la invocación del motor requieren correr contra el Supabase remoto (no hay entorno
   local en esta sesión). Queda para el smoke de RCG0.B6.
@@ -195,3 +205,129 @@ El detalle de B1–B6 vive en la nota de backlog original de esta fase (mensaje 
 Sprint RCG-0) y en `Ikan-Nota-Tecnica-Arquitectura-RCG2026-v1.0-2026-08-10.docx`. Resumen de
 cada uno arriba en la tabla de estado. Cada bloque se detalla aquí a medida que se arranca,
 para no duplicar la fuente regulatoria.
+
+
+---
+
+## RCG0.B7 · Consola de plataforma completa — NUEVO
+
+**Decisión de Polo (2026-08-29):** es un **bloque propio**, no un apéndice de las
+listas, y se toma **cuando el demo esté cerrado**. Queda anotado aquí para que
+no dependa de la memoria de nadie.
+
+Hoy la consola de Kawiil (`/admin`, despliegue aparte) tiene dos secciones:
+listas restrictivas y parámetros regulatorios. Para ser lo que Polo describe
+—«un sistema para administrar y revisar las aplicaciones de todos los usuarios
+y sistemas Ikán en uso»— le falta:
+
+- **Organizaciones.** Alta, estado, qué fracciones opera, perfil de actividad.
+  Hoy sólo se crean por SQL.
+- **Usuarios por organización.** Alta, roles, desactivación. Hoy es
+  `bootstrap_usuario_*.sql` a mano.
+- **Prospectos.** Los del formulario público caen en `prospect_intake`, que
+  además **no tiene migration** y que nadie mira. Es el embudo roto que se
+  documentó en el primer diagnóstico.
+- **Uso por organización.** Operaciones, hallazgos, verificaciones consumidas y
+  su costo. Es lo que permite cobrar y dimensionar.
+- **Salud de la plataforma.** Corridas del job, errores sin atender, últimas
+  cargas por fuente, migrations aplicadas por proyecto.
+
+**Regla que ya rige y que este bloque debe respetar:** las organizaciones
+cliente **consumen**; sólo Kawiil escribe. La RLS lo impone desde la 0012, y
+`platform_admin` (0008) es el privilegio, que cruza organizaciones y no es un
+rol de organización.
+
+**Relación con Didit (RCG0.B8, pendiente):** la consola es también donde se
+verá el consumo de verificaciones y su costo, así que conviene diseñar las dos
+cosas sabiendo que comparten pantalla.
+
+---
+
+## RCG0.B3f · El expediente del acto se arma mientras el notario trabaja — ✅ hecho
+
+**Por qué existe:** el aviso se arma el mes siguiente; el notario captura el día
+que firma. El alta de un acto guardaba compareciente, monto, tipo de acto y país;
+el layout de fe pública pide además número de instrumento, fecha del acto y la
+persona que solicita la formalización con apellidos por separado, fecha de
+nacimiento, RFC y CURP. Faltando eso, el día 17 hay que volver al protocolo.
+
+**Qué entró:**
+- Migration `0019`: claves del padrón SAT en `organizations`; nombre en partes,
+  fechas de nacimiento y constitución, clave de país y clave de actividad
+  económica en `client`; `instrumento_publico` y `datos_acto` en `operation`.
+  Trigger que recompone el nombre de despliegue desde las partes.
+- Diccionario **generado** desde el instructivo del SAT (518 campos) —
+  `scripts/generar-campos-fep.mjs`, para no transcribir a mano.
+- `src/lib/aviso/completitud.ts`: qué falta, con qué gravedad y en qué momento,
+  citando el número de campo del instructivo.
+- Panel de pendientes en el alta de compareciente, en el alta de acto y columna
+  "Expediente" en la lista de actos.
+- Claves del padrón visibles (sólo lectura) en Configuración.
+
+**Detalle y decisiones:** `docs/EXPEDIENTE_DEL_ACTO.md`.
+
+**Lo que deja abierto (siguiente bloque):** captura del subárbol de cada tipo de
+acto (grupos repetidos de intervinientes) y carga de los catálogos de la UIF.
+Ambos con banner ámbar visible, no en silencio.
+
+---
+
+## RCG0.B3g · Catálogos del layout — ✅ hecho (registro completo, carga pendiente de archivos)
+
+**Por qué existe:** donde el aviso pide una clave de catálogo, la captura era
+texto libre. Quien captura no se sabe de memoria el número de su estado, y el
+portal rechaza el aviso completo si la clave no existe.
+
+**Qué entró:** `catalogo_sat` + `catalogo_valor` con vigencias (reemplazar cierra,
+no borra), `reemplazar_valores_catalogo()` restringida a Kawiil, RLS de sólo
+lectura para los clientes, `<SelectCatalogo>` que guarda la clave y degrada a
+captura manual con banner ámbar cuando el catálogo no está cargado, y pantalla de
+carga en la consola de plataforma con previo y validación de formato.
+
+**Estado real:** 26 catálogos registrados, **25 cargados con 924 claves reales**.
+Salieron de la hoja oculta `Combos` de las plantillas de captura que publica el
+propio SAT (`Fedatario*.xlsm`), no de fuentes secundarias. Falta sólo el de
+códigos postales (32,353 valores), que se carga desde la consola con
+`docs/catalogos-uif/codigos_postales.csv`.
+
+**De paso:** apareció `FEP` como clave de actividad vulnerable de una notaría
+(`AVI` para un exchange), uno de los tres campos que impedían generar cualquier
+aviso. Sembrado en las dos organizaciones demo.
+
+**Detalle:** `docs/CATALOGOS_LAYOUT.md`.
+
+---
+
+## RCG0.B8 · Trazabilidad y anclaje
+
+Diseño completo en `docs/TRAZABILIDAD_Y_ANCLAJE.md`. Decisiones de Polo
+(2026-08-29): ancla con **OpenTimestamps**, NOM-151 **después del demo**.
+
+### B8.1 · Bitácora encadenada — ✅ hecho
+
+Un solo flujo de eventos encadenado por hashes, emitido por triggers para que
+ninguna ruta se lo salte. Detecta alteración, borrado y truncamiento; se
+verifica dos veces (base y navegador) y se exporta para que un tercero
+recalcule sin nuestra API. Deja escrito —y probado— su propio límite: la cadena
+sola no detecta que se reescriba entera, y para eso es B8.2.
+
+De paso cerró dos funciones `SECURITY DEFINER` que PostgreSQL había dejado
+abiertas a `PUBLIC`: `registrar_evento` y `emitir_folio_hallazgo`.
+
+Detalle: `docs/BITACORA_ENCADENADA.md`.
+
+### B8.2 · Anclaje con OpenTimestamps — ⏳ siguiente
+
+Raíz Merkle diaria sobre los eventos nuevos, sellada en Bitcoin. Sin datos
+personales: sólo la raíz. Paquete de verificación con el `.ots`.
+
+**Cadencia decidida (2026-08-29):** diaria, más un anclaje **forzado al cerrar
+cada periodo de aviso**. El diario acota a 24 horas la ventana sin ancla; el
+forzado existe porque el aviso es el documento que se defiende ante la
+autoridad, y dejarlo sin anclar hasta el día siguiente sería justo el momento en
+que más falta hace.
+
+El anclaje corre en una Edge Function programada, no en la sesión de desarrollo:
+el proxy del entorno de Claude Code bloquea los calendarios de OpenTimestamps.
+La llamada de red va aislada tras una interfaz para poder probar toda la lógica
+sin depender del calendario.

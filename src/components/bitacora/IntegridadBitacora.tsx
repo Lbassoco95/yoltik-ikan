@@ -1,0 +1,543 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  Anchor,
+  CheckCircle2,
+  Clock,
+  Download,
+  Loader2,
+  ShieldCheck,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  descargarOts,
+  estadoAnclaje,
+  estadoCadena,
+  exportarPaquete,
+  listarAnclajes,
+  verificarEnBase,
+  type AnclajeListado,
+  type EstadoAnclaje,
+} from "@/lib/api/bitacora";
+import {
+  advertenciaDeAlcance,
+  verificarPaquete,
+  type ResultadoVerificacion,
+} from "@/lib/bitacora/verificador";
+
+/**
+ * Estado e integridad de la bitácora encadenada.
+ *
+ * Verifica DOS veces a propósito: una la base con su propia función, y otra
+ * este navegador recalculando desde el paquete exportado. Si sólo verificara la
+ * base, se estaría pidiendo confiar justo en quien se quiere auditar. Que las
+ * dos coincidan es parte del resultado.
+ */
+export function IntegridadBitacora({
+  organizationId,
+  titulo = "Integridad de la bitácora",
+}: {
+  organizationId?: string;
+  titulo?: string;
+}) {
+  const [resultado, setResultado] = useState<ResultadoVerificacion | null>(
+    null,
+  );
+  const [roturasBase, setRoturasBase] = useState<
+    { secuencia: number; motivo: string }[] | null
+  >(null);
+  const [verificando, setVerificando] = useState(false);
+
+  const {
+    data: cabeza,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["cadena", organizationId ?? "propia"],
+    queryFn: () => estadoCadena(organizationId),
+  });
+
+  const { data: ancla } = useQuery({
+    queryKey: ["anclaje", organizationId ?? "propia"],
+    queryFn: () => estadoAnclaje(organizationId),
+  });
+
+  const { data: anclajes = [] } = useQuery({
+    queryKey: ["anclajes", organizationId ?? "propia"],
+    queryFn: () => listarAnclajes(organizationId, 10),
+  });
+
+  async function verificar() {
+    setVerificando(true);
+    setResultado(null);
+    setRoturasBase(null);
+    try {
+      const [roturas, paquete] = await Promise.all([
+        verificarEnBase(organizationId),
+        exportarPaquete(organizationId),
+      ]);
+      setRoturasBase(roturas);
+      setResultado(await verificarPaquete(paquete));
+    } catch (e) {
+      // Distinguir «la cadena está mal» de «no pudiste preguntar» no es un
+      // matiz: con un solo toast rojo, quien verifica no sabe si su bitácora
+      // está rota o si le falta un permiso, y las dos cosas se atienden de
+      // forma opuesta.
+      const msg = (e as Error).message ?? "";
+      const esPermiso = /permission|denied|not exist|does not exist|42501|42883|PGRST/i.test(msg);
+      toast.error(
+        esPermiso
+          ? `No se pudo ejecutar la verificación en la base: parece un problema de permisos o de ` +
+              `instalación, no de la bitácora. Avise a Kawiil. (${msg})`
+          : `No se pudo verificar: ${msg}`,
+        { duration: 12000 },
+      );
+    } finally {
+      setVerificando(false);
+    }
+  }
+
+  async function descargar() {
+    try {
+      const paquete = await exportarPaquete(organizationId);
+      const blob = new Blob([JSON.stringify(paquete, null, 1)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bitacora-${paquete.organization_id}-${paquete.generado_en.slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(`No se pudo exportar: ${(e as Error).message}`);
+    }
+  }
+
+  const coinciden =
+    resultado != null &&
+    roturasBase != null &&
+    resultado.integra === (roturasBase.length === 0);
+  const integra = resultado?.integra === true && roturasBase?.length === 0;
+
+  return (
+    <div className="glass-card p-5 space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">{titulo}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
+              Cada alta, cada acto y cada movimiento del motor queda encadenado
+              por hashes. Alterar o borrar un registro pasado rompe la cadena y
+              se detecta al recalcularla.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          {/* Un solo nombre para esto en toda la app: el texto de Auditoría lo
+              llamaba «el paquete de verificación» y el botón decía «Exportar». */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={descargar}
+            disabled={cabeza?.ultima_secuencia === 0}
+          >
+            <Download className="w-3.5 h-3.5" /> Descargar paquete de
+            verificación
+          </Button>
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={verificar}
+            disabled={verificando || cabeza?.ultima_secuencia === 0}
+          >
+            {verificando && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            Verificar
+          </Button>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <p className="text-xs text-muted-foreground">
+          Leyendo la cabeza de la cadena…
+        </p>
+      ) : isError ? (
+        <p className="text-xs text-destructive">
+          No se pudo leer la bitácora: {(error as Error)?.message}
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Dato
+            etiqueta="Eventos registrados"
+            valor={cabeza!.ultima_secuencia.toLocaleString("es-MX")}
+          />
+          <Dato
+            etiqueta="Último movimiento"
+            valor={
+              cabeza!.actualizado_en
+                ? new Date(cabeza!.actualizado_en).toLocaleString("es-MX")
+                : "Sin actividad"
+            }
+          />
+          {/* Una organización recién dada de alta no tiene fila de cadena, y
+              `estadoCadena` devuelve 64 ceros. Pintarlos parece un hash y no
+              lo es: es la ausencia de uno. */}
+          <Dato
+            etiqueta="Hash de la cadena"
+            valor={
+              cabeza!.ultima_secuencia === 0
+                ? "Sin eventos todavía"
+                : cabeza!.ultimo_hash.slice(0, 16) + "…"
+            }
+            mono={cabeza!.ultima_secuencia > 0}
+          />
+        </div>
+      )}
+
+      <EstadoDelAncla ancla={ancla ?? null} />
+
+      {anclajes.length > 0 && <Anclajes anclajes={anclajes} />}
+
+      {resultado && (
+        <div
+          className={`rounded-lg p-3 ${integra ? "bg-success/10" : "bg-destructive/10"}`}
+        >
+          <div className="flex items-center gap-2">
+            {integra ? (
+              <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+            )}
+            <p className="text-sm font-semibold text-foreground">
+              {integra
+                ? `Íntegra · ${resultado.eventosVerificados.toLocaleString("es-MX")} eventos recalculados`
+                : `Cadena rota · ${resultado.roturas.length} ${
+                    resultado.roturas.length === 1 ? "hallazgo" : "hallazgos"
+                  }`}
+            </p>
+          </div>
+
+          {!coinciden && (
+            <p className="text-xs text-destructive mt-2 ml-6">
+              La base y este navegador no llegaron al mismo resultado. Eso, por
+              sí solo, ya es motivo de revisión: significa que uno de los dos no
+              está calculando lo que dice.
+            </p>
+          )}
+
+          {resultado.roturas.length > 0 && (
+            <ul className="mt-2 ml-6 space-y-1">
+              {resultado.roturas.slice(0, 8).map((r, i) => (
+                <li
+                  key={`${r.secuencia}-${i}`}
+                  className="text-xs text-foreground"
+                >
+                  Evento {r.secuencia}: {r.motivo}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {integra && (
+            <>
+              <p
+                className={cn(
+                  "text-[13px] mt-2 ml-6",
+                  resultado.cubiertoHasta >= resultado.eventosVerificados
+                    ? "text-success"
+                    : "text-warning",
+                )}
+              >
+                {advertenciaDeAlcance(resultado)}
+              </p>
+
+              {/* Un anclaje cuya raíz no cuadra es la señal más grave del
+                  verificador: la cadena puede estar bien encadenada y aun así
+                  no ser la que se publicó. */}
+              {resultado.anclajes
+                .filter((a) => !a.coincide)
+                .map((a) => (
+                  <p
+                    key={a.id}
+                    className="text-[13px] text-destructive mt-1 ml-6"
+                  >
+                    Anclaje {a.desde_secuencia}–{a.hasta_secuencia}: {a.motivo}
+                  </p>
+                ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const MOTIVO_LABEL: Record<AnclajeListado["motivo"], string> = {
+  diario: "Diario",
+  cierre_periodo: "Cierre de aviso",
+  manual: "Manual",
+};
+
+/**
+ * Los anclajes, con su prueba descargable.
+ *
+ * El `.ots` es lo que se le entrega a un tercero: con él y un nodo de Bitcoin
+ * —o cualquier explorador de bloques— comprueba por su cuenta que esos eventos
+ * existían antes de ese bloque. Sin poder descargarlo, el anclaje sería una
+ * afirmación nuestra sobre nosotros mismos.
+ */
+function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
+  const [bajando, setBajando] = useState<string | null>(null);
+
+  async function bajar(a: AnclajeListado) {
+    setBajando(a.id);
+    try {
+      const bytes = await descargarOts(a.id);
+      const url = URL.createObjectURL(
+        new Blob([bytes as BlobPart], { type: "application/octet-stream" }),
+      );
+      const el = document.createElement("a");
+      el.href = url;
+      el.download = `anclaje-${a.desde_secuencia}-${a.hasta_secuencia}.ots`;
+      el.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBajando(null);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border">
+      {/* El contenedor redondeado recortaba el desbordamiento: en un teléfono
+          se perdían columnas sin manera de llegar a ellas. El scroll va en un
+          div propio, dentro del borde. */}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[32rem]">
+          <thead>
+            <tr className="bg-muted/30">
+              {["Eventos", "Motivo", "Estado", "Bloque", "Prueba"].map((h) => (
+                <th
+                  key={h}
+                  className="text-left text-[13px] font-semibold text-muted-foreground uppercase px-3 py-2"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {anclajes.map((a) => (
+              <tr key={a.id} className="border-t border-border">
+                <td className="px-3 py-2 text-xs font-mono">
+                  {a.desde_secuencia}–{a.hasta_secuencia}
+                </td>
+                <td className="px-3 py-2 text-xs">{MOTIVO_LABEL[a.motivo]}</td>
+                <td className="px-3 py-2">
+                  {/* El significado va en el texto, no sólo en el color. */}
+                  <span
+                    className={cn(
+                      "status-badge text-xs",
+                      a.estado === "confirmado"
+                        ? "bg-success/10 text-success"
+                        : a.estado === "pendiente"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-destructive/10 text-destructive",
+                    )}
+                  >
+                    {a.estado === "confirmado"
+                      ? "En Bitcoin"
+                      : a.estado === "pendiente"
+                        ? "Esperando bloque"
+                        : "No se publicó"}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">
+                  <span className="font-mono">
+                    {a.bloque_btc?.toLocaleString("es-MX") ?? "—"}
+                  </span>
+                  {a.fecha_bloque && (
+                    <span className="block text-xs">
+                      {new Date(a.fecha_bloque).toLocaleDateString("es-MX")}
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="gap-1.5 h-7"
+                    disabled={!a.tiene_ots || bajando === a.id}
+                    title={
+                      a.tiene_ots
+                        ? undefined
+                        : "Todavía no hay archivo de prueba para este anclaje."
+                    }
+                    onClick={() => bajar(a)}
+                  >
+                    {bajando === a.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Download className="w-3 h-3" />
+                    )}
+                    {a.estado === "confirmado" ? ".ots" : ".ots (incompleta)"}
+                  </Button>
+                  {a.tiene_ots && a.estado !== "confirmado" && (
+                    <p className="text-xs text-muted-foreground mt-0.5 max-w-[16rem]">
+                      Aún sin confirmación de Bitcoin. Sirve para conservarla,
+                      no para acreditar la fecha todavía.
+                    </p>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[13px] text-muted-foreground px-3 py-2 border-t border-border">
+        El archivo <code>.ots</code> es la prueba: con <code>ots verify</code> y
+        un nodo de Bitcoin, o comparando la raíz contra el bloque en cualquier
+        explorador, se comprueba sin pedirnos nada.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * El ancla externa, dicha sin exagerar.
+ *
+ * Tres estados distintos y ninguno se puede confundir con otro:
+ *   - confirmado: hay una raíz en un bloque de Bitcoin. Es la afirmación
+ *     fuerte, y es la única que se pinta en verde.
+ *   - pendiente: el calendario aceptó la raíz pero Bitcoin todavía no la
+ *     confirma. Tarda unas horas y es normal; no es una certificación aún.
+ *   - sin ancla: sólo la cadena interna. Se dice, no se calla.
+ *
+ * `eventos_sin_anclar` sale siempre, incluso con el ancla al día: es la
+ * ventana en la que una manipulación no tendría nada que la contradiga, y
+ * ocultarla sería vender más de lo que hay.
+ */
+function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
+  if (!ancla) return null;
+
+  const confirmado = ancla.estado === "confirmado";
+  const pendiente = ancla.estado === "pendiente";
+  const sinAncla = ancla.anclado_hasta == null;
+
+  return (
+    <div
+      className={cn(
+        "rounded-lg p-3",
+        confirmado
+          ? "bg-success/10"
+          : pendiente
+            ? "bg-primary/5"
+            : "bg-warning/10",
+      )}
+    >
+      <div className="flex items-start gap-2">
+        {confirmado ? (
+          <Anchor className="w-4 h-4 mt-0.5 text-success shrink-0" />
+        ) : pendiente ? (
+          <Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+        ) : (
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-warning shrink-0" />
+        )}
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-foreground">
+            {confirmado
+              ? `Anclado en Bitcoin · bloque ${ancla.bloque_btc?.toLocaleString("es-MX")}`
+              : pendiente
+                ? "Anclaje enviado · esperando confirmación de Bitcoin"
+                : sinAncla
+                  ? "Sin anclaje externo todavía"
+                  : "El último anclaje no llegó a publicarse"}
+          </p>
+
+          <p className="text-[13px] text-muted-foreground">
+            {confirmado ? (
+              <>
+                Los eventos 1 a {ancla.anclado_hasta?.toLocaleString("es-MX")}{" "}
+                están respaldados por una raíz publicada en el bloque{" "}
+                {ancla.bloque_btc?.toLocaleString("es-MX")} de Bitcoin
+                {/* El bloque va primero porque es lo verificable; la fecha
+                    sale de consultar esa altura en un explorador público y es
+                    comodidad de lectura. Si no se pudo consultar, se calla:
+                    no se inventa una fecha. */}
+                {ancla.fecha_bloque
+                  ? `, del ${new Date(ancla.fecha_bloque).toLocaleDateString(
+                      "es-MX",
+                      {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      },
+                    )}`
+                  : ""}
+                . Cualquiera puede comprobarlo con un nodo de Bitcoin, sin
+                pedirnos nada.
+              </>
+            ) : pendiente ? (
+              <>
+                El calendario de OpenTimestamps ya recibió la raíz; Bitcoin
+                tarda unas horas en confirmarla. Hasta entonces esto todavía no
+                es una certificación.
+              </>
+            ) : (
+              <>
+                Por ahora la integridad se comprueba sólo dentro de la base. Eso
+                detecta que se alterara un evento suelto, no que se reescribiera
+                la cadena entera.
+              </>
+            )}
+          </p>
+
+          {ancla.eventos_sin_anclar > 0 && (
+            <p className="text-[13px] text-warning">
+              {ancla.eventos_sin_anclar.toLocaleString("es-MX")} evento
+              {ancla.eventos_sin_anclar === 1 ? "" : "s"} sin cobertura externa:
+              son los posteriores al último anclaje. El anclaje corre a diario y
+              se fuerza al cerrar cada periodo de aviso.
+            </p>
+          )}
+
+          {ancla.raiz_merkle && (
+            <p className="text-[13px] font-mono text-muted-foreground break-all">
+              raíz {ancla.raiz_merkle}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Dato({
+  etiqueta,
+  valor,
+  mono,
+}: {
+  etiqueta: string;
+  valor: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="rounded-lg bg-muted/40 p-3">
+      <p className="text-[13px] text-muted-foreground uppercase tracking-wider">
+        {etiqueta}
+      </p>
+      <p
+        className={`text-sm font-semibold text-foreground mt-0.5 ${mono ? "font-mono" : ""}`}
+      >
+        {valor}
+      </p>
+    </div>
+  );
+}
