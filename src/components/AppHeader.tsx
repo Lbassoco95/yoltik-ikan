@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Bell, Search, LogOut, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -23,6 +24,27 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
   const { profile, roles, signOut } = useAuth();
   const { activeRole, setActiveRole } = useActiveRole();
   const navegar = useNavigate();
+  const [busqueda, setBusqueda] = useState("");
+
+  /**
+   * Llevaba desde el andamiaje sin conectar: un `<Input>` sin `value` ni
+   * `onChange` que prometía «Buscar clientes, operaciones…» y no buscaba nada.
+   *
+   * En un producto de cumplimiento eso no es un botón muerto cualquiera. Quien
+   * teclea el nombre de un cliente, no ve nada y sigue adelante, se lleva la
+   * idea de que ese cliente no está dado de alta. Un buscador que calla se lee
+   * como una respuesta.
+   *
+   * No duplica lógica: Clientes y Operaciones ya saben filtrar, así que esto
+   * los lleva allí con el término puesto. Un buscador propio aquí sería una
+   * segunda implementación que se desincroniza con la primera.
+   */
+  const buscar = () => {
+    const q = busqueda.trim();
+    if (!q) return;
+    const destino = activeRole === "operador" ? "/operaciones" : "/clientes";
+    navegar(`${destino}?q=${encodeURIComponent(q)}`);
+  };
 
   // Los hallazgos son del OC y del Admin: el Operador no los ve, y pedirlos
   // con su sesión sólo produciría un cero con una consulta de más.
@@ -55,6 +77,10 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar clientes, operaciones…"
+            aria-label="Buscar clientes u operaciones"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && buscar()}
             className="pl-10 w-64 lg:w-80 bg-muted/50 border-0 focus-visible:ring-1"
           />
         </div>

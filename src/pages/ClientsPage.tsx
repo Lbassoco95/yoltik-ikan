@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Plus, Filter, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -70,7 +70,11 @@ const FORM_INICIAL = {
 };
 
 export default function ClientsPage() {
-  const [search, setSearch] = useState("");
+  // El buscador del encabezado navega aquí con ?q=. Se toma como valor
+  // INICIAL, no como fuente de verdad: a partir de ahí manda el campo de esta
+  // pantalla, y escribir en él no reescribe la URL a cada tecla.
+  const [parametrosUrl] = useSearchParams();
+  const [search, setSearch] = useState(() => parametrosUrl.get("q") ?? "");
   const [typeFilter, setTypeFilter] = useState("all");
   const [dialogAbierto, setDialogAbierto] = useState(false);
   const [form, setForm] = useState(FORM_INICIAL);
