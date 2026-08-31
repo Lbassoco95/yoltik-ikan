@@ -189,11 +189,20 @@ export default function OperationsPage() {
   const alta = useMutation({
     mutationFn: async (input: NuevaOperacionInput) => {
       const op = await crearOperacion(input);
-      await invocarMotor(op.id); // el motor corre en segundo plano; acuse neutro
+      // Recorrido completo, no acotado al acto: es lo que deja la constancia
+      // de evaluación y lo que permite que una regla agregada vea su ventana.
+      // El acuse al Operador sigue siendo neutro.
+      await invocarMotor();
       return op;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["operaciones"] });
+      // El motor acaba de correr: la bandeja del OC y el periodo del aviso
+      // cambiaron, y si no se refrescan la pantalla sigue enseñando el estado
+      // de antes de la evaluación.
+      queryClient.invalidateQueries({ queryKey: ["hallazgos"] });
+      queryClient.invalidateQueries({ queryKey: ["hallazgos", "abiertos", "count"] });
+      queryClient.invalidateQueries({ queryKey: ["periodo-aviso"] });
       toast.success("Operación registrada");
       setDialogAbierto(false);
       setForm(FORM_INICIAL);

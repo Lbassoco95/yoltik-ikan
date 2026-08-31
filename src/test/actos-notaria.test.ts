@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   TIPOS_ACTO_NOTARIA, actosDe, actosDelSppld, canalDeActo, labelTipoActo,
+  etiquetaConocimiento, nivelConocimiento,
 } from '@/lib/perfil-actividad';
 
 /** Los tipos de acto tal como los publica el SAT, extraídos del instructivo. */
@@ -53,5 +54,27 @@ describe('catálogo de actos de la fracción XII', () => {
     expect(labelTipoActo('otorgamiento_poder')).toBe('Otorgamiento de poder irrevocable');
     expect(labelTipoActo('lo_que_sea')).toBe('lo_que_sea');
     expect(labelTipoActo(null)).toBe('—');
+  });
+});
+
+describe('KYC o KYB, según a quién se conoce', () => {
+  it('una persona moral no lleva KYC', () => {
+    // KYC es el proceso sobre una PERSONA: identificación oficial y prueba de
+    // vida. Sobre una sociedad lo que se hace es KYB —acta constitutiva, objeto
+    // social, quién está detrás—. Llamarles igual le dice a un notario que a su
+    // cliente sociedad se le hizo un proceso que no se le hizo.
+    expect(etiquetaConocimiento('moral')).toBe('KYB');
+    expect(etiquetaConocimiento('fisica')).toBe('KYC');
+  });
+
+  it('un tipo desconocido cae en KYC, no en vacío', () => {
+    // Preferible a dejar la etiqueta en blanco: la gran mayoría de
+    // comparecientes son personas físicas.
+    expect(etiquetaConocimiento('')).toBe('KYC');
+  });
+
+  it('el nivel se compone sin perder cuál es', () => {
+    expect(nivelConocimiento('fisica', 'N1')).toBe('KYC · N1');
+    expect(nivelConocimiento('moral', 'N3')).toBe('KYB · N3');
   });
 });

@@ -33,7 +33,7 @@ import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import type { NuevoClienteInput, TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { LABELS } from "@/lib/perfil-actividad";
+import { LABELS, nivelConocimiento } from "@/lib/perfil-actividad";
 import { PendientesAviso } from "@/components/aviso/PendientesAviso";
 import { SIN_APELLIDO, pendientesCompareciente } from "@/lib/aviso/completitud";
 import { SelectCatalogo } from "@/components/aviso/SelectCatalogo";
@@ -291,7 +291,7 @@ export default function ClientsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                {["Nombre / Razón Social", "Tipo", "RFC", "Riesgo", "Nivel KYC", "Alto de oficio", "Identidad", ""].map((h) => (
+                {["Nombre / Razón Social", "Tipo", "RFC", "Riesgo", "Conocimiento", "Alto de oficio", "Identidad", ""].map((h) => (
                   <th
                     key={h}
                     className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3"
@@ -325,7 +325,9 @@ export default function ClientsPage() {
                       score={evaluaciones?.get(client.id)?.score_total}
                     />
                   </td>
-                  <td className="px-4 py-3 text-sm">{client.nivel_kyc}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {nivelConocimiento(client.tipo_persona, client.nivel_kyc)}
+                  </td>
                   <td className="px-4 py-3">
                     {client.alto_de_oficio ? (
                       <span className="status-badge bg-destructive/10 text-destructive">Sí</span>

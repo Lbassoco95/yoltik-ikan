@@ -26,7 +26,7 @@ import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
 import type { SectorAV, TipoPersona } from "@/types/domain";
 import { useAuth } from "@/lib/auth-context";
-import { LABELS, labelTipoActo } from "@/lib/perfil-actividad";
+import { LABELS, labelTipoActo, nivelConocimiento } from "@/lib/perfil-actividad";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
@@ -156,7 +156,8 @@ export default function ClientDetailPage() {
           </div>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          {tipoLabel[client.tipo_persona]} · {client.rfc ?? "sin RFC"} · Nivel {client.nivel_kyc}
+          {tipoLabel[client.tipo_persona]} · {client.rfc ?? "sin RFC"} ·{" "}
+          {nivelConocimiento(client.tipo_persona, client.nivel_kyc)}
           {client.alto_de_oficio && (
             <span className="ml-2 status-badge bg-destructive/10 text-destructive">Alto de oficio</span>
           )}

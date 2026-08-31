@@ -61,15 +61,34 @@ export async function actualizarDatosActo(
   if (error) throw error;
 }
 
-/** Invoca la Edge Function motor-pld tras el alta de una operación. El acuse al
- *  Operador es neutro: el motor corre en segundo plano y sus hallazgos los
- *  consume el OC. Un fallo al invocar NO rompe el alta (se registra en consola).
- *  Para una corrida manual con feedback real, usar `recorrerMotor()`. */
-export async function invocarMotor(operationId?: string): Promise<void> {
+/**
+ * Corre el motor tras el alta de una operación.
+ *
+ * El acuse al Operador es neutro: el motor corre en segundo plano y sus
+ * hallazgos los consume el OC. Un fallo al invocar NO rompe el alta —el acto ya
+ * está registrado y perderlo sería peor que evaluarlo tarde—; se anota en
+ * consola y el recorrido manual lo alcanza después.
+ *
+ * RECORRE TODO, NO SÓLO LA OPERACIÓN RECIÉN CAPTURADA
+ *
+ * Antes se acotaba con `operation_id`, y eso hacía dos cosas mal. Una regla
+ * agregada mide una ventana: con una sola operación cargada, dos actos que
+ * juntos cruzan el umbral no lo cruzan nunca. Y una corrida acotada no puede
+ * sellar la constancia de evaluación —no ha visto lo suficiente para firmar que
+ * el acto quedó juzgado—, así que cada captura dejaba una operación más sin
+ * evaluar y el aviso del mes se quedaba bloqueado hasta que alguien fuera a
+ * Reportes a pulsar el botón.
+ *
+ * Para una notaría son decenas de actos al mes y el recorrido es barato. Si
+ * algún día un volumen lo vuelve caro, la respuesta es acotar por PERIODO —lo
+ * que la ventana más larga necesita— no por operación: acotar por operación es
+ * lo que rompe la regla.
+ */
+export async function invocarMotor(): Promise<void> {
   try {
     const { organizationId } = await contextoSesion();
     const { error } = await supabase.functions.invoke('motor-pld', {
-      body: { organization_id: organizationId, trigger_tipo: 'manual', operation_id: operationId },
+      body: { organization_id: organizationId, trigger_tipo: 'on_insert' },
     });
     if (error) console.warn('[motor-pld] no se pudo invocar:', error.message);
   } catch (e) {
