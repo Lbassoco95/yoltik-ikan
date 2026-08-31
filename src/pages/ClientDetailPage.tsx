@@ -20,6 +20,12 @@ import {
 } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
+import { paisesEnListas } from "@/lib/api/catalogos";
+import {
+  faltanPorResponder,
+  prellenarMatriz,
+  type RespuestaSugerida,
+} from "@/lib/riesgo/prellenado";
 import { elementosAplicables, evaluarMatriz, respuestasCompletas } from "@/lib/riesgo/matriz";
 import { formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
@@ -82,15 +88,69 @@ export default function ClientDetailPage() {
     enabled: !!id,
   });
 
+  // El mismo snapshot de listas que usa el Motor PLD. Que la matriz y el motor
+  // midan el riesgo de país contra fuentes distintas sería la manera más fácil
+  // de que el sistema se contradiga sobre el mismo compareciente.
+  const { data: listas } = useQuery({
+    queryKey: ["paises-en-listas"],
+    queryFn: paisesEnListas,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  /**
+   * Lo que la matriz se responde sola.
+   *
+   * Se recalcula con el acto más reciente del compareciente: el riesgo no es
+   * una foto del día del alta, se mueve con lo que la persona hace. Registrar
+   * una operación en dólares cambia una respuesta, y la matriz tiene que
+   * enterarse sin que nadie vuelva a abrirla a mano.
+   */
+  const sugeridas: RespuestaSugerida[] = plantilla && client
+    ? prellenarMatriz(plantilla.configuracion, {
+        tipo_persona: client.tipo_persona,
+        pais_iso2: client.pais_residencia_iso2,
+        tipo_acto: (ops[0]?.contraparte as Record<string, unknown> | null)?.tipo_acto as
+          | string
+          | undefined,
+        moneda_origen: ops[0]?.moneda_origen,
+        activo_virtual: ops[0]?.activo_virtual,
+        gafi_gris: listas?.gafi_gris,
+        gafi_negra: listas?.gafi_negra,
+      })
+    : [];
+  const porVariable = new Map(sugeridas.map((r) => [r.variable_codigo, r]));
+
   // Se abre con lo que se respondió la última vez. Volver a capturar veinte
   // variables para cambiar una sola es la clase de fricción que hace que la
   // matriz no se actualice nunca.
+  //
+  // Y lo que nunca se ha respondido arranca con la sugerencia del sistema. NO
+  // pisa lo que el OC ya contestó: una evaluación guardada es su juicio, y
+  // reescribirla con una deducción del software sería sustituirlo en silencio.
   useEffect(() => {
     if (evaluacion && evaluacion.id !== precargada) {
       setRespuestas(evaluacion.respuestas ?? {});
       setPrecargada(evaluacion.id);
     }
   }, [evaluacion, precargada]);
+
+  useEffect(() => {
+    if (sugeridas.length === 0) return;
+    setRespuestas((previas) => {
+      const siguientes = { ...previas };
+      let cambio = false;
+      for (const r of sugeridas) {
+        if (typeof siguientes[r.variable_codigo] !== "number") {
+          siguientes[r.variable_codigo] = r.valor;
+          cambio = true;
+        }
+      }
+      return cambio ? siguientes : previas;
+    });
+    // Depende del contenido, no de la identidad del arreglo: se recalcula en
+    // cada render y compararlo por referencia dispararía el efecto siempre.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(sugeridas)]);
 
   const guardar = useMutation({
     mutationFn: () => evaluarRiesgoCliente(plantilla!, client!, respuestas),
@@ -210,9 +270,27 @@ export default function ClientDetailPage() {
                 <div key={el.codigo} className="glass-card p-5">
                   <p className="text-sm font-semibold text-foreground mb-3">{el.nombre}</p>
                   <div className="space-y-3">
-                    {el.variables.map((v) => (
-                      <div key={v.codigo} className="grid grid-cols-2 gap-3 items-center">
-                        <span className="text-sm text-muted-foreground">{v.pregunta}</span>
+                    {el.variables.map((v) => {
+                      const sugerida = porVariable.get(v.codigo);
+                      // Sugerida y todavía sin tocar por el OC. Si él la
+                      // cambió, deja de ser del sistema y la marca se va.
+                      const delSistema =
+                        sugerida != null && respuestas[v.codigo] === sugerida.valor;
+                      return (
+                      <div key={v.codigo} className="grid grid-cols-2 gap-3 items-start">
+                        <div>
+                          <span className="text-sm text-muted-foreground">{v.pregunta}</span>
+                          {/* La fuente, siempre. Una respuesta que el software
+                              puso y que nadie puede rastrear es peor que un
+                              campo vacío: el OC la firma sin saber de dónde
+                              salió. */}
+                          {delSistema && (
+                            <p className="text-[13px] text-accent mt-0.5">
+                              La respondió el sistema: {sugerida!.fuente}. Cámbiala si no
+                              corresponde.
+                            </p>
+                          )}
+                        </div>
                         <Select
                           value={respuestas[v.codigo]?.toString() ?? ""}
                           onValueChange={(val) =>
@@ -231,7 +309,8 @@ export default function ClientDetailPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -250,7 +329,17 @@ export default function ClientDetailPage() {
                       )}
                     </>
                   ) : (
-                    "Captura incompleta: responda todas las variables para calcular el riesgo."
+                    <>
+                      El sistema respondió{" "}
+                      <strong className="text-foreground">{sugeridas.length}</strong> de{" "}
+                      <strong className="text-foreground">
+                        {sugeridas.length + faltanPorResponder(
+                          plantilla!.configuracion, client.tipo_persona, respuestas,
+                        ).length}
+                      </strong>{" "}
+                      con lo que ya está capturado. Faltan las que no puede saber: el valor en
+                      UMA, la forma de pago, si es PEP y el riesgo de la actividad.
+                    </>
                   )}
                 </p>
                 <Button

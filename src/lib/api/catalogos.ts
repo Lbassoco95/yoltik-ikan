@@ -49,3 +49,32 @@ export async function reemplazarValoresCatalogo(
   if (error) throw error;
   return (data as number) ?? 0;
 }
+
+/**
+ * Los países en listas GAFI, por fuente.
+ *
+ * Es el MISMO snapshot que el Motor PLD usa para la tipología de contraparte en
+ * país de alto riesgo. Que la matriz y el motor midan el riesgo de país contra
+ * fuentes distintas sería la manera más fácil de que el sistema se contradiga a
+ * sí mismo sobre el mismo compareciente.
+ *
+ * Sólo las vigentes: una lista cerrada es historia, no criterio de hoy.
+ */
+export async function paisesEnListas(): Promise<{
+  gafi_gris: Set<string>;
+  gafi_negra: Set<string>;
+}> {
+  const { data, error } = await supabase
+    .from('country_risk_list')
+    .select('iso2, fuente, vigente_hasta')
+    .in('fuente', ['gafi_gris', 'gafi_negra'])
+    .is('vigente_hasta', null);
+  if (error) throw error;
+
+  const gris = new Set<string>();
+  const negra = new Set<string>();
+  for (const f of (data ?? []) as { iso2: string; fuente: string }[]) {
+    (f.fuente === 'gafi_negra' ? negra : gris).add(f.iso2.toUpperCase());
+  }
+  return { gafi_gris: gris, gafi_negra: negra };
+}
