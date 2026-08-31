@@ -481,7 +481,16 @@ export default function OperationsPage() {
                       return (
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            {faltan === 0 ? (
+                            {/* "Completo" sobre una transmisión de inmueble se lee
+                                como "ya entra al aviso del mes", y ese acto va
+                                por DeclaraNOT con su propio plazo de 15 días
+                                naturales. El expediente puede estar completo y
+                                aun así no estar reportado. */}
+                            {tipoActo && canalDeActo(tipoActo) === "declaranot" ? (
+                              <span className="status-badge bg-warning/10 text-warning">
+                                Por DeclaraNOT
+                              </span>
+                            ) : faltan === 0 ? (
                               <span className="status-badge bg-success/10 text-success">
                                 Completo
                               </span>
@@ -691,7 +700,11 @@ export default function OperationsPage() {
                 </div>
               )}
 
-              <PendientesAviso pendientes={pendientesDelAlta} compacto />
+              <PendientesAviso
+                pendientes={pendientesDelAlta}
+                compacto
+                canal={canal}
+              />
             </div>
           )}
 
