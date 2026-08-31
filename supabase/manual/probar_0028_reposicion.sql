@@ -123,9 +123,14 @@ begin
   -- 8. Quedó en la cadena de LA NOTARÍA, no en la de plataforma: el sujeto
   --    obligado tiene que poder enseñarlo en su propio paquete.
   -- ------------------------------------------------------------------
+  -- Acotado a los eventos de ESTA corrida (`secuencia > v_sec`, capturada en
+  -- el montaje). Sin eso la prueba contaba el histórico de la cadena y fallaba
+  -- la segunda vez que se corría sobre la misma base: encontraba 3 donde
+  -- esperaba 1, y la culpa era de la prueba, no del código.
   select count(*) into v_n
     from evento_auditoria
    where organization_id = v_org
+     and secuencia > v_sec
      and tipo = 'segundo_factor_repuesto'
      and entidad_id = v_oc
      and payload->>'motivo' like 'Perdió el teléfono%'

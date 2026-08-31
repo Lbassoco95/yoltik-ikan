@@ -128,7 +128,18 @@ lateral (values
          and to_regprocedure('public.usuarios_de_plataforma()') is not null
          and not has_function_privilege('anon', 'public.reponer_segundo_factor(uuid,text)', 'execute')
          and not has_function_privilege('anon', 'public.usuarios_de_plataforma()', 'execute'),
-       'apply_0028_reposicion_factor.sql')
+       'apply_0028_reposicion_factor.sql'),
+  -- Lo que se comprueba aquí no es que existan las funciones, sino que la
+  -- ESCRITURA directa esté cerrada: con `update` abierto sobre esta tabla se
+  -- puede reescribir con qué UMA se juzgó un acto de un año pasado, y las
+  -- funciones nuevas no impiden nada si la puerta de al lado sigue abierta.
+  (29, '0029 · parámetros regulatorios editables desde la consola',
+       to_regprocedure('public.fijar_parametro(text,text,numeric,text,date,text,text,text,text,text)') is not null
+         and not has_table_privilege('authenticated', 'public.parametro_regulatorio', 'update')
+         and not exists (select 1 from pg_policies
+                          where schemaname='public' and tablename='parametro_regulatorio'
+                            and cmd <> 'SELECT'),
+       'apply_0029_parametros.sql')
 ) as m(orden, migration, aplicada, bundle);
 
 -- ---------------------------------------------------------------------
@@ -238,7 +249,7 @@ end $$;
 -- ---------------------------------------------------------------------
 insert into ikan_estado
 select '0 · Resumen', 1,
-       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0028'
+       case when count(*) = 0 then 'Todo aplicado de la 0011 a la 0029'
             else count(*) || ' migration(s) por correr' end,
        case when count(*) = 0 then 'al día' else 'empieza por la ' || min(orden) end,
        coalesce(string_agg(replace(accion, 'supabase/manual/', ''), ' → ' order by orden), '')
