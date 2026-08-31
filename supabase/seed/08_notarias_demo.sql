@@ -108,8 +108,19 @@ on conflict (id) do nothing;
 -- =================== Tipologías XII (mismo motor) ===================
 -- La `nota` viaja dentro de regla_dsl → el motor la copia a
 -- regla_payload.nota_referencia del hallazgo.
+--
+-- El `filtro` de las reglas agregadas (migration 0031) NO es opcional aquí: sin
+-- él, XII-01 sumaba TODOS los actos del compareciente en el mes para decidir si
+-- rebasaba el umbral de inmuebles. La ley acumula por tipo de acto, no por
+-- persona. Un poder, una constitución y una compraventa del mismo compareciente
+-- sumaban entre sí y disparaban un umbral que ninguno alcanzaba por su cuenta.
+-- `genera_aviso` (migration 0035) dice cuáles corresponden a un supuesto de
+-- Aviso del artículo 17 y cuáles son señal de riesgo para la bandeja del OC.
+-- Va explícito aquí y no sólo en la migration porque en un proyecto nuevo las
+-- migrations corren ANTES que los seeds: si dependiera del update de la 0035,
+-- estas tipologías nacerían todas sin marcar y ningún acto entraría al aviso.
 insert into tipologia_av (id, organization_id, sector, codigo, nombre, descripcion,
-                          regla_dsl, severidad, version, fuente)
+                          regla_dsl, severidad, version, fuente, genera_aviso)
 values
   ('33333333-0012-0000-0000-000000000001',
    '12121212-1212-1212-1212-121212121212',
@@ -119,13 +130,17 @@ values
       "tipo": "agregado",
       "ventana": "1M",
       "agrupar_por": "client_id",
+      "filtro": {
+        "campo": "contraparte.tipo_acto",
+        "valores": ["transmision_inmueble"]
+      },
       "condicion": {
         "count": { "op": ">=", "valor": 1 },
         "suma_monto_uma": { "op": ">=", "valor": 8000 }
       },
       "nota": "Art. 17 fr. XII apartado A inciso a) LFPIORPI, reforma DOF 16/07/2025."
     }'::jsonb,
-   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.'),
+   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.', true),
 
   ('33333333-0012-0000-0000-000000000002',
    '12121212-1212-1212-1212-121212121212',
@@ -137,7 +152,7 @@ values
       "valores": ["otorgamiento_poder"],
       "nota": "Art. 17 fr. XII apartado A inciso b) LFPIORPI: aviso siempre, sin umbral de monto."
     }'::jsonb,
-   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.'),
+   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.', true),
 
   ('33333333-0012-0000-0000-000000000003',
    '12121212-1212-1212-1212-121212121212',
@@ -149,7 +164,7 @@ values
       "fuentes": ["gafi_negra", "gafi_gris", "ofac_sancionado", "onu"],
       "nota": "Señal de referencia, sujeta a confirmación con Kawiil-Cumplimiento."
     }'::jsonb,
-   'critica', 1, 'GAFI · OFAC · ONU (snapshot en BD)'),
+   'critica', 1, 'GAFI · OFAC · ONU (snapshot en BD)', false),
 
   -- Los dos supuestos que la reforma DOF 16/07/2025 cambió de fondo y que este
   -- seed no cubría. El acto de fideicomiso ya estaba sembrado arriba y ninguna
@@ -161,10 +176,11 @@ values
    '{
       "tipo": "lookup",
       "campo": "contraparte.tipo_acto",
-      "valores": ["constitucion_personas_morales"],
+      "valores": ["constitucion_personas_morales", "modificacion_patrimonial",
+                  "fusion", "escision", "compra_venta_acciones"],
       "nota": "Art. 17 fr. XII apartado A inciso c) LFPIORPI, reforma DOF 16/07/2025: siempre objeto de Aviso, sin umbral. Antes de la reforma tenía umbral de 8,025 UMA."
     }'::jsonb,
-   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.'),
+   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.', true),
 
   ('33333333-0012-0000-0000-000000000005',
    '12121212-1212-1212-1212-121212121212',
@@ -174,11 +190,15 @@ values
       "tipo": "agregado",
       "ventana": "6M",
       "agrupar_por": "client_id",
+      "filtro": {
+        "campo": "contraparte.tipo_acto",
+        "valores": ["constitucion_modificacion_fideicomiso"]
+      },
       "condicion": {
         "count": { "op": ">=", "valor": 1 },
         "suma_monto_uma": { "op": ">=", "valor": 4000 }
       },
       "nota": "Art. 17 fr. XII apartado A inciso d) LFPIORPI, reforma DOF 16/07/2025. Bajó de 8,025 a 4,000 UMA y se suprimió la limitación a inmuebles."
     }'::jsonb,
-   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.')
+   'alta', 1, 'Art. 17 fr. XII LFPIORPI, reforma DOF 16/07/2025. Informe Kawiil-Cumplimiento 31/08/2026.', true)
 on conflict (organization_id, sector, codigo, version) do nothing;

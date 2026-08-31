@@ -25,6 +25,7 @@ export function PendientesAviso({
   pendientes,
   compacto = false,
   mostrarReferencias = false,
+  canal,
   className,
 }: {
   pendientes: Pendiente[];
@@ -44,6 +45,17 @@ export function PendientesAviso({
    * se depura un aviso.
    */
   mostrarReferencias?: boolean;
+  /**
+   * Por dónde se presenta el acto. Sólo se pasa cuando ya hay un tipo de acto
+   * elegido.
+   *
+   * Existe porque el mensaje de "no falta nada" era falso dos veces sobre una
+   * transmisión de inmueble: ese acto va por DeclaraNOT, no por el SPPLD, y su
+   * plazo son 15 días naturales tras la firma, no el día 17 del mes siguiente.
+   * Decirle a un notario que su expediente ya entra al aviso del mes es
+   * decirle que algo está reportado cuando no lo está.
+   */
+  canal?: "sppld" | "declaranot";
   className?: string;
 }) {
   const bloquean = pendientes.filter((p) => p.gravedad === "bloquea_aviso");
@@ -52,12 +64,24 @@ export function PendientesAviso({
   return (
     <div className={cn("space-y-4", className)}>
       {bloquean.length === 0 ? (
-        <div className="flex items-start gap-2 rounded-lg bg-success/10 p-3">
-          <CheckCircle2 className="w-4 h-4 mt-0.5 text-success shrink-0" />
-          <p className="text-sm text-foreground">
-            No falta nada para que este expediente entre al aviso del mes.
-          </p>
-        </div>
+        canal === "declaranot" ? (
+          <div className="flex items-start gap-2 rounded-lg bg-warning/10 p-3">
+            <AlertTriangle className="w-4 h-4 mt-0.5 text-warning shrink-0" />
+            <p className="text-sm text-foreground">
+              El expediente está completo, pero este acto{" "}
+              <strong>no entra al aviso mensual del SPPLD</strong>: se presenta por DeclaraNOT,
+              dentro de los 15 días naturales siguientes a la firma. Generar el aviso del mes
+              NO lo reporta.
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2 rounded-lg bg-success/10 p-3">
+            <CheckCircle2 className="w-4 h-4 mt-0.5 text-success shrink-0" />
+            <p className="text-sm text-foreground">
+              No falta nada para que este expediente entre al aviso del mes.
+            </p>
+          </div>
+        )
       ) : (
         <Bloque
           icono={<AlertTriangle className="w-4 h-4 text-warning shrink-0" />}

@@ -34,8 +34,9 @@ interface RunInput {
   operation_id?: string;
 }
 
-// Severidades que marcan la operación como candidata a aviso.
-const SEVERIDADES_AVISO = new Set(['alta', 'critica']);
+// Estados en los que un hallazgo sigue en la bandeja del OC: nadie lo ha
+// juzgado todavía. Son los únicos que se pueden reversionar en sitio.
+const ESTADOS_ABIERTOS = new Set(['abierto', 'en_revision']);
 
 // CORS: el navegador manda un preflight OPTIONS antes del POST de
 // supabase.functions.invoke. Sin estos headers el preflight falla (405) y el
@@ -69,7 +70,7 @@ Deno.serve(async (req: Request) => {
   // --- 1. Tipologías activas de la organización -----------------------
   const { data: tipologiasRaw, error: errTips } = await supabase
     .from('tipologia_av')
-    .select('id, codigo, nombre, version, severidad, activa, regla_dsl')
+    .select('id, codigo, nombre, version, severidad, activa, genera_aviso, regla_dsl')
     .eq('organization_id', input.organization_id)
     .eq('activa', true);
   if (errTips) {
@@ -267,29 +268,86 @@ Deno.serve(async (req: Request) => {
   // --- 4. Correr el motor --------------------------------------------
   const { candidatos, porTipologia, tiposNoSoportados } = correrMotor(tipologias, operaciones, ctx);
 
-  // --- 5. Filtrar candidatos ya existentes (idempotencia) ------------
+  // --- 5. Cotejar contra lo que ya existe ----------------------------
+  // Tres desenlaces por candidato, y sólo el primero era el que estaba escrito:
+  //
+  //   Ya existe idéntico (misma operación, misma tipología, misma versión):
+  //     no se toca. Es la idempotencia que permite recorrer el motor las veces
+  //     que haga falta sin llenar la bandeja de copias.
+  //
+  //   Existe el MISMO hallazgo bajo otra versión de la regla, todavía abierto:
+  //     se reversiona en sitio. Al versionar XII-01 y XII-05 en la 0031 —el
+  //     criterio legal no cambió, cambió la forma de medirlo— el hallazgo v1
+  //     seguía abierto y el recorrido añadía el v2 al lado. El OC veía dos
+  //     renglones del mismo acto y la misma tipología, y tenía que adivinar
+  //     cuál atender. Es el mismo hecho juzgado con la regla corregida: se
+  //     conserva el renglón, con su folio, su asignación y su compromiso, y se
+  //     le cambia la versión.
+  //
+  //   Existe pero YA LO RESOLVIÓ el OC, y la versión nueva vuelve a disparar:
+  //     se crea nuevo. Aquí sí hay algo que nadie ha juzgado —la regla
+  //     corregida dice algo sobre un acto que se cerró bajo la anterior— y
+  //     reescribir el resuelto borraría la decisión del OC.
   const opIds = [...new Set(candidatos.map((c) => c.operation_id).filter(Boolean))] as string[];
-  let existentes: { operation_id: string; tipologia_id: string; tipologia_version: number }[] = [];
+  interface FilaHallazgo {
+    id: string;
+    operation_id: string;
+    tipologia_id: string;
+    tipologia_codigo: string;
+    tipologia_version: number;
+    estado: string;
+  }
+  let existentes: FilaHallazgo[] = [];
   if (opIds.length) {
     const { data: exist } = await supabase
       .from('hallazgo')
-      .select('operation_id, tipologia_id, tipologia_version')
+      .select('id, operation_id, tipologia_id, tipologia_codigo, tipologia_version, estado')
       .eq('organization_id', input.organization_id)
       .in('operation_id', opIds);
-    existentes = (exist ?? []) as typeof existentes;
+    existentes = (exist ?? []) as FilaHallazgo[];
   }
-  const claveExistente = new Set(
+
+  const identicos = new Set(
     existentes.map((e) => `${e.operation_id}|${e.tipologia_id}|${e.tipologia_version}`),
   );
+  // Abiertos por operación y CÓDIGO de tipología, no por id: es justo cruzar
+  // versiones lo que se quiere detectar.
+  const abiertosPorCodigo = new Map<string, FilaHallazgo[]>();
+  for (const e of existentes) {
+    if (!ESTADOS_ABIERTOS.has(e.estado)) continue;
+    const k = `${e.operation_id}|${e.tipologia_codigo}`;
+    const lista = abiertosPorCodigo.get(k);
+    if (lista) lista.push(e);
+    else abiertosPorCodigo.set(k, [e]);
+  }
 
-  const nuevos = candidatos.filter(
-    (c) => !claveExistente.has(`${c.operation_id}|${c.tipologia_id}|${c.tipologia_version}`),
-  );
+  const porInsertar: HallazgoCandidato[] = [];
+  const porReversionar: { fila: FilaHallazgo; c: HallazgoCandidato }[] = [];
+  // Un hallazgo abierto sólo puede absorber a UN candidato: sin esto, dos
+  // versiones activas del mismo código lo reescribirían una encima de la otra
+  // y la segunda desaparecería sin dejar rastro.
+  const tomados = new Set<string>();
 
-  // --- 6. Insertar hallazgos nuevos ----------------------------------
+  for (const c of candidatos) {
+    if (c.operation_id && identicos.has(`${c.operation_id}|${c.tipologia_id}|${c.tipologia_version}`)) {
+      continue;
+    }
+    const abiertos = c.operation_id
+      ? (abiertosPorCodigo.get(`${c.operation_id}|${c.tipologia_codigo}`) ?? [])
+      : [];
+    const previo = abiertos.find((e) => !tomados.has(e.id) && e.tipologia_id !== c.tipologia_id);
+    if (previo) {
+      tomados.add(previo.id);
+      porReversionar.push({ fila: previo, c });
+    } else {
+      porInsertar.push(c);
+    }
+  }
+
+  // --- 6. Escribir hallazgos -----------------------------------------
   let hallazgos_creados = 0;
-  if (nuevos.length) {
-    const filas = nuevos.map((c: HallazgoCandidato) => ({
+  if (porInsertar.length) {
+    const filas = porInsertar.map((c: HallazgoCandidato) => ({
       organization_id: input.organization_id,
       operation_id: c.operation_id,
       client_id: c.client_id,
@@ -312,28 +370,131 @@ Deno.serve(async (req: Request) => {
     hallazgos_creados = insertados?.length ?? 0;
   }
 
-  // --- 7. Marcar operaciones que requieren aviso ---------------------
-  // Heurística B0: una operación ligada a un hallazgo de severidad alta/crítica
-  // se marca requiere_aviso. La construcción del borrador de aviso queda para
-  // un bloque posterior (layouts de Aviso aún no publicados por la UIF).
-  const opsAviso = [
-    ...new Set(
-      candidatos
-        .filter((c) => c.operation_id && SEVERIDADES_AVISO.has(c.severidad))
-        .map((c) => c.operation_id as string),
-    ),
-  ];
-  if (opsAviso.length) {
-    await supabase
-      .from('operation')
-      .update({ requiere_aviso: true, identificada_en: new Date().toISOString() })
-      .in('id', opsAviso)
+  // El folio, la asignación, el plan de trabajo y la fecha de compromiso NO se
+  // tocan: son trabajo del OC sobre un hallazgo que sigue siendo el mismo.
+  let hallazgos_reversionados = 0;
+  for (const { fila, c } of porReversionar) {
+    const { error: errUpd } = await supabase
+      .from('hallazgo')
+      .update({
+        tipologia_id: c.tipologia_id,
+        tipologia_nombre: c.tipologia_nombre,
+        tipologia_version: c.tipologia_version,
+        severidad: c.severidad,
+        regla_payload: c.regla_payload,
+        clasificacion_urgencia: c.clasificacion_urgencia,
+      })
+      .eq('id', fila.id)
       .eq('organization_id', input.organization_id);
+    if (errUpd) {
+      return json({ error: errUpd.message }, 500);
+    }
+    hallazgos_reversionados++;
+  }
+
+  // --- 7. Marcar las operaciones que obligan a avisar ----------------
+  // Antes se marcaba por severidad alta o crítica. Severidad es prioridad de
+  // bandeja; la obligación de avisar es un hecho legal. Ahora se lee de
+  // `tipologia_av.genera_aviso` (migration 0035): las tipologías que sí
+  // corresponden a un supuesto del artículo 17.
+  //
+  // La diferencia se ve en XII-03 y XVI-04, "contraparte en país de alto
+  // riesgo": son críticas, el OC las mira primero, y no vuelven reportable un
+  // acto que no rebasó umbral ni cae en supuesto.
+  const generaAviso = new Map(tipologias.map((t) => [t.id, t.genera_aviso === true]));
+  const opsAviso = new Set(
+    candidatos
+      .filter((c) => c.operation_id && generaAviso.get(c.tipologia_id))
+      .map((c) => c.operation_id as string),
+  );
+
+  // El motor sólo levantaba la marca, nunca la bajaba, y eso convertía la
+  // determinación en un trinquete: una operación marcada por la heurística de
+  // severidad —o por una regla que después se corrigió, como XII-04 cuando
+  // cotejaba un solo tipo de acto— se quedaba marcada para siempre y ningún
+  // recorrido posterior podía desmarcarla. Corregir la regla no corregía lo
+  // que la regla vieja había declarado.
+  //
+  // Ahora el recorrido es autoritativo sobre lo que evaluó: cada operación
+  // queda con lo que dicen las tipologías vigentes HOY. Nadie más escribe esta
+  // columna, así que no hay decisión humana que se pueda pisar.
+  //
+  // `identificada_en` sólo se toca al levantar la marca, y al bajarla se
+  // limpia: es la fecha en que se identificó la obligación, y si la obligación
+  // ya no existe, esa fecha no fecha nada.
+  // Con una salvedad: bajar la marca sólo lo puede hacer un recorrido COMPLETO.
+  // Una corrida acotada a una operación —la que dispara el alta— no ve las
+  // demás del cliente, así que una regla agregada no puede alcanzar su umbral
+  // aunque en conjunto lo alcance. Concluir "no requiere aviso" desde ahí sería
+  // concluirlo sin haber mirado la evidencia. Levantarla sí puede: para eso le
+  // basta lo que tiene delante.
+  const recorridoCompleto = !input.operation_id;
+  const marcadas = operaciones.filter((o) => opsAviso.has(o.id)).map((o) => o.id);
+  const desmarcadas = recorridoCompleto
+    ? operaciones.filter((o) => !opsAviso.has(o.id)).map((o) => o.id)
+    : [];
+
+  // En tandas: `in` con miles de uuids desborda la URL del PostgREST.
+  async function marcar(ids: string[], requiere: boolean): Promise<string | null> {
+    for (let i = 0; i < ids.length; i += 500) {
+      const { error } = await supabase
+        .from('operation')
+        .update({
+          requiere_aviso: requiere,
+          identificada_en: requiere ? new Date().toISOString() : null,
+        })
+        .in('id', ids.slice(i, i + 500))
+        .eq('organization_id', input.organization_id)
+        // Sólo las que cambian: sin esto cada recorrido reescribe
+        // identificada_en de todo y se pierde cuándo nació la obligación.
+        .eq('requiere_aviso', !requiere);
+      if (error) return error.message;
+    }
+    return null;
+  }
+
+  const errMarca = (await marcar(marcadas, true)) ?? (await marcar(desmarcadas, false));
+  if (errMarca) {
+    return json({ error: errMarca }, 500);
+  }
+
+  // --- 8. Dejar constancia de que se evaluaron -----------------------
+  // Todas las que el recorrido alcanzó, encontrara algo o no. Sin esto, un acto
+  // examinado y limpio se ve igual que uno que nadie miró, y la pantalla del
+  // aviso mensual concluía el mes en ceros sobre actos sin juzgar.
+  //
+  // Sólo la sella un recorrido COMPLETO, por lo mismo que sólo un recorrido
+  // completo puede bajar la marca de aviso: la corrida del alta ve UNA
+  // operación, así que una regla agregada mide su ventana con un solo dato.
+  // Puede levantar la marca —para eso le basta— pero no puede firmar que el
+  // acto quedó juzgado. Sellarlo ahí pondría constancia de una evaluación
+  // parcial, y esa constancia es justo lo que la pantalla del aviso lee para
+  // decidir si el mes se puede dar por vacío.
+  //
+  // El efecto práctico: cerrar el mes pasa por recorrer el motor sobre el
+  // periodo, con el botón de la propia pantalla del aviso o el de la bandeja
+  // del OC. Que sea un paso explícito es correcto: es la determinación.
+  let operaciones_evaluadas = 0;
+  if (recorridoCompleto) {
+    const evaluadas = operaciones.map((o) => o.id);
+    const evaluadaEn = new Date().toISOString();
+    // En tandas: `in` con miles de uuids desborda la URL del PostgREST.
+    for (let i = 0; i < evaluadas.length; i += 500) {
+      const { error: errEval } = await supabase
+        .from('operation')
+        .update({ evaluada_en: evaluadaEn })
+        .in('id', evaluadas.slice(i, i + 500))
+        .eq('organization_id', input.organization_id);
+      if (errEval) {
+        return json({ error: errEval.message }, 500);
+      }
+    }
+    operaciones_evaluadas = evaluadas.length;
   }
 
   const duracion_ms = Date.now() - t0;
 
-  // --- 8. Registrar la corrida ---------------------------------------
+  // --- 9. Registrar la corrida ---------------------------------------
   await supabase.from('motor_run').insert({
     organization_id: input.organization_id,
     trigger_tipo: input.trigger_tipo,
@@ -344,7 +505,10 @@ Deno.serve(async (req: Request) => {
       tipologias_evaluadas: tipologias.length,
       por_tipologia: porTipologia,
       tipos_no_soportados: tiposNoSoportados,
-      operaciones_marcadas_aviso: opsAviso.length,
+      operaciones_marcadas_aviso: opsAviso.size,
+      operaciones_evaluadas,
+      recorrido_completo: recorridoCompleto,
+      hallazgos_reversionados,
     },
   });
 
@@ -352,8 +516,10 @@ Deno.serve(async (req: Request) => {
     ok: true,
     operaciones_procesadas: operaciones.length,
     hallazgos_creados,
+    hallazgos_reversionados,
     por_tipologia: porTipologia,
-    operaciones_marcadas_aviso: opsAviso.length,
+    operaciones_marcadas_aviso: opsAviso.size,
+    operaciones_evaluadas,
     duracion_ms,
   });
 });

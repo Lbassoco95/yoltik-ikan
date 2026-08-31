@@ -27,18 +27,18 @@ function p(over: Partial<ParametroVigente> = {}): ParametroVigente {
 
 describe('resolución de parámetros regulatorios', () => {
   it('devuelve el parámetro global cuando no hay uno del sector', () => {
-    const params = [p({ codigo: PARAM.UMBRAL_IDENTIFICACION, valor_numerico: 645, sector: '*' })];
-    expect(valorParametro(params, PARAM.UMBRAL_IDENTIFICACION, 'XII')).toBe(645);
+    const params = [p({ codigo: PARAM.XII_INMUEBLE, valor_numerico: 645, sector: '*' })];
+    expect(valorParametro(params, PARAM.XII_INMUEBLE, 'XII')).toBe(645);
   });
 
   it('el parámetro del sector gana sobre el global', () => {
     const params = [
-      p({ codigo: PARAM.UMBRAL_IDENTIFICACION, valor_numerico: 645, sector: '*' }),
-      p({ codigo: PARAM.UMBRAL_IDENTIFICACION, valor_numerico: 16000, sector: 'XII' }),
+      p({ codigo: PARAM.XII_INMUEBLE, valor_numerico: 645, sector: '*' }),
+      p({ codigo: PARAM.XII_INMUEBLE, valor_numerico: 16000, sector: 'XII' }),
     ];
-    expect(valorParametro(params, PARAM.UMBRAL_IDENTIFICACION, 'XII')).toBe(16000);
+    expect(valorParametro(params, PARAM.XII_INMUEBLE, 'XII')).toBe(16000);
     // Otro sector sigue viendo el global.
-    expect(valorParametro(params, PARAM.UMBRAL_IDENTIFICACION, 'XVI')).toBe(645);
+    expect(valorParametro(params, PARAM.XII_INMUEBLE, 'XVI')).toBe(645);
   });
 
   it('no filtra el parámetro de otro sector hacia el sector consultado', () => {

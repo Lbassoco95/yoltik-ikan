@@ -81,8 +81,15 @@ export interface MotorRunResultado {
   ok: boolean;
   operaciones_procesadas: number;
   hallazgos_creados: number;
+  /** Hallazgos abiertos que pasaron a una versión más nueva de su tipología en
+   *  vez de duplicarse al lado del anterior. */
+  hallazgos_reversionados?: number;
   por_tipologia?: Record<string, number>;
   operaciones_marcadas_aviso?: number;
+  /** Cuántas quedaron con constancia de evaluación. Sólo un recorrido completo
+   *  la sella: la corrida del alta ve una sola operación y no puede firmar que
+   *  el acto quedó juzgado contra las reglas agregadas. */
+  operaciones_evaluadas?: number;
   duracion_ms?: number;
 }
 

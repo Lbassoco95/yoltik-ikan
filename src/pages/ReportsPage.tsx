@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { cargarPeriodo, guardarAviso, listarAvisos, periodosConActos } from "@/lib/api/avisos";
 import { anclarPorCierreDePeriodo } from "@/lib/api/bitacora";
+import { recorrerMotor } from "@/lib/api/operaciones";
 import { evaluarAvisoMensual } from "@/lib/aviso-mensual";
 import { generarAvisoXml } from "@/lib/aviso/generador-xml";
 import { labelTipoActo } from "@/lib/perfil-actividad";
@@ -54,6 +55,27 @@ export default function ReportsPage() {
   });
 
   const evaluacion = datos ? evaluarAvisoMensual(datos.operaciones, datos.hallazgos) : null;
+
+  // Recorrer el motor desde aquí. La bandeja del OC tiene el mismo botón, pero
+  // el bloqueo aparece en ESTA pantalla y mandar a buscarlo a otra es la forma
+  // más fácil de que alguien decida que el mes va en ceros y ya.
+  //
+  // El motor recorre toda la organización, no sólo el periodo abierto: es lo
+  // que hace la Edge Function y decir otra cosa sería mentir sobre su alcance.
+  const evaluar = useMutation({
+    mutationFn: recorrerMotor,
+    onSuccess: (r) => {
+      queryClient.invalidateQueries({ queryKey: ["periodo-aviso"] });
+      queryClient.invalidateQueries({ queryKey: ["hallazgos"] });
+      queryClient.invalidateQueries({ queryKey: ["hallazgos", "abiertos", "count"] });
+      toast.success(
+        `${r.operaciones_evaluadas ?? r.operaciones_procesadas} operación(es) evaluadas. ` +
+          `${r.operaciones_marcadas_aviso ?? 0} requieren aviso, ` +
+          `${r.hallazgos_creados} hallazgo(s) nuevo(s).`,
+      );
+    },
+    onError: (e: Error) => toast.error(`No se pudo evaluar: ${e.message}`),
+  });
 
   const generar = useMutation({
     mutationFn: async (enCeros: boolean) => {
@@ -160,7 +182,29 @@ export default function ReportsPage() {
           )}
 
           {evaluacion?.bloqueos.map((b) => (
-            <Aviso key={b.motivo} tono="bloqueo" titulo={b.motivo} detalle={b.detalle} />
+            <Aviso
+              key={b.motivo}
+              tono="bloqueo"
+              titulo={b.motivo}
+              detalle={b.detalle}
+              // Sólo el de actos sin evaluar tiene salida desde aquí. El del
+              // umbral no la tiene ni debe tenerla: se resuelve presentando el
+              // aviso con esas operaciones, que es el botón de al lado.
+              accion={
+                b.clave === "sin_evaluar" ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => evaluar.mutate()}
+                    disabled={evaluar.isPending}
+                    className="gap-2"
+                  >
+                    {evaluar.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    Evaluar ahora
+                  </Button>
+                ) : undefined
+              }
+            />
           ))}
 
           {evaluacion?.recordatorios.map((r) => (
@@ -373,10 +417,14 @@ function Aviso({
   tono,
   titulo,
   detalle,
+  accion,
 }: {
   tono: "bloqueo" | "recordatorio";
   titulo: string;
   detalle: string;
+  /** Lo que resuelve el bloqueo, cuando hay algo que la propia pantalla puede
+   *  hacer. Un bloqueo sin salida deja al usuario leyendo un muro. */
+  accion?: React.ReactNode;
 }) {
   const bloqueo = tono === "bloqueo";
   return (
@@ -386,10 +434,11 @@ function Aviso({
       ) : (
         <Clock className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
       )}
-      <div>
+      <div className="flex-1">
         <p className="text-sm font-semibold text-foreground">{titulo}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{detalle}</p>
       </div>
+      {accion && <div className="shrink-0 self-center">{accion}</div>}
     </div>
   );
 }

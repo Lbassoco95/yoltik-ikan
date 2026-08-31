@@ -20,11 +20,16 @@ export function cn(...inputs: ClassValue[]) {
 // Ver: src/lib/parametros.ts · src/lib/api/parametros.ts · src/hooks/useParametros.ts
 // =====================================================================
 
-export function formatMxn(value: number): string {
+export function formatMxn(value: number, conCentavos = false): string {
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
     currency: 'MXN',
-    maximumFractionDigits: 0,
+    // Los montos van sin centavos: en una tabla de operaciones los centavos son
+    // ruido. La UMA es la excepción y por eso existe la bandera: mostrar «$117»
+    // cuando vale 117.31 hace que quien compruebe el cálculo a mano obtenga un
+    // número distinto al que la pantalla le enseña.
+    minimumFractionDigits: conCentavos ? 2 : 0,
+    maximumFractionDigits: conCentavos ? 2 : 0,
   }).format(value);
 }
 

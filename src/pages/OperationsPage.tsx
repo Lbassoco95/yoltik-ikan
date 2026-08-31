@@ -37,7 +37,7 @@ import {
   LABELS,
   NOTA_CANALES,
   TIPOS_ACTO_NOTARIA,
-  UMBRALES_XII_REFERENCIA,
+  SUPUESTOS_AVISO_XII,
   canalDeActo,
   labelTipoActo,
 } from "@/lib/perfil-actividad";
@@ -112,12 +112,16 @@ export default function OperationsPage() {
   // y la UI muestra un guion en vez de inventar una cifra.
   const { valor: valorParam } = useParametros();
   const umaMxn = valorParam(PARAM.UMA_DIARIA);
-  const umbral645Uma = valorParam(PARAM.UMBRAL_IDENTIFICACION);
-  const umbral3210Uma = valorParam(PARAM.UMBRAL_RESTRICCION);
-  const threshold645 =
-    umaMxn != null && umbral645Uma != null ? umbral645Uma * umaMxn : undefined;
-  const threshold3210 =
-    umaMxn != null && umbral3210Uma != null ? umbral3210Uma * umaMxn : undefined;
+  // Activos virtuales. Los umbrales de 645 y 3,210 UMA que había aquí quedaron
+  // DEROGADOS por la reforma DOF 16/07/2025: son 210 UMA por operación y 4 UMA
+  // sobre la contraprestación cobrada. La pantalla los publicaba mientras el
+  // motor ya usaba los vigentes.
+  const umbralOperacionUma = valorParam(PARAM.XVI_OPERACION, "XVI");
+  const umbralComisionUma = valorParam(PARAM.XVI_CONTRAPRESTACION, "XVI");
+  const umbralOperacionMxn =
+    umaMxn != null && umbralOperacionUma != null ? umbralOperacionUma * umaMxn : undefined;
+  const umbralComisionMxn =
+    umaMxn != null && umbralComisionUma != null ? umbralComisionUma * umaMxn : undefined;
 
   const { data: operaciones = [], isLoading, isError, error } = useQuery({
     queryKey: ["operaciones"],
@@ -143,14 +147,11 @@ export default function OperationsPage() {
    * El color refuerza; el texto es el que lleva el significado.
    */
   function umbralRebasado(monto: number): { etiqueta: string; clase: string } | null {
-    if (threshold3210 != null && monto >= threshold3210)
+    if (umbralOperacionMxn != null && monto >= umbralOperacionMxn)
       return {
-        etiqueta: "Rebasa el umbral de restricción (3 210 UMA)",
-        clase: "bg-destructive/10 text-destructive",
-      };
-    if (threshold645 != null && monto >= threshold645)
-      return {
-        etiqueta: "Rebasa el umbral de identificación (645 UMA)",
+        // El texto lleva la cifra vigente, no una escrita a mano: si mañana
+        // cambia el catálogo, cambia la etiqueta.
+        etiqueta: `Alcanza el umbral de aviso (${umbralOperacionUma?.toLocaleString("es-MX")} UMA)`,
         clase: "bg-warning/10 text-warning",
       };
     return null;
@@ -320,32 +321,48 @@ export default function OperationsPage() {
 
       {esNotarias ? (
         <div className="glass-card p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">
-              Umbrales de aviso — Fracción XII (fe pública)
-            </p>
-            <span className="status-badge bg-warning/20 text-warning text-xs">REFERENCIA</span>
+          <p className="text-sm font-semibold text-foreground">
+            Cuándo hay que avisar — fe pública
+          </p>
+          {/* Las cifras salen del catálogo de parámetros, el mismo que consulta
+              el motor. Estuvieron escritas a mano aquí y se quedaron publicando
+              16,000 UMA cuando la reforma las bajó a 8,000: la pantalla decía
+              una cosa y el motor hacía otra. */}
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {SUPUESTOS_AVISO_XII.map((s) => {
+              const umbral = s.codigo ? valorParam(s.codigo, "XII") : null;
+              return (
+                <div key={s.concepto} className="rounded-lg bg-muted/40 p-3">
+                  <p className="text-xs text-muted-foreground">{s.concepto}</p>
+                  <p className="text-lg font-bold text-foreground">
+                    {s.codigo === null
+                      ? "Siempre"
+                      : umbral != null
+                        ? `Desde ${umbral.toLocaleString("es-MX")} UMA`
+                        : "—"}
+                  </p>
+                  {/* En pesos, además de en UMA: la cifra en UMA no le dice
+                      nada a nadie hasta que se traduce. */}
+                  {s.codigo !== null && umbral != null && umaMxn != null && (
+                    <p className="text-[13px] text-muted-foreground tabular-nums">
+                      {formatMxn(umbral * umaMxn)} con la UMA de hoy
+                    </p>
+                  )}
+                  <p className="text-[13px] text-muted-foreground mt-1">{s.detalle}</p>
+                </div>
+              );
+            })}
           </div>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {UMBRALES_XII_REFERENCIA.items.map((u) => (
-              <div key={u.concepto} className="rounded-lg bg-muted/40 p-3">
-                <p className="text-xs text-muted-foreground">{u.concepto}</p>
-                <p className="text-lg font-bold text-foreground">{u.umbral}</p>
-                <p className="text-[13px] text-muted-foreground mt-1">{u.detalle}</p>
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 text-[13px] text-warning">{UMBRALES_XII_REFERENCIA.nota}</p>
         </div>
       ) : (
-        <div className="text-xs text-muted-foreground flex gap-6">
+        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-6 gap-y-1">
           <span>
-            Umbral identificación ({umbral645Uma?.toLocaleString("es-MX") ?? "—"} UMA):{" "}
-            <strong>{threshold645 != null ? formatMxn(threshold645) : "—"}</strong>
+            Aviso por operación ({umbralOperacionUma?.toLocaleString("es-MX") ?? "—"} UMA):{" "}
+            <strong>{umbralOperacionMxn != null ? formatMxn(umbralOperacionMxn) : "—"}</strong>
           </span>
           <span>
-            Umbral restricción ({umbral3210Uma?.toLocaleString("es-MX") ?? "—"} UMA):{" "}
-            <strong>{threshold3210 != null ? formatMxn(threshold3210) : "—"}</strong>
+            Aviso por comisión cobrada ({umbralComisionUma?.toLocaleString("es-MX") ?? "—"} UMA):{" "}
+            <strong>{umbralComisionMxn != null ? formatMxn(umbralComisionMxn) : "—"}</strong>
           </span>
         </div>
       )}
@@ -370,7 +387,12 @@ export default function OperationsPage() {
                   "Monto",
                   esNotarias ? "Tipo de acto" : "Tipo",
                   esNotarias ? "Valor (UMA)" : "Activo",
-                  "Umbral",
+                  // El umbral de monto sólo dice algo en activos virtuales. En
+                  // fe pública no hay una cifra única que responda: el poder
+                  // irrevocable y la constitución de persona moral se avisan
+                  // siempre, y el inmueble y el fideicomiso tienen umbrales
+                  // distintos. La respuesta la da el motor, columna siguiente.
+                  ...(esNotarias ? [] : ["Umbral"]),
                   "Requiere aviso",
                   ...(esNotarias ? ["Expediente"] : []),
                 ].map((h) => (
@@ -389,11 +411,12 @@ export default function OperationsPage() {
                   key={op.id}
                   className={cn(
                     "border-b border-border last:border-0 transition-colors",
-                    threshold3210 != null && op.monto_mxn >= threshold3210
-                      ? "bg-destructive/5"
-                      : threshold645 != null && op.monto_mxn >= threshold645
-                        ? "bg-warning/5"
-                        : "hover:bg-muted/30",
+                    // Ámbar, no rojo: un acto que alcanza el umbral es algo que
+                    // atender, no algo roto. Y el tinte no informa por sí solo
+                    // —la columna "Requiere aviso" lleva el texto—: refuerza.
+                    op.requiere_aviso || op.evaluada_en == null
+                      ? "bg-warning/5"
+                      : "hover:bg-muted/30",
                   )}
                 >
                   <td className="px-4 py-3 text-sm">
@@ -426,18 +449,25 @@ export default function OperationsPage() {
                       </span>
                     )}
                   </td>
+                  {!esNotarias && (
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const u = umbralRebasado(op.monto_mxn);
+                        return u ? (
+                          <span className={cn("status-badge text-xs", u.clase)}>{u.etiqueta}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Por debajo</span>
+                        );
+                      })()}
+                    </td>
+                  )}
                   <td className="px-4 py-3">
-                    {(() => {
-                      const u = umbralRebasado(op.monto_mxn);
-                      return u ? (
-                        <span className={cn("status-badge text-xs", u.clase)}>{u.etiqueta}</span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Por debajo</span>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-4 py-3">
-                    {op.requiere_aviso ? (
+                    {/* Tres estados, no dos. "No" y "todavía nadie lo ha
+                        mirado" no son lo mismo, y confundirlos es lo que hacía
+                        que un mes de actos sin evaluar se presentara en ceros. */}
+                    {op.evaluada_en == null ? (
+                      <span className="status-badge bg-warning/10 text-warning">Sin evaluar</span>
+                    ) : op.requiere_aviso ? (
                       <span className="status-badge bg-warning/10 text-warning">Sí</span>
                     ) : (
                       <span className="text-sm text-muted-foreground">No</span>
@@ -451,7 +481,16 @@ export default function OperationsPage() {
                       return (
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            {faltan === 0 ? (
+                            {/* "Completo" sobre una transmisión de inmueble se lee
+                                como "ya entra al aviso del mes", y ese acto va
+                                por DeclaraNOT con su propio plazo de 15 días
+                                naturales. El expediente puede estar completo y
+                                aun así no estar reportado. */}
+                            {tipoActo && canalDeActo(tipoActo) === "declaranot" ? (
+                              <span className="status-badge bg-warning/10 text-warning">
+                                Por DeclaraNOT
+                              </span>
+                            ) : faltan === 0 ? (
                               <span className="status-badge bg-success/10 text-success">
                                 Completo
                               </span>
@@ -661,7 +700,11 @@ export default function OperationsPage() {
                 </div>
               )}
 
-              <PendientesAviso pendientes={pendientesDelAlta} compacto />
+              <PendientesAviso
+                pendientes={pendientesDelAlta}
+                compacto
+                canal={canal}
+              />
             </div>
           )}
 

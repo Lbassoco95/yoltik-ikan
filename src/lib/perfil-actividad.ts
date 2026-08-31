@@ -130,29 +130,53 @@ export const NOTA_CANALES =
   'por el SPPLD en XML. Son dos sistemas distintos: confundirlos hace que un notario crea que ya ' +
   'reportó cuando no lo hizo.';
 
-/** Umbrales de referencia de la fracción XII (fe pública). FIJOS, no calculados. */
-export const UMBRALES_XII_REFERENCIA = {
-  nota:
-    'Cifras de referencia, sujetas a confirmación con Kawiil-Cumplimiento. ' +
-    'Provienen de fuentes secundarias aún no cruzadas con el texto legal vigente.',
-  items: [
-    {
-      concepto: 'Transmisión de inmuebles',
-      umbral: '16,000 UMA',
-      detalle: 'Aviso al alcanzar o superar el umbral.',
-    },
-    {
-      concepto: 'Poderes irrevocables',
-      umbral: 'Siempre',
-      detalle: 'Aviso en todos los casos, sin umbral de monto.',
-    },
-    {
-      concepto: 'Constitución de personas morales',
-      umbral: '8,025 UMA',
-      detalle: 'Aviso al alcanzar o superar el umbral.',
-    },
-  ],
-};
+/**
+ * Los supuestos de aviso de la fracción XII que la pantalla publica.
+ *
+ * Aquí NO va ninguna cifra. La llevaba —16,000 UMA para inmuebles y 8,025 para
+ * personas morales— y eso resultó ser el mismo error que la migration 0011 vino
+ * a matar, resucitado en el front: un umbral regulatorio escrito a mano en un
+ * archivo de código. Cuando la reforma DOF 16/07/2025 cambió los umbrales, el
+ * motor se corrigió con la 0030 y esta constante se quedó publicando las cifras
+ * derogadas. Durante días la pantalla dijo 16,000 y el motor usó 8,000.
+ *
+ * Ahora sólo se declara QUÉ supuestos existen y con qué código de catálogo se
+ * resuelve cada uno; la cifra la pone `parametro_regulatorio`, que es la única
+ * fuente de verdad y la que el motor también consulta.
+ *
+ * `codigo: null` es el supuesto que no tiene umbral porque el Aviso procede
+ * siempre. No es un hueco: es la respuesta.
+ */
+export const SUPUESTOS_AVISO_XII: {
+  concepto: string;
+  codigo: string | null;
+  detalle: string;
+}[] = [
+  {
+    concepto: 'Transmisión o constitución de derechos reales sobre inmuebles',
+    codigo: 'umbral_xii_inmueble_uma',
+    detalle:
+      'La base es el mayor entre precio pactado, valor catastral, valor comercial y monto ' +
+      'garantizado, sin contribuciones.',
+  },
+  {
+    concepto: 'Poderes irrevocables',
+    codigo: null,
+    detalle: 'Se avisa en todos los casos, sin importar el monto.',
+  },
+  {
+    concepto: 'Constitución de personas morales y cambios en su capital',
+    codigo: null,
+    detalle:
+      'Incluye fusión, escisión y compraventa de acciones. Desde la reforma de 2025 se avisa ' +
+      'siempre, sin importar el monto.',
+  },
+  {
+    concepto: 'Fideicomisos traslativos o de garantía',
+    codigo: 'umbral_xii_fideicomiso_uma',
+    detalle: 'Ya no se limita a inmuebles.',
+  },
+];
 
 export function resolverPerfil(raw: string | null | undefined): PerfilActividad {
   return raw === 'notarias' ? 'notarias' : 'generico';

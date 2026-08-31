@@ -117,7 +117,17 @@ function obligatoriedadDe(obligatorio, reglas) {
 function condicionEnProsa(reglas) {
   const m = reglas.match(/(?:VXSD:\s*)?((?:El campo|La etiqueta)[^.]*?\bobligatori[oa]\b[^.]*(?:\.\d+)?[^.]*)\./i);
   const frase = (m ? m[1] : reglas.split('.')[0]).replace(/\s+/g, ' ').trim();
-  return frase || null;
+
+  // El instructivo prefija cada regla con su código de validación —VXSD,
+  // VC22R1 y demás— y ese código acababa impreso en la pantalla del notario:
+  // «VXSD: La longitud es de 13 caracteres». No le dice nada a nadie salvo a
+  // quien tenga el instructivo delante.
+  //
+  // El regex de arriba ya lo quitaba, pero SÓLO cuando la frase empezaba por
+  // «El campo» o «La etiqueta»; en cualquier otro caso caía al split y se
+  // llevaba el prefijo entero. Se limpia aquí, sobre el resultado, que es
+  // donde vale para todos los casos.
+  return frase.replace(/^[A-Z]{2,}[0-9A-Z]*:\s*/, '').trim() || null;
 }
 
 const filas = leerCsv(readFileSync(ORIGEN, 'utf8'));
