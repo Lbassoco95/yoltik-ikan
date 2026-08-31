@@ -408,3 +408,30 @@ describe('la identificación no crea pendientes imposibles', () => {
     expect(pendientesIdentificacion(undefined, { cargando: false })).toHaveLength(1);
   });
 });
+
+describe('qué se puede diferir de un acto y qué no', () => {
+  // La fecha, el instrumento y el tipo identifican el acto: sin ellos el
+  // registro no señala nada y no habría ni a qué volver a completarlo. Por eso
+  // se validan aparte y no admiten diferirse, mientras que los campos de la
+  // rama sí.
+  it('la falta de instrumento, fecha o tipo no es de la rama', () => {
+    const p = pendientesActo({ fecha: '', instrumento_publico: '', tipo_acto: '', datos_acto: {} });
+    const campos = p.map((x) => x.campo);
+    expect(campos).toContain('instrumento_publico');
+    expect(campos).toContain('fecha_operacion');
+    expect(campos).toContain('tipo_actividad');
+  });
+
+  it('con el acto identificado, lo que queda es de la rama', () => {
+    // Es lo que el botón de diferir deja pasar: todo cuelga del subárbol del
+    // tipo de acto, no de la identidad del acto.
+    const p = pendientesActo({
+      fecha: '2026-08-18',
+      instrumento_publico: '45321',
+      tipo_acto: 'otorgamiento_poder',
+      datos_acto: {},
+    }).filter((x) => x.gravedad === 'bloquea_aviso');
+    expect(p.length).toBeGreaterThan(0);
+    for (const x of p) expect(x.no.startsWith('3.6.1.3.')).toBe(true);
+  });
+});
