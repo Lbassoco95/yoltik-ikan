@@ -69,7 +69,7 @@ export default function ReportsPage() {
       queryClient.invalidateQueries({ queryKey: ["hallazgos"] });
       queryClient.invalidateQueries({ queryKey: ["hallazgos", "abiertos", "count"] });
       toast.success(
-        `${r.operaciones_procesadas} operación(es) evaluadas. ` +
+        `${r.operaciones_evaluadas ?? r.operaciones_procesadas} operación(es) evaluadas. ` +
           `${r.operaciones_marcadas_aviso ?? 0} requieren aviso, ` +
           `${r.hallazgos_creados} hallazgo(s) nuevo(s).`,
       );

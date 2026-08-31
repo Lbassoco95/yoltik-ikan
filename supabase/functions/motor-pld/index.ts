@@ -402,43 +402,99 @@ Deno.serve(async (req: Request) => {
   // riesgo": son críticas, el OC las mira primero, y no vuelven reportable un
   // acto que no rebasó umbral ni cae en supuesto.
   const generaAviso = new Map(tipologias.map((t) => [t.id, t.genera_aviso === true]));
-  const opsAviso = [
-    ...new Set(
-      candidatos
-        .filter((c) => c.operation_id && generaAviso.get(c.tipologia_id))
-        .map((c) => c.operation_id as string),
-    ),
-  ];
-  if (opsAviso.length) {
-    await supabase
-      .from('operation')
-      .update({ requiere_aviso: true, identificada_en: new Date().toISOString() })
-      .in('id', opsAviso)
-      .eq('organization_id', input.organization_id);
+  const opsAviso = new Set(
+    candidatos
+      .filter((c) => c.operation_id && generaAviso.get(c.tipologia_id))
+      .map((c) => c.operation_id as string),
+  );
+
+  // El motor sólo levantaba la marca, nunca la bajaba, y eso convertía la
+  // determinación en un trinquete: una operación marcada por la heurística de
+  // severidad —o por una regla que después se corrigió, como XII-04 cuando
+  // cotejaba un solo tipo de acto— se quedaba marcada para siempre y ningún
+  // recorrido posterior podía desmarcarla. Corregir la regla no corregía lo
+  // que la regla vieja había declarado.
+  //
+  // Ahora el recorrido es autoritativo sobre lo que evaluó: cada operación
+  // queda con lo que dicen las tipologías vigentes HOY. Nadie más escribe esta
+  // columna, así que no hay decisión humana que se pueda pisar.
+  //
+  // `identificada_en` sólo se toca al levantar la marca, y al bajarla se
+  // limpia: es la fecha en que se identificó la obligación, y si la obligación
+  // ya no existe, esa fecha no fecha nada.
+  // Con una salvedad: bajar la marca sólo lo puede hacer un recorrido COMPLETO.
+  // Una corrida acotada a una operación —la que dispara el alta— no ve las
+  // demás del cliente, así que una regla agregada no puede alcanzar su umbral
+  // aunque en conjunto lo alcance. Concluir "no requiere aviso" desde ahí sería
+  // concluirlo sin haber mirado la evidencia. Levantarla sí puede: para eso le
+  // basta lo que tiene delante.
+  const recorridoCompleto = !input.operation_id;
+  const marcadas = operaciones.filter((o) => opsAviso.has(o.id)).map((o) => o.id);
+  const desmarcadas = recorridoCompleto
+    ? operaciones.filter((o) => !opsAviso.has(o.id)).map((o) => o.id)
+    : [];
+
+  // En tandas: `in` con miles de uuids desborda la URL del PostgREST.
+  async function marcar(ids: string[], requiere: boolean): Promise<string | null> {
+    for (let i = 0; i < ids.length; i += 500) {
+      const { error } = await supabase
+        .from('operation')
+        .update({
+          requiere_aviso: requiere,
+          identificada_en: requiere ? new Date().toISOString() : null,
+        })
+        .in('id', ids.slice(i, i + 500))
+        .eq('organization_id', input.organization_id)
+        // Sólo las que cambian: sin esto cada recorrido reescribe
+        // identificada_en de todo y se pierde cuándo nació la obligación.
+        .eq('requiere_aviso', !requiere);
+      if (error) return error.message;
+    }
+    return null;
+  }
+
+  const errMarca = (await marcar(marcadas, true)) ?? (await marcar(desmarcadas, false));
+  if (errMarca) {
+    return json({ error: errMarca }, 500);
   }
 
   // --- 8. Dejar constancia de que se evaluaron -----------------------
-  // Todas las que el motor recorrió, encontrara algo o no. Sin esto, un acto
+  // Todas las que el recorrido alcanzó, encontrara algo o no. Sin esto, un acto
   // examinado y limpio se ve igual que uno que nadie miró, y la pantalla del
   // aviso mensual concluía el mes en ceros sobre actos sin juzgar.
   //
-  // Se manda en tandas: `in` con miles de uuids desborda la URL del PostgREST.
-  const evaluadas = operaciones.map((o) => o.id);
-  const evaluadaEn = new Date().toISOString();
-  for (let i = 0; i < evaluadas.length; i += 500) {
-    const { error: errEval } = await supabase
-      .from('operation')
-      .update({ evaluada_en: evaluadaEn })
-      .in('id', evaluadas.slice(i, i + 500))
-      .eq('organization_id', input.organization_id);
-    if (errEval) {
-      return json({ error: errEval.message }, 500);
+  // Sólo la sella un recorrido COMPLETO, por lo mismo que sólo un recorrido
+  // completo puede bajar la marca de aviso: la corrida del alta ve UNA
+  // operación, así que una regla agregada mide su ventana con un solo dato.
+  // Puede levantar la marca —para eso le basta— pero no puede firmar que el
+  // acto quedó juzgado. Sellarlo ahí pondría constancia de una evaluación
+  // parcial, y esa constancia es justo lo que la pantalla del aviso lee para
+  // decidir si el mes se puede dar por vacío.
+  //
+  // El efecto práctico: cerrar el mes pasa por recorrer el motor sobre el
+  // periodo, con el botón de la propia pantalla del aviso o el de la bandeja
+  // del OC. Que sea un paso explícito es correcto: es la determinación.
+  let operaciones_evaluadas = 0;
+  if (recorridoCompleto) {
+    const evaluadas = operaciones.map((o) => o.id);
+    const evaluadaEn = new Date().toISOString();
+    // En tandas: `in` con miles de uuids desborda la URL del PostgREST.
+    for (let i = 0; i < evaluadas.length; i += 500) {
+      const { error: errEval } = await supabase
+        .from('operation')
+        .update({ evaluada_en: evaluadaEn })
+        .in('id', evaluadas.slice(i, i + 500))
+        .eq('organization_id', input.organization_id);
+      if (errEval) {
+        return json({ error: errEval.message }, 500);
+      }
     }
+    operaciones_evaluadas = evaluadas.length;
   }
 
   const duracion_ms = Date.now() - t0;
 
-  // --- 8. Registrar la corrida ---------------------------------------
+  // --- 9. Registrar la corrida ---------------------------------------
   await supabase.from('motor_run').insert({
     organization_id: input.organization_id,
     trigger_tipo: input.trigger_tipo,
@@ -449,7 +505,9 @@ Deno.serve(async (req: Request) => {
       tipologias_evaluadas: tipologias.length,
       por_tipologia: porTipologia,
       tipos_no_soportados: tiposNoSoportados,
-      operaciones_marcadas_aviso: opsAviso.length,
+      operaciones_marcadas_aviso: opsAviso.size,
+      operaciones_evaluadas,
+      recorrido_completo: recorridoCompleto,
       hallazgos_reversionados,
     },
   });
@@ -460,7 +518,8 @@ Deno.serve(async (req: Request) => {
     hallazgos_creados,
     hallazgos_reversionados,
     por_tipologia: porTipologia,
-    operaciones_marcadas_aviso: opsAviso.length,
+    operaciones_marcadas_aviso: opsAviso.size,
+    operaciones_evaluadas,
     duracion_ms,
   });
 });
