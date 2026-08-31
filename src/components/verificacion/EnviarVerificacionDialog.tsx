@@ -96,7 +96,16 @@ export function EnviarVerificacionDialog({
     onSuccess: (r) => {
       setUrl(r.url);
       onEnviada?.();
-      if (canal === "correo") toast.success(`Liga enviada a ${correo}`);
+      // «Liga enviada a X» afirmaba una entrega que no nos consta. Quien manda
+      // ese correo es Didit, y su respuesta 200 es de la SESIÓN, no del envío:
+      // el correo puede no salir nunca y la pantalla decía que había llegado.
+      // Es la misma clase de afirmación falsa que los umbrales escritos a mano,
+      // y aquí además deja al compareciente esperando algo que no viene.
+      if (canal === "correo") {
+        toast.success(`Se le pidió a Didit que mande la liga a ${correo}`, {
+          description: "Si no llega en unos minutos, la liga de abajo sirve igual.",
+        });
+      }
       if (canal === "presencial") window.open(r.url, "_blank", "noopener");
     },
     onError: (e: Error) => toast.error(e.message),

@@ -13,6 +13,7 @@ import {
 } from "@/lib/api/verificacion";
 import { pendientesCompareciente, pendientesIdentificacion } from "@/lib/aviso/completitud";
 import { useAuth } from "@/lib/auth-context";
+import { etiquetaConocimiento } from "@/lib/perfil-actividad";
 import type { TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
 
@@ -39,9 +40,9 @@ import { cn } from "@/lib/utils";
  */
 
 const NIVEL_KYC: Record<string, { etiqueta: string; detalle: string }> = {
-  N1: { etiqueta: "N1 · Básico", detalle: "Identificación simplificada" },
+  N1: { etiqueta: "N1", detalle: "Identificación simplificada" },
   N2: { etiqueta: "N2 · Reforzado", detalle: "Expediente ampliado" },
-  N3: { etiqueta: "N3 · Debida diligencia reforzada", detalle: "Cliente de riesgo alto" },
+  N3: { etiqueta: "N3 · Reforzada", detalle: "Cliente de riesgo alto" },
 };
 
 /**
@@ -158,7 +159,7 @@ export default function VerificationPage() {
             <table className="w-full min-w-[38rem]">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  {["Compareciente", "Nivel KYC", "Expediente", "Identidad"].map((h) => (
+                  {["Compareciente", "Conocimiento", "Expediente", "Identidad"].map((h) => (
                     <th
                       key={h}
                       className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
@@ -186,7 +187,9 @@ export default function VerificationPage() {
                         <p className="text-[13px] text-muted-foreground">{cliente.rfc ?? "sin RFC"}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm">{nivel.etiqueta}</span>
+                        <span className="text-sm">
+                          {etiquetaConocimiento(cliente.tipo_persona)} · {nivel.etiqueta}
+                        </span>
                         <p className="text-[13px] text-muted-foreground">{nivel.detalle}</p>
                       </td>
                       <td className="px-4 py-3">

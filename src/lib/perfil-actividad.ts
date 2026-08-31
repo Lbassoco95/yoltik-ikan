@@ -203,3 +203,29 @@ export function canalDeActo(value: unknown): 'sppld' | 'declaranot' | undefined 
 export function actosDelSppld(): TipoActoNotaria[] {
   return TIPOS_ACTO_NOTARIA.filter((t) => t.canal === 'sppld');
 }
+
+/**
+ * KYC o KYB, según a quién se esté conociendo.
+ *
+ * La columna se llama `nivel_kyc` para toda la tabla y por eso la pantalla
+ * decía «Nivel KYC» también sobre una sociedad. No es lo mismo: KYC —Know Your
+ * Customer— es el proceso sobre una persona, con su identificación oficial y
+ * su prueba de vida; sobre una persona moral lo que se hace es KYB —Know Your
+ * Business—, que mira el acta constitutiva, el objeto social y quién está
+ * detrás. Los pasos son otros y los documentos son otros.
+ *
+ * Llamarles igual en pantalla le dice a un notario que a su cliente sociedad se
+ * le hizo un proceso que no se le hizo. El dato guardado no cambia: cambia
+ * cómo se nombra.
+ */
+export function etiquetaConocimiento(tipoPersona: 'fisica' | 'moral' | string): 'KYC' | 'KYB' {
+  return tipoPersona === 'moral' ? 'KYB' : 'KYC';
+}
+
+/** «Nivel KYC N1» o «Nivel KYB N1», ya armado. */
+export function nivelConocimiento(
+  tipoPersona: 'fisica' | 'moral' | string,
+  nivel: string,
+): string {
+  return `${etiquetaConocimiento(tipoPersona)} · ${nivel}`;
+}
