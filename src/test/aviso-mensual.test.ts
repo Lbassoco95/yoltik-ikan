@@ -10,7 +10,9 @@ function op(over: Partial<OperacionDelPeriodo> = {}): OperacionDelPeriodo {
   return {
     id: 'op-1', tipo_acto: 'constitucion_personas_morales',
     monto_mxn: 1_000_000, fecha: '2026-08-15', rebasa_umbral: false,
-    canal: 'sppld', ...over,
+    // Evaluada por defecto: cada prueba de umbral o de hallazgo quiere aislar
+    // ESO. La falta de evaluación tiene sus propias pruebas más abajo.
+    evaluada: true, canal: 'sppld', ...over,
   };
 }
 function hal(over: Partial<HallazgoDelPeriodo> = {}): HallazgoDelPeriodo {
@@ -126,5 +128,53 @@ describe('caso combinado', () => {
     expect(ev.reportables.map((o) => o.id)).toEqual(['a']);
     expect(ev.porDeclaraNot.map((o) => o.id)).toEqual(['c']);
     expect(ev.recordatorios.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('un acto sin evaluar impide dar el mes por vacío', () => {
+  it('bloquea el informe en ceros', () => {
+    // No es que no sea reportable: es que nadie lo ha determinado. Presentar
+    // en ceros afirmaría haber revisado algo que no se revisó.
+    const ev = evaluarAvisoMensual([op({ evaluada: false })], [], HOY);
+    expect(ev.puedeEnCeros).toBe(false);
+    expect(ev.bloqueos).toHaveLength(1);
+    expect(ev.bloqueos[0].motivo).toMatch(/no ha evaluado/i);
+    expect(ev.bloqueos[0].operaciones).toEqual(['op-1']);
+    expect(ev.sinEvaluar).toHaveLength(1);
+  });
+
+  it('un acto de DeclaraNOT sin evaluar no bloquea este aviso', () => {
+    // La transmisión de inmuebles no entra en el aviso del SPPLD, así que su
+    // evaluación no cambia si este mes va en ceros.
+    const ev = evaluarAvisoMensual(
+      [op({ id: 'op-inm', tipo_acto: 'transmision_inmueble', canal: 'declaranot', evaluada: false })],
+      [], HOY,
+    );
+    expect(ev.puedeEnCeros).toBe(true);
+    expect(ev.sinEvaluar).toEqual([]);
+  });
+
+  it('los dos bloqueos conviven y se cuentan por separado', () => {
+    const ev = evaluarAvisoMensual(
+      [op({ id: 'op-1', rebasa_umbral: true }), op({ id: 'op-2', evaluada: false })],
+      [], HOY,
+    );
+    expect(ev.puedeEnCeros).toBe(false);
+    expect(ev.bloqueos).toHaveLength(2);
+    expect(ev.bloqueos.map((b) => b.operaciones)).toEqual([['op-1'], ['op-2']]);
+  });
+
+  it('no bloquea nada cuando todo está evaluado y nada rebasa', () => {
+    const ev = evaluarAvisoMensual([op(), op({ id: 'op-2' })], [], HOY);
+    expect(ev.puedeEnCeros).toBe(true);
+    expect(ev.sinEvaluar).toEqual([]);
+  });
+
+  it('el acto sin evaluar NO se cuenta como reportable', () => {
+    // Bloquear el informe en ceros no es lo mismo que declararlo reportable:
+    // meterlo al aviso sería inventar una obligación que nadie determinó.
+    const ev = evaluarAvisoMensual([op({ evaluada: false })], [], HOY);
+    expect(ev.reportables).toEqual([]);
+    expect(tipoAvisoSugerido(ev)).toBe('en_ceros');
   });
 });

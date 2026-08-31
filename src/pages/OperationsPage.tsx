@@ -387,7 +387,12 @@ export default function OperationsPage() {
                   "Monto",
                   esNotarias ? "Tipo de acto" : "Tipo",
                   esNotarias ? "Valor (UMA)" : "Activo",
-                  "Umbral",
+                  // El umbral de monto sólo dice algo en activos virtuales. En
+                  // fe pública no hay una cifra única que responda: el poder
+                  // irrevocable y la constitución de persona moral se avisan
+                  // siempre, y el inmueble y el fideicomiso tienen umbrales
+                  // distintos. La respuesta la da el motor, columna siguiente.
+                  ...(esNotarias ? [] : ["Umbral"]),
                   "Requiere aviso",
                   ...(esNotarias ? ["Expediente"] : []),
                 ].map((h) => (
@@ -406,11 +411,12 @@ export default function OperationsPage() {
                   key={op.id}
                   className={cn(
                     "border-b border-border last:border-0 transition-colors",
-                    umbralOperacionMxn != null && op.monto_mxn >= umbralOperacionMxn
-                      ? "bg-destructive/5"
-                      : false
-                        ? "bg-warning/5"
-                        : "hover:bg-muted/30",
+                    // Ámbar, no rojo: un acto que alcanza el umbral es algo que
+                    // atender, no algo roto. Y el tinte no informa por sí solo
+                    // —la columna "Requiere aviso" lleva el texto—: refuerza.
+                    op.requiere_aviso || op.evaluada_en == null
+                      ? "bg-warning/5"
+                      : "hover:bg-muted/30",
                   )}
                 >
                   <td className="px-4 py-3 text-sm">
@@ -443,18 +449,25 @@ export default function OperationsPage() {
                       </span>
                     )}
                   </td>
+                  {!esNotarias && (
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const u = umbralRebasado(op.monto_mxn);
+                        return u ? (
+                          <span className={cn("status-badge text-xs", u.clase)}>{u.etiqueta}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Por debajo</span>
+                        );
+                      })()}
+                    </td>
+                  )}
                   <td className="px-4 py-3">
-                    {(() => {
-                      const u = umbralRebasado(op.monto_mxn);
-                      return u ? (
-                        <span className={cn("status-badge text-xs", u.clase)}>{u.etiqueta}</span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Por debajo</span>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-4 py-3">
-                    {op.requiere_aviso ? (
+                    {/* Tres estados, no dos. "No" y "todavía nadie lo ha
+                        mirado" no son lo mismo, y confundirlos es lo que hacía
+                        que un mes de actos sin evaluar se presentara en ceros. */}
+                    {op.evaluada_en == null ? (
+                      <span className="status-badge bg-warning/10 text-warning">Sin evaluar</span>
+                    ) : op.requiere_aviso ? (
                       <span className="status-badge bg-warning/10 text-warning">Sí</span>
                     ) : (
                       <span className="text-sm text-muted-foreground">No</span>

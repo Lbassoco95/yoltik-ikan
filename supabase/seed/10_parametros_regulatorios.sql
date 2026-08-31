@@ -79,6 +79,18 @@ select * from (values
    date '2025-07-17', 'Art. 17 fr. XVI inciso b) LFPIORPI, reforma DOF 16/07/2025. Criterio Kawiil-Cumplimiento 31/08/2026.', null::text,
    'Se mide sobre la COMISIÓN cobrada, no sobre el monto de la operación. Son $469.24 con la UMA de 2026: en la práctica un umbral cercano a cero. Confirmado en Ley, pendiente de cotejo.'),
 
+  -- Fe pública, inciso a). Faltaba: la migration 0030 lo carga como CORRECCIÓN
+  -- de la fila de 16,000 UMA del régimen anterior, y en un proyecto nuevo esa
+  -- fila no existe, así que el umbral no quedaba en el catálogo. El motor lo
+  -- aplicaba igual —la cifra vive en regla_dsl de XII-01— pero la pantalla de
+  -- umbrales lo mostraba en blanco: el producto decía no tener un umbral que
+  -- sí estaba aplicando.
+  ('umbral_xii_inmueble_uma',
+   'Transmisión o constitución de derechos reales sobre inmuebles · umbral de Aviso',
+   8000.0000, 'uma', 'XII',
+   date '2025-07-17', 'Art. 17 fr. XII apartado A inciso a) LFPIORPI, reforma DOF 16/07/2025. Informe técnico Kawiil-Cumplimiento 31/08/2026.', null::text,
+   'La base de cálculo (art. 6 del Reglamento, reforma DOF 27/03/2026) es el MAYOR entre precio pactado, valor catastral, valor comercial y monto garantizado por suerte principal, excluyendo contribuciones y accesorios: no es el precio de la operación. Excluye garantías a favor de instituciones del sistema financiero u organismos públicos de vivienda. La reforma lo bajó de 16,000 a 8,000 UMA.'),
+
   ('umbral_xii_fideicomiso_uma',
    'Constitución o modificación de fideicomisos traslativos o de garantía · umbral de Aviso',
    4000.0000, 'uma', 'XII',

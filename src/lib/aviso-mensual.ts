@@ -21,9 +21,16 @@
  *     fecha de compromiso, el trabajo está planeado y presentar el aviso del
  *     periodo no tiene por qué esperar. Se RECUERDA, no se bloquea.
  *
+ *   Actos que el motor nunca recorrió
+ *     No es que no sean reportables: es que nadie lo ha determinado. Se
+ *     BLOQUEA. Un informe en ceros sobre actos sin evaluar no es una
+ *     declaración equivocada, es una declaración sin fundamento: afirma haber
+ *     comprobado algo que no se comprobó.
+ *
  * La diferencia práctica: el umbral es un hecho, el hallazgo es un juicio en
- * curso. Bloquear por un juicio en curso paralizaría al fedatario; no bloquear
- * por un hecho lo pondría a mentir.
+ * curso, y el acto sin evaluar es un hueco. Bloquear por un juicio en curso
+ * paralizaría al fedatario; no bloquear por un hecho —o por un hueco— lo
+ * pondría a mentir.
  */
 
 export type TipoAvisoMensual = 'con_operaciones' | 'en_ceros';
@@ -37,6 +44,15 @@ export interface OperacionDelPeriodo {
   /** Si el monto o el tipo de acto la vuelven reportable. Lo determina el
    *  Motor PLD contra `parametro_regulatorio`, no esta función. */
   rebasa_umbral: boolean;
+  /**
+   * El Motor PLD ya la recorrió, haya encontrado algo o no.
+   *
+   * Sin este dato, `rebasa_umbral: false` significaba dos cosas distintas —"se
+   * revisó y no es reportable" y "nadie la ha mirado"— y esta función leía
+   * las dos como la primera. Un mes entero de actos sin evaluar se presentaba
+   * en ceros sin una sola advertencia.
+   */
+  evaluada: boolean;
   /** 'sppld' o 'declaranot'. Sólo las del SPPLD entran en este aviso. */
   canal: string;
 }
@@ -51,6 +67,10 @@ export interface HallazgoDelPeriodo {
 }
 
 export interface Bloqueo {
+  /** Qué clase de bloqueo es. La pantalla lo usa para saber cuál puede
+   *  resolver desde ahí; distinguirlos por el texto del motivo haría que
+   *  reescribir una frase rompiera un botón. */
+  clave: 'umbral' | 'sin_evaluar';
   motivo: string;
   detalle: string;
   operaciones: string[];
@@ -64,6 +84,9 @@ export interface Recordatorio {
 export interface EvaluacionAviso {
   /** Operaciones del SPPLD que deben ir en el aviso. */
   reportables: OperacionDelPeriodo[];
+  /** Las del SPPLD que el motor todavía no ha recorrido. No se sabe si son
+   *  reportables, y por eso el periodo no puede darse por vacío. */
+  sinEvaluar: OperacionDelPeriodo[];
   /** Las de inmuebles: van por DeclaraNOT y NO entran aquí. Se listan para
    *  que nadie las dé por reportadas al presentar este aviso. */
   porDeclaraNot: OperacionDelPeriodo[];
@@ -84,6 +107,9 @@ export function evaluarAvisoMensual(
   const delSppld = operaciones.filter((o) => o.canal === 'sppld');
   const porDeclaraNot = operaciones.filter((o) => o.canal === 'declaranot');
   const reportables = delSppld.filter((o) => o.rebasa_umbral);
+  // Sólo las del SPPLD: las de DeclaraNOT no entran en este aviso, así que su
+  // evaluación no cambia si este mes va en ceros o no.
+  const sinEvaluar = delSppld.filter((o) => !o.evaluada);
 
   const bloqueos: Bloqueo[] = [];
   const recordatorios: Recordatorio[] = [];
@@ -91,12 +117,28 @@ export function evaluarAvisoMensual(
   // Lo único que bloquea: presentar en ceros teniendo operaciones sobre umbral.
   if (reportables.length > 0) {
     bloqueos.push({
+      clave: 'umbral',
       motivo: 'Hay operaciones que rebasaron el umbral',
       detalle:
         `${reportables.length} ${reportables.length === 1 ? 'operación rebasó' : 'operaciones rebasaron'} ` +
         'el umbral en este periodo. Un informe en ceros declara que no hubo operaciones reportables, ' +
         'y eso no sería cierto. Presenta el aviso con estas operaciones.',
       operaciones: reportables.map((o) => o.id),
+    });
+  }
+
+  // Actos sin evaluar: bloquean el informe en ceros, no la presentación.
+  // Se puede presentar el aviso con lo que ya se sabe reportable; lo que no se
+  // puede es afirmar que no hubo nada teniendo actos sin revisar.
+  if (sinEvaluar.length > 0) {
+    bloqueos.push({
+      clave: 'sin_evaluar',
+      motivo: 'Hay actos que el motor no ha evaluado',
+      detalle:
+        `${sinEvaluar.length} ${sinEvaluar.length === 1 ? 'acto del periodo no ha pasado' : 'actos del periodo no han pasado'} ` +
+        'por el Motor PLD, así que no se sabe si son reportables. Un informe en ceros afirma que ' +
+        'se revisaron y no lo fueron. Corre el motor sobre el periodo antes de presentar.',
+      operaciones: sinEvaluar.map((o) => o.id),
     });
   }
 
@@ -144,6 +186,7 @@ export function evaluarAvisoMensual(
 
   return {
     reportables,
+    sinEvaluar,
     porDeclaraNot,
     bloqueos,
     recordatorios,

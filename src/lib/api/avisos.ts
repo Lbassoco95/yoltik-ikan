@@ -18,6 +18,7 @@ interface FilaOperacion {
   monto_mxn: number;
   fecha: string;
   requiere_aviso: boolean;
+  evaluada_en: string | null;
   instrumento_publico: string | null;
   datos_acto: Record<string, unknown> | null;
   contraparte: Record<string, unknown> | null;
@@ -62,7 +63,7 @@ export async function cargarPeriodo(periodo: string): Promise<PeriodoAviso> {
   const [ops, org] = await Promise.all([
     supabase
       .from('operation')
-      .select('id, client_id, monto_mxn, fecha, requiere_aviso, instrumento_publico, datos_acto, contraparte, folio')
+      .select('id, client_id, monto_mxn, fecha, requiere_aviso, evaluada_en, instrumento_publico, datos_acto, contraparte, folio')
       .eq('organization_id', organizationId)
       .gte('fecha', desde)
       .lt('fecha', hasta)
@@ -106,6 +107,7 @@ export async function cargarPeriodo(periodo: string): Promise<PeriodoAviso> {
       monto_mxn: Number(o.monto_mxn),
       fecha: o.fecha,
       rebasa_umbral: o.requiere_aviso,
+      evaluada: o.evaluada_en != null,
       canal: canalDeActo(tipoActo) ?? 'sppld',
     };
   });

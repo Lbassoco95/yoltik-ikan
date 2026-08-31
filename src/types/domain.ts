@@ -156,6 +156,9 @@ export interface Operation {
   /** Subárbol de <tipo_actividad> del layout, según contraparte.tipo_acto. */
   datos_acto: Record<string, unknown>;
   requiere_aviso: boolean;
+  /** Cuándo el Motor PLD la recorrió, encontrara algo o no (migration 0035).
+   *  Nulo = nadie la ha juzgado, que NO es lo mismo que `requiere_aviso: false`. */
+  evaluada_en: string | null;
   capturado_por: string | null;
   capturado_en: string;
 }

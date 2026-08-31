@@ -163,6 +163,10 @@ export interface Tipologia {
   version: number;
   severidad: string;
   activa: boolean;
+  /** La tipología corresponde a un supuesto de Aviso del art. 17 LFPIORPI
+   *  (migration 0035). No lo usa el evaluador —dispararse es dispararse—; lo
+   *  usa el motor al decidir qué operaciones marca como reportables. */
+  genera_aviso?: boolean;
   regla_dsl: ReglaDsl;
 }
 
