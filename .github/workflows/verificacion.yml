@@ -1,0 +1,56 @@
+# =====================================================================
+# Ikán · Verificación en cada push y cada pull request
+# =====================================================================
+# El repo no tenía CI. Los cuatro comandos que esto corre son los mismos que
+# pide CLAUDE.md al cerrar un bloque, así que hasta hoy dependían de que quien
+# trabajara se acordara de correrlos.
+#
+# No necesita NINGÚN secreto, y es a propósito. La prueba que vigila que
+# `src/types/database.ts` vaya al día compara contra las MIGRATIONS y no contra
+# el proyecto remoto: así corre en cualquier fork y en cualquier rama, y caza
+# la deriva en su origen —cuando se escribe la migration— en vez de después de
+# desplegar. Ver `src/test/tipos-contra-esquema.test.ts`.
+# =====================================================================
+
+name: Verificación
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+# Un push nuevo sobre la misma rama cancela la corrida anterior: revisar un
+# commit que ya quedó atrás no dice nada de lo que hay ahora.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # `npm ci` y no `npm install`: instala exactamente lo del lockfile. Con
+      # `install` el CI puede pasar con dependencias distintas a las que corren
+      # en local, que es la clase de diferencia que sólo se descubre tarde.
+      - run: npm ci
+
+      # Los cuatro por separado y no encadenados con &&: así el resumen dice
+      # cuál falló sin tener que abrir el log.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Build
+        run: npm run build
