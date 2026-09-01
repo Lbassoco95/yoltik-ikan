@@ -47,6 +47,24 @@ import { getClavesPadron } from "@/lib/api/organizacion";
 import { PendientesAviso } from "@/components/aviso/PendientesAviso";
 import { CapturaActo } from "@/components/aviso/CapturaActo";
 import { SelectCatalogo } from "@/components/aviso/SelectCatalogo";
+
+/**
+ * Actos en los que hay un inmueble del que hablar.
+ *
+ * La ubicación del inmueble se preguntaba en TODOS los actos de fe pública,
+ * incluida la constitución de una sociedad, donde no hay ninguno. Un formulario
+ * que pide un dato que no existe no es sólo ruido: invita a inventarlo, y ese
+ * invento acaba calificando la zona geográfica del expediente.
+ *
+ * La lista es corta a propósito. El fideicomiso entra porque el traslativo de
+ * dominio suele serlo sobre un inmueble, aunque no siempre; ahí el campo es
+ * opcional y quedarse vacío es una respuesta válida. Si Cumplimiento quiere
+ * otro conjunto, es esta constante.
+ */
+const ACTOS_CON_INMUEBLE = new Set([
+  "transmision_inmueble",
+  "constitucion_modificacion_fideicomiso",
+]);
 import type { DatosActo } from "@/lib/aviso/valores-acto";
 import { useActiveRole } from "@/hooks/useActiveRole";
 import type { Operation } from "@/types/domain";
@@ -912,7 +930,7 @@ export default function OperationsPage() {
                   opera enteramente en territorio nacional, un campo de país que
                   siempre responde «México» no discrimina en el noventa y tantos
                   por ciento de los expedientes. */}
-              {esNotarias && (
+              {esNotarias && ACTOS_CON_INMUEBLE.has(form.tipo_acto) && (
                 <>
                   <SelectCatalogo
                     catalogo="entidad_federativa"
