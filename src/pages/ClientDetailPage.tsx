@@ -22,11 +22,12 @@ import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { EstructuraSocietaria } from "@/components/clientes/EstructuraSocietaria";
 import { Identificacion } from "@/components/clientes/Identificacion";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
-import { paisesEnListas, zonasDeAtencion } from "@/lib/api/catalogos";
+import { paisesEnListas, paisesSancionados, zonasDeAtencion } from "@/lib/api/catalogos";
 import {
   ACCION_POR_MOTIVO,
   faltasExplicadas,
   indicadoresDerivados,
+  sancionesDelExpediente,
   prellenarMatriz,
   type ContextoPrellenado,
   type MotivoFalta,
@@ -40,6 +41,7 @@ import {
   type ContextoEvaluacion,
 } from "@/lib/riesgo/matriz";
 import { operacionesEnVentana } from "@/lib/riesgo/perfil-transaccional";
+import { estaBloqueado } from "@/lib/riesgo/sanciones";
 import { banderaBandaDeUmbral, umbralDelActo } from "@/lib/riesgo/tramos";
 import { cn, formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
@@ -126,6 +128,15 @@ export default function ClientDetailPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // Los países bajo sanción de la ONU y de OFAC (migration 0053). Consulta
+  // aparte del GAFI y no un filtro más sobre la misma: miden cosas distintas y
+  // pesan distinto, y devolverlas juntas invitaría a tratarlas igual.
+  const { data: sanciones, isSuccess: sancionesCargadas } = useQuery({
+    queryKey: ["paises-sancionados", profile?.organization_id],
+    queryFn: paisesSancionados,
+    staleTime: 10 * 60 * 1000,
+  });
+
   // La lista interna de zonas de atención. Viene vacía hasta que Cumplimiento
   // la cargue, y mientras esté vacía la variable de zona no puntúa ni se pide.
   const { data: zonas = [] } = useQuery({
@@ -199,7 +210,12 @@ export default function ClientDetailPage() {
           gafi_gris: listasCargadas ? listas?.gafi_gris : undefined,
           gafi_negra: listasCargadas ? listas?.gafi_negra : undefined,
           plenario_gafi: listas?.plenario,
-          listas_cargadas: listasCargadas,
+          // Las dos consultas tienen que haber terminado. Con las sanciones en
+          // vuelo, un compareciente cubano saldría sin bandera y el valor
+          // quedaría escrito: el mismo falso negativo que el del GAFI, con otra
+          // lista.
+          listas_cargadas: listasCargadas && sancionesCargadas,
+          sanciones: sancionesCargadas ? sanciones : undefined,
           canal_distribucion: client.canal_distribucion,
           zonas_atencion: zonas,
           entidad_cliente: client.entidad_federativa_clave,
@@ -232,6 +248,10 @@ export default function ClientDetailPage() {
   // —agrupar para puntuar es aceptable— y que el flujo tiene que separar,
   // porque conlleva contramedidas y no simplemente diligencia reforzada.
   const indicadores = contexto ? indicadoresDerivados(contexto) : {};
+  // El detalle de las sanciones, aparte del booleano que consume la matriz: un
+  // bloqueo que no dice por qué no se puede levantar.
+  const riesgoSanciones = contexto ? sancionesDelExpediente(contexto) : null;
+  const bloqueado = estaBloqueado(riesgoSanciones);
   const ctxEvaluacion: ContextoEvaluacion = {
     catalogos_disponibles: catalogos,
     indicadores,
@@ -578,6 +598,39 @@ export default function ClientDetailPage() {
                     Operación en banda de umbral · +{bandera.puntos} puntos
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">{bandera.detalle}</p>
+                </div>
+              )}
+
+              {/* El nivel 1 de la Adenda 3. NO es un piso: un piso deja el
+                  expediente en banda alta y permite seguir, y aquí lo que
+                  procede es detenerse y escalar. Por eso va antes que todo lo
+                  demás y no se mezcla con el puntaje. */}
+              {bloqueado && riesgoSanciones && (
+                <div className="glass-card p-4 border-l-4 border-l-destructive">
+                  <p className="text-sm font-semibold text-destructive">
+                    Jurisdicción bajo embargo — no continuar sin escalar
+                  </p>
+                  <p className="text-sm text-foreground mt-1">{riesgoSanciones.motivo}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    No se resuelve con puntos. El acto requiere escalamiento al Oficial de
+                    Cumplimiento antes de continuar.
+                  </p>
+                </div>
+              )}
+
+              {/* El nivel 2: piso de banda alta, sin bloqueo. */}
+              {!bloqueado && riesgoSanciones && (
+                <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <p className="text-sm font-semibold text-foreground">
+                    País bajo régimen de sanciones
+                  </p>
+                  <p className="text-sm text-foreground mt-1">{riesgoSanciones.motivo}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    El expediente entra en banda alta con independencia del puntaje.
+                    {riesgoSanciones.hay_onu
+                      ? " Alcanzado por el Consejo de Seguridad: las resoluciones vinculan a México y su omisión no se pondera con el enfoque basado en riesgo."
+                      : " Alcanzado sólo por OFAC, que es derecho extranjero y no obliga a un fedatario mexicano: pesa como exposición a sanciones secundarias y valor indiciario."}
+                  </p>
                 </div>
               )}
 
