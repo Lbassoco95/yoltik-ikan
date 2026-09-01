@@ -22,10 +22,12 @@ import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import { paisesEnListas, zonasDeAtencion } from "@/lib/api/catalogos";
 import {
-  faltanPorResponder,
+  ACCION_POR_MOTIVO,
+  faltasExplicadas,
   indicadoresDerivados,
   prellenarMatriz,
   type ContextoPrellenado,
+  type MotivoFalta,
   type RespuestaSugerida,
 } from "@/lib/riesgo/prellenado";
 import {
@@ -60,6 +62,14 @@ export default function ClientDetailPage() {
   const [precargada, setPrecargada] = useState<string | null>(null);
   /** Variables que el OC cambió a mano en esta sesión. El pre-llenado no las pisa. */
   const [editadas, setEditadas] = useState<Set<string>>(new Set());
+  /**
+   * Clave de la opción elegida, por variable.
+   *
+   * Aparte del número porque el número no identifica la opción: `XII-ACT-01`
+   * tiene once actos y cuatro valores de riesgo —seis valen 3 y cuatro valen
+   * 4—, así que un select con valor 4 empataba con cuatro opciones a la vez.
+   */
+  const [claves, setClaves] = useState<Record<string, string>>({});
   const { perfilActividad, profile } = useAuth();
   const queryClient = useQueryClient();
   const L = LABELS[perfilActividad];
@@ -199,6 +209,10 @@ export default function ClientDetailPage() {
           // Dos ventanas distintas para el mismo cliente sería la manera más
           // fácil de que el sistema se contradiga sobre él.
           operaciones_en_ventana: operacionesEnVentana(ops.map((o) => o.fecha)),
+          // «No hay actos» y «hay un acto al que le falta un dato» mandan al OC
+          // a pantallas distintas, así que la matriz tiene que poder decir cuál
+          // de las dos es.
+          hay_actos: ops.length > 0,
           // El margen del perfil transaccional sale del registro versionado y
           // firmado, no de una constante: la instrucción 12 de la Adenda retiró
           // el redondeo que equivalía a una tolerancia del 50 % no documentada.
@@ -219,6 +233,7 @@ export default function ClientDetailPage() {
   const ctxEvaluacion: ContextoEvaluacion = {
     catalogos_disponibles: catalogos,
     indicadores,
+    claves,
     // Suma al puntaje sin entrar al máximo: es excepcional por definición y
     // meterla en el denominador diluiría todo lo demás.
     puntaje_extra: bandera?.puntos ?? 0,
@@ -234,6 +249,7 @@ export default function ClientDetailPage() {
   useEffect(() => {
     if (evaluacion && evaluacion.id !== precargada) {
       setRespuestas(evaluacion.respuestas ?? {});
+      setClaves(evaluacion.respuestas_clave ?? {});
       setEditadas(new Set());
       setPrecargada(evaluacion.id);
     }
@@ -269,6 +285,19 @@ export default function ClientDetailPage() {
         if (editadas.has(r.variable_codigo)) continue;
         if (siguientes[r.variable_codigo] === r.valor) continue;
         siguientes[r.variable_codigo] = r.valor;
+        cambio = true;
+      }
+      return cambio ? siguientes : previas;
+    });
+    // Y la clave, que es lo que identifica la opción cuando varias comparten
+    // puntaje. Sin esto el select quedaba en blanco aunque el número estuviera.
+    setClaves((previas) => {
+      const siguientes = { ...previas };
+      let cambio = false;
+      for (const r of sugeridas) {
+        if (!r.clave || editadas.has(r.variable_codigo)) continue;
+        if (siguientes[r.variable_codigo] === r.clave) continue;
+        siguientes[r.variable_codigo] = r.clave;
         cambio = true;
       }
       return cambio ? siguientes : previas;
@@ -311,6 +340,18 @@ export default function ClientDetailPage() {
   const completa = plantilla
     ? respuestasCompletas(plantilla.configuracion, client.tipo_persona, respuestas, catalogos)
     : false;
+  // Lo que falta, con el motivo de cada hueco.
+  const faltas =
+    plantilla && contexto
+      ? faltasExplicadas(plantilla.configuracion, contexto, respuestas, catalogos)
+      : [];
+  // Agrupadas por causa, en el orden en que el OC las va a atender: primero lo
+  // que se resuelve en otra pantalla, al final lo que le toca decidir a él.
+  const ORDEN_MOTIVO: MotivoFalta[] = ["sin_actos", "sin_dato", "sin_parametro", "requiere_criterio"];
+  const faltasPorMotivo = ORDEN_MOTIVO.map(
+    (m) => [m, faltas.filter((f) => f.motivo === m)] as const,
+  ).filter(([, lista]) => lista.length > 0);
+
   // Vista previa en vivo: mismo cálculo que se persistirá al guardar.
   const preview = completa
     ? evaluarMatriz(plantilla!.configuracion, client.tipo_persona, respuestas, ctxEvaluacion)
@@ -408,6 +449,9 @@ export default function ClientDetailPage() {
                       // factor no existe, y las RCG lo exigen aunque hoy no se
                       // pueda calificar.
                       const sinCatalogo = !variablePuntua(v, catalogos);
+                      // ¿Sus opciones tienen clave estable? Entonces se
+                      // identifican por ella y no por su puntaje.
+                      const porClave = v.opciones.every((o) => o.clave != null);
                       // Sugerida y todavía sin tocar por el OC. Si él la
                       // cambió, deja de ser del sistema y la marca se va.
                       // Exacto, no por coincidencia de valor: si el OC eligió
@@ -453,10 +497,25 @@ export default function ClientDetailPage() {
                           )}
                         </div>
                         <Select
-                          value={respuestas[v.codigo]?.toString() ?? ""}
+                          // Se identifica por CLAVE cuando las opciones la
+                          // traen: con el valor, un select en 4 empataba con
+                          // las cuatro opciones que valen 4 y pintaba sus
+                          // cuatro etiquetas concatenadas.
+                          value={
+                            porClave
+                              ? (claves[v.codigo] ?? "")
+                              : (respuestas[v.codigo]?.toString() ?? "")
+                          }
                           disabled={sinCatalogo}
                           onValueChange={(val) => {
-                            setRespuestas({ ...respuestas, [v.codigo]: Number(val) });
+                            const elegida = porClave
+                              ? v.opciones.find((o) => o.clave === val)
+                              : v.opciones.find((o) => o.valor === Number(val));
+                            if (!elegida) return;
+                            setRespuestas({ ...respuestas, [v.codigo]: elegida.valor });
+                            setClaves((c) =>
+                              elegida.clave ? { ...c, [v.codigo]: elegida.clave } : c,
+                            );
                             // A partir de aquí es juicio del OC y el
                             // pre-llenado deja de tocarla.
                             setEditadas((s) => new Set(s).add(v.codigo));
@@ -467,7 +526,13 @@ export default function ClientDetailPage() {
                           </SelectTrigger>
                           <SelectContent>
                             {v.opciones.map((o) => (
-                              <SelectItem key={o.valor} value={o.valor.toString()}>
+                              // La clave como `key` y como `value`: con el
+                              // valor había cuatro items con el mismo, que es
+                              // clave duplicada en React y empate en el Select.
+                              <SelectItem
+                                key={o.clave ?? o.valor}
+                                value={porClave ? (o.clave as string) : o.valor.toString()}
+                              >
                                 {o.label}
                               </SelectItem>
                             ))}
@@ -563,13 +628,22 @@ export default function ClientDetailPage() {
                     <>
                       El sistema respondió{" "}
                       <strong className="text-foreground">{sugeridas.length}</strong> de{" "}
-                      <strong className="text-foreground">
-                        {sugeridas.length + faltanPorResponder(
-                          plantilla!.configuracion, client.tipo_persona, respuestas, catalogos,
-                        ).length}
-                      </strong>{" "}
-                      con lo que ya está capturado. Faltan las que no puede saber por sí solo:
-                      si el compareciente es PEP y quién es el beneficiario controlador.
+                      <strong className="text-foreground">{sugeridas.length + faltas.length}</strong>{" "}
+                      con lo que ya está capturado.
+                      {/* Cada hueco con SU motivo. El texto anterior estaba
+                          escrito a mano y nombraba dos variables cuando podían
+                          faltar seis, y escondía que se atienden en lugares
+                          distintos: unas al registrar el acto, otras en el alta,
+                          y sólo algunas las contesta el OC. */}
+                      {faltasPorMotivo.map(([motivo, lista]) => (
+                        <span key={motivo} className="block mt-2">
+                          <strong className="text-foreground">
+                            {lista.length === 1 ? "Falta" : `Faltan ${lista.length}`}
+                          </strong>{" "}
+                          — {lista.map((f) => f.pregunta).join(" · ")}.{" "}
+                          <span className="text-warning">{ACCION_POR_MOTIVO[motivo]}</span>
+                        </span>
+                      ))}
                     </>
                   )}
                 </p>

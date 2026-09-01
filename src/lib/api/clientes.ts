@@ -111,6 +111,9 @@ export interface EvaluacionPersistida {
   client_id: string;
   template_id: string;
   respuestas: Record<string, number>;
+  /** Clave de la opción elegida por variable (migration 0047). Vacío en las
+   *  evaluaciones anteriores, que se guardaron sin ella. */
+  respuestas_clave: Record<string, string>;
   score_total: number;
   clasificacion: ClasificacionRiesgo;
   motivo_alto_de_oficio: string | null;
@@ -127,7 +130,7 @@ export interface EvaluacionPersistida {
 export async function ultimaEvaluacion(clientId: string): Promise<EvaluacionPersistida | null> {
   const { data, error } = await supabase
     .from('client_risk_assessment')
-    .select('id, client_id, template_id, respuestas, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
+    .select('id, client_id, template_id, respuestas, respuestas_clave, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
     .eq('client_id', clientId)
     .order('evaluado_en', { ascending: false })
     .limit(1)
@@ -149,7 +152,7 @@ export async function ultimasEvaluaciones(
   if (clientIds.length === 0) return new Map();
   const { data, error } = await supabase
     .from('client_risk_assessment')
-    .select('id, client_id, template_id, respuestas, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
+    .select('id, client_id, template_id, respuestas, respuestas_clave, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
     .in('client_id', clientIds)
     .order('evaluado_en', { ascending: false });
   if (error) throw error;
@@ -194,6 +197,9 @@ export async function evaluarRiesgoCliente(
       client_id: cliente.id,
       template_id: plantilla.id,
       respuestas,
+      // La clave de cada opción elegida, aparte del número: con el número solo,
+      // un fideicomiso y un poder irrevocable son indistinguibles.
+      respuestas_clave: comoJson(ctx.claves ?? {}),
       subtotales: resultado.subtotales,
       score_total: resultado.score_total,
       clasificacion: resultado.clasificacion,

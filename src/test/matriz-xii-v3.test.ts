@@ -8,7 +8,12 @@ import {
   variablePuntua,
 } from '@/lib/riesgo/matriz';
 import { maximoPosible } from '@/lib/riesgo/indice';
-import { prellenarMatriz, indicadoresDerivados } from '@/lib/riesgo/prellenado';
+import {
+  prellenarMatriz,
+  indicadoresDerivados,
+  faltasExplicadas,
+  faltanPorResponder,
+} from '@/lib/riesgo/prellenado';
 import type { MatrizConfig, TipoPersona } from '@/types/domain';
 
 /**
@@ -238,6 +243,128 @@ function respuestasExtremo(tipo: TipoPersona, extremo: 'min' | 'max', catalogos:
   return out;
 }
 
+describe('la opción se identifica por clave, no por su puntaje', () => {
+  /**
+   * El defecto que esto cierra, y que se vio en pantalla antes que en ninguna
+   * prueba: `XII-ACT-01` tiene once actos y cuatro valores de riesgo, porque el
+   * riesgo base se comparte a propósito. Seis actos valen 3 y cuatro valen 4.
+   *
+   * Con la respuesta guardada sólo como número, `opciones.find(o => o.valor ===
+   * respuesta)` devuelve SIEMPRE la primera con ese valor: un fideicomiso se
+   * registraba como PODER_IRREVOCABLE. La banda salía bien —los cuatro son alto
+   * de oficio— pero el fundamento legal que firma el OC era el equivocado.
+   */
+  const ACTOS: Opcion[] = [
+    { clave: 'transmision_inmueble', label: 'Transmisión de inmuebles', valor: 3 },
+    { clave: 'otorgamiento_poder', label: 'Poder irrevocable', valor: 4 },
+    { clave: 'constitucion_modificacion_fideicomiso', label: 'Fideicomiso', valor: 4 },
+    { clave: 'contrato_mutuo_credito', label: 'Mutuo o crédito', valor: 4 },
+  ];
+  const CFG_ACTOS: MatrizConfig = {
+    elementos: [
+      {
+        codigo: 'E1_ACTO',
+        nombre: 'Acto',
+        variables: [
+          { codigo: 'XII-ACT-01', pregunta: 'Tipo de acto que se instrumenta', opciones: ACTOS },
+        ],
+      },
+    ],
+    escala_cliente: {
+      bajo: { min: 0, max: 39, acciones: '' },
+      medio: { min: 40, max: 69, acciones: '' },
+      alto: { min: 70, max: 100, acciones: '' },
+    },
+    triggers_alto_de_oficio: [
+      {
+        codigo: 'PODER_IRREVOCABLE',
+        descripcion: 'Otorgamiento de poder irrevocable.',
+        variable_codigo: 'XII-ACT-01',
+        claves: ['otorgamiento_poder'],
+      },
+      {
+        codigo: 'FIDEICOMISO',
+        descripcion: 'Fideicomiso traslativo o de garantía.',
+        variable_codigo: 'XII-ACT-01',
+        claves: ['constitucion_modificacion_fideicomiso'],
+      },
+    ],
+    escala_normalizada: true,
+  };
+
+  it('un fideicomiso dispara FIDEICOMISO, no PODER_IRREVOCABLE', () => {
+    const r = evaluarMatriz(CFG_ACTOS, 'fisica', { 'XII-ACT-01': 4 }, {
+      claves: { 'XII-ACT-01': 'constitucion_modificacion_fideicomiso' },
+    });
+    expect(r.triggers_activados).toEqual(['FIDEICOMISO']);
+    expect(r.motivo_alto_de_oficio).toContain('Fideicomiso');
+  });
+
+  it('un poder irrevocable dispara el suyo', () => {
+    const r = evaluarMatriz(CFG_ACTOS, 'fisica', { 'XII-ACT-01': 4 }, {
+      claves: { 'XII-ACT-01': 'otorgamiento_poder' },
+    });
+    expect(r.triggers_activados).toEqual(['PODER_IRREVOCABLE']);
+  });
+
+  it('un mutuo, que comparte valor con los dos, no dispara ninguno de ellos', () => {
+    const r = evaluarMatriz(CFG_ACTOS, 'fisica', { 'XII-ACT-01': 4 }, {
+      claves: { 'XII-ACT-01': 'contrato_mutuo_credito' },
+    });
+    expect(r.triggers_activados).toEqual([]);
+  });
+
+  /**
+   * Las evaluaciones guardadas antes de la 0047 no tienen clave. Ahí el valor
+   * 4 es ambiguo entre tres actos, y adivinar el fundamento legal de un alto de
+   * oficio es peor que no dispararlo.
+   */
+  it('sin clave y con el valor ambiguo, NO se adivina el disparador', () => {
+    const r = evaluarMatriz(CFG_ACTOS, 'fisica', { 'XII-ACT-01': 4 });
+    expect(r.triggers_activados).toEqual([]);
+  });
+
+  it('sin clave pero con el valor inequívoco, sí resuelve', () => {
+    const cfg: MatrizConfig = {
+      ...CFG_ACTOS,
+      elementos: [
+        {
+          ...CFG_ACTOS.elementos[0],
+          variables: [
+            {
+              codigo: 'XII-ACT-01',
+              pregunta: 'Tipo de acto que se instrumenta',
+              opciones: [ACTOS[0], ACTOS[1]], // 3 y 4, sin empate
+            },
+          ],
+        },
+      ],
+    };
+    const r = evaluarMatriz(cfg, 'fisica', { 'XII-ACT-01': 4 });
+    expect(r.triggers_activados).toEqual(['PODER_IRREVOCABLE']);
+  });
+
+  /**
+   * El invariante que faltaba. No es «los valores son únicos» —comparten
+   * puntaje a propósito— sino: si comparten puntaje, TIENEN que traer clave,
+   * porque el puntaje ya no las identifica.
+   */
+  it('toda opción que comparte puntaje con otra trae clave', () => {
+    for (const el of [...CFG.elementos, ...CFG_ACTOS.elementos]) {
+      for (const v of el.variables) {
+        const cuenta = new Map<number, number>();
+        for (const o of v.opciones) cuenta.set(o.valor, (cuenta.get(o.valor) ?? 0) + 1);
+        for (const o of v.opciones) {
+          if ((cuenta.get(o.valor) ?? 0) > 1) {
+            expect(o.clave, `${v.codigo} · «${o.label}» comparte puntaje y no trae clave`)
+              .toBeTruthy();
+          }
+        }
+      }
+    }
+  });
+});
+
 describe('escala normalizada · el índice, no el puntaje crudo', () => {
   /**
    * El defecto que esto cierra: la v2 declaró bandas de 0-39/40-69/70-100 y el
@@ -355,6 +482,84 @@ describe('el indicador de llamado a la acción · piso sin puntaje', () => {
         ...gafi,
       }).GAFI_LLAMADO_ACCION,
     ).toBe(false);
+  });
+});
+
+describe('los huecos se explican, no se cuentan mal', () => {
+  /**
+   * La pantalla decía, con texto escrito a mano: «faltan las que no puede saber
+   * por sí solo: si el compareciente es PEP y quién es el beneficiario
+   * controlador». En un compareciente SIN ACTOS faltaban seis, no dos, y el OC
+   * leía que le faltaban dos casillas.
+   *
+   * Y la cuenta equivocada era lo de menos: los huecos se atienden en pantallas
+   * distintas —unos al registrar el acto, otros en el alta del cliente, sólo
+   * algunos los contesta el OC— y el texto los presentaba todos como suyos.
+   */
+  const SIN_ACTOS: Parameters<typeof faltasExplicadas>[1] = {
+    tipo_persona: 'fisica',
+    hay_actos: false,
+    pais_nacionalidad: 'MX',
+    pais_iso2: 'MX',
+    listas_cargadas: true,
+    gafi_gris: new Set<string>(),
+    gafi_negra: new Set<string>(),
+    actividad_clave: '4430200',
+    margen_perfil: 1,
+  };
+
+  it('las que dependen del acto se marcan «sin_actos», no como criterio del OC', () => {
+    const faltas = faltasExplicadas(CFG, SIN_ACTOS, {}, SIN_ZONAS);
+    const delActo = faltas.filter((f) => f.motivo === 'sin_actos').map((f) => f.variable_codigo);
+    expect(delActo).toContain('XII-ACT-01');
+    expect(delActo).toContain('XII-ACT-03');
+  });
+
+  it('con un acto registrado el motivo cambia: el dato falta, el acto no', () => {
+    const faltas = faltasExplicadas(CFG, { ...SIN_ACTOS, hay_actos: true }, {}, SIN_ZONAS);
+    const acto = faltas.find((f) => f.variable_codigo === 'XII-ACT-01');
+    expect(acto?.motivo).toBe('sin_dato');
+  });
+
+  it('la condición de PPE es criterio de una persona, siempre', () => {
+    const faltas = faltasExplicadas(CFG, SIN_ACTOS, {}, SIN_ZONAS);
+    const pep = faltas.find((f) => f.variable_codigo === 'XII-PF-02');
+    expect(pep?.motivo).toBe('requiere_criterio');
+  });
+
+  it('una coincidencia sin resolver lo dice con esas palabras', () => {
+    const faltas = faltasExplicadas(
+      CFG,
+      { ...SIN_ACTOS, condicion_pep: 'coincidencia_sin_resolver' },
+      {},
+      SIN_ZONAS,
+    );
+    expect(faltas.find((f) => f.variable_codigo === 'XII-PF-02')?.detalle).toContain(
+      'nadie la ha resuelto',
+    );
+  });
+
+  it('sin el parámetro del margen, la frecuencia se explica como parámetro faltante', () => {
+    const faltas = faltasExplicadas(
+      CFG,
+      { ...SIN_ACTOS, margen_perfil: null },
+      {},
+      SIN_ZONAS,
+    );
+    expect(faltas.find((f) => f.variable_codigo === 'XII-PTR-01')?.motivo).toBe('sin_parametro');
+  });
+
+  /** Que la cuenta cuadre: nada se queda sin explicar. */
+  it('toda variable sin responder tiene un motivo', () => {
+    const faltas = faltasExplicadas(CFG, SIN_ACTOS, {}, SIN_ZONAS);
+    const pendientes = faltanPorResponder(CFG, 'fisica', {}, SIN_ZONAS);
+    expect(faltas).toHaveLength(pendientes.length);
+    expect(faltas.every((f) => f.motivo && f.detalle.length > 0)).toBe(true);
+  });
+
+  it('la zona no cuenta como hueco cuando su lista está vacía', () => {
+    const faltas = faltasExplicadas(CFG, SIN_ACTOS, {}, SIN_ZONAS);
+    expect(faltas.some((f) => f.variable_codigo === 'XII-ZON-01')).toBe(false);
   });
 });
 
