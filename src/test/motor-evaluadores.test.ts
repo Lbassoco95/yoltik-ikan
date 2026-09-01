@@ -8,6 +8,8 @@ import {
   correrMotor,
   evaluarTipologia,
   ventanaAMs,
+  ventanaDesde,
+  ventanaHasta,
   valorEnCampo,
   type Tipologia,
   type OperacionEval,
@@ -880,5 +882,246 @@ describe('una regla agregada nombra TODAS las operaciones de su ventana', () => 
     const c = evaluarTipologia(UMBRAL, ops, ctx());
     expect(c).toHaveLength(1);
     expect((c[0].regla_payload as { operaciones?: string[] }).operaciones).toEqual(['a']);
+  });
+});
+
+describe('las ventanas de meses se cuentan con el calendario', () => {
+  // La ventana móvil de seis meses del artículo 7 del Reglamento gobierna el
+  // Aviso por acumulación, y el artículo 18 fracción X obliga a detectar las
+  // operaciones que deban acumularse. Aproximar el mes a 30 días deja fuera los
+  // actos del día 181 al 184: un falso negativo silencioso y a favor de no
+  // reportar.
+  it('seis meses son seis meses, no 180 días', () => {
+    const fin = new Date('2026-08-31T12:00:00Z');
+    const inicio = ventanaDesde(fin, '6M');
+    expect(inicio.toISOString().slice(0, 10)).toBe('2026-02-28');
+
+    const dias = (fin.getTime() - inicio.getTime()) / 86_400_000;
+    expect(dias).toBeGreaterThan(180); // la aproximación se quedaba corta
+  });
+
+  it('el día 31 se ajusta como en un almanaque', () => {
+    // Seis meses antes del 31 de agosto es el 28 o 29 de febrero, no el 3 de
+    // marzo. Sin el ajuste, el mes se desborda solo y la ventana se corre.
+    expect(ventanaDesde(new Date('2026-08-31T00:00:00Z'), '6M').toISOString().slice(0, 10))
+      .toBe('2026-02-28');
+    expect(ventanaDesde(new Date('2024-08-31T00:00:00Z'), '6M').toISOString().slice(0, 10))
+      .toBe('2024-02-29'); // bisiesto
+    expect(ventanaDesde(new Date('2026-03-31T00:00:00Z'), '1M').toISOString().slice(0, 10))
+      .toBe('2026-02-28');
+  });
+
+  it('cruza el fin de año sin perderse', () => {
+    expect(ventanaDesde(new Date('2026-01-15T00:00:00Z'), '6M').toISOString().slice(0, 10))
+      .toBe('2025-07-15');
+  });
+
+  it('horas y días siguen siendo milisegundos', () => {
+    expect(ventanaDesde(new Date('2026-08-20T12:00:00Z'), '24h').toISOString())
+      .toBe('2026-08-19T12:00:00.000Z');
+    expect(ventanaDesde(new Date('2026-08-20T12:00:00Z'), '72h').toISOString())
+      .toBe('2026-08-17T12:00:00.000Z');
+  });
+
+  it('hacia adelante es simétrico', () => {
+    const inicio = new Date('2026-02-28T00:00:00Z');
+    expect(ventanaHasta(inicio, '6M').toISOString().slice(0, 10)).toBe('2026-08-28');
+    expect(ventanaHasta(new Date('2026-08-20T12:00:00Z'), '24h').toISOString())
+      .toBe('2026-08-21T12:00:00.000Z');
+  });
+
+  it('todas las ventanas que las tipologías usan se resuelven', () => {
+    // Las cuatro que hay sembradas hoy. Si mañana entra una nueva unidad, esta
+    // prueba la caza antes que el motor.
+    for (const v of ['24h', '72h', '1M', '6M']) {
+      expect(() => ventanaDesde(new Date(), v)).not.toThrow();
+      expect(() => ventanaHasta(new Date(), v)).not.toThrow();
+    }
+  });
+
+  it('una ventana inválida truena en vez de calcular cualquier cosa', () => {
+    for (const v of ['6 meses', '6s', '', 'M6']) {
+      expect(() => ventanaDesde(new Date(), v)).toThrow(/ventana inválida/);
+    }
+  });
+});
+
+describe('un acto en el día 182 SÍ acumula', () => {
+  it('el caso concreto que la aproximación perdía', () => {
+    // Dos transmisiones que juntas cruzan el umbral, separadas por más de 180
+    // días pero menos de seis meses. Con la ventana de 30 días por mes, la
+    // primera caía fuera y no había Aviso por acumulación.
+    const UMBRAL = tip('XII-01', {
+      tipo: 'agregado',
+      ventana: '6M',
+      agrupar_por: 'client_id',
+      condicion: { suma_monto_uma: { op: '>=', valor: 8000 } },
+    });
+    const ops = [
+      op({ id: 'vieja', fecha: '2026-03-01T12:00:00Z', monto_mxn: 5000 * UMA_PRUEBA }),
+      op({ id: 'nueva', fecha: '2026-09-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+    ];
+    const dias =
+      (new Date('2026-09-01').getTime() - new Date('2026-03-01').getTime()) / 86_400_000;
+    // 184 días: dentro de los seis meses del calendario, FUERA de los 180 que
+    // daba la aproximación de 30 días por mes.
+    expect(dias).toBe(184);
+
+    const c = evaluarTipologia(UMBRAL, ops, ctx({ ahora: new Date('2026-09-02T00:00:00Z') }));
+    expect(c).toHaveLength(1);
+    expect((c[0].regla_payload as { operaciones?: string[] }).operaciones).toEqual([
+      'vieja', 'nueva',
+    ]);
+  });
+});
+
+describe('el borde de la ventana se incluye', () => {
+  it('un acto exactamente en el límite entra en la acumulación', () => {
+    // Seis meses hacia atrás desde el 1 de septiembre alcanzan al 1 de marzo,
+    // no empiezan el 2. Con un `>` estricto quedaba fuera un acto que la ley
+    // incluye: un milisegundo de diferencia y una operación menos en el Aviso.
+    const UMBRAL = tip('XII-01', {
+      tipo: 'agregado',
+      ventana: '6M',
+      agrupar_por: 'client_id',
+      condicion: { suma_monto_uma: { op: '>=', valor: 8000 } },
+    });
+    const c = evaluarTipologia(
+      UMBRAL,
+      [
+        op({ id: 'borde', fecha: '2026-03-01T12:00:00Z', monto_mxn: 5000 * UMA_PRUEBA }),
+        op({ id: 'hoy', fecha: '2026-09-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+      ],
+      ctx({ ahora: new Date('2026-09-02T00:00:00Z') }),
+    );
+    expect((c[0]?.regla_payload as { operaciones?: string[] })?.operaciones).toContain('borde');
+  });
+
+  it('un acto FUERA de la ventana no entra', () => {
+    // El día anterior al límite sí queda fuera, que es lo correcto.
+    const UMBRAL = tip('XII-01', {
+      tipo: 'agregado',
+      ventana: '6M',
+      agrupar_por: 'client_id',
+      condicion: { suma_monto_uma: { op: '>=', valor: 8000 } },
+    });
+    const c = evaluarTipologia(
+      UMBRAL,
+      [
+        op({ id: 'vieja', fecha: '2026-02-28T12:00:00Z', monto_mxn: 5000 * UMA_PRUEBA }),
+        op({ id: 'hoy', fecha: '2026-09-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+      ],
+      ctx({ ahora: new Date('2026-09-02T00:00:00Z') }),
+    );
+    expect(c).toHaveLength(0);
+  });
+});
+
+describe('el fraccionamiento se distingue del umbral cruzado a secas', () => {
+  const REGLA = tip('XII-01', {
+    tipo: 'agregado',
+    ventana: '6M',
+    agrupar_por: 'client_id',
+    condicion: { suma_monto_uma: { op: '>=', valor: 8000 } },
+  });
+
+  function payloadDe(ops: OperacionEval[]) {
+    const c = evaluarTipologia(REGLA, ops, ctx({ ahora: new Date('2026-09-02T00:00:00Z') }));
+    return c[0]?.regla_payload as Record<string, unknown> | undefined;
+  }
+
+  it('varias que ninguna alcanzaba, y juntas cruzan: es fraccionamiento', () => {
+    // Es la forma que tiene el fraccionamiento, y el penúltimo párrafo del
+    // artículo 17 lo contempla expresamente. El 18 fracción X obliga a
+    // DETECTARLO, no sólo a sumar.
+    const p = payloadDe([
+      op({ id: 'a', fecha: '2026-04-01T12:00:00Z', monto_mxn: 3000 * UMA_PRUEBA }),
+      op({ id: 'b', fecha: '2026-06-01T12:00:00Z', monto_mxn: 3000 * UMA_PRUEBA }),
+      op({ id: 'c', fecha: '2026-08-01T12:00:00Z', monto_mxn: 2500 * UMA_PRUEBA }),
+    ]);
+    expect(p?.posible_fraccionamiento).toBe(true);
+    expect((p?.fraccionamiento as Record<string, unknown>).operaciones).toBe(3);
+    expect((p?.fraccionamiento as Record<string, unknown>).nota).toMatch(/acumulación/i);
+  });
+
+  it('una grande con otras pequeñas alrededor NO es fraccionamiento', () => {
+    // Ahí hubo una operación reportable, no un patrón. Para el OC son dos
+    // bandejas distintas: la primera se revisa, la segunda se investiga.
+    const p = payloadDe([
+      op({ id: 'grande', fecha: '2026-04-01T12:00:00Z', monto_mxn: 9000 * UMA_PRUEBA }),
+      op({ id: 'chica', fecha: '2026-06-01T12:00:00Z', monto_mxn: 100 * UMA_PRUEBA }),
+    ]);
+    expect(p?.posible_fraccionamiento).toBeUndefined();
+    expect(p?.fraccionamiento).toBeUndefined();
+  });
+
+  it('una sola operación nunca es fraccionamiento', () => {
+    const p = payloadDe([
+      op({ id: 'sola', fecha: '2026-08-01T12:00:00Z', monto_mxn: 9000 * UMA_PRUEBA }),
+    ]);
+    expect(p?.posible_fraccionamiento).toBeUndefined();
+  });
+
+  it('el hallazgo ordinario no lleva la bandera en false', () => {
+    // Una bandera que siempre está y casi siempre es false es una bandera que
+    // se aprende a ignorar.
+    const p = payloadDe([
+      op({ id: 'grande', fecha: '2026-08-01T12:00:00Z', monto_mxn: 9000 * UMA_PRUEBA }),
+    ]);
+    expect(Object.keys(p ?? {})).not.toContain('posible_fraccionamiento');
+  });
+
+  it('sube la urgencia de la bandeja a 24 horas', () => {
+    // La regla es de umbral y por su forma le tocaría `por_umbral`. Pero un
+    // umbral cruzado por acumulación no es un acto grande: es un patrón, y el
+    // patrón se investiga antes de que se enfríe.
+    const c = evaluarTipologia(
+      REGLA,
+      [
+        op({ id: 'a', fecha: '2026-04-01T12:00:00Z', monto_mxn: 4500 * UMA_PRUEBA }),
+        op({ id: 'b', fecha: '2026-08-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+      ],
+      ctx({ ahora: new Date('2026-09-02T00:00:00Z') }),
+    );
+    expect(c[0].clasificacion_urgencia).toBe('24_horas');
+
+    // El mismo umbral cruzado por una sola operación se queda en por_umbral.
+    const solo = evaluarTipologia(
+      REGLA,
+      [op({ id: 'grande', fecha: '2026-08-01T12:00:00Z', monto_mxn: 9000 * UMA_PRUEBA })],
+      ctx({ ahora: new Date('2026-09-02T00:00:00Z') }),
+    );
+    expect(solo[0].clasificacion_urgencia).toBe('por_umbral');
+  });
+
+  it('una regla que sólo CUENTA operaciones no se fracciona', () => {
+    // «Cinco accesos desde IP anónima» no se fracciona: se repite. La bandera
+    // sólo tiene sentido sobre umbrales de monto.
+    const conteo = tip('XVI-06', {
+      tipo: 'agregado',
+      ventana: '1M',
+      agrupar_por: 'client_id',
+      condicion: { count_ip_anonima: { op: '>=', valor: 2 } },
+    });
+    const c = evaluarTipologia(
+      conteo,
+      [
+        op({ id: 'a', fecha: '2026-08-01T12:00:00Z', contraparte: { ip_anonima: true } }),
+        op({ id: 'b', fecha: '2026-08-02T12:00:00Z', contraparte: { ip_anonima: true } }),
+      ],
+      ctx({ ahora: new Date('2026-08-03T00:00:00Z') }),
+    );
+    expect((c[0]?.regla_payload as Record<string, unknown>)?.posible_fraccionamiento)
+      .toBeUndefined();
+  });
+
+  it('todas las operaciones de la ventana entran al Aviso', () => {
+    // Es lo que hace que el fraccionamiento dispare el Aviso por acumulación:
+    // el motor marca requiere_aviso sobre lo que el payload nombra.
+    const p = payloadDe([
+      op({ id: 'a', fecha: '2026-04-01T12:00:00Z', monto_mxn: 4500 * UMA_PRUEBA }),
+      op({ id: 'b', fecha: '2026-08-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+    ]);
+    expect(p?.operaciones).toEqual(['a', 'b']);
   });
 });

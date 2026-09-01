@@ -61,3 +61,4 @@
 \i 14_catalogos_uif.sql
 \i 15_clave_actividad_demos.sql
 \i 16_regimen_vigente.sql
+\i 17_snapshot_gafi_2026_06.sql

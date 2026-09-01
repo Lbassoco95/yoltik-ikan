@@ -1,0 +1,23 @@
+-- =====================================================================
+-- Seed 17 · El snapshot del GAFI vigente, para proyectos nuevos
+-- =====================================================================
+-- Las migrations corren ANTES que los seeds. La 0045 carga el snapshot del
+-- plenario de junio de 2026 sobre los datos que encuentra, y en un proyecto
+-- nuevo no encuentra ninguno: la tabla `country_risk_list` todavía está vacía
+-- cuando ella pasa.
+--
+-- El efecto, sin esto, sería que un entorno nuevo arranca con la lista del seed
+-- 04 —corte de FEBRERO DE 2025, dieciséis jurisdicciones y sin plenario— y la
+-- aplica como si fuera la vigente. Cinco países que el GAFI ya quitó seguirían
+-- sumando riesgo, y once que añadió no lo sumarían.
+--
+-- A diferencia del seed 16, esto NO copia el contenido de la migration: llama a
+-- la misma función. Veinticinco jurisdicciones en dos archivos se
+-- desincronizan en cuanto alguien actualiza uno, y la copia que quede atrás
+-- seguiría calificando gente sin que nadie lo note.
+--
+-- Idempotente: si el snapshot ya está cargado, la función devuelve 0 y no toca
+-- nada.
+-- =====================================================================
+
+select public.cargar_snapshot_gafi_2026_06() as filas_cargadas;

@@ -64,16 +64,63 @@ Deno.serve(async (req) => {
   }
 
   const estado = estadoDeDidit(evento.status);
+  const resumen = resumirDecision(evento.decision);
 
   await supabase
     .from('verificacion_identidad')
     .update({
       estado,
-      resumen: resumirDecision(evento.decision),
+      resumen,
       ultimo_evento_id: evento.event_id ?? null,
       resuelta_en: esFinal(estado) ? new Date().toISOString() : null,
     })
     .eq('id', fila.id);
+
+  // --- Condición de PPE, con su evidencia (migration 0038) ------------
+  //
+  // Sólo se escribe cuando la verificación terminó: un screening a medias no
+  // determina nada, y dejar constancia de una consulta que no acabó sería
+  // acreditar algo que no ocurrió.
+  //
+  // Lo que se escribe puede ser `no_pep` —una determinación— o
+  // `coincidencia_sin_resolver` —un hallazgo que espera a la célula—. Nunca el
+  // NIVEL de PPE: nacional, extranjera o familiar los determina una persona,
+  // porque las RCG reservan esa decisión al sujeto obligado y no al proveedor.
+  //
+  // Y no se pisa una condición que alguien ya resolvió a mano. Una
+  // reverificación posterior no puede borrar el juicio de la célula: si el
+  // screening nuevo dijera algo distinto, eso es un caso para mirar, no para
+  // sobrescribir en silencio.
+  if (esFinal(estado)) {
+    const { data: pep } = await supabase.rpc('pep_desde_resumen', { p_resumen: resumen });
+    const decidido = pep as { condicion?: string; evidencia?: unknown } | null;
+
+    if (decidido?.condicion) {
+      const { data: cliente } = await supabase
+        .from('client')
+        .select('condicion_pep')
+        .eq('id', fila.client_id)
+        .maybeSingle();
+
+      const yaResuelta =
+        cliente?.condicion_pep != null &&
+        cliente.condicion_pep !== 'coincidencia_sin_resolver';
+
+      if (!yaResuelta) {
+        await supabase
+          .from('client')
+          .update({
+            condicion_pep: decidido.condicion,
+            pep_evidencia: {
+              ...(decidido.evidencia as Record<string, unknown>),
+              consultado_en: new Date().toISOString(),
+              didit_session_id: evento.session_id ?? null,
+            },
+          })
+          .eq('id', fila.client_id);
+      }
+    }
+  }
 
   // A la bitácora encadenada de SU organización. Que a un compareciente se le
   // verificara la identidad, cuándo y con qué resultado es parte del expediente,
@@ -89,7 +136,7 @@ Deno.serve(async (req) => {
         didit_session_id: evento.session_id,
         estado,
         estado_proveedor: evento.status,
-        resumen: resumirDecision(evento.decision),
+        resumen,
       },
       p_actor_tipo: 'sistema',
       p_actor_id: null,

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createHmac } from "node:crypto";
 import {
   canonico,
+  categoriasDeCoincidencias,
   esFinal,
   estadoDeDidit,
   igualEnTiempoConstante,
@@ -171,5 +172,77 @@ describe("resumen de la decisión", () => {
     expect(resumirDecision(null)).toEqual({});
     expect(resumirDecision({})).toEqual({});
     expect(resumirDecision({ id_verifications: [] })).toEqual({});
+  });
+});
+
+describe('el screening distingue qué tipo de coincidencia hubo', () => {
+  // «Hubo una coincidencia de tipo PPE» dice algo sobre NUESTRO cliente y el
+  // expediente lo necesita. «Coincidió con Fulano de Tal» es información de
+  // otra persona y se queda en el proveedor. Ésa es la línea.
+  it('sin coincidencias no hay categorías', () => {
+    expect(categoriasDeCoincidencias({ total_hits: 0 })).toEqual([]);
+  });
+
+  it('reconoce PPE y sanción como cosas distintas', () => {
+    // La primera puede impedir operar y la segunda pide diligencia reforzada.
+    // Verlas iguales era el defecto.
+    expect(
+      categoriasDeCoincidencias({ total_hits: 1, hits: [{ category: 'PEP' }] }),
+    ).toEqual(['pep']);
+    expect(
+      categoriasDeCoincidencias({ total_hits: 1, hits: [{ category: 'Sanctions' }] }),
+    ).toEqual(['sancion']);
+  });
+
+  it('lee el campo de la coincidencia esté donde esté', () => {
+    // La forma del payload de Didit puede cambiar y no está fijada por contrato
+    // con nosotros; se lee a la defensiva.
+    for (const clave of ['hits', 'matches', 'results', 'screening_results']) {
+      const aml = { total_hits: 1, [clave]: [{ type: 'political exposure' }] };
+      expect(categoriasDeCoincidencias(aml)).toEqual(['pep']);
+    }
+  });
+
+  it('una coincidencia sin categoría reconocible NO se da por benigna', () => {
+    // Suponer ahí convertiría un hallazgo sin revisar en un «no es PPE»
+    // silencioso, que es lo que una verificación desarma primero.
+    expect(categoriasDeCoincidencias({ total_hits: 3 })).toEqual(['sin_clasificar']);
+    expect(
+      categoriasDeCoincidencias({ total_hits: 1, hits: [{ nombre: 'x' }] }),
+    ).toEqual(['sin_clasificar']);
+    expect(
+      categoriasDeCoincidencias({ total_hits: 1, hits: [{ category: 'algo raro' }] }),
+    ).toEqual(['sin_clasificar']);
+  });
+
+  it('junta varias categorías sin repetir', () => {
+    const r = categoriasDeCoincidencias({
+      total_hits: 3,
+      hits: [{ category: 'PEP' }, { category: 'Sanctions' }, { category: 'pep' }],
+    });
+    expect(r).toEqual(['pep', 'sancion']);
+  });
+});
+
+describe('el resumen guarda el tipo de coincidencia, no con quién', () => {
+  it('el resumen del screening trae categorías y conteo', () => {
+    const r = resumirDecision({
+      aml_screenings: [{ status: 'Approved', total_hits: 2, hits: [{ category: 'PEP' }] }],
+    });
+    const listas = r.listas as Record<string, unknown>;
+    expect(listas.coincidencias).toBe(2);
+    expect(listas.categorias).toEqual(['pep']);
+  });
+
+  it('no copia los datos de la persona con la que coincidió', () => {
+    const r = resumirDecision({
+      aml_screenings: [{
+        status: 'Approved', total_hits: 1,
+        hits: [{ category: 'PEP', full_name: 'Fulano de Tal', date_of_birth: '1970-01-01' }],
+      }],
+    });
+    const texto = JSON.stringify(r);
+    expect(texto).not.toContain('Fulano');
+    expect(texto).not.toContain('1970-01-01');
   });
 });

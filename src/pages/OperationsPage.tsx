@@ -29,10 +29,11 @@ import {
   invocarMotor,
   actualizarDatosActo,
 } from "@/lib/api/operaciones";
-import type { NuevaOperacionInput, TipoOperacion } from "@/types/domain";
+import type { FormaPago, NuevaOperacionInput, TipoOperacion } from "@/types/domain";
 import { formatMxn, cn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
+import { evaluarArticulo32 } from "@/lib/riesgo/articulo32";
 import { useAuth } from "@/lib/auth-context";
 import {
   LABELS,
@@ -45,6 +46,7 @@ import {
 import { getClavesPadron } from "@/lib/api/organizacion";
 import { PendientesAviso } from "@/components/aviso/PendientesAviso";
 import { CapturaActo } from "@/components/aviso/CapturaActo";
+import { SelectCatalogo } from "@/components/aviso/SelectCatalogo";
 import type { DatosActo } from "@/lib/aviso/valores-acto";
 import { useActiveRole } from "@/hooks/useActiveRole";
 import type { Operation } from "@/types/domain";
@@ -85,6 +87,17 @@ const FORM_INICIAL = {
   fecha: hoyISO(),
   instrumento_publico: "",
   datos_acto: {} as DatosActo,
+  forma_pago: "" as FormaPago | "",
+  pais_origen_recursos: "",
+  // Zona geográfica del inmueble (migration 0041). Del INMUEBLE, no del
+  // domicilio del cliente: son cosas distintas y las dos cuentan como factor
+  // geográfico. Alguien domiciliado en Guadalajara que compra en una zona de
+  // atención es justo el caso que el factor existe para ver.
+  entidad_federativa_inmueble: "",
+  municipio_inmueble: "",
+  efectivo_mxn: "",
+  fecha_pago: "",
+  pago_de_tercero: false,
 };
 
 export default function OperationsPage() {
@@ -98,6 +111,13 @@ export default function OperationsPage() {
   // Acto cuyo expediente se está completando desde la lista. El detalle del
   // acto rara vez está entero el día de la firma.
   const [actoEnCurso, setActoEnCurso] = useState<Operation | null>(null);
+  /** Forma de pago y origen del acto que se está completando (migration 0036). */
+  // `FormaPago | ""` y no `string`: la columna es un enum de tres valores, y con
+  // el tipo suelto un valor equivocado llegaba hasta la base para fallar ahí.
+  const [extrasEnCurso, setExtrasEnCurso] = useState<{
+    forma_pago: FormaPago | "";
+    pais_origen_recursos: string;
+  }>({ forma_pago: "", pais_origen_recursos: "" });
   const [datosEnCurso, setDatosEnCurso] = useState<DatosActo>({});
   const queryClient = useQueryClient();
   const { perfilActividad } = useAuth();
@@ -287,6 +307,16 @@ export default function OperationsPage() {
       return;
     }
 
+    // El artículo 32 se para aquí también. El trigger de la base lo impediría
+    // igual, pero un error de base de datos delante de quien captura no explica
+    // nada y no dice qué hacer. Esto sí.
+    if (avisoArt32?.prohibido) {
+      toast.error("El artículo 32 no permite liquidar este acto en efectivo", {
+        description: avisoArt32.detalle,
+      });
+      return;
+    }
+
     // Las señales (país, tipo de acto) viajan en contraparte (jsonb).
     const contraparte: Record<string, unknown> = {};
     if (form.pais_iso2.trim()) contraparte.pais_iso2 = form.pais_iso2.trim().toUpperCase();
@@ -301,6 +331,13 @@ export default function OperationsPage() {
       activo_virtual: esNotarias ? undefined : form.activo_virtual.trim() || undefined,
       contraparte: Object.keys(contraparte).length ? contraparte : undefined,
       datos_acto: esNotarias ? form.datos_acto : undefined,
+      forma_pago: form.forma_pago || undefined,
+      pais_origen_recursos: form.pais_origen_recursos.trim().toUpperCase() || undefined,
+      entidad_federativa_inmueble: form.entidad_federativa_inmueble.trim() || undefined,
+      municipio_inmueble: form.municipio_inmueble.trim() || undefined,
+      efectivo_mxn: form.efectivo_mxn ? Number(form.efectivo_mxn) : undefined,
+      fecha_pago: form.fecha_pago || undefined,
+      pago_de_tercero: form.pago_de_tercero || undefined,
       // Mediodía local: la fecha del acto es un día, no un instante, y guardarla
       // a las 00:00 la corre al día anterior en husos al oeste de UTC.
       fecha: new Date(`${form.fecha}T12:00:00`).toISOString(),
@@ -309,7 +346,8 @@ export default function OperationsPage() {
   }
 
   const guardarExpediente = useMutation({
-    mutationFn: () => actualizarDatosActo(actoEnCurso!.id, datosEnCurso),
+    mutationFn: () =>
+      actualizarDatosActo(actoEnCurso!.id, datosEnCurso, extrasEnCurso),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["operaciones"] });
       toast.success("Expediente del acto actualizado");
@@ -385,6 +423,26 @@ export default function OperationsPage() {
 
   const catalogosDelActo = form.tipo_acto ? catalogosPendientes(form.tipo_acto) : [];
   const canal = form.tipo_acto ? canalDeActo(form.tipo_acto) : undefined;
+
+  /**
+   * La prohibición del artículo 32, evaluada mientras se captura.
+   *
+   * El candado de verdad vive en un trigger de la base (migration 0039) y ahí
+   * se queda: una validación que sólo existiera aquí la saltaría cualquiera con
+   * la API. Esto es para que quien captura se entere ANTES de pulsar
+   * «Registrar» —enterarse al guardar es enterarse tarde, con el compareciente
+   * enfrente y el instrumento firmado—.
+   *
+   * La UMA es la del día del pago, no la de hoy: el límite se mide así.
+   */
+  const avisoArt32 = form.efectivo_mxn
+    ? evaluarArticulo32({
+        tipo_acto: form.tipo_acto,
+        efectivo_mxn: Number(form.efectivo_mxn),
+        umaDelDiaDelPago: valorParam(PARAM.UMA_DIARIA, "*"),
+        limitesUma: (codigo) => valorParam(codigo, "XII"),
+      })
+    : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -590,13 +648,23 @@ export default function OperationsPage() {
                                 Faltan {faltan}
                               </span>
                             )}
-                            {puedeCompletar && tipoActo && canalDeActo(tipoActo) === "sppld" && (
+                            {/* También en los actos de DeclaraNOT. Su expediente
+                                del layout no existe —ese acto no va por el
+                                SPPLD— pero la forma de pago y el origen de los
+                                recursos sí les aplican, y de hecho es en la
+                                transmisión de inmuebles donde la prohibición de
+                                efectivo del artículo 32 pesa más. */}
+                            {puedeCompletar && tipoActo && (
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => {
                                   setActoEnCurso(op);
                                   setDatosEnCurso((op.datos_acto ?? {}) as DatosActo);
+                                  setExtrasEnCurso({
+                                    forma_pago: op.forma_pago ?? "",
+                                    pais_origen_recursos: op.pais_origen_recursos ?? "",
+                                  });
                                 }}
                               >
                                 Completar
@@ -729,6 +797,143 @@ export default function OperationsPage() {
                   </p>
                 </div>
               )}
+
+              {/* Los dos datos que la matriz de riesgo pedía y no existían en
+                  ninguna parte, así que el OC los contestaba de memoria
+                  (migration 0036). La forma de pago además es el único dato que
+                  permite vigilar la prohibición de efectivo del artículo 32:
+                  sus umbrales llevan cargados desde la 0030 sin que nada
+                  pudiera consultarlos. */}
+              <div>
+                <Label>Forma de pago</Label>
+                <Select
+                  value={form.forma_pago}
+                  onValueChange={(v) => setForm({ ...form, forma_pago: v as FormaPago })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bancarizado">
+                      Bancarizado — transferencia o cheque nominativo
+                    </SelectItem>
+                    <SelectItem value="mixto">Mixto — parte en efectivo</SelectItem>
+                    <SelectItem value="efectivo">Efectivo</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[13px] text-muted-foreground mt-1">
+                  Responde una variable de la matriz de riesgo. «Mixto» cuenta como efectivo
+                  para la prohibición del artículo 32.
+                </p>
+              </div>
+
+              {/* Sólo cuando hubo efectivo. Pedir el monto en una operación
+                  bancarizada es preguntar por algo que no existe, y además la
+                  base rechaza esa combinación (migration 0039). */}
+              {(form.forma_pago === "mixto" || form.forma_pago === "efectivo") && (
+                <>
+                  <div>
+                    <Label>Efectivo entregado (MXN)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.efectivo_mxn}
+                      onChange={(e) => setForm({ ...form, efectivo_mxn: e.target.value })}
+                    />
+                    {avisoArt32 && (
+                      // Rojo, no ámbar: el artículo 32 no es algo que atender,
+                      // es algo que impide. Y se dice ANTES de intentar
+                      // guardar, aunque el candado de la base lo pare igual:
+                      // enterarse al pulsar «Registrar» es enterarse tarde.
+                      <p
+                        className={cn(
+                          "text-[13px] mt-1",
+                          avisoArt32.prohibido ? "text-destructive font-medium" : "text-muted-foreground",
+                        )}
+                      >
+                        {avisoArt32.detalle}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label>Día del pago</Label>
+                    <Input
+                      type="date"
+                      value={form.fecha_pago}
+                      onChange={(e) => setForm({ ...form, fecha_pago: e.target.value })}
+                    />
+                    <p className="text-[13px] text-muted-foreground mt-1">
+                      El límite del artículo 32 se mide con la UMA de ESE día, no la del
+                      instrumento. Si se deja vacío se usa la fecha del acto.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-start gap-2 rounded-lg border p-3">
+                <input
+                  id="pago-tercero"
+                  type="checkbox"
+                  className="mt-1"
+                  checked={form.pago_de_tercero}
+                  onChange={(e) => setForm({ ...form, pago_de_tercero: e.target.checked })}
+                />
+                <Label htmlFor="pago-tercero" className="font-normal cursor-pointer">
+                  El pago proviene de un tercero
+                  <span className="block text-[13px] text-muted-foreground font-normal">
+                    Alguien distinto del compareciente. Es una señal por sí misma, con
+                    independencia del monto: dice quién está detrás de la operación.
+                  </span>
+                </Label>
+              </div>
+
+              <div>
+                <Label>País de origen de los recursos</Label>
+                <Input
+                  placeholder="MX"
+                  maxLength={2}
+                  value={form.pais_origen_recursos}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      pais_origen_recursos: e.target.value.toUpperCase().replace(/[^A-Z]/g, ""),
+                    })
+                  }
+                />
+                <p className="text-[13px] text-muted-foreground mt-1">
+                  De dónde viene el dinero, que no es lo mismo que dónde vive el compareciente.
+                  Se coteja contra las listas del GAFI.
+                </p>
+              </div>
+              {/* Zona geográfica nacional. Las RCG exigen zona geográfica como
+                  factor, y zona geográfica no es país: para una notaría que
+                  opera enteramente en territorio nacional, un campo de país que
+                  siempre responde «México» no discrimina en el noventa y tantos
+                  por ciento de los expedientes. */}
+              {esNotarias && (
+                <>
+                  <SelectCatalogo
+                    catalogo="entidad_federativa"
+                    etiqueta="Entidad federativa del inmueble"
+                    valor={form.entidad_federativa_inmueble}
+                    onChange={(v) => setForm({ ...form, entidad_federativa_inmueble: v })}
+                  />
+                  <div>
+                    <Label>Municipio del inmueble</Label>
+                    <Input
+                      placeholder="Zapopan"
+                      value={form.municipio_inmueble}
+                      onChange={(e) => setForm({ ...form, municipio_inmueble: e.target.value })}
+                    />
+                    <p className="text-[13px] text-muted-foreground mt-1">
+                      Se coteja contra la lista interna de zonas de atención, junto con el
+                      domicilio del compareciente. Se toma la más alta de las dos.
+                    </p>
+                  </div>
+                </>
+              )}
               {!esNotarias && (
                 <div>
                   <Label>Activo virtual</Label>
@@ -852,13 +1057,70 @@ export default function OperationsPage() {
           </DialogHeader>
 
           {actoEnCurso && (
-            <CapturaActo
-              tipoActo={
-                (actoEnCurso.contraparte as Record<string, unknown> | null)?.tipo_acto as string
-              }
-              datos={datosEnCurso}
-              onChange={setDatosEnCurso}
-            />
+            <>
+              {/* Los actos anteriores a la 0036 nacieron sin estos dos datos, y
+                  sin manera de completarlos después se quedarían para siempre
+                  sin poder cerrar su matriz de riesgo. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3">
+                <div>
+                  <Label>Forma de pago</Label>
+                  <Select
+                    value={extrasEnCurso.forma_pago}
+                    onValueChange={(v) =>
+                      setExtrasEnCurso({ ...extrasEnCurso, forma_pago: v as FormaPago })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bancarizado">
+                        Bancarizado — transferencia o cheque nominativo
+                      </SelectItem>
+                      <SelectItem value="mixto">Mixto — parte en efectivo</SelectItem>
+                      <SelectItem value="efectivo">Efectivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>País de origen de los recursos</Label>
+                  <Input
+                    placeholder="MX"
+                    maxLength={2}
+                    value={extrasEnCurso.pais_origen_recursos}
+                    onChange={(e) =>
+                      setExtrasEnCurso({
+                        ...extrasEnCurso,
+                        pais_origen_recursos: e.target.value
+                          .toUpperCase()
+                          .replace(/[^A-Z]/g, ""),
+                      })
+                    }
+                  />
+                </div>
+                <p className="sm:col-span-2 text-[13px] text-muted-foreground">
+                  Los dos responden variables de la matriz de riesgo del compareciente. De
+                  dónde viene el dinero no es lo mismo que dónde vive quien comparece.
+                </p>
+              </div>
+
+              {canalDeActo(
+                (actoEnCurso.contraparte as Record<string, unknown> | null)?.tipo_acto,
+              ) === "sppld" ? (
+                <CapturaActo
+                  tipoActo={
+                    (actoEnCurso.contraparte as Record<string, unknown> | null)?.tipo_acto as string
+                  }
+                  datos={datosEnCurso}
+                  onChange={setDatosEnCurso}
+                />
+              ) : (
+                <p className="text-[13px] text-muted-foreground">
+                  Este acto se presenta por DeclaraNOT, no por el SPPLD, así que no tiene
+                  expediente en el formato de fe pública. Los dos datos de arriba sí le aplican.
+                </p>
+              )}
+            </>
           )}
 
           <DialogFooter>

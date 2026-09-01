@@ -198,9 +198,76 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
     resumen.listas = {
       estado: aml.status ?? null,
       coincidencias: aml.total_hits ?? 0,
-      // Las coincidencias en sí NO se copian: son datos de terceros y se
-      // consultan en el proveedor.
+      // QUÉ TIPO de coincidencia, no con quién.
+      //
+      // La distinción es la que separa un dato del expediente de un dato de un
+      // tercero. «Hubo una coincidencia de tipo PEP» dice algo sobre NUESTRO
+      // cliente y el expediente lo necesita; «coincidió con Fulano de Tal,
+      // nacido en tal fecha» es información de otra persona y se queda en el
+      // proveedor.
+      //
+      // Sin este campo, una coincidencia de sanción y una de persona
+      // políticamente expuesta se veían iguales, y son cosas muy distintas: la
+      // primera puede impedir operar y la segunda pide diligencia reforzada.
+      categorias: categoriasDeCoincidencias(aml),
     };
   }
   return resumen;
+}
+
+/**
+ * Las categorías de las coincidencias de listas, normalizadas.
+ *
+ * Se lee a la defensiva: la forma exacta del payload de Didit puede cambiar y
+ * no está fijada por contrato con nosotros. Lo que NO se hace es adivinar: si
+ * hay coincidencias y ninguna trae categoría reconocible, se devuelve
+ * `['sin_clasificar']` en vez de suponer que no eran PEP.
+ *
+ * Suponer ahí sería lo peor: convertiría una coincidencia sin revisar en un
+ * «no es PEP» silencioso, que es justo lo que una visita de verificación
+ * desarma primero.
+ */
+export function categoriasDeCoincidencias(aml: Record<string, unknown>): string[] {
+  const total = Number(aml.total_hits ?? 0);
+  if (!Number.isFinite(total) || total <= 0) return [];
+
+  // Los sitios donde Didit ha puesto las coincidencias, en orden de preferencia.
+  const posibles = [aml.hits, aml.matches, aml.results, aml.screening_results];
+  const lista = posibles.find((x) => Array.isArray(x) && x.length > 0) as
+    | Record<string, unknown>[]
+    | undefined;
+
+  if (!lista) return ['sin_clasificar'];
+
+  const fuera = new Set<string>();
+  for (const hit of lista) {
+    if (!hit || typeof hit !== 'object') continue;
+    // Otra vez a la defensiva: el nombre del campo varía entre versiones.
+    const crudo = [hit.category, hit.type, hit.list_type, hit.match_type, hit.categories]
+      .flat()
+      .filter((x): x is string => typeof x === 'string');
+
+    if (crudo.length === 0) {
+      fuera.add('sin_clasificar');
+      continue;
+    }
+    for (const c of crudo) fuera.add(normalizarCategoria(c));
+  }
+  return fuera.size > 0 ? [...fuera].sort() : ['sin_clasificar'];
+}
+
+/**
+ * Categoría del proveedor a la nuestra.
+ *
+ * Deliberadamente conservador: lo que no se reconoce cae en 'sin_clasificar' y
+ * no en 'otro', porque las dos cosas se tratan distinto —lo sin clasificar
+ * escala a la célula de cumplimiento, lo demás no—.
+ */
+function normalizarCategoria(crudo: string): string {
+  const c = crudo.toLowerCase();
+  if (c.includes('pep') || c.includes('political')) return 'pep';
+  if (c.includes('sanction') || c.includes('sancion')) return 'sancion';
+  if (c.includes('adverse') || c.includes('media')) return 'nota_adversa';
+  if (c.includes('warning') || c.includes('watch')) return 'lista_de_atencion';
+  return 'sin_clasificar';
 }

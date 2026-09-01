@@ -18,7 +18,7 @@ export interface ParametroVigente {
   codigo: string;
   nombre: string;
   valor_numerico: number;
-  unidad: 'mxn' | 'uma' | 'dia' | 'anio' | 'porcentaje';
+  unidad: 'mxn' | 'uma' | 'dia' | 'anio' | 'porcentaje' | 'operacion';
   /** '*' = aplica a todas las actividades. */
   sector: string;
   vigente_desde: string;
@@ -44,6 +44,12 @@ export const PARAM = {
   // de efectivo 8,025. La asimetría es de la ley, no una errata.
   EFECTIVO_INMUEBLE: 'umbral_efectivo_inmueble_uma',
   EFECTIVO_ACCIONES: 'umbral_efectivo_acciones_uma',
+
+  // Perfil transaccional (Cap. III Ter de las RCG). Margen ABSOLUTO en
+  // operaciones, no porcentaje: en fe pública la frecuencia declarada es un
+  // entero pequeño y un 10 % sobre dos esperadas da 2.2, que al redondear se
+  // comporta igual que no tener tolerancia. Provisional y firmado (0044).
+  MARGEN_PERFIL: 'margen_perfil_transaccional_operaciones',
 
   // Activos virtuales (fracción XVI), mismo régimen.
   XVI_OPERACION: 'umbral_xvi_operacion_uma',

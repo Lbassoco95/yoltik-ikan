@@ -418,6 +418,13 @@ Deno.serve(async (req: Request) => {
   // La diferencia se ve en XII-03 y XVI-04, "contraparte en país de alto
   // riesgo": son críticas, el OC las mira primero, y no vuelven reportable un
   // acto que no rebasó umbral ni cae en supuesto.
+  // Cuántos hallazgos traen la bandera de fraccionamiento. Va al resumen de la
+  // corrida porque es el número que el OC necesita ver primero: no es lo mismo
+  // «tres hallazgos por umbral» que «tres hallazgos, y uno es fraccionamiento».
+  const fraccionamientos = candidatos.filter(
+    (c) => (c.regla_payload as { posible_fraccionamiento?: boolean }).posible_fraccionamiento,
+  ).length;
+
   const generaAviso = new Map(tipologias.map((t) => [t.id, t.genera_aviso === true]));
 
   // TODAS las operaciones de la ventana que disparó, no sólo la que la cerró.
@@ -536,6 +543,7 @@ Deno.serve(async (req: Request) => {
       por_tipologia: porTipologia,
       tipos_no_soportados: tiposNoSoportados,
       operaciones_marcadas_aviso: opsAviso.size,
+      posible_fraccionamiento: fraccionamientos,
       operaciones_evaluadas,
       recorrido_completo: recorridoCompleto,
       hallazgos_reversionados,
@@ -549,6 +557,7 @@ Deno.serve(async (req: Request) => {
     hallazgos_reversionados,
     por_tipologia: porTipologia,
     operaciones_marcadas_aviso: opsAviso.size,
+    posible_fraccionamiento: fraccionamientos,
     operaciones_evaluadas,
     duracion_ms,
   });

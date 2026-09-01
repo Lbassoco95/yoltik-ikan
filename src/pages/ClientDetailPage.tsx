@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Loader2, Save } from "lucide-react";
@@ -20,8 +20,24 @@ import {
 } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
-import { elementosAplicables, evaluarMatriz, respuestasCompletas } from "@/lib/riesgo/matriz";
-import { formatMxn } from "@/lib/utils";
+import { paisesEnListas, zonasDeAtencion } from "@/lib/api/catalogos";
+import {
+  faltanPorResponder,
+  indicadoresDerivados,
+  prellenarMatriz,
+  type ContextoPrellenado,
+  type RespuestaSugerida,
+} from "@/lib/riesgo/prellenado";
+import {
+  elementosAplicables,
+  evaluarMatriz,
+  respuestasCompletas,
+  variablePuntua,
+  type ContextoEvaluacion,
+} from "@/lib/riesgo/matriz";
+import { operacionesEnVentana } from "@/lib/riesgo/perfil-transaccional";
+import { banderaBandaDeUmbral, umbralDelActo } from "@/lib/riesgo/tramos";
+import { cn, formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
 import type { SectorAV, TipoPersona } from "@/types/domain";
@@ -42,6 +58,8 @@ export default function ClientDetailPage() {
   // Marca de cuál evaluación ya se precargó, para no pisar lo que el usuario
   // esté capturando cada vez que la consulta se revalide.
   const [precargada, setPrecargada] = useState<string | null>(null);
+  /** Variables que el OC cambió a mano en esta sesión. El pre-llenado no las pisa. */
+  const [editadas, setEditadas] = useState<Set<string>>(new Set());
   const { perfilActividad, profile } = useAuth();
   const queryClient = useQueryClient();
   const L = LABELS[perfilActividad];
@@ -82,18 +100,190 @@ export default function ClientDetailPage() {
     enabled: !!id,
   });
 
+  // El mismo snapshot de listas que usa el Motor PLD. Que la matriz y el motor
+  // midan el riesgo de país contra fuentes distintas sería la manera más fácil
+  // de que el sistema se contradiga sobre el mismo compareciente.
+  // La clave lleva la ORGANIZACIÓN. `country_risk_list` es por organización y
+  // RLS la acota, pero la caché de React Query no sabe de RLS: con una clave
+  // global, un cambio de contexto dentro de los diez minutos de `staleTime`
+  // serviría las listas de la organización anterior. Hoy un usuario pertenece a
+  // una sola, así que es un riesgo teórico; cuesta una línea cerrarlo.
+  const { data: listas, isSuccess: listasCargadas } = useQuery({
+    queryKey: ["paises-en-listas", profile?.organization_id],
+    queryFn: paisesEnListas,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // La lista interna de zonas de atención. Viene vacía hasta que Cumplimiento
+  // la cargue, y mientras esté vacía la variable de zona no puntúa ni se pide.
+  const { data: zonas = [] } = useQuery({
+    queryKey: ["zonas-atencion", profile?.organization_id],
+    queryFn: zonasDeAtencion,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Qué catálogos hay cargados hoy. Una variable que declara `requiere_catalogo`
+  // y cuyo catálogo falta queda fuera del máximo, del mínimo y de la captura:
+  // exigirla dejaría la matriz imposible de cerrar, y responderla «sin
+  // observaciones» le daría la calificación más baja a cualquier ubicación.
+  const catalogos = useMemo(
+    () => new Set(zonas.length > 0 ? ["zona_atencion"] : []),
+    [zonas.length],
+  );
+
+  /**
+   * Lo que la matriz se responde sola.
+   *
+   * Se recalcula con el acto más reciente del compareciente: el riesgo no es
+   * una foto del día del alta, se mueve con lo que la persona hace. Registrar
+   * una operación en dólares cambia una respuesta, y la matriz tiene que
+   * enterarse sin que nadie vuelva a abrirla a mano.
+   */
+  // El acto más reciente, en UMA y contra el umbral que le toca. Se calcula con
+  // la UMA vigente; el motor usa la del día del acto, y esa diferencia importa
+  // sólo en el cruce del 1 de febrero.
+  const actoReciente = ops[0];
+  const tipoActoReciente = (actoReciente?.contraparte as Record<string, unknown> | null)
+    ?.tipo_acto as string | undefined;
+  const montoUma =
+    actoReciente != null && umaMxn != null && umaMxn > 0
+      ? actoReciente.monto_mxn / umaMxn
+      : null;
+  const umbralUma = umbralDelActo(tipoActoReciente, (c) => valorParam(c, "XII")).umbral;
+
+  // Las banderas que suman FUERA de la escala de magnitud. La de banda de
+  // umbral existía desde la instrucción 2 y nunca llegaba a `calcularIndice`:
+  // se calculaba, se probaba, y su puntaje se perdía. Una operación al 95 % del
+  // umbral puntuaba igual que una al 30 %.
+  const bandera = montoUma != null ? banderaBandaDeUmbral(montoUma, umbralUma) : null;
+
+  const contexto: ContextoPrellenado | null =
+    plantilla && client
+      ? {
+          tipo_persona: client.tipo_persona,
+          pais_iso2: client.pais_residencia_iso2,
+          // La nacionalidad, aparte de la residencia: la matriz v3 toma el más
+          // alto de los tres países y la DIVERGENCIA entre ellos es la señal.
+          pais_nacionalidad: client.pais_nacionalidad_clave,
+          tipo_acto: tipoActoReciente,
+          moneda_origen: ops[0]?.moneda_origen,
+          activo_virtual: ops[0]?.activo_virtual,
+          forma_pago: ops[0]?.forma_pago,
+          pais_origen_recursos: ops[0]?.pais_origen_recursos,
+          actividad_clave: client.actividad_economica_clave,
+          // El valor del acto en UMA y el umbral que le toca. Sin esto la
+          // variable de magnitud —el corazón de la escala relativa al umbral—
+          // no se pre-llenaba nunca, y la bandera de banda de umbral no tenía
+          // con qué calcularse.
+          monto_uma: montoUma,
+          umbral_uma: umbralUma,
+          // El snapshot del GAFI SÓLO cuando terminó de cargar.
+          //
+          // Con la consulta en vuelo, `nivelDePais` no encuentra al país en
+          // ninguna lista y responde «sin observaciones»: Irán salía como
+          // jurisdicción limpia y el valor quedaba escrito. Es el falso
+          // negativo silencioso de manual, y encima se veía contestado.
+          // Mientras no haya listas, la variable de país no se responde.
+          gafi_gris: listasCargadas ? listas?.gafi_gris : undefined,
+          gafi_negra: listasCargadas ? listas?.gafi_negra : undefined,
+          plenario_gafi: listas?.plenario,
+          listas_cargadas: listasCargadas,
+          canal_distribucion: client.canal_distribucion,
+          zonas_atencion: zonas,
+          entidad_cliente: client.entidad_federativa_clave,
+          municipio_cliente: client.municipio,
+          entidad_inmueble: ops[0]?.entidad_federativa_inmueble,
+          municipio_inmueble: ops[0]?.municipio_inmueble,
+          frecuencia_esperada_anual: client.frecuencia_esperada_anual,
+          // La MISMA ventana móvil de seis meses del art. 7 que usa el motor.
+          // Dos ventanas distintas para el mismo cliente sería la manera más
+          // fácil de que el sistema se contradiga sobre él.
+          operaciones_en_ventana: operacionesEnVentana(ops.map((o) => o.fecha)),
+          // El margen del perfil transaccional sale del registro versionado y
+          // firmado, no de una constante: la instrucción 12 de la Adenda retiró
+          // el redondeo que equivalía a una tolerancia del 50 % no documentada.
+          // Sin parámetro cargado la variable se queda sin responder.
+          margen_perfil: valorParam(PARAM.MARGEN_PERFIL, "XII"),
+        }
+      : null;
+
+  const sugeridas: RespuestaSugerida[] =
+    plantilla && contexto ? prellenarMatriz(plantilla.configuracion, contexto) : [];
+  const porVariable = new Map(sugeridas.map((r) => [r.variable_codigo, r]));
+
+  // Las banderas booleanas que no suman puntos pero fuerzan la banda: hoy sólo
+  // el llamado a la acción del GAFI, que el puntaje agrupa con la lista gris
+  // —agrupar para puntuar es aceptable— y que el flujo tiene que separar,
+  // porque conlleva contramedidas y no simplemente diligencia reforzada.
+  const indicadores = contexto ? indicadoresDerivados(contexto) : {};
+  const ctxEvaluacion: ContextoEvaluacion = {
+    catalogos_disponibles: catalogos,
+    indicadores,
+    // Suma al puntaje sin entrar al máximo: es excepcional por definición y
+    // meterla en el denominador diluiría todo lo demás.
+    puntaje_extra: bandera?.puntos ?? 0,
+  };
+
   // Se abre con lo que se respondió la última vez. Volver a capturar veinte
   // variables para cambiar una sola es la clase de fricción que hace que la
   // matriz no se actualice nunca.
+  //
+  // Abrir el expediente empieza un borrador NUEVO: lo que se cargó es la
+  // evaluación anterior, que queda íntegra en `client_risk_assessment` y no se
+  // toca. Por eso `editadas` arranca vacío.
   useEffect(() => {
     if (evaluacion && evaluacion.id !== precargada) {
       setRespuestas(evaluacion.respuestas ?? {});
+      setEditadas(new Set());
       setPrecargada(evaluacion.id);
     }
   }, [evaluacion, precargada]);
 
+  /**
+   * Las derivaciones del sistema PISAN lo que no haya tocado el OC.
+   *
+   * Antes sólo rellenaban huecos, y eso tenía dos consecuencias malas:
+   *
+   *   · Una evaluación guardada congelaba sus respuestas. Si el compareciente
+   *     otorgaba después un poder irrevocable, la matriz seguía respondiendo
+   *     con la compraventa anterior y el piso PODER_IRREVOCABLE no se
+   *     activaba nunca. El comentario de arriba prometía justo lo contrario.
+   *
+   *   · Una respuesta escrita mientras las listas del GAFI iban en vuelo se
+   *     quedaba, aunque después llegaran y dijeran otra cosa.
+   *
+   * Lo que se protege es el JUICIO DEL OC, no cualquier número que ya esté en
+   * el formulario. Por eso se distingue: lo que él cambió a mano en esta
+   * sesión no se pisa; lo demás se recalcula con los datos de hoy.
+   *
+   * La evaluación anterior no se pierde: es un registro histórico y sigue
+   * entera en la base. Lo que se está editando es un borrador nuevo, y un
+   * borrador nuevo tiene que reflejar el expediente de hoy.
+   */
+  useEffect(() => {
+    if (sugeridas.length === 0) return;
+    setRespuestas((previas) => {
+      const siguientes = { ...previas };
+      let cambio = false;
+      for (const r of sugeridas) {
+        if (editadas.has(r.variable_codigo)) continue;
+        if (siguientes[r.variable_codigo] === r.valor) continue;
+        siguientes[r.variable_codigo] = r.valor;
+        cambio = true;
+      }
+      return cambio ? siguientes : previas;
+    });
+    // Depende del contenido, no de la identidad del arreglo: se recalcula en
+    // cada render y compararlo por referencia dispararía el efecto siempre.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(sugeridas), editadas]);
+
   const guardar = useMutation({
-    mutationFn: () => evaluarRiesgoCliente(plantilla!, client!, respuestas),
+    mutationFn: () =>
+      evaluarRiesgoCliente(plantilla!, client!, respuestas, {
+        ...ctxEvaluacion,
+        plenario_gafi: listas?.plenario,
+      }),
     onSuccess: (r) => {
       queryClient.invalidateQueries({ queryKey: ["cliente", id] });
       queryClient.invalidateQueries({ queryKey: ["evaluacion", id] });
@@ -119,11 +309,11 @@ export default function ClientDetailPage() {
   const kyc = client.datos_kyc ?? {};
   const elementos = plantilla ? elementosAplicables(plantilla.configuracion, client.tipo_persona) : [];
   const completa = plantilla
-    ? respuestasCompletas(plantilla.configuracion, client.tipo_persona, respuestas)
+    ? respuestasCompletas(plantilla.configuracion, client.tipo_persona, respuestas, catalogos)
     : false;
   // Vista previa en vivo: mismo cálculo que se persistirá al guardar.
   const preview = completa
-    ? evaluarMatriz(plantilla!.configuracion, client.tipo_persona, respuestas)
+    ? evaluarMatriz(plantilla!.configuracion, client.tipo_persona, respuestas, ctxEvaluacion)
     : null;
 
   return (
@@ -210,14 +400,67 @@ export default function ClientDetailPage() {
                 <div key={el.codigo} className="glass-card p-5">
                   <p className="text-sm font-semibold text-foreground mb-3">{el.nombre}</p>
                   <div className="space-y-3">
-                    {el.variables.map((v) => (
-                      <div key={v.codigo} className="grid grid-cols-2 gap-3 items-center">
-                        <span className="text-sm text-muted-foreground">{v.pregunta}</span>
+                    {el.variables.map((v) => {
+                      const sugerida = porVariable.get(v.codigo);
+                      // Una variable cuyo catálogo no está cargado no puntúa y
+                      // no se pide. Se muestra deshabilitada y con el motivo:
+                      // esconderla dejaría a la matriz aparentando que ese
+                      // factor no existe, y las RCG lo exigen aunque hoy no se
+                      // pueda calificar.
+                      const sinCatalogo = !variablePuntua(v, catalogos);
+                      // Sugerida y todavía sin tocar por el OC. Si él la
+                      // cambió, deja de ser del sistema y la marca se va.
+                      // Exacto, no por coincidencia de valor: si el OC eligió
+                      // a mano el mismo número que el sistema, la respuesta es
+                      // suya y no debe presentarse como derivada.
+                      const delSistema =
+                        sugerida != null &&
+                        !editadas.has(v.codigo) &&
+                        respuestas[v.codigo] === sugerida.valor;
+                      return (
+                      <div key={v.codigo} className="grid grid-cols-2 gap-3 items-start">
+                        <div>
+                          <span className="text-sm text-muted-foreground">{v.pregunta}</span>
+                          {sinCatalogo && (
+                            <p className="text-[13px] mt-0.5 text-warning">
+                              No califica todavía: la lista interna «{v.requiere_catalogo}» está
+                              vacía. La variable queda fuera del puntaje hasta que Cumplimiento la
+                              cargue, en vez de responder «sin observaciones» a cualquier ubicación.
+                            </p>
+                          )}
+                          {/* La fuente, siempre. Una respuesta que el software
+                              puso y que nadie puede rastrear es peor que un
+                              campo vacío: el OC la firma sin saber de dónde
+                              salió. */}
+                          {delSistema && (
+                            // Ámbar cuando salió de un valor por omisión y no de un
+                            // dato del expediente. Que las dos se vieran igual haría
+                            // que nadie fuera a revisar la que sí hace falta revisar.
+                            <p
+                              className={cn(
+                                "text-[13px] mt-0.5",
+                                sugerida!.por_defecto ? "text-warning" : "text-accent",
+                              )}
+                            >
+                              {sugerida!.por_defecto
+                                ? "Sin dato para determinarla: "
+                                : "La respondió el sistema: "}
+                              {sugerida!.fuente}
+                              {sugerida!.por_defecto
+                                ? " Revísala."
+                                : " Cámbiala si no corresponde."}
+                            </p>
+                          )}
+                        </div>
                         <Select
                           value={respuestas[v.codigo]?.toString() ?? ""}
-                          onValueChange={(val) =>
-                            setRespuestas({ ...respuestas, [v.codigo]: Number(val) })
-                          }
+                          disabled={sinCatalogo}
+                          onValueChange={(val) => {
+                            setRespuestas({ ...respuestas, [v.codigo]: Number(val) });
+                            // A partir de aquí es juicio del OC y el
+                            // pre-llenado deja de tocarla.
+                            setEditadas((s) => new Set(s).add(v.codigo));
+                          }}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccione…" />
@@ -231,26 +474,103 @@ export default function ClientDetailPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
+
+              {/* Mientras el snapshot no llegue, la variable de país no se
+                  responde y la matriz no se puede cerrar. Decirlo evita que
+                  alguien lo lea como un campo que se le olvidó contestar. */}
+              {!listasCargadas && (
+                <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <p className="text-sm text-muted-foreground">
+                    Cargando el snapshot de listas del GAFI. El riesgo país no se responde hasta
+                    que llegue: sin las listas, cualquier jurisdicción se vería como «sin
+                    observaciones».
+                  </p>
+                </div>
+              )}
+
+              {/* Los puntos que suman FUERA de la escala de magnitud. */}
+              {bandera && (
+                <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <p className="text-sm font-semibold text-foreground">
+                    Operación en banda de umbral · +{bandera.puntos} puntos
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">{bandera.detalle}</p>
+                </div>
+              )}
+
+              {/* La bandera de flujo, aparte del puntaje. El llamado a la
+                  acción del GAFI conlleva CONTRAMEDIDAS, no diligencia
+                  reforzada: la escala lo agrupa con la lista gris y aquí se
+                  separa, porque el flujo no puede agruparlos. */}
+              {indicadores.GAFI_LLAMADO_ACCION && (
+                <div className="glass-card p-4 border-l-4 border-l-destructive">
+                  <p className="text-sm font-semibold text-foreground">
+                    País bajo llamado a la acción del GAFI
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Conlleva contramedidas, no sólo diligencia reforzada. El expediente entra en
+                    banda alta con independencia del puntaje y requiere revisión del Oficial de
+                    Cumplimiento antes de continuar.
+                  </p>
+                </div>
+              )}
 
               <div className="glass-card p-4 flex items-center justify-between gap-4">
                 <p className="text-sm text-muted-foreground">
                   {completa ? (
                     <>
-                      Captura completa. Score:{" "}
-                      <strong className="text-foreground">{preview!.score_total}</strong> · Riesgo:{" "}
+                      Captura completa.{" "}
+                      {preview!.indice != null ? (
+                        <>
+                          Índice:{" "}
+                          <strong className="text-foreground">{preview!.indice}</strong> de 100
+                          {" "}(puntaje {preview!.score_total} de {preview!.maximo})
+                        </>
+                      ) : (
+                        <>
+                          Score: <strong className="text-foreground">{preview!.score_total}</strong>
+                        </>
+                      )}{" "}
+                      · Riesgo:{" "}
                       <strong className={riesgoClase[preview!.clasificacion]}>
                         {preview!.clasificacion.toUpperCase()}
                       </strong>
                       {preview!.triggers_activados.length > 0 && (
                         <> · alto de oficio por {preview!.triggers_activados.join(", ")}</>
                       )}
+                      {/* Los cortes de 40 y 70 no se han calibrado contra una
+                          muestra real. Presentarlos como definitivos es justo
+                          lo que la Adenda pide no hacer. */}
+                      {preview!.provisional && (
+                        <span className="block text-warning mt-1">
+                          Clasificación provisional: los cortes de la escala todavía no se han
+                          calibrado contra una muestra real de expedientes.
+                        </span>
+                      )}
+                      {preview!.variables_sin_catalogo.length > 0 && (
+                        <span className="block text-warning mt-1">
+                          {preview!.variables_sin_catalogo.length} variable(s) quedaron fuera del
+                          puntaje por falta de su lista interna.
+                        </span>
+                      )}
                     </>
                   ) : (
-                    "Captura incompleta: responda todas las variables para calcular el riesgo."
+                    <>
+                      El sistema respondió{" "}
+                      <strong className="text-foreground">{sugeridas.length}</strong> de{" "}
+                      <strong className="text-foreground">
+                        {sugeridas.length + faltanPorResponder(
+                          plantilla!.configuracion, client.tipo_persona, respuestas, catalogos,
+                        ).length}
+                      </strong>{" "}
+                      con lo que ya está capturado. Faltan las que no puede saber por sí solo:
+                      si el compareciente es PEP y quién es el beneficiario controlador.
+                    </>
                   )}
                 </p>
                 <Button

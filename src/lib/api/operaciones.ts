@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
-import type { NuevaOperacionInput, Operation } from '@/types/domain';
+import type { FormaPago, NuevaOperacionInput, Operation } from '@/types/domain';
+import { comoJson, type Json } from './json';
 
 export async function listarOperaciones(): Promise<Operation[]> {
   const { data, error } = await supabase
@@ -31,15 +32,41 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
     monto_mxn: input.monto_mxn,
     moneda_origen: input.moneda_origen ?? 'MXN',
     activo_virtual: input.activo_virtual ?? null,
-    contraparte: input.contraparte ?? null,
+    contraparte: comoJson(input.contraparte ?? null),
     fecha: input.fecha ?? new Date().toISOString(),
     instrumento_publico: input.instrumento_publico ?? null,
-    datos_acto: input.datos_acto ?? {},
+    datos_acto: comoJson(input.datos_acto ?? {}),
+    forma_pago: input.forma_pago ?? null,
+    pais_origen_recursos: input.pais_origen_recursos?.trim().toUpperCase() || null,
+    efectivo_mxn: input.efectivo_mxn ?? null,
+    fecha_pago: input.fecha_pago || null,
+    pago_de_tercero: input.pago_de_tercero ?? null,
+    institucion_financiera: input.institucion_financiera?.trim() || null,
+    cuenta_ordenante: input.cuenta_ordenante?.trim() || null,
+    // Zona geográfica del inmueble (migration 0041). Distinta del domicilio del
+    // cliente: las dos cuentan como factor geográfico y la matriz toma la más
+    // alta. Alguien domiciliado en Guadalajara que compra en una zona de
+    // atención es justo el caso que el factor existe para ver.
+    entidad_federativa_inmueble: input.entidad_federativa_inmueble?.trim() || null,
+    municipio_inmueble: input.municipio_inmueble?.trim() || null,
     capturado_por: uid,
   };
   const { data, error } = await supabase.from('operation').insert(fila).select('*').single();
   if (error) throw error;
   return data as unknown as Operation;
+}
+
+/**
+ * Lo único que `actualizarDatosActo` cambia de una operación.
+ *
+ * `null` en un campo opcional lo BORRA; ausente lo deja como estaba. La
+ * diferencia importa: no es lo mismo «no toqué este campo» que «lo dejé en
+ * blanco», y con un índice `string -> unknown` no había forma de expresarla.
+ */
+interface CambioActo {
+  datos_acto: Json;
+  forma_pago?: FormaPago | null;
+  pais_origen_recursos?: string | null;
 }
 
 /**
@@ -53,11 +80,30 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
 export async function actualizarDatosActo(
   operationId: string,
   datosActo: Record<string, unknown>,
+  /**
+   * Forma de pago y país de origen de los recursos (migration 0036).
+   *
+   * Van aquí y no sólo en el alta porque el notario casi nunca tiene todo el
+   * día de la firma, y porque los actos anteriores a la 0036 nacieron sin
+   * ellos: sin manera de completarlos después, esos actos quedarían para
+   * siempre sin poder cerrar su matriz de riesgo.
+   *
+   * `undefined` deja el valor como está; cadena vacía lo borra. La diferencia
+   * importa: no es lo mismo «no toqué este campo» que «lo dejé en blanco».
+   */
+  extras?: { forma_pago?: FormaPago | ''; pais_origen_recursos?: string },
 ): Promise<void> {
-  const { error } = await supabase
-    .from('operation')
-    .update({ datos_acto: datosActo })
-    .eq('id', operationId);
+  // Tipado como lo que es y no como `Record<string, unknown>`: ese índice
+  // aceptaba cualquier llave con cualquier valor, así que un typo en el nombre
+  // de una columna compilaba y se iba a fallar a la base, y nada impedía
+  // escribir una forma de pago que el enum no admite.
+  const cambios: CambioActo = { datos_acto: comoJson(datosActo) };
+  if (extras?.forma_pago !== undefined) cambios.forma_pago = extras.forma_pago || null;
+  if (extras?.pais_origen_recursos !== undefined) {
+    cambios.pais_origen_recursos = extras.pais_origen_recursos.trim().toUpperCase() || null;
+  }
+
+  const { error } = await supabase.from('operation').update(cambios).eq('id', operationId);
   if (error) throw error;
 }
 

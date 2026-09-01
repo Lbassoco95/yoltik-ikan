@@ -110,12 +110,38 @@ export interface Client {
   pais_residencia_iso2: string | null;
   datos_kyc: Record<string, unknown>;
   datos_kyb: Record<string, unknown> | null;
+  /** Condición de persona políticamente expuesta (migration 0038). Nulo = no se
+   *  ha consultado, que NO es lo mismo que `no_pep`. */
+  condicion_pep: CondicionPep | null;
+  /** Cómo se llegó a esa condición: fuente, fecha, resultado, quién resolvió.
+   *  Sin ella la condición es una afirmación sin respaldo. */
+  pep_evidencia: Record<string, unknown> | null;
   nivel_kyc: NivelKyc;
   alto_de_oficio: boolean;
   activo: boolean;
   capturado_por: string | null;
   capturado_en: string;
+  /**
+   * Cómo llegó el cliente (migration 0041). Factor obligatorio de las RCG y el
+   * que más aplica a este producto, porque el onboarding es remoto.
+   *
+   * NO se deduce de que exista una verificación de Didit: se puede verificar a
+   * distancia a quien vino a la notaría.
+   */
+  canal_distribucion: CanalDistribucion | null;
+  /** Con `entidad_federativa_clave` forma la zona geográfica del domicilio. */
+  municipio: string | null;
+  /** Operaciones al año que el cliente declara esperar (Cap. III Ter de las
+   *  RCG). Es la única pieza del perfil transaccional que no se puede
+   *  calcular: la observada sale de la ventana móvil de seis meses. */
+  frecuencia_esperada_anual: number | null;
 }
+
+/** Valores del check de `client.canal_distribucion` (migration 0041). */
+export type CanalDistribucion =
+  | 'presencial'
+  | 'remoto_verificacion_reforzada'
+  | 'remoto_estandar';
 
 /** Payload de alta que captura el Operador. `organization_id` y `capturado_por`
  *  los resuelve la capa de API desde la sesión (no los envía el formulario). */
@@ -136,6 +162,9 @@ export interface NuevoClienteInput {
   entidad_federativa?: string;
   pais_residencia_iso2?: string;
   datos_kyc?: Record<string, unknown>;
+  canal_distribucion?: CanalDistribucion;
+  municipio?: string;
+  frecuencia_esperada_anual?: number;
 }
 
 export interface Operation {
@@ -155,6 +184,27 @@ export interface Operation {
   instrumento_publico: string | null;
   /** Subárbol de <tipo_actividad> del layout, según contraparte.tipo_acto. */
   datos_acto: Record<string, unknown>;
+  /** Cómo se liquidó: bancarizado, mixto o efectivo (migration 0036). Alimenta
+   *  la matriz y permite vigilar la prohibición de efectivo del art. 32. */
+  forma_pago: FormaPago | null;
+  /** ISO2 del país de donde vienen los recursos. NO se deriva de la residencia
+   *  del compareciente: son cosas distintas. */
+  pais_origen_recursos: string | null;
+  /** Efectivo entregado, en pesos (migration 0039). Alimenta la prohibición del
+   *  art. 32, cuya omisión se sanciona con porcentaje sobre el valor. */
+  efectivo_mxn: number | null;
+  /** Día del pago. El art. 32 se mide con la UMA de ESE día, no la del
+   *  instrumento. Nulo = se usa la del acto. */
+  fecha_pago: string | null;
+  /** Clave del catálogo ENTIDAD FEDERATIVA donde está el inmueble (migration
+   *  0041). Distinta del domicilio del cliente: las dos cuentan como factor
+   *  geográfico, y se toma la más alta. */
+  entidad_federativa_inmueble: string | null;
+  municipio_inmueble: string | null;
+  /** El pago viene de alguien distinto del cliente. Señal por sí misma. */
+  pago_de_tercero: boolean | null;
+  institucion_financiera: string | null;
+  cuenta_ordenante: string | null;
   requiere_aviso: boolean;
   /** Cuándo el Motor PLD la recorrió, encontrara algo o no (migration 0035).
    *  Nulo = nadie la ha juzgado, que NO es lo mismo que `requiere_aviso: false`. */
@@ -162,6 +212,31 @@ export interface Operation {
   capturado_por: string | null;
   capturado_en: string;
 }
+
+/**
+ * Cómo se liquidó el acto.
+ *
+ * Los tres valores salen de las opciones que la matriz de riesgo ya define; no
+ * son una clasificación propia. «Mixto» es el caso que importa: un acto pagado
+ * en parte con efectivo entra en el supuesto del artículo 32 igual que uno
+ * pagado del todo en efectivo.
+ */
+export type FormaPago = 'bancarizado' | 'mixto' | 'efectivo';
+
+/**
+ * Condición de persona políticamente expuesta.
+ *
+ * `coincidencia_sin_resolver` no es un hueco: es el estado real de un
+ * expediente cuyo screening encontró algo y todavía nadie miró. Las RCG
+ * reservan al sujeto obligado la determinación del nivel, así que una
+ * coincidencia del proveedor no se convierte por sí sola en «es PPE».
+ */
+export type CondicionPep =
+  | 'no_pep'
+  | 'pep_nacional'
+  | 'pep_extranjera'
+  | 'familiar_o_asociado'
+  | 'coincidencia_sin_resolver';
 
 export interface NuevaOperacionInput {
   client_id: string;
@@ -173,6 +248,17 @@ export interface NuevaOperacionInput {
   fecha?: string;
   instrumento_publico?: string;
   datos_acto?: Record<string, unknown>;
+  forma_pago?: FormaPago;
+  pais_origen_recursos?: string;
+  efectivo_mxn?: number;
+  fecha_pago?: string;
+  pago_de_tercero?: boolean;
+  institucion_financiera?: string;
+  cuenta_ordenante?: string;
+  /** Zona geográfica del inmueble (migration 0041). Clave del catálogo
+   *  ENTIDAD FEDERATIVA; el municipio en texto libre. */
+  entidad_federativa_inmueble?: string;
+  municipio_inmueble?: string;
 }
 
 // =====================================================================
@@ -181,6 +267,19 @@ export interface NuevaOperacionInput {
 export interface MatrizOpcion {
   valor: number;
   label: string;
+  /**
+   * Identidad estable de la opción, independiente de su posición y de su
+   * puntaje.
+   *
+   * Existe porque el disparador de alto de oficio apuntaba a la POSICIÓN de la
+   * opción en el arreglo: al pasar el catálogo de actos de cuatro a once, el
+   * poder irrevocable ocupó el lugar del fideicomiso y empezó a disparar su
+   * alerta. No fallaba, respondía mal.
+   *
+   * En la variable de tipo de acto es el valor del catálogo del layout
+   * (`otorgamiento_poder`); en las demás puede quedar vacía.
+   */
+  clave?: string;
   /** Marca opcional para triggers de alto de oficio (no presente en el seed actual). */
   alto_de_oficio?: boolean;
 }
@@ -190,6 +289,36 @@ export interface MatrizVariable {
   criterio?: string;
   peso?: number;
   opciones: MatrizOpcion[];
+  /**
+   * Catálogo del que depende para poder responderse. Mientras ese catálogo esté
+   * vacío, la variable NO puntúa y queda fuera del máximo y del mínimo de la
+   * escala.
+   *
+   * Existe por la zona geográfica: su lista interna nace vacía porque la
+   * determinación de qué zonas son de atención es de Cumplimiento. Dejarla
+   * dentro de la escala con todos los expedientes en el mínimo los comprimiría
+   * a todos hacia abajo por una razón que no tiene que ver con su riesgo; y
+   * responderla «sin observaciones» sería peor todavía, porque se vería
+   * contestada y nadie iría a revisarla.
+   */
+  requiere_catalogo?: string;
+}
+
+/**
+ * Una bandera de sí o no que vive FUERA del puntaje.
+ *
+ * Existe porque agrupar lista gris y lista negra es aceptable para puntuar y no
+ * lo es para el flujo: el llamado a la acción del GAFI conlleva contramedidas,
+ * no simplemente diligencia reforzada. La forma de conciliar las dos cosas sin
+ * romper el diseño de tres opciones es dejar la variable de puntaje con tres
+ * valores y añadir el indicador aparte. El puntaje se agrupa; el flujo no.
+ */
+export interface MatrizIndicador {
+  codigo: string;
+  pregunta: string;
+  descripcion: string;
+  /** `piso` fuerza la banda alta; `informativo` sólo se muestra. */
+  efecto: 'piso' | 'informativo';
 }
 export interface MatrizElemento {
   codigo: string;
@@ -211,7 +340,29 @@ export interface TriggerAltoDeOficio {
   codigo: string;
   descripcion: string;
   variable_codigo?: string;
+  /**
+   * Dispara si la respuesta alcanza este valor. FRÁGIL por naturaleza: depende
+   * de que el orden y los puntajes de las opciones no cambien, y basta añadir
+   * una opción para que señale a otra cosa. Se conserva para las plantillas
+   * que ya lo usan; en las nuevas se prefiere `claves`.
+   */
   valor_minimo?: number;
+  /**
+   * Dispara si la opción elegida es una de éstas, por su `clave` estable.
+   *
+   * Es la forma correcta: un disparador de fideicomiso tiene que apuntar al
+   * fideicomiso, no al tercer renglón de una lista. Cuando hay `claves`, se
+   * ignora `valor_minimo`.
+   */
+  claves?: string[];
+  /**
+   * Dispara si el indicador booleano de este código está en true.
+   *
+   * No apunta a ninguna variable de puntaje: es el caso del llamado a la acción
+   * del GAFI, que la escala agrupa con la lista gris y el flujo tiene que
+   * separar.
+   */
+  indicador_codigo?: string;
 }
 
 export interface MatrizConfig {
@@ -222,6 +373,19 @@ export interface MatrizConfig {
     alto: MatrizEscalaRango;
   };
   triggers_alto_de_oficio: TriggerAltoDeOficio[];
+  /** Banderas de sí o no que no suman puntos pero pueden forzar la banda. */
+  indicadores?: MatrizIndicador[];
+  /**
+   * Las bandas de `escala_cliente` están en índice de 0 a 100, no en puntaje
+   * crudo. Sin esta marca el puntaje crudo se compara contra bandas que no son
+   * suyas, y con once variables cuyo máximo ronda los treinta puntos TODO
+   * clasificaría «bajo» contra una banda que empieza en 40.
+   */
+  escala_normalizada?: boolean;
+  /** Los cortes se calibraron contra datos reales. Mientras sea falso, la
+   *  clasificación se presenta como provisional. */
+  calibrada?: boolean;
+  nota_calibracion?: string;
 }
 export type EstadoPlantilla = 'borrador' | 'publicada';
 

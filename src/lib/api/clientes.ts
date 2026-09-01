@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
+import { comoJson } from './json';
 import type {
   ClasificacionRiesgo,
   Client,
@@ -7,7 +8,12 @@ import type {
   NuevoClienteInput,
   SectorAV,
 } from '@/types/domain';
-import { evaluarMatriz, respuestasCompletas, type ResultadoEvaluacion } from '@/lib/riesgo/matriz';
+import {
+  evaluarMatriz,
+  respuestasCompletas,
+  type ContextoEvaluacion,
+  type ResultadoEvaluacion,
+} from '@/lib/riesgo/matriz';
 
 /** Lista los clientes visibles para el usuario (RLS filtra por rol/organización). */
 export async function listarClientes(): Promise<Client[]> {
@@ -49,7 +55,14 @@ export async function crearCliente(input: NuevoClienteInput): Promise<Client> {
     nacionalidad: input.nacionalidad ?? null,
     entidad_federativa: input.entidad_federativa ?? null,
     pais_residencia_iso2: input.pais_residencia_iso2 ?? null,
-    datos_kyc: input.datos_kyc ?? {},
+    datos_kyc: comoJson(input.datos_kyc ?? {}),
+    // Factores del Capítulo III Ter y del catálogo de las RCG (migration 0041).
+    // Se capturan en el alta y no después: el canal por el que llegó alguien
+    // deja de saberse en cuanto pasa el día.
+    canal_distribucion: input.canal_distribucion ?? null,
+    municipio: input.municipio?.trim() || null,
+    frecuencia_esperada_anual:
+      typeof input.frecuencia_esperada_anual === 'number' ? input.frecuencia_esperada_anual : null,
     capturado_por: uid,
   };
   const { data, error } = await supabase.from('client').insert(fila).select('*').single();
@@ -159,13 +172,20 @@ export async function evaluarRiesgoCliente(
   plantilla: ClientRiskTemplate,
   cliente: Pick<Client, 'id' | 'tipo_persona'>,
   respuestas: Record<string, number>,
+  /**
+   * Catálogos cargados, indicadores booleanos y puntos de banderas externas.
+   *
+   * Sin él, una variable que depende de un catálogo vacío contaría como
+   * incompleta para siempre y la matriz no se podría cerrar nunca.
+   */
+  ctx: ContextoEvaluacion & { plenario_gafi?: string | null } = {},
 ): Promise<EvaluacionGuardada> {
   const cfg = plantilla.configuracion;
-  if (!respuestasCompletas(cfg, cliente.tipo_persona, respuestas)) {
+  if (!respuestasCompletas(cfg, cliente.tipo_persona, respuestas, ctx.catalogos_disponibles)) {
     throw new Error('La captura está incompleta: responde todas las variables aplicables.');
   }
 
-  const resultado = evaluarMatriz(cfg, cliente.tipo_persona, respuestas);
+  const resultado = evaluarMatriz(cfg, cliente.tipo_persona, respuestas, ctx);
   const uid = (await supabase.auth.getUser()).data.user?.id ?? null;
 
   const { data, error } = await supabase
@@ -178,6 +198,12 @@ export async function evaluarRiesgoCliente(
       score_total: resultado.score_total,
       clasificacion: resultado.clasificacion,
       motivo_alto_de_oficio: resultado.motivo_alto_de_oficio,
+      // Contra qué versiones se calculó (migration 0041). La metodología, las
+      // bandas y los pesos son parámetros normativos igual que los umbrales:
+      // sin registrarlos, la reclasificación semestral del Cap. III Bis es
+      // indistinguible de una corrección de errores.
+      snapshot_listas_plenario: ctx.plenario_gafi ?? null,
+      metodologia_version: plantilla.version,
       evaluado_por: uid,
     })
     .select('id')

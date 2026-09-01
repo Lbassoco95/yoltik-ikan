@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { ClientRiskTemplate, MatrizConfig, SectorAV } from '@/types/domain';
+import { comoJson } from './json';
 
 
 /** Versiones de la matriz de riesgo de la organización, más nueva primero.
@@ -40,7 +41,10 @@ export async function guardarBorradorMatriz(
 ): Promise<void> {
   const { error } = await supabase
     .from('client_risk_template')
-    .update({ configuracion, ...(notas !== undefined ? { notas_version: notas } : {}) })
+    .update({
+      configuracion: comoJson(configuracion),
+      ...(notas !== undefined ? { notas_version: notas } : {}),
+    })
     .eq('id', templateId);
   if (error) throw error;
 }

@@ -217,11 +217,23 @@ export async function agregarNotaHallazgo({
   return data as unknown as HallazgoBitacoraEntrada;
 }
 
+/**
+ * Lo único que esta capa cambia de un hallazgo.
+ *
+ * Era `Record<string, string>`, que aceptaba cualquier llave con cualquier
+ * texto: un typo en el nombre de una columna compilaba y se iba a la base a
+ * fallar, y nada impedía escribir un estado que el enum no admite. Los dos
+ * únicos llamadores mandan una de estas dos formas.
+ */
+type CambioHallazgo =
+  | { estado: EstadoHallazgo }
+  | { clasificacion_urgencia: ClasificacionUrgencia };
+
 /** Un UPDATE bloqueado por RLS no devuelve error, solo afecta 0 filas: sin
  *  `.select().single()` el front cantaría un éxito falso. */
 async function actualizarHallazgo(
   hallazgoId: string,
-  cambios: Record<string, string>,
+  cambios: CambioHallazgo,
 ): Promise<void> {
   const { data, error } = await supabase
     .from('hallazgo')
