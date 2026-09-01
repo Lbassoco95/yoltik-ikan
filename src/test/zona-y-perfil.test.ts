@@ -263,6 +263,45 @@ describe('la ventana móvil es la MISMA que la del motor', () => {
     expect(inicio.toISOString().slice(0, 10)).toBe('2026-02-28');
   });
 
+  /**
+   * El defecto que esto cierra: `ventanaDesde` conservaba la HORA del acto que
+   * cierra la ventana, así que seis meses hacia atrás desde el 1 de septiembre
+   * a las 12:00 empezaban el 1 de marzo a las 12:00 y dejaban fuera una
+   * escritura de ese mismo día a las 10:00.
+   *
+   * Lo grave no era el milisegundo: era que el resultado dependía de la hora
+   * guardada en `fecha`. Los mismos dos actos producían o no un Aviso por
+   * acumulación según a qué hora se hubiera capturado el primero.
+   */
+  it('el día del límite cuenta ENTERO, sin importar la hora', () => {
+    const fin = new Date('2026-09-01T12:00:00Z');
+    // Mismo día del límite, dos horas ANTES de la hora de cierre.
+    expect(operacionesEnVentana(['2026-03-01T10:00:00Z'], fin)).toBe(1);
+    // Y después.
+    expect(operacionesEnVentana(['2026-03-01T23:59:59Z'], fin)).toBe(1);
+    // El día anterior sigue fuera: la ventana no se estiró de más.
+    expect(operacionesEnVentana(['2026-02-28T23:59:59Z'], fin)).toBe(0);
+  });
+
+  it('la ventana ya no depende de la hora a la que se corre', () => {
+    // El mismo par de actos, evaluado a distintas horas del día de cierre.
+    const acto = '2026-03-01T10:00:00Z';
+    for (const hora of ['00:00:00', '08:30:00', '12:00:00', '23:59:59']) {
+      expect(
+        operacionesEnVentana([acto], new Date(`2026-09-01T${hora}Z`)),
+        `cerrando a las ${hora}`,
+      ).toBe(1);
+    }
+  });
+
+  it('las ventanas de HORAS siguen siendo exactas: ahí la hora es el dato', () => {
+    // 24h y 72h miden inmediatez. Truncarlas al día las convertiría en otra
+    // regla, así que `ventanaDesde` sólo trunca las de meses.
+    const fin = new Date('2026-09-01T12:00:00Z');
+    expect(ventanaDesde(fin, '24h').toISOString()).toBe('2026-08-31T12:00:00.000Z');
+    expect(ventanaDesde(fin, '72h').toISOString()).toBe('2026-08-29T12:00:00.000Z');
+  });
+
   it('el borde de inicio es inclusivo, igual que en el motor', () => {
     const fin = new Date('2026-09-01T00:00:00Z');
     const inicio = inicioDeVentana(fin);

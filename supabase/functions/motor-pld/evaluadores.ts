@@ -373,6 +373,21 @@ export function ventanaDesde(fin: Date, ventana: string): Date {
     Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth() + 1, 0),
   ).getUTCDate();
   inicio.setUTCDate(Math.min(dia, ultimoDelMes));
+
+  // Y al PRINCIPIO de ese día, no a la hora del acto que cierra la ventana.
+  //
+  // Sin esto, seis meses hacia atrás desde el 1 de septiembre a las 12:00
+  // empezaban el 1 de marzo a las 12:00, y una escritura de ese mismo 1 de
+  // marzo a las 10:00 quedaba fuera. El defecto no es el milisegundo: es que
+  // el resultado dependía de la HORA guardada en `fecha`. Los mismos dos actos
+  // producían o no un Aviso por acumulación según a qué hora se hubiera
+  // capturado el primero, que es una fuente de no determinismo inaceptable en
+  // un cálculo que sostiene una obligación de reporte.
+  //
+  // Se trunca sólo en las ventanas de MESES. Las de horas —24h, 72h— miden
+  // inmediatez y ahí la hora sí es el dato: truncarlas las convertiría en otra
+  // regla.
+  inicio.setUTCHours(0, 0, 0, 0);
   return inicio;
 }
 

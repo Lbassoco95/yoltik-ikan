@@ -4,6 +4,7 @@ import {
   elementosAplicables,
   variablesAplicables,
   respuestasCompletas,
+  evaluarMatriz,
 } from "@/lib/riesgo/matriz";
 import type { MatrizConfig, MatrizElemento } from "@/types/domain";
 
@@ -68,6 +69,27 @@ describe("matriz · elementos/variables aplicables", () => {
 describe("matriz · respuestasCompletas", () => {
   it("detecta captura incompleta y completa", () => {
     expect(respuestasCompletas(config, "fisica", { "PROD-01": 1 })).toBe(false);
-    expect(respuestasCompletas(config, "fisica", { "PROD-01": 1, "CLI-PF-01": 2 })).toBe(true);
+    expect(respuestasCompletas(config, "fisica", { "PROD-01": 1, "CLI-PF-01": 1 })).toBe(true);
+  });
+
+  /**
+   * Esta prueba afirmaba lo contrario: usaba `"CLI-PF-01": 2` sobre una
+   * variable cuya única opción vale 1, y esperaba `true`. Codificaba el defecto
+   * como comportamiento correcto.
+   *
+   * Un número que no corresponde a ninguna opción no es una respuesta. Llega
+   * de una evaluación hecha con una versión anterior de la plantilla, de una
+   * escritura por API o de una corrección a mano, y antes se sumaba: un valor
+   * negativo en una variable de 1 a 3 hacía que el índice se recortara a cero y
+   * el expediente saliera «bajo» por un dato imposible.
+   */
+  it("un valor que no es ninguna opción NO cuenta como respuesta", () => {
+    expect(respuestasCompletas(config, "fisica", { "PROD-01": 1, "CLI-PF-01": 2 })).toBe(false);
+    expect(respuestasCompletas(config, "fisica", { "PROD-01": 1, "CLI-PF-01": -10 })).toBe(false);
+  });
+
+  it("y tampoco suma puntos", () => {
+    const r = evaluarMatriz(config, "fisica", { "PROD-01": 1, "CLI-PF-01": -10 });
+    expect(r.score_total).toBe(1);
   });
 });

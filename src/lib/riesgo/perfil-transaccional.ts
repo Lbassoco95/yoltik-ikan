@@ -163,6 +163,10 @@ export function inicioDeVentana(fin: Date, meses = MESES_VENTANA): Date {
     Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth() + 1, 0),
   ).getUTCDate();
   inicio.setUTCDate(Math.min(dia, ultimoDelMes));
+  // Al principio del día. Ver la explicación en `ventanaDesde` del motor: sin
+  // esto, cuántas operaciones caen en la ventana dependía de la hora guardada
+  // en `fecha`.
+  inicio.setUTCHours(0, 0, 0, 0);
   return inicio;
 }
 

@@ -1,5 +1,5 @@
 import type { MatrizConfig, MatrizVariable, TipoPersona } from '@/types/domain';
-import { variablesAplicables, type CatalogosDisponibles } from './matriz';
+import { variablesAplicables, respuestaValida, type CatalogosDisponibles } from './matriz';
 import { magnitudDeOperacion } from './tramos';
 import { riesgoDeActividad } from './actividad';
 import { riesgoPaisMaximo, claveDeNivel, type PaisCapturado } from './pais';
@@ -121,6 +121,20 @@ export interface ContextoPrellenado {
   /** Países en listas GAFI, del snapshot que ya usa el Motor PLD. */
   gafi_gris?: Set<string>;
   gafi_negra?: Set<string>;
+  /**
+   * El snapshot TERMINÓ de cargar.
+   *
+   * Sin esta bandera, una consulta todavía en vuelo se veía igual que un
+   * snapshot en el que el país no aparece: `nivelDePais` no lo encontraba en
+   * ninguna lista y respondía «sin observaciones». Irán salía como jurisdicción
+   * limpia, el valor quedaba escrito, y como el pre-llenado no pisa lo ya
+   * respondido, se quedaba así aunque después llegaran las listas.
+   *
+   * `false` o ausente = la variable de país NO se responde. No saber de dónde
+   * es alguien y saber que su país está limpio son cosas distintas, y la
+   * diferencia entre las dos es justo lo que esta variable existe para ver.
+   */
+  listas_cargadas?: boolean;
   /** Plenario del GAFI del snapshot (migration 0041). Viaja a la explicación
    *  para que se pueda reconstruir contra qué versión se calificó. */
   plenario_gafi?: string | null;
@@ -275,6 +289,11 @@ function paisesCapturados(ctx: ContextoPrellenado): PaisCapturado[] {
  * puntos— sino una condición de flujo que fuerza la banda alta.
  */
 export function indicadoresDerivados(ctx: ContextoPrellenado): Record<string, boolean> {
+  // Con las listas sin cargar, la bandera no se puede afirmar NI negar. Se
+  // devuelve false porque es lo único que el tipo admite, pero la variable de
+  // país tampoco se responde, así que la matriz no se puede cerrar y nadie
+  // guarda una evaluación con el piso apagado por una consulta en vuelo.
+  if (ctx.listas_cargadas === false) return { GAFI_LLAMADO_ACCION: false };
   const r = riesgoPaisMaximo(paisesCapturados(ctx), {
     gafi_gris: ctx.gafi_gris,
     gafi_negra: ctx.gafi_negra,
@@ -354,8 +373,11 @@ export function prellenarMatriz(
   {
     const v = variables.find((x) => /riesgo pa[ií]s/i.test(x.pregunta));
     const porClave = v?.opciones.some((o) => o.clave === 'riesgo');
+    // Sin snapshot no hay contra qué comparar, y contestar «sin observaciones»
+    // porque la consulta no ha vuelto sería inventar una respuesta benigna.
+    const hayListas = ctx.listas_cargadas !== false;
 
-    if (v && porClave) {
+    if (v && porClave && hayListas) {
       const r = riesgoPaisMaximo(paisesCapturados(ctx), {
         gafi_gris: ctx.gafi_gris,
         gafi_negra: ctx.gafi_negra,
@@ -370,7 +392,7 @@ export function prellenarMatriz(
           fuente: r.fuente,
         });
       }
-    } else if (ctx.pais_iso2) {
+    } else if (ctx.pais_iso2 && hayListas) {
       // Plantillas v1 y v2.
       const nivel = nivelPais(ctx.pais_iso2, ctx);
       const vViejo = variables.find((x) =>
@@ -600,7 +622,10 @@ export function faltanPorResponder(
   respuestas: Record<string, number>,
   catalogos?: CatalogosDisponibles,
 ): MatrizVariable[] {
+  // Una variable con un valor que no es ninguna de sus opciones cuenta como
+  // NO respondida: es un dato que la plantilla no reconoce, y tratarlo como
+  // respuesta lo dejaría fuera de la lista de lo que el OC tiene que contestar.
   return variablesAplicables(config, tipoPersona, catalogos).filter(
-    (v) => typeof respuestas[v.codigo] !== 'number',
+    (v) => !respuestaValida(v, respuestas[v.codigo]),
   );
 }

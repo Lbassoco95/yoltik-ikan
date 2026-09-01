@@ -61,7 +61,21 @@ export function variablesAplicables(
     .filter((v) => variablePuntua(v, catalogos));
 }
 
-/** ¿Están respondidas todas las variables aplicables? */
+/**
+ * ¿Es este número una de las opciones que la variable ofrece?
+ *
+ * No es paranoia de tipos: las respuestas viajan como `jsonb` y se guardan
+ * enteras, así que una evaluación de una versión anterior de la plantilla, una
+ * escritura por API o una corrección a mano pueden traer un valor que la
+ * variable ya no tiene —o que nunca tuvo—. Un `-10` en una variable de 1 a 3
+ * pasaba como respuesta válida, se sumaba, y el índice lo recortaba a cero: el
+ * expediente salía «bajo» por un dato imposible.
+ */
+export function respuestaValida(v: MatrizVariable, valor: unknown): valor is number {
+  return typeof valor === 'number' && v.opciones.some((o) => o.valor === valor);
+}
+
+/** ¿Están respondidas todas las variables aplicables, CON UNA OPCIÓN QUE EXISTE? */
 export function respuestasCompletas(
   config: MatrizConfig,
   tipoPersona: TipoPersona,
@@ -69,7 +83,7 @@ export function respuestasCompletas(
   catalogos?: CatalogosDisponibles,
 ): boolean {
   const variables = variablesAplicables(config, tipoPersona, catalogos);
-  return variables.every((v) => typeof respuestas[v.codigo] === 'number');
+  return variables.every((v) => respuestaValida(v, respuestas[v.codigo]));
 }
 
 // =====================================================================
@@ -132,10 +146,17 @@ export interface ContextoEvaluacion {
   puntaje_extra?: number;
 }
 
-/** Score de una sola variable. Sin respuesta aporta 0. */
+/**
+ * Score de una sola variable. Sin respuesta aporta 0.
+ *
+ * Un valor que no corresponde a ninguna opción tampoco suma: sumarlo sería
+ * puntuar contra un dato que la plantilla no reconoce. Como `respuestasCompletas`
+ * ya lo rechaza, llegar aquí con uno significa que alguien evaluó sin pasar por
+ * ahí, y en ese caso lo correcto es no inventarle un puntaje.
+ */
 function scoreVariable(v: MatrizVariable, respuestas: Record<string, number>): number {
   const valor = respuestas[v.codigo];
-  if (typeof valor !== 'number') return 0;
+  if (!respuestaValida(v, valor)) return 0;
   return (v.peso ?? PESO_POR_DEFECTO) * valor;
 }
 
