@@ -8,6 +8,8 @@ import {
   correrMotor,
   evaluarTipologia,
   ventanaAMs,
+  ventanaDesde,
+  ventanaHasta,
   valorEnCampo,
   type Tipologia,
   type OperacionEval,
@@ -880,5 +882,137 @@ describe('una regla agregada nombra TODAS las operaciones de su ventana', () => 
     const c = evaluarTipologia(UMBRAL, ops, ctx());
     expect(c).toHaveLength(1);
     expect((c[0].regla_payload as { operaciones?: string[] }).operaciones).toEqual(['a']);
+  });
+});
+
+describe('las ventanas de meses se cuentan con el calendario', () => {
+  // La ventana móvil de seis meses del artículo 7 del Reglamento gobierna el
+  // Aviso por acumulación, y el artículo 18 fracción X obliga a detectar las
+  // operaciones que deban acumularse. Aproximar el mes a 30 días deja fuera los
+  // actos del día 181 al 184: un falso negativo silencioso y a favor de no
+  // reportar.
+  it('seis meses son seis meses, no 180 días', () => {
+    const fin = new Date('2026-08-31T12:00:00Z');
+    const inicio = ventanaDesde(fin, '6M');
+    expect(inicio.toISOString().slice(0, 10)).toBe('2026-02-28');
+
+    const dias = (fin.getTime() - inicio.getTime()) / 86_400_000;
+    expect(dias).toBeGreaterThan(180); // la aproximación se quedaba corta
+  });
+
+  it('el día 31 se ajusta como en un almanaque', () => {
+    // Seis meses antes del 31 de agosto es el 28 o 29 de febrero, no el 3 de
+    // marzo. Sin el ajuste, el mes se desborda solo y la ventana se corre.
+    expect(ventanaDesde(new Date('2026-08-31T00:00:00Z'), '6M').toISOString().slice(0, 10))
+      .toBe('2026-02-28');
+    expect(ventanaDesde(new Date('2024-08-31T00:00:00Z'), '6M').toISOString().slice(0, 10))
+      .toBe('2024-02-29'); // bisiesto
+    expect(ventanaDesde(new Date('2026-03-31T00:00:00Z'), '1M').toISOString().slice(0, 10))
+      .toBe('2026-02-28');
+  });
+
+  it('cruza el fin de año sin perderse', () => {
+    expect(ventanaDesde(new Date('2026-01-15T00:00:00Z'), '6M').toISOString().slice(0, 10))
+      .toBe('2025-07-15');
+  });
+
+  it('horas y días siguen siendo milisegundos', () => {
+    expect(ventanaDesde(new Date('2026-08-20T12:00:00Z'), '24h').toISOString())
+      .toBe('2026-08-19T12:00:00.000Z');
+    expect(ventanaDesde(new Date('2026-08-20T12:00:00Z'), '72h').toISOString())
+      .toBe('2026-08-17T12:00:00.000Z');
+  });
+
+  it('hacia adelante es simétrico', () => {
+    const inicio = new Date('2026-02-28T00:00:00Z');
+    expect(ventanaHasta(inicio, '6M').toISOString().slice(0, 10)).toBe('2026-08-28');
+    expect(ventanaHasta(new Date('2026-08-20T12:00:00Z'), '24h').toISOString())
+      .toBe('2026-08-21T12:00:00.000Z');
+  });
+
+  it('todas las ventanas que las tipologías usan se resuelven', () => {
+    // Las cuatro que hay sembradas hoy. Si mañana entra una nueva unidad, esta
+    // prueba la caza antes que el motor.
+    for (const v of ['24h', '72h', '1M', '6M']) {
+      expect(() => ventanaDesde(new Date(), v)).not.toThrow();
+      expect(() => ventanaHasta(new Date(), v)).not.toThrow();
+    }
+  });
+
+  it('una ventana inválida truena en vez de calcular cualquier cosa', () => {
+    for (const v of ['6 meses', '6s', '', 'M6']) {
+      expect(() => ventanaDesde(new Date(), v)).toThrow(/ventana inválida/);
+    }
+  });
+});
+
+describe('un acto en el día 182 SÍ acumula', () => {
+  it('el caso concreto que la aproximación perdía', () => {
+    // Dos transmisiones que juntas cruzan el umbral, separadas por más de 180
+    // días pero menos de seis meses. Con la ventana de 30 días por mes, la
+    // primera caía fuera y no había Aviso por acumulación.
+    const UMBRAL = tip('XII-01', {
+      tipo: 'agregado',
+      ventana: '6M',
+      agrupar_por: 'client_id',
+      condicion: { suma_monto_uma: { op: '>=', valor: 8000 } },
+    });
+    const ops = [
+      op({ id: 'vieja', fecha: '2026-03-01T12:00:00Z', monto_mxn: 5000 * UMA_PRUEBA }),
+      op({ id: 'nueva', fecha: '2026-09-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+    ];
+    const dias =
+      (new Date('2026-09-01').getTime() - new Date('2026-03-01').getTime()) / 86_400_000;
+    // 184 días: dentro de los seis meses del calendario, FUERA de los 180 que
+    // daba la aproximación de 30 días por mes.
+    expect(dias).toBe(184);
+
+    const c = evaluarTipologia(UMBRAL, ops, ctx({ ahora: new Date('2026-09-02T00:00:00Z') }));
+    expect(c).toHaveLength(1);
+    expect((c[0].regla_payload as { operaciones?: string[] }).operaciones).toEqual([
+      'vieja', 'nueva',
+    ]);
+  });
+});
+
+describe('el borde de la ventana se incluye', () => {
+  it('un acto exactamente en el límite entra en la acumulación', () => {
+    // Seis meses hacia atrás desde el 1 de septiembre alcanzan al 1 de marzo,
+    // no empiezan el 2. Con un `>` estricto quedaba fuera un acto que la ley
+    // incluye: un milisegundo de diferencia y una operación menos en el Aviso.
+    const UMBRAL = tip('XII-01', {
+      tipo: 'agregado',
+      ventana: '6M',
+      agrupar_por: 'client_id',
+      condicion: { suma_monto_uma: { op: '>=', valor: 8000 } },
+    });
+    const c = evaluarTipologia(
+      UMBRAL,
+      [
+        op({ id: 'borde', fecha: '2026-03-01T12:00:00Z', monto_mxn: 5000 * UMA_PRUEBA }),
+        op({ id: 'hoy', fecha: '2026-09-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+      ],
+      ctx({ ahora: new Date('2026-09-02T00:00:00Z') }),
+    );
+    expect((c[0]?.regla_payload as { operaciones?: string[] })?.operaciones).toContain('borde');
+  });
+
+  it('un acto FUERA de la ventana no entra', () => {
+    // El día anterior al límite sí queda fuera, que es lo correcto.
+    const UMBRAL = tip('XII-01', {
+      tipo: 'agregado',
+      ventana: '6M',
+      agrupar_por: 'client_id',
+      condicion: { suma_monto_uma: { op: '>=', valor: 8000 } },
+    });
+    const c = evaluarTipologia(
+      UMBRAL,
+      [
+        op({ id: 'vieja', fecha: '2026-02-28T12:00:00Z', monto_mxn: 5000 * UMA_PRUEBA }),
+        op({ id: 'hoy', fecha: '2026-09-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+      ],
+      ctx({ ahora: new Date('2026-09-02T00:00:00Z') }),
+    );
+    expect(c).toHaveLength(0);
   });
 });

@@ -313,10 +313,67 @@ export function ventanaAMs(ventana: string): number {
     case 'd':
       return n * 86_400_000;
     case 'M':
-      return n * 30 * 86_400_000; // aproximación; suficiente para volúmenes mensuales del demo
+      return n * 30 * 86_400_000;
     default:
       throw new Error(`unidad de ventana no soportada: "${m[2]}"`);
   }
+}
+
+/**
+ * El inicio de la ventana, contado hacia atrás desde una fecha.
+ *
+ * Las horas y los días son milisegundos y no tienen misterio. Los MESES no:
+ * `ventanaAMs` los aproxima a 30 días, y para seis meses eso son 180 cuando el
+ * calendario da entre 181 y 184.
+ *
+ * La diferencia parece pequeña y no lo es. La ventana móvil de seis meses del
+ * artículo 7 del Reglamento es la que gobierna el Aviso por acumulación, y el
+ * artículo 18 fracción X obliga a que los mecanismos automatizados detecten
+ * justamente las operaciones que deban acumularse. Un acto en el día 182 cae
+ * FUERA de una ventana de 180 días y no acumula, cuando legalmente está dentro:
+ * un falso negativo en el aviso, silencioso y a favor de no reportar.
+ *
+ * Por eso los meses se restan con aritmética de calendario. El comentario que
+ * había —«aproximación; suficiente para volúmenes mensuales del demo»— era
+ * honesto cuando se escribió y dejó de serlo.
+ *
+ * El día 31 se ajusta como hace el calendario: seis meses antes del 31 de agosto
+ * es el 28 o 29 de febrero, no el 3 de marzo. Es lo que haría cualquiera al
+ * contar meses con un almanaque delante.
+ */
+export function ventanaHasta(inicio: Date, ventana: string): Date {
+  const m = /^(\d+)\s*([hdM])$/.exec(ventana.trim());
+  if (!m) throw new Error(`ventana inválida en regla_dsl: "${ventana}"`);
+  const n = Number(m[1]);
+  if (m[2] !== 'M') return new Date(inicio.getTime() + ventanaAMs(ventana));
+
+  const fin = new Date(inicio.getTime());
+  const dia = fin.getUTCDate();
+  fin.setUTCDate(1);
+  fin.setUTCMonth(fin.getUTCMonth() + n);
+  const ultimoDelMes = new Date(
+    Date.UTC(fin.getUTCFullYear(), fin.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  fin.setUTCDate(Math.min(dia, ultimoDelMes));
+  return fin;
+}
+
+export function ventanaDesde(fin: Date, ventana: string): Date {
+  const m = /^(\d+)\s*([hdM])$/.exec(ventana.trim());
+  if (!m) throw new Error(`ventana inválida en regla_dsl: "${ventana}"`);
+  const n = Number(m[1]);
+
+  if (m[2] !== 'M') return new Date(fin.getTime() - ventanaAMs(ventana));
+
+  const inicio = new Date(fin.getTime());
+  const dia = inicio.getUTCDate();
+  inicio.setUTCDate(1); // primero se fija el mes, si no el 31 se desborda solo
+  inicio.setUTCMonth(inicio.getUTCMonth() - n);
+  const ultimoDelMes = new Date(
+    Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  inicio.setUTCDate(Math.min(dia, ultimoDelMes));
+  return inicio;
 }
 
 export function comparar(op: Comparador, a: number, b: number): boolean {
@@ -470,7 +527,8 @@ function evalAgregado(
   ops: OperacionEval[],
   ctx: MotorContext,
 ): HallazgoCandidato[] {
-  const win = ventanaAMs(regla.ventana);
+  // La ventana ya NO se calcula en milisegundos: `ventanaDesde` la resuelve por
+  // acto, con aritmética de calendario en los meses.
 
   // El filtro se aplica ANTES de agrupar: lo que queda fuera no cuenta para la
   // suma ni puede cerrar una ventana.
@@ -484,11 +542,19 @@ function evalAgregado(
 
   for (const [clave, lista] of grupos) {
     const sorted = [...lista].sort((a, b) => ms(a.fecha) - ms(b.fecha));
-    // Ventana deslizante: cada operación cierra una ventana hacia atrás.
+    // Ventana deslizante: cada operación cierra una ventana hacia atrás. Con
+    // aritmética de calendario en los meses, no restando 30 días por mes.
     for (let i = 0; i < sorted.length; i++) {
       const fin = sorted[i];
-      const inicio = ms(fin.fecha) - win;
-      const enVentana = sorted.filter((o) => ms(o.fecha) > inicio && ms(o.fecha) <= ms(fin.fecha));
+      const inicio = ventanaDesde(new Date(fin.fecha), regla.ventana).getTime();
+      // El borde de inicio se INCLUYE. Una ventana de seis meses hacia atrás
+      // desde el 1 de septiembre alcanza al 1 de marzo, no empieza el 2: con
+      // `>` estricto, un acto que cae exactamente en el límite quedaba fuera de
+      // la acumulación aunque la ley lo incluya. Es un milisegundo de
+      // diferencia y una operación menos en el Aviso.
+      const enVentana = sorted.filter(
+        (o) => ms(o.fecha) >= inicio && ms(o.fecha) <= ms(fin.fecha),
+      );
       const met = metricasVentana(enVentana, ctx);
       if (condicionesCumplen(regla.condicion, met)) {
         out.push(
@@ -513,7 +579,6 @@ function evalSecuencia(
   ops: OperacionEval[],
   ctx: MotorContext,
 ): HallazgoCandidato[] {
-  const win = ventanaAMs(regla.ventana);
   const grupos = agrupar(ops, (o) => o.client_id);
   const out: HallazgoCandidato[] = [];
   const secuencia = regla.secuencia;
@@ -524,11 +589,16 @@ function evalSecuencia(
     // Busca la secuencia ordenada de `tipo` dentro de la ventana, arrancando en cada índice.
     for (let i = 0; i < sorted.length; i++) {
       if (sorted[i].tipo !== secuencia[0]) continue;
+      // La secuencia mira hacia ADELANTE desde la primera operación, así que
+      // aquí la ventana se calcula hacia adelante. Con la misma aritmética de
+      // calendario: hoy todas las secuencias sembradas usan horas, donde da
+      // igual, pero la primera que use meses no debe heredar la aproximación.
       const t0 = ms(sorted[i].fecha);
+      const limite = ventanaHasta(new Date(sorted[i].fecha), regla.ventana).getTime();
       let paso = 1;
       let ultimo = sorted[i];
       for (let j = i + 1; j < sorted.length && paso < secuencia.length; j++) {
-        if (ms(sorted[j].fecha) - t0 > win) break;
+        if (ms(sorted[j].fecha) > limite) break;
         if (sorted[j].tipo === secuencia[paso]) {
           ultimo = sorted[j];
           paso++;
