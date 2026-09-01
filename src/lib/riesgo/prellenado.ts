@@ -4,6 +4,12 @@ import { magnitudDeOperacion } from './tramos';
 import { riesgoDeActividad } from './actividad';
 import { riesgoPaisMaximo, claveDeNivel, type PaisCapturado } from './pais';
 import { riesgoDeZona, type ZonaAtencion } from './zona';
+import {
+  INDICADOR_PAIS_SANCIONADO,
+  indicadorDeSanciones,
+  riesgoDeSanciones,
+  type ListasSanciones,
+} from './sanciones';
 import { riesgoDeCanal, riesgoDeFrecuencia } from './perfil-transaccional';
 
 /**
@@ -142,6 +148,14 @@ export interface ContextoPrellenado {
    * diferencia entre las dos es justo lo que esta variable existe para ver.
    */
   listas_cargadas?: boolean;
+  /**
+   * Los países bajo sanción de la ONU y de OFAC (Adenda 3).
+   *
+   * Aparte del GAFI y no mezclado con él: el GAFI evalúa la solidez del régimen
+   * PLD de una jurisdicción y una sanción no dice nada sobre eso. Un país puede
+   * tener un régimen impecable y estar bajo embargo.
+   */
+  sanciones?: ListasSanciones;
   /** Plenario del GAFI del snapshot (migration 0041). Viaja a la explicación
    *  para que se pueda reconstruir contra qué versión se calificó. */
   plenario_gafi?: string | null;
@@ -339,13 +353,36 @@ export function indicadoresDerivados(ctx: ContextoPrellenado): Record<string, bo
   // devuelve false porque es lo único que el tipo admite, pero la variable de
   // país tampoco se responde, así que la matriz no se puede cerrar y nadie
   // guarda una evaluación con el piso apagado por una consulta en vuelo.
-  if (ctx.listas_cargadas === false) return { GAFI_LLAMADO_ACCION: false };
-  const r = riesgoPaisMaximo(paisesCapturados(ctx), {
+  if (ctx.listas_cargadas === false) {
+    return { GAFI_LLAMADO_ACCION: false, [INDICADOR_PAIS_SANCIONADO]: false };
+  }
+  const paises = paisesCapturados(ctx);
+  const r = riesgoPaisMaximo(paises, {
     gafi_gris: ctx.gafi_gris,
     gafi_negra: ctx.gafi_negra,
     plenario: ctx.plenario_gafi,
   });
-  return { GAFI_LLAMADO_ACCION: r?.llamado_a_la_accion === true };
+  // Las sanciones se calculan sobre LOS MISMOS países que el GAFI. Mirar
+  // conjuntos distintos en cada control haría que un expediente pudiera salir
+  // limpio de uno y sucio del otro por el país que cada uno olvidó mirar.
+  const s = riesgoDeSanciones(paises, ctx.sanciones ?? {});
+  return {
+    GAFI_LLAMADO_ACCION: r?.llamado_a_la_accion === true,
+    [INDICADOR_PAIS_SANCIONADO]: indicadorDeSanciones(s),
+  };
+}
+
+/**
+ * El riesgo por sanciones del expediente, para pintarlo.
+ *
+ * Se expone aparte de `indicadoresDerivados` porque el indicador es un booleano
+ * —lo único que la matriz consume— y la pantalla necesita el detalle: qué país,
+ * en qué calidad y bajo qué autoridad. Un bloqueo que no dice por qué no se
+ * puede levantar.
+ */
+export function sancionesDelExpediente(ctx: ContextoPrellenado) {
+  if (ctx.listas_cargadas === false) return null;
+  return riesgoDeSanciones(paisesCapturados(ctx), ctx.sanciones ?? {});
 }
 
 export function prellenarMatriz(

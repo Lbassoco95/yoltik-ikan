@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { EstadoCatalogo, ValorCatalogo } from '@/lib/catalogos';
 import type { ZonaAtencion } from '@/lib/riesgo/zona';
+import type { ListasSanciones, NivelSancion } from '@/lib/riesgo/sanciones';
 import { comoJson } from './json';
 
 /** Estado de todos los catálogos: cuáles están cargados y desde cuándo.
@@ -92,6 +93,51 @@ export async function paisesEnListas(): Promise<{
     if (f.plenario && (plenario === null || f.plenario > plenario)) plenario = f.plenario;
   }
   return { gafi_gris: gris, gafi_negra: negra, plenario };
+}
+
+/**
+ * Los países bajo régimen de sanciones de la ONU y de OFAC (migration 0053).
+ *
+ * Consulta APARTE de `paisesEnListas` y no un filtro más sobre la misma, porque
+ * el GAFI y las sanciones miden cosas distintas: el GAFI evalúa la solidez del
+ * régimen PLD de una jurisdicción, y una sanción no dice nada sobre eso. Un
+ * país puede tener un régimen impecable y estar bajo embargo. Devolverlos
+ * juntos obligaría a quien llama a separarlos otra vez, y el día que alguien no
+ * los separe, «tiene deficiencias técnicas» y «no se puede operar con él» se
+ * verían igual.
+ *
+ * El `nivel` de la tabla es un entero donde MÁS ES PEOR —3 prohibición, 2
+ * riesgo alto—, al revés que los niveles de la Adenda 3. La traducción a texto
+ * se hace aquí, una sola vez, para que ningún otro sitio tenga que acordarse.
+ */
+export async function paisesSancionados(): Promise<ListasSanciones> {
+  const { data, error } = await supabase
+    .from('country_risk_list')
+    .select('iso2, fuente, nivel, plenario')
+    .in('fuente', ['onu', 'ofac_sancionado'])
+    .is('vigente_hasta', null);
+  if (error) throw error;
+
+  const onu = new Map<string, NivelSancion>();
+  const ofac = new Map<string, NivelSancion>();
+  let lectura: string | null = null;
+
+  for (const f of (data ?? []) as {
+    iso2: string;
+    fuente: string;
+    nivel: number;
+    plenario?: string | null;
+  }[]) {
+    const nivel: NivelSancion = f.nivel >= 3 ? 'prohibicion' : 'riesgo_alto';
+    const destino = f.fuente === 'onu' ? onu : ofac;
+    const iso2 = f.iso2.toUpperCase();
+    // Si un país aparece dos veces en la misma fuente, se queda el más severo.
+    if (destino.get(iso2) !== 'prohibicion') destino.set(iso2, nivel);
+    // `plenario` guarda «lectura DD/MM/AAAA» en estas dos fuentes.
+    if (f.plenario && (lectura === null || f.plenario > lectura)) lectura = f.plenario;
+  }
+
+  return { onu, ofac, lectura: lectura?.replace(/^lectura /, '') ?? null };
 }
 
 /**
