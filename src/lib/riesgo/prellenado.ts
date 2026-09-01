@@ -81,6 +81,13 @@ export interface RespuestaSugerida {
   /** De dónde salió, en español y sin jerga. Es lo que hace revisable la sugerencia. */
   fuente: string;
   /**
+   * Clave estable de la opción elegida, cuando la tiene.
+   *
+   * El número no basta para identificar la opción: seis actos valen 3 y cuatro
+   * valen 4, porque el riesgo base se comparte a propósito.
+   */
+  clave?: string;
+  /**
    * La respuesta salió de un VALOR POR DEFECTO, no de un dato del expediente.
    *
    * Hoy sólo la actividad económica: cuando la clave no está en la tabla de
@@ -357,6 +364,7 @@ export function prellenarMatriz(
       variable_codigo: v.codigo,
       valor: opcion.valor,
       etiqueta: opcion.label,
+          clave: opcion.clave,
       fuente,
     });
   };
@@ -373,6 +381,7 @@ export function prellenarMatriz(
         variable_codigo: v.codigo,
         valor: porClave.valor,
         etiqueta: porClave.label,
+          clave: porClave.clave,
         fuente: 'el tipo de acto que se está instrumentando',
       });
     } else {
@@ -396,6 +405,7 @@ export function prellenarMatriz(
           variable_codigo: v.codigo,
           valor: opcion.valor,
           etiqueta: opcion.label,
+          clave: opcion.clave,
           fuente: m.fuente,
         });
       }
@@ -428,6 +438,7 @@ export function prellenarMatriz(
           variable_codigo: v.codigo,
           valor: opcion.valor,
           etiqueta: opcion.label,
+          clave: opcion.clave,
           fuente: r.fuente,
         });
       }
@@ -486,6 +497,7 @@ export function prellenarMatriz(
           variable_codigo: v.codigo,
           valor: opcion.valor,
           etiqueta: opcion.label,
+          clave: opcion.clave,
           fuente: FUENTE_PEP[ctx.condicion_pep] ?? 'la condición de PPE registrada',
         });
       }
@@ -512,6 +524,7 @@ export function prellenarMatriz(
           variable_codigo: v.codigo,
           valor: opcion.valor,
           etiqueta: opcion.label,
+          clave: opcion.clave,
           fuente: r.fuente,
           por_defecto: !r.mapeada,
         });
@@ -533,6 +546,7 @@ export function prellenarMatriz(
           variable_codigo: v.codigo,
           valor: opcion.valor,
           etiqueta: opcion.label,
+          clave: opcion.clave,
           fuente: `la forma de pago capturada en el acto (${texto.toLowerCase()})`,
         });
       }
@@ -556,6 +570,7 @@ export function prellenarMatriz(
           variable_codigo: v.codigo,
           valor: opcion.valor,
           etiqueta: opcion.label,
+          clave: opcion.clave,
           fuente: `los recursos vienen de ${ctx.pais_origen_recursos.toUpperCase()}: ${TEXTO_PAIS[nivel]}`,
         });
       }
@@ -576,6 +591,7 @@ export function prellenarMatriz(
         variable_codigo: v.codigo,
         valor: opcion.valor,
         etiqueta: opcion.label,
+          clave: opcion.clave,
         fuente: r.fuente,
       });
     }
@@ -609,6 +625,7 @@ export function prellenarMatriz(
         variable_codigo: v.codigo,
         valor: opcion.valor,
         etiqueta: opcion.label,
+          clave: opcion.clave,
         fuente: r.fuente,
       });
     }
@@ -638,6 +655,7 @@ export function prellenarMatriz(
           variable_codigo: v.codigo,
           valor: opcion.valor,
           etiqueta: opcion.label,
+          clave: opcion.clave,
           fuente: r.fuente,
           por_defecto: r.por_defecto,
         });

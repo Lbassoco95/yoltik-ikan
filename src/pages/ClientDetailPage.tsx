@@ -62,6 +62,14 @@ export default function ClientDetailPage() {
   const [precargada, setPrecargada] = useState<string | null>(null);
   /** Variables que el OC cambió a mano en esta sesión. El pre-llenado no las pisa. */
   const [editadas, setEditadas] = useState<Set<string>>(new Set());
+  /**
+   * Clave de la opción elegida, por variable.
+   *
+   * Aparte del número porque el número no identifica la opción: `XII-ACT-01`
+   * tiene once actos y cuatro valores de riesgo —seis valen 3 y cuatro valen
+   * 4—, así que un select con valor 4 empataba con cuatro opciones a la vez.
+   */
+  const [claves, setClaves] = useState<Record<string, string>>({});
   const { perfilActividad, profile } = useAuth();
   const queryClient = useQueryClient();
   const L = LABELS[perfilActividad];
@@ -225,6 +233,7 @@ export default function ClientDetailPage() {
   const ctxEvaluacion: ContextoEvaluacion = {
     catalogos_disponibles: catalogos,
     indicadores,
+    claves,
     // Suma al puntaje sin entrar al máximo: es excepcional por definición y
     // meterla en el denominador diluiría todo lo demás.
     puntaje_extra: bandera?.puntos ?? 0,
@@ -240,6 +249,7 @@ export default function ClientDetailPage() {
   useEffect(() => {
     if (evaluacion && evaluacion.id !== precargada) {
       setRespuestas(evaluacion.respuestas ?? {});
+      setClaves(evaluacion.respuestas_clave ?? {});
       setEditadas(new Set());
       setPrecargada(evaluacion.id);
     }
@@ -275,6 +285,19 @@ export default function ClientDetailPage() {
         if (editadas.has(r.variable_codigo)) continue;
         if (siguientes[r.variable_codigo] === r.valor) continue;
         siguientes[r.variable_codigo] = r.valor;
+        cambio = true;
+      }
+      return cambio ? siguientes : previas;
+    });
+    // Y la clave, que es lo que identifica la opción cuando varias comparten
+    // puntaje. Sin esto el select quedaba en blanco aunque el número estuviera.
+    setClaves((previas) => {
+      const siguientes = { ...previas };
+      let cambio = false;
+      for (const r of sugeridas) {
+        if (!r.clave || editadas.has(r.variable_codigo)) continue;
+        if (siguientes[r.variable_codigo] === r.clave) continue;
+        siguientes[r.variable_codigo] = r.clave;
         cambio = true;
       }
       return cambio ? siguientes : previas;
@@ -426,6 +449,9 @@ export default function ClientDetailPage() {
                       // factor no existe, y las RCG lo exigen aunque hoy no se
                       // pueda calificar.
                       const sinCatalogo = !variablePuntua(v, catalogos);
+                      // ¿Sus opciones tienen clave estable? Entonces se
+                      // identifican por ella y no por su puntaje.
+                      const porClave = v.opciones.every((o) => o.clave != null);
                       // Sugerida y todavía sin tocar por el OC. Si él la
                       // cambió, deja de ser del sistema y la marca se va.
                       // Exacto, no por coincidencia de valor: si el OC eligió
@@ -471,10 +497,25 @@ export default function ClientDetailPage() {
                           )}
                         </div>
                         <Select
-                          value={respuestas[v.codigo]?.toString() ?? ""}
+                          // Se identifica por CLAVE cuando las opciones la
+                          // traen: con el valor, un select en 4 empataba con
+                          // las cuatro opciones que valen 4 y pintaba sus
+                          // cuatro etiquetas concatenadas.
+                          value={
+                            porClave
+                              ? (claves[v.codigo] ?? "")
+                              : (respuestas[v.codigo]?.toString() ?? "")
+                          }
                           disabled={sinCatalogo}
                           onValueChange={(val) => {
-                            setRespuestas({ ...respuestas, [v.codigo]: Number(val) });
+                            const elegida = porClave
+                              ? v.opciones.find((o) => o.clave === val)
+                              : v.opciones.find((o) => o.valor === Number(val));
+                            if (!elegida) return;
+                            setRespuestas({ ...respuestas, [v.codigo]: elegida.valor });
+                            setClaves((c) =>
+                              elegida.clave ? { ...c, [v.codigo]: elegida.clave } : c,
+                            );
                             // A partir de aquí es juicio del OC y el
                             // pre-llenado deja de tocarla.
                             setEditadas((s) => new Set(s).add(v.codigo));
@@ -485,7 +526,13 @@ export default function ClientDetailPage() {
                           </SelectTrigger>
                           <SelectContent>
                             {v.opciones.map((o) => (
-                              <SelectItem key={o.valor} value={o.valor.toString()}>
+                              // La clave como `key` y como `value`: con el
+                              // valor había cuatro items con el mismo, que es
+                              // clave duplicada en React y empate en el Select.
+                              <SelectItem
+                                key={o.clave ?? o.valor}
+                                value={porClave ? (o.clave as string) : o.valor.toString()}
+                              >
                                 {o.label}
                               </SelectItem>
                             ))}

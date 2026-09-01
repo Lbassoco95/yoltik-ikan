@@ -144,6 +144,19 @@ export interface ContextoEvaluacion {
    * demás.
    */
   puntaje_extra?: number;
+  /**
+   * Clave de la opción elegida, por código de variable.
+   *
+   * Hace falta porque el riesgo base se COMPARTE entre actos: `XII-ACT-01`
+   * tiene once opciones y cuatro valores, así que seis actos valen 3 y cuatro
+   * valen 4. Con el número solo, `opciones.find(o => o.valor === respuesta)`
+   * devuelve siempre la primera con ese valor, y un fideicomiso se registraba
+   * como poder irrevocable: banda correcta, fundamento legal equivocado.
+   *
+   * Cuando la clave no viene se cae al comportamiento anterior, para poder
+   * seguir leyendo las evaluaciones guardadas antes de la migration 0047.
+   */
+  claves?: Record<string, string>;
 }
 
 /**
@@ -192,8 +205,19 @@ export function triggersActivados(
     // pasar el catálogo de actos de cuatro a once, el poder irrevocable ocupó
     // la posición del fideicomiso y disparaba su alerta.
     if (t.claves && t.claves.length > 0) {
-      const elegida = variable.opciones.find((o) => o.valor === respuesta);
-      return elegida?.clave != null && t.claves.includes(elegida.clave);
+      // La clave elegida, cuando se guardó. Es la única forma de saber CUÁL de
+      // las opciones que comparten valor se eligió.
+      const clave = ctx.claves?.[t.variable_codigo];
+      if (clave != null) return t.claves.includes(clave);
+
+      // Sin clave —evaluaciones anteriores a la 0047— se resuelve por valor,
+      // que es lo que había. Pero sólo si NO hay ambigüedad: si varias opciones
+      // comparten ese valor, cualquier respuesta sería una adivinanza, y
+      // adivinar el fundamento legal de un alto de oficio es peor que no
+      // dispararlo.
+      const conEseValor = variable.opciones.filter((o) => o.valor === respuesta);
+      if (conEseValor.length !== 1) return false;
+      return conEseValor[0].clave != null && t.claves.includes(conEseValor[0].clave);
     }
 
     // Forma antigua, para las plantillas que todavía la usan.
