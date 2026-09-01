@@ -104,3 +104,31 @@ describe('los tipos generados van al día con las migrations', () => {
     ).toEqual([]);
   });
 });
+
+describe('el parser de migrations no se come columnas', () => {
+  /**
+   * Regresión de un falso verde. Un comentario `--` DETRÁS de código dejaba su
+   * texto dentro del cuerpo del `create table`, y la columna siguiente quedaba
+   * pegada a él y no se reconocía. `verificacion_identidad.resumen` era
+   * invisible para el esquema, así que la prueba de selects marcaba como
+   * inexistente una columna perfectamente válida —y, del otro lado, una columna
+   * fantasma habría dejado pasar un select roto.
+   */
+  it('ve las columnas que van después de un comentario de fin de línea', () => {
+    const esquema = esquemaDeMigrations();
+    const cols = esquema.get('verificacion_identidad');
+    expect(cols).toBeDefined();
+    // `enviado_a` lleva su comentario en la misma línea; `resumen` es la que
+    // venía después y desaparecía.
+    expect(cols).toContain('enviado_a');
+    expect(cols).toContain('resumen');
+  });
+
+  it('no corta en los guiones que van dentro de una cadena', () => {
+    // Varias migrations usan `E'\n---\n'` como separador de notas. Si el
+    // barrido de comentarios no respetara las comillas, cortaría ahí y se
+    // llevaría por delante el resto de la sentencia.
+    const esquema = esquemaDeMigrations();
+    expect(esquema.get('parametro_regulatorio')).toContain('notas');
+  });
+});

@@ -320,8 +320,10 @@ export function pendientesIdentificacion(
      * imposible enseña a ignorar la lista.
      *
      * Lo que se identifica de una persona moral son las personas físicas
-     * detrás. Eso vive en el bloque de beneficiario controlador, que todavía
-     * no existe.
+     * detrás. Eso vive en el bloque de beneficiario controlador (migration
+     * 0049), y de ellas se recaban los cuatro datos del Anexo 3 sin correr
+     * verificación: la del art. 18 fr. I está referida al Cliente con quien se
+     * realiza la Actividad Vulnerable.
      */
     tipoPersona?: 'fisica' | 'moral';
     /**

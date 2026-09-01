@@ -20,6 +20,7 @@ import {
 } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { EstructuraSocietaria } from "@/components/clientes/EstructuraSocietaria";
+import { Identificacion } from "@/components/clientes/Identificacion";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import { paisesEnListas, zonasDeAtencion } from "@/lib/api/catalogos";
 import {
@@ -409,6 +410,11 @@ export default function ClientDetailPage() {
           {client.tipo_persona === "moral" && (
             <TabsTrigger value="estructura">Estructura y beneficiario</TabsTrigger>
           )}
+          {/* La identificación vive DENTRO del expediente, no en un tablero
+              aparte: lo que Didit resolvió de esta persona y su condición de
+              PPE son datos de este expediente, y buscarlos en otra pantalla
+              obliga a salirse de él para responder su pregunta más básica. */}
+          <TabsTrigger value="identificacion">Identificación</TabsTrigger>
           <TabsTrigger value="operaciones">{esNotarias ? "Actos" : "Operaciones"}</TabsTrigger>
         </TabsList>
 
@@ -677,6 +683,10 @@ export default function ClientDetailPage() {
             <EstructuraSocietaria client={client} />
           </TabsContent>
         )}
+
+        <TabsContent value="identificacion">
+          <Identificacion client={client} />
+        </TabsContent>
 
         <TabsContent value="operaciones">
           <div className="glass-card overflow-hidden">
