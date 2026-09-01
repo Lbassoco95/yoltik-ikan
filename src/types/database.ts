@@ -1668,6 +1668,7 @@ export type Database = {
           creada_por: string | null
           domicilio_fiscal: string | null
           es_demostracion: boolean
+          es_referencia: boolean
           fecha_alta_sat: string | null
           id: string
           oficio_alta_sat: string | null
@@ -1685,6 +1686,7 @@ export type Database = {
           creada_por?: string | null
           domicilio_fiscal?: string | null
           es_demostracion?: boolean
+          es_referencia?: boolean
           fecha_alta_sat?: string | null
           id?: string
           oficio_alta_sat?: string | null
@@ -1702,6 +1704,7 @@ export type Database = {
           creada_por?: string | null
           domicilio_fiscal?: string | null
           es_demostracion?: boolean
+          es_referencia?: boolean
           fecha_alta_sat?: string | null
           id?: string
           oficio_alta_sat?: string | null
