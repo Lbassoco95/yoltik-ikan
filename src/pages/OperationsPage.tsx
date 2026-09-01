@@ -100,6 +100,8 @@ export default function OperationsPage() {
   // Acto cuyo expediente se está completando desde la lista. El detalle del
   // acto rara vez está entero el día de la firma.
   const [actoEnCurso, setActoEnCurso] = useState<Operation | null>(null);
+  /** Forma de pago y origen del acto que se está completando (migration 0036). */
+  const [extrasEnCurso, setExtrasEnCurso] = useState({ forma_pago: "", pais_origen_recursos: "" });
   const [datosEnCurso, setDatosEnCurso] = useState<DatosActo>({});
   const queryClient = useQueryClient();
   const { perfilActividad } = useAuth();
@@ -313,7 +315,8 @@ export default function OperationsPage() {
   }
 
   const guardarExpediente = useMutation({
-    mutationFn: () => actualizarDatosActo(actoEnCurso!.id, datosEnCurso),
+    mutationFn: () =>
+      actualizarDatosActo(actoEnCurso!.id, datosEnCurso, extrasEnCurso),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["operaciones"] });
       toast.success("Expediente del acto actualizado");
@@ -594,13 +597,23 @@ export default function OperationsPage() {
                                 Faltan {faltan}
                               </span>
                             )}
-                            {puedeCompletar && tipoActo && canalDeActo(tipoActo) === "sppld" && (
+                            {/* También en los actos de DeclaraNOT. Su expediente
+                                del layout no existe —ese acto no va por el
+                                SPPLD— pero la forma de pago y el origen de los
+                                recursos sí les aplican, y de hecho es en la
+                                transmisión de inmuebles donde la prohibición de
+                                efectivo del artículo 32 pesa más. */}
+                            {puedeCompletar && tipoActo && (
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => {
                                   setActoEnCurso(op);
                                   setDatosEnCurso((op.datos_acto ?? {}) as DatosActo);
+                                  setExtrasEnCurso({
+                                    forma_pago: op.forma_pago ?? "",
+                                    pais_origen_recursos: op.pais_origen_recursos ?? "",
+                                  });
                                 }}
                               >
                                 Completar
@@ -904,13 +917,70 @@ export default function OperationsPage() {
           </DialogHeader>
 
           {actoEnCurso && (
-            <CapturaActo
-              tipoActo={
-                (actoEnCurso.contraparte as Record<string, unknown> | null)?.tipo_acto as string
-              }
-              datos={datosEnCurso}
-              onChange={setDatosEnCurso}
-            />
+            <>
+              {/* Los actos anteriores a la 0036 nacieron sin estos dos datos, y
+                  sin manera de completarlos después se quedarían para siempre
+                  sin poder cerrar su matriz de riesgo. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3">
+                <div>
+                  <Label>Forma de pago</Label>
+                  <Select
+                    value={extrasEnCurso.forma_pago}
+                    onValueChange={(v) =>
+                      setExtrasEnCurso({ ...extrasEnCurso, forma_pago: v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bancarizado">
+                        Bancarizado — transferencia o cheque nominativo
+                      </SelectItem>
+                      <SelectItem value="mixto">Mixto — parte en efectivo</SelectItem>
+                      <SelectItem value="efectivo">Efectivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>País de origen de los recursos</Label>
+                  <Input
+                    placeholder="MX"
+                    maxLength={2}
+                    value={extrasEnCurso.pais_origen_recursos}
+                    onChange={(e) =>
+                      setExtrasEnCurso({
+                        ...extrasEnCurso,
+                        pais_origen_recursos: e.target.value
+                          .toUpperCase()
+                          .replace(/[^A-Z]/g, ""),
+                      })
+                    }
+                  />
+                </div>
+                <p className="sm:col-span-2 text-[13px] text-muted-foreground">
+                  Los dos responden variables de la matriz de riesgo del compareciente. De
+                  dónde viene el dinero no es lo mismo que dónde vive quien comparece.
+                </p>
+              </div>
+
+              {canalDeActo(
+                (actoEnCurso.contraparte as Record<string, unknown> | null)?.tipo_acto,
+              ) === "sppld" ? (
+                <CapturaActo
+                  tipoActo={
+                    (actoEnCurso.contraparte as Record<string, unknown> | null)?.tipo_acto as string
+                  }
+                  datos={datosEnCurso}
+                  onChange={setDatosEnCurso}
+                />
+              ) : (
+                <p className="text-[13px] text-muted-foreground">
+                  Este acto se presenta por DeclaraNOT, no por el SPPLD, así que no tiene
+                  expediente en el formato de fe pública. Los dos datos de arriba sí le aplican.
+                </p>
+              )}
+            </>
           )}
 
           <DialogFooter>

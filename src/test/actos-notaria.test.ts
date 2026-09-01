@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
@@ -76,5 +77,26 @@ describe('KYC o KYB, según a quién se conoce', () => {
   it('el nivel se compone sin perder cuál es', () => {
     expect(nivelConocimiento('fisica', 'N1')).toBe('KYC · N1');
     expect(nivelConocimiento('moral', 'N3')).toBe('KYB · N3');
+  });
+});
+
+describe('los campos del acto llegan completos al insert', () => {
+  // `crearOperacion` arma la fila campo por campo, así que un campo nuevo en el
+  // formulario que nadie añada aquí se pierde en silencio: el alta responde
+  // 200, el acto se guarda, y el dato simplemente no está. Pasó con forma_pago
+  // y pais_origen_recursos.
+  it('la fila del insert cubre todo lo que el formulario captura', async () => {
+    const fuente = await readFile('src/lib/api/operaciones.ts', 'utf8');
+    const cuerpo = fuente.slice(
+      fuente.indexOf('export async function crearOperacion'),
+      fuente.indexOf('export async function actualizarDatosActo'),
+    );
+    for (const campo of [
+      'client_id', 'tipo', 'monto_mxn', 'moneda_origen', 'activo_virtual',
+      'contraparte', 'fecha', 'instrumento_publico', 'datos_acto',
+      'forma_pago', 'pais_origen_recursos',
+    ]) {
+      expect(cuerpo, `crearOperacion no manda ${campo}`).toContain(`${campo}:`);
+    }
   });
 });

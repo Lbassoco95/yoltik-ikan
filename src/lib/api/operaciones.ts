@@ -35,6 +35,8 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
     fecha: input.fecha ?? new Date().toISOString(),
     instrumento_publico: input.instrumento_publico ?? null,
     datos_acto: input.datos_acto ?? {},
+    forma_pago: input.forma_pago ?? null,
+    pais_origen_recursos: input.pais_origen_recursos?.trim().toUpperCase() || null,
     capturado_por: uid,
   };
   const { data, error } = await supabase.from('operation').insert(fila).select('*').single();
@@ -53,11 +55,26 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
 export async function actualizarDatosActo(
   operationId: string,
   datosActo: Record<string, unknown>,
+  /**
+   * Forma de pago y país de origen de los recursos (migration 0036).
+   *
+   * Van aquí y no sólo en el alta porque el notario casi nunca tiene todo el
+   * día de la firma, y porque los actos anteriores a la 0036 nacieron sin
+   * ellos: sin manera de completarlos después, esos actos quedarían para
+   * siempre sin poder cerrar su matriz de riesgo.
+   *
+   * `undefined` deja el valor como está; cadena vacía lo borra. La diferencia
+   * importa: no es lo mismo «no toqué este campo» que «lo dejé en blanco».
+   */
+  extras?: { forma_pago?: string; pais_origen_recursos?: string },
 ): Promise<void> {
-  const { error } = await supabase
-    .from('operation')
-    .update({ datos_acto: datosActo })
-    .eq('id', operationId);
+  const cambios: Record<string, unknown> = { datos_acto: datosActo };
+  if (extras?.forma_pago !== undefined) cambios.forma_pago = extras.forma_pago || null;
+  if (extras?.pais_origen_recursos !== undefined) {
+    cambios.pais_origen_recursos = extras.pais_origen_recursos.trim().toUpperCase() || null;
+  }
+
+  const { error } = await supabase.from('operation').update(cambios).eq('id', operationId);
   if (error) throw error;
 }
 
