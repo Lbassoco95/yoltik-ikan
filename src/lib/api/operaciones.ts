@@ -37,6 +37,11 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
     datos_acto: input.datos_acto ?? {},
     forma_pago: input.forma_pago ?? null,
     pais_origen_recursos: input.pais_origen_recursos?.trim().toUpperCase() || null,
+    efectivo_mxn: input.efectivo_mxn ?? null,
+    fecha_pago: input.fecha_pago || null,
+    pago_de_tercero: input.pago_de_tercero ?? null,
+    institucion_financiera: input.institucion_financiera?.trim() || null,
+    cuenta_ordenante: input.cuenta_ordenante?.trim() || null,
     capturado_por: uid,
   };
   const { data, error } = await supabase.from('operation').insert(fila).select('*').single();

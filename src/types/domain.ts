@@ -167,6 +167,16 @@ export interface Operation {
   /** ISO2 del país de donde vienen los recursos. NO se deriva de la residencia
    *  del compareciente: son cosas distintas. */
   pais_origen_recursos: string | null;
+  /** Efectivo entregado, en pesos (migration 0039). Alimenta la prohibición del
+   *  art. 32, cuya omisión se sanciona con porcentaje sobre el valor. */
+  efectivo_mxn: number | null;
+  /** Día del pago. El art. 32 se mide con la UMA de ESE día, no la del
+   *  instrumento. Nulo = se usa la del acto. */
+  fecha_pago: string | null;
+  /** El pago viene de alguien distinto del cliente. Señal por sí misma. */
+  pago_de_tercero: boolean | null;
+  institucion_financiera: string | null;
+  cuenta_ordenante: string | null;
   requiere_aviso: boolean;
   /** Cuándo el Motor PLD la recorrió, encontrara algo o no (migration 0035).
    *  Nulo = nadie la ha juzgado, que NO es lo mismo que `requiere_aviso: false`. */
@@ -212,6 +222,11 @@ export interface NuevaOperacionInput {
   datos_acto?: Record<string, unknown>;
   forma_pago?: FormaPago;
   pais_origen_recursos?: string;
+  efectivo_mxn?: number;
+  fecha_pago?: string;
+  pago_de_tercero?: boolean;
+  institucion_financiera?: string;
+  cuenta_ordenante?: string;
 }
 
 // =====================================================================

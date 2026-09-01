@@ -33,6 +33,7 @@ import type { FormaPago, NuevaOperacionInput, TipoOperacion } from "@/types/doma
 import { formatMxn, cn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
+import { evaluarArticulo32 } from "@/lib/riesgo/articulo32";
 import { useAuth } from "@/lib/auth-context";
 import {
   LABELS,
@@ -87,6 +88,9 @@ const FORM_INICIAL = {
   datos_acto: {} as DatosActo,
   forma_pago: "" as FormaPago | "",
   pais_origen_recursos: "",
+  efectivo_mxn: "",
+  fecha_pago: "",
+  pago_de_tercero: false,
 };
 
 export default function OperationsPage() {
@@ -291,6 +295,16 @@ export default function OperationsPage() {
       return;
     }
 
+    // El artículo 32 se para aquí también. El trigger de la base lo impediría
+    // igual, pero un error de base de datos delante de quien captura no explica
+    // nada y no dice qué hacer. Esto sí.
+    if (avisoArt32?.prohibido) {
+      toast.error("El artículo 32 no permite liquidar este acto en efectivo", {
+        description: avisoArt32.detalle,
+      });
+      return;
+    }
+
     // Las señales (país, tipo de acto) viajan en contraparte (jsonb).
     const contraparte: Record<string, unknown> = {};
     if (form.pais_iso2.trim()) contraparte.pais_iso2 = form.pais_iso2.trim().toUpperCase();
@@ -307,6 +321,9 @@ export default function OperationsPage() {
       datos_acto: esNotarias ? form.datos_acto : undefined,
       forma_pago: form.forma_pago || undefined,
       pais_origen_recursos: form.pais_origen_recursos.trim().toUpperCase() || undefined,
+      efectivo_mxn: form.efectivo_mxn ? Number(form.efectivo_mxn) : undefined,
+      fecha_pago: form.fecha_pago || undefined,
+      pago_de_tercero: form.pago_de_tercero || undefined,
       // Mediodía local: la fecha del acto es un día, no un instante, y guardarla
       // a las 00:00 la corre al día anterior en husos al oeste de UTC.
       fecha: new Date(`${form.fecha}T12:00:00`).toISOString(),
@@ -392,6 +409,26 @@ export default function OperationsPage() {
 
   const catalogosDelActo = form.tipo_acto ? catalogosPendientes(form.tipo_acto) : [];
   const canal = form.tipo_acto ? canalDeActo(form.tipo_acto) : undefined;
+
+  /**
+   * La prohibición del artículo 32, evaluada mientras se captura.
+   *
+   * El candado de verdad vive en un trigger de la base (migration 0039) y ahí
+   * se queda: una validación que sólo existiera aquí la saltaría cualquiera con
+   * la API. Esto es para que quien captura se entere ANTES de pulsar
+   * «Registrar» —enterarse al guardar es enterarse tarde, con el compareciente
+   * enfrente y el instrumento firmado—.
+   *
+   * La UMA es la del día del pago, no la de hoy: el límite se mide así.
+   */
+  const avisoArt32 = form.efectivo_mxn
+    ? evaluarArticulo32({
+        tipo_acto: form.tipo_acto,
+        efectivo_mxn: Number(form.efectivo_mxn),
+        umaDelDiaDelPago: valorParam(PARAM.UMA_DIARIA, "*"),
+        limitesUma: (codigo) => valorParam(codigo, "XII"),
+      })
+    : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -774,6 +811,68 @@ export default function OperationsPage() {
                   Responde una variable de la matriz de riesgo. «Mixto» cuenta como efectivo
                   para la prohibición del artículo 32.
                 </p>
+              </div>
+
+              {/* Sólo cuando hubo efectivo. Pedir el monto en una operación
+                  bancarizada es preguntar por algo que no existe, y además la
+                  base rechaza esa combinación (migration 0039). */}
+              {(form.forma_pago === "mixto" || form.forma_pago === "efectivo") && (
+                <>
+                  <div>
+                    <Label>Efectivo entregado (MXN)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.efectivo_mxn}
+                      onChange={(e) => setForm({ ...form, efectivo_mxn: e.target.value })}
+                    />
+                    {avisoArt32 && (
+                      // Rojo, no ámbar: el artículo 32 no es algo que atender,
+                      // es algo que impide. Y se dice ANTES de intentar
+                      // guardar, aunque el candado de la base lo pare igual:
+                      // enterarse al pulsar «Registrar» es enterarse tarde.
+                      <p
+                        className={cn(
+                          "text-[13px] mt-1",
+                          avisoArt32.prohibido ? "text-destructive font-medium" : "text-muted-foreground",
+                        )}
+                      >
+                        {avisoArt32.detalle}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label>Día del pago</Label>
+                    <Input
+                      type="date"
+                      value={form.fecha_pago}
+                      onChange={(e) => setForm({ ...form, fecha_pago: e.target.value })}
+                    />
+                    <p className="text-[13px] text-muted-foreground mt-1">
+                      El límite del artículo 32 se mide con la UMA de ESE día, no la del
+                      instrumento. Si se deja vacío se usa la fecha del acto.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              <div className="flex items-start gap-2 rounded-lg border p-3">
+                <input
+                  id="pago-tercero"
+                  type="checkbox"
+                  className="mt-1"
+                  checked={form.pago_de_tercero}
+                  onChange={(e) => setForm({ ...form, pago_de_tercero: e.target.checked })}
+                />
+                <Label htmlFor="pago-tercero" className="font-normal cursor-pointer">
+                  El pago proviene de un tercero
+                  <span className="block text-[13px] text-muted-foreground font-normal">
+                    Alguien distinto del compareciente. Es una señal por sí misma, con
+                    independencia del monto: dice quién está detrás de la operación.
+                  </span>
+                </Label>
               </div>
 
               <div>
