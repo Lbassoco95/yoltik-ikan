@@ -71,3 +71,24 @@ describe('ninguna cifra regulatoria queda en el código', () => {
     expect('UMA_MXN' in evaluadores).toBe(false);
   });
 });
+
+/**
+ * Los códigos de `PARAM` tienen que existir en las migrations que los siembran.
+ *
+ * Un código que el front pide y que la base no tiene devuelve `undefined`, y
+ * `undefined` no falla: simplemente deja la función sin responder, en silencio.
+ * Con el margen del perfil transaccional eso significaría que la variable de
+ * frecuencia deja de calificarse y nadie se entera.
+ */
+describe('los códigos de PARAM existen en las migrations', () => {
+  it('el margen del perfil transaccional está sembrado con ese código exacto', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const sql = await readFile(
+      'supabase/migrations/0044_margen_perfil_transaccional.sql',
+      'utf8',
+    );
+    expect(sql).toContain(`'${PARAM.MARGEN_PERFIL}'`);
+    // Y sembrado para el sector de fe pública, que es como lo pide el front.
+    expect(sql).toContain("'operacion', 'XII'");
+  });
+});

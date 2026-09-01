@@ -424,19 +424,40 @@ describe('pre-llenado contra la v3', () => {
     expect(s.find((r) => r.variable_codigo === 'XII-ZON-01')?.valor).toBe(2);
   });
 
-  it('la frecuencia SIEMPRE se responde, y sin declaración va marcada', () => {
-    const sin = prellenarMatriz(CFG, { tipo_persona: 'fisica', operaciones_en_ventana: 3 });
+  it('sin declaración del cliente la frecuencia va marcada por defecto', () => {
+    const sin = prellenarMatriz(CFG, {
+      tipo_persona: 'fisica',
+      operaciones_en_ventana: 3,
+      margen_perfil: 1,
+    });
     const r = sin.find((x) => x.variable_codigo === 'XII-PTR-01');
     expect(r?.valor).toBe(2);
     expect(r?.por_defecto).toBe(true);
+  });
 
+  it('con declaración y exceso responde «excede», sin marca de por defecto', () => {
     const excede = prellenarMatriz(CFG, {
       tipo_persona: 'fisica',
       frecuencia_esperada_anual: 2,
       operaciones_en_ventana: 5,
+      margen_perfil: 1,
     });
     const e = excede.find((x) => x.variable_codigo === 'XII-PTR-01');
     expect(e?.valor).toBe(3);
     expect(e?.por_defecto).toBe(false);
+  });
+
+  /**
+   * Instrucción 12 de la Adenda: el margen es un parámetro normativo firmado, no
+   * una constante del código. Sin él la variable NO se responde — antes se
+   * respondía con una tolerancia del 50 % que nadie había aprobado.
+   */
+  it('sin el parámetro del margen la frecuencia no se responde', () => {
+    const s = prellenarMatriz(CFG, {
+      tipo_persona: 'fisica',
+      frecuencia_esperada_anual: 2,
+      operaciones_en_ventana: 5,
+    });
+    expect(s.find((x) => x.variable_codigo === 'XII-PTR-01')).toBeUndefined();
   });
 });

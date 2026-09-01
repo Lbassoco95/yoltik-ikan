@@ -141,6 +141,15 @@ export interface ContextoPrellenado {
   frecuencia_esperada_anual?: number | null;
   /** Operaciones observadas en la ventana móvil de seis meses del art. 7. */
   operaciones_en_ventana?: number;
+  /**
+   * Margen del perfil transaccional, del parámetro firmado
+   * `margen_perfil_transaccional_operaciones` (migration 0044).
+   *
+   * Sin él la variable de frecuencia NO se responde. No hay valor por defecto y
+   * es deliberado: un default en el código sería otra vez una tolerancia
+   * escondida, que es lo que la instrucción 12 de la Adenda mandó retirar.
+   */
+  margen_perfil?: number | null;
 }
 
 /**
@@ -545,16 +554,25 @@ export function prellenarMatriz(
   }
 
   // --- Perfil transaccional: frecuencia --------------------------------
-  // SIEMPRE se responde, como la actividad y por la misma razón: sin
-  // declaración la respuesta es la intermedia y va marcada `por_defecto`, no el
-  // mínimo. Un expediente al que le falta el dato no puede puntuar mejor que
-  // uno que lo tiene y está en orden.
+  // Se responde siempre QUE HAYA MARGEN CARGADO. Sin declaración del cliente la
+  // respuesta es la intermedia y va marcada `por_defecto`, no el mínimo: un
+  // expediente al que le falta el dato no puede puntuar mejor que uno que lo
+  // tiene y está en orden.
+  //
+  // Pero sin el PARÁMETRO del margen no se responde nada. No hay default en el
+  // código, y es el punto entero de la instrucción 12: la tolerancia anterior
+  // —media anualidad redondeada hacia arriba— era un 50 % inventado que nadie
+  // podía acreditar cuándo cambió ni quién lo aprobó.
   {
     const v = variables.find((x) => /frecuencia de operaci/i.test(x.pregunta));
     if (v) {
-      const r = riesgoDeFrecuencia(ctx.frecuencia_esperada_anual, ctx.operaciones_en_ventana ?? 0);
-      const opcion = v.opciones.find((o) => o.clave === r.clave);
-      if (opcion) {
+      const r = riesgoDeFrecuencia(
+        ctx.frecuencia_esperada_anual,
+        ctx.operaciones_en_ventana ?? 0,
+        ctx.margen_perfil,
+      );
+      const opcion = r ? v.opciones.find((o) => o.clave === r.clave) : undefined;
+      if (r && opcion) {
         out.push({
           variable_codigo: v.codigo,
           valor: opcion.valor,

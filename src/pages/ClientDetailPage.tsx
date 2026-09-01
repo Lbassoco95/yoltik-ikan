@@ -161,6 +161,11 @@ export default function ClientDetailPage() {
           // Dos ventanas distintas para el mismo cliente sería la manera más
           // fácil de que el sistema se contradiga sobre él.
           operaciones_en_ventana: operacionesEnVentana(ops.map((o) => o.fecha)),
+          // El margen del perfil transaccional sale del registro versionado y
+          // firmado, no de una constante: la instrucción 12 de la Adenda retiró
+          // el redondeo que equivalía a una tolerancia del 50 % no documentada.
+          // Sin parámetro cargado la variable se queda sin responder.
+          margen_perfil: valorParam(PARAM.MARGEN_PERFIL, "XII"),
         }
       : null;
 
