@@ -1016,3 +1016,112 @@ describe('el borde de la ventana se incluye', () => {
     expect(c).toHaveLength(0);
   });
 });
+
+describe('el fraccionamiento se distingue del umbral cruzado a secas', () => {
+  const REGLA = tip('XII-01', {
+    tipo: 'agregado',
+    ventana: '6M',
+    agrupar_por: 'client_id',
+    condicion: { suma_monto_uma: { op: '>=', valor: 8000 } },
+  });
+
+  function payloadDe(ops: OperacionEval[]) {
+    const c = evaluarTipologia(REGLA, ops, ctx({ ahora: new Date('2026-09-02T00:00:00Z') }));
+    return c[0]?.regla_payload as Record<string, unknown> | undefined;
+  }
+
+  it('varias que ninguna alcanzaba, y juntas cruzan: es fraccionamiento', () => {
+    // Es la forma que tiene el fraccionamiento, y el penúltimo párrafo del
+    // artículo 17 lo contempla expresamente. El 18 fracción X obliga a
+    // DETECTARLO, no sólo a sumar.
+    const p = payloadDe([
+      op({ id: 'a', fecha: '2026-04-01T12:00:00Z', monto_mxn: 3000 * UMA_PRUEBA }),
+      op({ id: 'b', fecha: '2026-06-01T12:00:00Z', monto_mxn: 3000 * UMA_PRUEBA }),
+      op({ id: 'c', fecha: '2026-08-01T12:00:00Z', monto_mxn: 2500 * UMA_PRUEBA }),
+    ]);
+    expect(p?.posible_fraccionamiento).toBe(true);
+    expect((p?.fraccionamiento as Record<string, unknown>).operaciones).toBe(3);
+    expect((p?.fraccionamiento as Record<string, unknown>).nota).toMatch(/acumulación/i);
+  });
+
+  it('una grande con otras pequeñas alrededor NO es fraccionamiento', () => {
+    // Ahí hubo una operación reportable, no un patrón. Para el OC son dos
+    // bandejas distintas: la primera se revisa, la segunda se investiga.
+    const p = payloadDe([
+      op({ id: 'grande', fecha: '2026-04-01T12:00:00Z', monto_mxn: 9000 * UMA_PRUEBA }),
+      op({ id: 'chica', fecha: '2026-06-01T12:00:00Z', monto_mxn: 100 * UMA_PRUEBA }),
+    ]);
+    expect(p?.posible_fraccionamiento).toBeUndefined();
+    expect(p?.fraccionamiento).toBeUndefined();
+  });
+
+  it('una sola operación nunca es fraccionamiento', () => {
+    const p = payloadDe([
+      op({ id: 'sola', fecha: '2026-08-01T12:00:00Z', monto_mxn: 9000 * UMA_PRUEBA }),
+    ]);
+    expect(p?.posible_fraccionamiento).toBeUndefined();
+  });
+
+  it('el hallazgo ordinario no lleva la bandera en false', () => {
+    // Una bandera que siempre está y casi siempre es false es una bandera que
+    // se aprende a ignorar.
+    const p = payloadDe([
+      op({ id: 'grande', fecha: '2026-08-01T12:00:00Z', monto_mxn: 9000 * UMA_PRUEBA }),
+    ]);
+    expect(Object.keys(p ?? {})).not.toContain('posible_fraccionamiento');
+  });
+
+  it('sube la urgencia de la bandeja a 24 horas', () => {
+    // La regla es de umbral y por su forma le tocaría `por_umbral`. Pero un
+    // umbral cruzado por acumulación no es un acto grande: es un patrón, y el
+    // patrón se investiga antes de que se enfríe.
+    const c = evaluarTipologia(
+      REGLA,
+      [
+        op({ id: 'a', fecha: '2026-04-01T12:00:00Z', monto_mxn: 4500 * UMA_PRUEBA }),
+        op({ id: 'b', fecha: '2026-08-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+      ],
+      ctx({ ahora: new Date('2026-09-02T00:00:00Z') }),
+    );
+    expect(c[0].clasificacion_urgencia).toBe('24_horas');
+
+    // El mismo umbral cruzado por una sola operación se queda en por_umbral.
+    const solo = evaluarTipologia(
+      REGLA,
+      [op({ id: 'grande', fecha: '2026-08-01T12:00:00Z', monto_mxn: 9000 * UMA_PRUEBA })],
+      ctx({ ahora: new Date('2026-09-02T00:00:00Z') }),
+    );
+    expect(solo[0].clasificacion_urgencia).toBe('por_umbral');
+  });
+
+  it('una regla que sólo CUENTA operaciones no se fracciona', () => {
+    // «Cinco accesos desde IP anónima» no se fracciona: se repite. La bandera
+    // sólo tiene sentido sobre umbrales de monto.
+    const conteo = tip('XVI-06', {
+      tipo: 'agregado',
+      ventana: '1M',
+      agrupar_por: 'client_id',
+      condicion: { count_ip_anonima: { op: '>=', valor: 2 } },
+    });
+    const c = evaluarTipologia(
+      conteo,
+      [
+        op({ id: 'a', fecha: '2026-08-01T12:00:00Z', contraparte: { ip_anonima: true } }),
+        op({ id: 'b', fecha: '2026-08-02T12:00:00Z', contraparte: { ip_anonima: true } }),
+      ],
+      ctx({ ahora: new Date('2026-08-03T00:00:00Z') }),
+    );
+    expect((c[0]?.regla_payload as Record<string, unknown>)?.posible_fraccionamiento)
+      .toBeUndefined();
+  });
+
+  it('todas las operaciones de la ventana entran al Aviso', () => {
+    // Es lo que hace que el fraccionamiento dispare el Aviso por acumulación:
+    // el motor marca requiere_aviso sobre lo que el payload nombra.
+    const p = payloadDe([
+      op({ id: 'a', fecha: '2026-04-01T12:00:00Z', monto_mxn: 4500 * UMA_PRUEBA }),
+      op({ id: 'b', fecha: '2026-08-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
+    ]);
+    expect(p?.operaciones).toEqual(['a', 'b']);
+  });
+});

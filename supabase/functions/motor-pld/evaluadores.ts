@@ -475,7 +475,15 @@ function candidato(
     tipologia_version: tip.version,
     severidad: tip.severidad,
     regla_payload: { evaluado_en: 'motor-pld', ...contexto, ...payload },
-    clasificacion_urgencia: clasificacionUrgencia(tip.regla_dsl),
+    // El fraccionamiento sube la urgencia de la bandeja. La regla que lo
+    // produjo es de umbral —y por su forma le tocaría `por_umbral`— pero un
+    // umbral cruzado por acumulación de operaciones que ninguna lo alcanzaba
+    // no es un acto grande: es un patrón, y el patrón se investiga antes de
+    // que se enfríe. La forma de la regla no lo puede saber; el resultado sí.
+    clasificacion_urgencia:
+      (payload as { posible_fraccionamiento?: boolean })?.posible_fraccionamiento
+        ? '24_horas'
+        : clasificacionUrgencia(tip.regla_dsl),
   };
 }
 
@@ -564,6 +572,7 @@ function evalAgregado(
             grupo: clave,
             metricas: met,
             operaciones: enVentana.map((o) => o.id),
+            ...banderaDeFraccionamiento(enVentana, regla, met, ctx),
           }, ctx),
         );
         break; // un hallazgo por grupo (primera ventana que dispara)
@@ -571,6 +580,71 @@ function evalAgregado(
     }
   }
   return out;
+}
+
+/**
+ * ¿La ventana cruzó el umbral porque se fraccionó?
+ *
+ * La distinción no es cosmética y el hallazgo no es el mismo. Que la suma de
+ * seis meses alcance el umbral puede querer decir dos cosas muy distintas:
+ *
+ *   Una operación grande, más otras pequeñas alrededor. Es un acto reportable
+ *   con acompañamiento. Nada más que decir.
+ *
+ *   VARIAS operaciones, ninguna de las cuales alcanzaba el umbral por sí sola,
+ *   que juntas lo cruzan. Eso es la forma que tiene el fraccionamiento, y el
+ *   penúltimo párrafo del artículo 17 lo contempla expresamente: los actos de
+ *   un mismo cliente se acumulan. El artículo 18 fracción X obliga a que los
+ *   mecanismos automatizados lo DETECTEN, no sólo a que sumen.
+ *
+ * Para el OC son dos bandejas distintas: la primera se revisa, la segunda se
+ * investiga. Verlas iguales es perder la señal dentro del ruido.
+ *
+ * Devuelve un objeto para esparcir en el payload: vacío cuando no aplica, para
+ * no ensuciar los hallazgos ordinarios con una bandera en false que después
+ * alguien tendría que aprender a ignorar.
+ */
+function banderaDeFraccionamiento(
+  enVentana: OperacionEval[],
+  regla: Extract<ReglaDsl, { tipo: 'agregado' }>,
+  met: Record<string, number>,
+  ctx: MotorContext,
+): Record<string, unknown> {
+  if (enVentana.length < 2) return {};
+
+  // Sólo tiene sentido sobre umbrales de MONTO. Una regla que cuenta
+  // operaciones —«cinco accesos desde IP anónima»— no se fracciona: se repite.
+  const claveMonto = Object.keys(regla.condicion).find((k) => METRICAS_MONTO.includes(k));
+  if (!claveMonto) return {};
+
+  const umbral = regla.condicion[claveMonto]?.valor;
+  if (typeof umbral !== 'number' || umbral <= 0) return {};
+
+  // ¿Alguna alcanzaba el umbral por su cuenta? Si sí, no hubo fraccionamiento:
+  // hubo una operación reportable.
+  const enUma = claveMonto.endsWith('_uma');
+  const solaAlcanza = enVentana.some((o) => {
+    const valor = claveMonto.startsWith('contraprestacion')
+      ? (o.contraprestacion_mxn ?? 0)
+      : o.monto_mxn;
+    return (enUma ? valor / umaEnFecha(ctx, o.fecha) : valor) >= umbral;
+  });
+  if (solaAlcanza) return {};
+
+  return {
+    posible_fraccionamiento: true,
+    fraccionamiento: {
+      operaciones: enVentana.length,
+      ventana: regla.ventana,
+      metrica: claveMonto,
+      umbral,
+      suma: met[claveMonto],
+      nota:
+        `${enVentana.length} operaciones en ${regla.ventana}, ninguna de las cuales alcanzaba ` +
+        `el umbral de ${umbral} por sí sola, que acumuladas lo cruzan. Procede el Aviso por ` +
+        'acumulación (art. 17, penúltimo párrafo, LFPIORPI).',
+    },
+  };
 }
 
 function evalSecuencia(
