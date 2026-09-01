@@ -112,7 +112,12 @@ export default function OperationsPage() {
   // acto rara vez está entero el día de la firma.
   const [actoEnCurso, setActoEnCurso] = useState<Operation | null>(null);
   /** Forma de pago y origen del acto que se está completando (migration 0036). */
-  const [extrasEnCurso, setExtrasEnCurso] = useState({ forma_pago: "", pais_origen_recursos: "" });
+  // `FormaPago | ""` y no `string`: la columna es un enum de tres valores, y con
+  // el tipo suelto un valor equivocado llegaba hasta la base para fallar ahí.
+  const [extrasEnCurso, setExtrasEnCurso] = useState<{
+    forma_pago: FormaPago | "";
+    pais_origen_recursos: string;
+  }>({ forma_pago: "", pais_origen_recursos: "" });
   const [datosEnCurso, setDatosEnCurso] = useState<DatosActo>({});
   const queryClient = useQueryClient();
   const { perfilActividad } = useAuth();
@@ -1062,7 +1067,7 @@ export default function OperationsPage() {
                   <Select
                     value={extrasEnCurso.forma_pago}
                     onValueChange={(v) =>
-                      setExtrasEnCurso({ ...extrasEnCurso, forma_pago: v })
+                      setExtrasEnCurso({ ...extrasEnCurso, forma_pago: v as FormaPago })
                     }
                   >
                     <SelectTrigger>

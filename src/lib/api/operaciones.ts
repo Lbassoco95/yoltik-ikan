@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
-import type { NuevaOperacionInput, Operation } from '@/types/domain';
-import { comoJson } from './json';
+import type { FormaPago, NuevaOperacionInput, Operation } from '@/types/domain';
+import { comoJson, type Json } from './json';
 
 export async function listarOperaciones(): Promise<Operation[]> {
   const { data, error } = await supabase
@@ -57,6 +57,19 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
 }
 
 /**
+ * Lo único que `actualizarDatosActo` cambia de una operación.
+ *
+ * `null` en un campo opcional lo BORRA; ausente lo deja como estaba. La
+ * diferencia importa: no es lo mismo «no toqué este campo» que «lo dejé en
+ * blanco», y con un índice `string -> unknown` no había forma de expresarla.
+ */
+interface CambioActo {
+  datos_acto: Json;
+  forma_pago?: FormaPago | null;
+  pais_origen_recursos?: string | null;
+}
+
+/**
  * Completa el subárbol del acto de una operación ya registrada.
  *
  * Sólo OC y Admin: la política `operation_update_motor_or_oc` lo exige y el
@@ -78,9 +91,13 @@ export async function actualizarDatosActo(
    * `undefined` deja el valor como está; cadena vacía lo borra. La diferencia
    * importa: no es lo mismo «no toqué este campo» que «lo dejé en blanco».
    */
-  extras?: { forma_pago?: string; pais_origen_recursos?: string },
+  extras?: { forma_pago?: FormaPago | ''; pais_origen_recursos?: string },
 ): Promise<void> {
-  const cambios: Record<string, unknown> = { datos_acto: datosActo };
+  // Tipado como lo que es y no como `Record<string, unknown>`: ese índice
+  // aceptaba cualquier llave con cualquier valor, así que un typo en el nombre
+  // de una columna compilaba y se iba a fallar a la base, y nada impedía
+  // escribir una forma de pago que el enum no admite.
+  const cambios: CambioActo = { datos_acto: comoJson(datosActo) };
   if (extras?.forma_pago !== undefined) cambios.forma_pago = extras.forma_pago || null;
   if (extras?.pais_origen_recursos !== undefined) {
     cambios.pais_origen_recursos = extras.pais_origen_recursos.trim().toUpperCase() || null;
