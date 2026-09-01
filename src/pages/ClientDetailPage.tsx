@@ -114,6 +114,8 @@ export default function ClientDetailPage() {
           | undefined,
         moneda_origen: ops[0]?.moneda_origen,
         activo_virtual: ops[0]?.activo_virtual,
+        forma_pago: ops[0]?.forma_pago,
+        pais_origen_recursos: ops[0]?.pais_origen_recursos,
         gafi_gris: listas?.gafi_gris,
         gafi_negra: listas?.gafi_negra,
       })

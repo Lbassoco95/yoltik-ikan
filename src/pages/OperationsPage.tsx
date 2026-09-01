@@ -29,7 +29,7 @@ import {
   invocarMotor,
   actualizarDatosActo,
 } from "@/lib/api/operaciones";
-import type { NuevaOperacionInput, TipoOperacion } from "@/types/domain";
+import type { FormaPago, NuevaOperacionInput, TipoOperacion } from "@/types/domain";
 import { formatMxn, cn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
@@ -85,6 +85,8 @@ const FORM_INICIAL = {
   fecha: hoyISO(),
   instrumento_publico: "",
   datos_acto: {} as DatosActo,
+  forma_pago: "" as FormaPago | "",
+  pais_origen_recursos: "",
 };
 
 export default function OperationsPage() {
@@ -301,6 +303,8 @@ export default function OperationsPage() {
       activo_virtual: esNotarias ? undefined : form.activo_virtual.trim() || undefined,
       contraparte: Object.keys(contraparte).length ? contraparte : undefined,
       datos_acto: esNotarias ? form.datos_acto : undefined,
+      forma_pago: form.forma_pago || undefined,
+      pais_origen_recursos: form.pais_origen_recursos.trim().toUpperCase() || undefined,
       // Mediodía local: la fecha del acto es un día, no un instante, y guardarla
       // a las 00:00 la corre al día anterior en husos al oeste de UTC.
       fecha: new Date(`${form.fecha}T12:00:00`).toISOString(),
@@ -729,6 +733,54 @@ export default function OperationsPage() {
                   </p>
                 </div>
               )}
+
+              {/* Los dos datos que la matriz de riesgo pedía y no existían en
+                  ninguna parte, así que el OC los contestaba de memoria
+                  (migration 0036). La forma de pago además es el único dato que
+                  permite vigilar la prohibición de efectivo del artículo 32:
+                  sus umbrales llevan cargados desde la 0030 sin que nada
+                  pudiera consultarlos. */}
+              <div>
+                <Label>Forma de pago</Label>
+                <Select
+                  value={form.forma_pago}
+                  onValueChange={(v) => setForm({ ...form, forma_pago: v as FormaPago })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bancarizado">
+                      Bancarizado — transferencia o cheque nominativo
+                    </SelectItem>
+                    <SelectItem value="mixto">Mixto — parte en efectivo</SelectItem>
+                    <SelectItem value="efectivo">Efectivo</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[13px] text-muted-foreground mt-1">
+                  Responde una variable de la matriz de riesgo. «Mixto» cuenta como efectivo
+                  para la prohibición del artículo 32.
+                </p>
+              </div>
+
+              <div>
+                <Label>País de origen de los recursos</Label>
+                <Input
+                  placeholder="MX"
+                  maxLength={2}
+                  value={form.pais_origen_recursos}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      pais_origen_recursos: e.target.value.toUpperCase().replace(/[^A-Z]/g, ""),
+                    })
+                  }
+                />
+                <p className="text-[13px] text-muted-foreground mt-1">
+                  De dónde viene el dinero, que no es lo mismo que dónde vive el compareciente.
+                  Se coteja contra las listas del GAFI.
+                </p>
+              </div>
               {!esNotarias && (
                 <div>
                   <Label>Activo virtual</Label>

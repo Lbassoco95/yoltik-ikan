@@ -155,6 +155,12 @@ export interface Operation {
   instrumento_publico: string | null;
   /** Subárbol de <tipo_actividad> del layout, según contraparte.tipo_acto. */
   datos_acto: Record<string, unknown>;
+  /** Cómo se liquidó: bancarizado, mixto o efectivo (migration 0036). Alimenta
+   *  la matriz y permite vigilar la prohibición de efectivo del art. 32. */
+  forma_pago: FormaPago | null;
+  /** ISO2 del país de donde vienen los recursos. NO se deriva de la residencia
+   *  del compareciente: son cosas distintas. */
+  pais_origen_recursos: string | null;
   requiere_aviso: boolean;
   /** Cuándo el Motor PLD la recorrió, encontrara algo o no (migration 0035).
    *  Nulo = nadie la ha juzgado, que NO es lo mismo que `requiere_aviso: false`. */
@@ -162,6 +168,16 @@ export interface Operation {
   capturado_por: string | null;
   capturado_en: string;
 }
+
+/**
+ * Cómo se liquidó el acto.
+ *
+ * Los tres valores salen de las opciones que la matriz de riesgo ya define; no
+ * son una clasificación propia. «Mixto» es el caso que importa: un acto pagado
+ * en parte con efectivo entra en el supuesto del artículo 32 igual que uno
+ * pagado del todo en efectivo.
+ */
+export type FormaPago = 'bancarizado' | 'mixto' | 'efectivo';
 
 export interface NuevaOperacionInput {
   client_id: string;
@@ -173,6 +189,8 @@ export interface NuevaOperacionInput {
   fecha?: string;
   instrumento_publico?: string;
   datos_acto?: Record<string, unknown>;
+  forma_pago?: FormaPago;
+  pais_origen_recursos?: string;
 }
 
 // =====================================================================

@@ -246,9 +246,13 @@ describe('el pre-llenado NO responde lo que no puede saber', () => {
     expect(s.find((x) => x.variable_codigo === 'XII-ACT-02')).toBeUndefined();
   });
 
-  it('no inventa el PEP ni la forma de pago: no hay dónde capturarlos', () => {
+  it('no inventa el PEP: no hay dónde capturarlo', () => {
     const s = prellenarMatriz(CONFIG, COMPLETO);
     expect(s.find((x) => x.variable_codigo === 'XII-PF-02')).toBeUndefined();
+  });
+
+  it('sin forma de pago capturada, no la supone', () => {
+    const s = prellenarMatriz(CONFIG, COMPLETO);
     expect(s.find((x) => x.variable_codigo === 'XII-ACT-03')).toBeUndefined();
   });
 
@@ -261,7 +265,9 @@ describe('el pre-llenado NO responde lo que no puede saber', () => {
 
   it('no deriva el origen de los fondos de la residencia', () => {
     // Dónde vive alguien y de dónde salió el dinero son cosas distintas, y
-    // confundirlas es justo lo que la variable existe para detectar.
+    // confundirlas es justo lo que la variable existe para detectar. Aunque el
+    // compareciente resida en un país de lista negra, sin origen capturado la
+    // variable se queda sin responder.
     const s = prellenarMatriz(CONFIG, { ...COMPLETO, pais_iso2: 'IR' });
     expect(s.find((x) => x.variable_codigo === 'XII-REC-01')).toBeUndefined();
   });
@@ -292,15 +298,95 @@ describe('lo que queda para el OC', () => {
       moneda_origen: 'MXN', ...GAFI,
     });
     const faltan = faltanPorResponder(CONFIG, 'fisica', respuestasDe(s));
-    // De ocho variables, el sistema contesta tres y quedan cinco.
+    // Sin forma de pago ni origen capturados: tres respondidas, cinco no.
     expect(s).toHaveLength(3);
     expect(faltan.map((v) => v.codigo).sort()).toEqual([
       'XII-ACT-02', 'XII-ACT-03', 'XII-PF-02', 'XII-PF-03', 'XII-REC-01',
     ]);
   });
 
+  it('con el acto completo quedan sólo las dos que dependen de Cumplimiento', () => {
+    // Es el objetivo del bloque: que lo único sin responder sea lo que nadie
+    // puede derivar sin una decisión metodológica —los tramos de UMA y el
+    // riesgo de la actividad— más el PEP, que no se captura en ninguna parte.
+    const s = prellenarMatriz(CONFIG, {
+      tipo_persona: 'fisica', pais_iso2: 'MX', tipo_acto: 'otorgamiento_poder',
+      moneda_origen: 'MXN', forma_pago: 'efectivo', pais_origen_recursos: 'MX', ...GAFI,
+    });
+    const faltan = faltanPorResponder(CONFIG, 'fisica', respuestasDe(s));
+    expect(s).toHaveLength(5);
+    expect(faltan.map((v) => v.codigo).sort()).toEqual([
+      'XII-ACT-02', 'XII-PF-02', 'XII-PF-03',
+    ]);
+  });
+
   it('sin ningún dato, todas quedan para el OC', () => {
     const faltan = faltanPorResponder(CONFIG, 'fisica', {});
     expect(faltan).toHaveLength(8);
+  });
+});
+
+describe('forma de pago y origen de los recursos', () => {
+  it('la forma de pago sale del acto', () => {
+    for (const [capturado, esperado] of [
+      ['bancarizado', 1],
+      ['mixto', 2],
+      ['efectivo', 3],
+    ] as const) {
+      const s = prellenarMatriz(CONFIG, {
+        tipo_persona: 'fisica', tipo_acto: 'otorgamiento_poder', forma_pago: capturado, ...GAFI,
+      });
+      expect(s.find((x) => x.variable_codigo === 'XII-ACT-03')?.valor).toBe(esperado);
+    }
+  });
+
+  it('la opción se reconoce aunque lleve una explicación entre paréntesis', () => {
+    // El seed dice «Bancarizado (transferencia o cheque nominativo)»: el
+    // paréntesis es explicación, no parte del valor.
+    const s = prellenarMatriz(CONFIG, {
+      tipo_persona: 'fisica', tipo_acto: 'otorgamiento_poder', forma_pago: 'bancarizado', ...GAFI,
+    });
+    expect(s.find((x) => x.variable_codigo === 'XII-ACT-03')?.etiqueta).toMatch(/^Bancarizado/);
+  });
+
+  it('una forma de pago que la matriz no contempla no se responde', () => {
+    const s = prellenarMatriz(CONFIG, {
+      tipo_persona: 'fisica', tipo_acto: 'otorgamiento_poder', forma_pago: 'tarjeta', ...GAFI,
+    });
+    expect(s.find((x) => x.variable_codigo === 'XII-ACT-03')).toBeUndefined();
+  });
+
+  it('el origen de los fondos sale del país capturado como origen', () => {
+    const mx = prellenarMatriz(CONFIG, {
+      tipo_persona: 'fisica', pais_origen_recursos: 'MX', ...GAFI,
+    });
+    expect(mx.find((x) => x.variable_codigo === 'XII-REC-01')?.valor).toBe(1);
+
+    const ir = prellenarMatriz(CONFIG, {
+      tipo_persona: 'fisica', pais_origen_recursos: 'IR', ...GAFI,
+    });
+    expect(ir.find((x) => x.variable_codigo === 'XII-REC-01')?.valor).toBe(3);
+  });
+
+  it('no usa la opción intermedia de país, que ninguna lista respalda', () => {
+    // «Jurisdicción de riesgo medio» no tiene criterio en el catálogo que
+    // tenemos. Elegirla sería inventar un riesgo de país sin fuente.
+    for (const pais of ['MX', 'ES', 'PA', 'KP']) {
+      const s = prellenarMatriz(CONFIG, {
+        tipo_persona: 'fisica', pais_origen_recursos: pais, ...GAFI,
+      });
+      expect(s.find((x) => x.variable_codigo === 'XII-REC-01')?.valor).not.toBe(2);
+    }
+  });
+
+  it('el origen y la residencia son independientes', () => {
+    // Alguien que vive en México con recursos de un país en lista negra: la
+    // residencia baja y el origen alto. Si una arrastrara a la otra, la matriz
+    // dejaría de ver justo el caso que le interesa.
+    const s = prellenarMatriz(CONFIG, {
+      tipo_persona: 'fisica', pais_iso2: 'MX', pais_origen_recursos: 'KP', ...GAFI,
+    });
+    expect(s.find((x) => x.variable_codigo === 'XII-PF-01')?.valor).toBe(1);
+    expect(s.find((x) => x.variable_codigo === 'XII-REC-01')?.valor).toBe(3);
   });
 });

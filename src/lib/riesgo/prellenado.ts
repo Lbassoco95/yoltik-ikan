@@ -34,17 +34,22 @@ import { variablesAplicables } from './matriz';
  *     catálogo de la UIF con cientos de valores. Falta la regla que dice qué
  *     claves son de riesgo alto. Inventarla sería decidir metodología.
  *
- *   Condición de PEP · Forma de pago
- *     No hay ningún campo en Ikán donde se registren. No es que no se deriven:
+ *   Condición de PEP
+ *     No hay ningún campo en Ikán donde se registre. No es que no se derive:
  *     es que el dato no existe.
  *
  *   Beneficiario controlador identificado
  *     El módulo de estructura societaria no existe todavía.
  *
- *   País de origen de los fondos
- *     Tentador derivarlo de la residencia del compareciente, y sería un error:
- *     dónde vive alguien y de dónde salió el dinero son cosas distintas, y
- *     confundirlas es exactamente lo que la variable existe para detectar.
+ * La forma de pago y el país de origen de los recursos SÍ se derivan desde la
+ * migration 0036, que los añadió a la captura del acto. Antes no era que no se
+ * dedujeran: es que el dato no existía y el OC los contestaba de memoria.
+ *
+ * Del país de origen conviene decir lo que NO se hace: no se deriva de la
+ * residencia del compareciente. Dónde vive alguien y de dónde salió el dinero
+ * son cosas distintas, y confundirlas es exactamente lo que esa variable existe
+ * para detectar. Se responde con el país que se capturó como origen, o no se
+ * responde.
  *
  * Módulo puro: sin red, sin React. Se prueba solo.
  */
@@ -69,6 +74,10 @@ export interface ContextoPrellenado {
   moneda_origen?: string | null;
   /** Activo virtual involucrado, si lo hay. */
   activo_virtual?: string | null;
+  /** Cómo se liquidó el acto (migration 0036): bancarizado, mixto o efectivo. */
+  forma_pago?: string | null;
+  /** ISO2 del país de donde vienen los recursos (migration 0036). */
+  pais_origen_recursos?: string | null;
   /** Países en listas GAFI, del snapshot que ya usa el Motor PLD. */
   gafi_gris?: Set<string>;
   gafi_negra?: Set<string>;
@@ -129,6 +138,13 @@ function opcionDePais(v: MatrizVariable, nivel: ReturnType<typeof nivelPais>) {
   if (nivel === 'gris') return v.opciones[2];
   return cuatro ? v.opciones[3] : v.opciones[2];
 }
+
+/** Lo capturado en el acto, en las palabras con que la matriz nombra la opción. */
+const TEXTO_FORMA_PAGO: Record<string, string> = {
+  bancarizado: 'Bancarizado',
+  mixto: 'Mixto',
+  efectivo: 'Efectivo',
+};
 
 const TEXTO_PAIS: Record<ReturnType<typeof nivelPais>, string> = {
   nacional: 'el país registrado es México',
@@ -194,6 +210,51 @@ export function prellenarMatriz(
         sugerir(v, 'Moneda extranjera', `la operación está en ${ctx.moneda_origen.toUpperCase()}`);
       } else if (ctx.moneda_origen) {
         sugerir(v, 'No, solo moneda nacional', 'la operación está en pesos');
+      }
+    }
+  }
+
+  // --- Forma de pago ---------------------------------------------------
+  if (ctx.forma_pago) {
+    const v = variables.find((x) => /forma de pago/i.test(x.pregunta));
+    const texto = TEXTO_FORMA_PAGO[ctx.forma_pago];
+    if (v && texto) {
+      // Se busca por prefijo: la opción del seed dice «Bancarizado
+      // (transferencia o cheque nominativo)» y el paréntesis es explicación, no
+      // parte del valor.
+      const opcion = v.opciones.find((o) =>
+        o.label.toLowerCase().startsWith(texto.toLowerCase()),
+      );
+      if (opcion) {
+        out.push({
+          variable_codigo: v.codigo,
+          valor: opcion.valor,
+          etiqueta: opcion.label,
+          fuente: `la forma de pago capturada en el acto (${texto.toLowerCase()})`,
+        });
+      }
+    }
+  }
+
+  // --- País de origen de los recursos ----------------------------------
+  if (ctx.pais_origen_recursos) {
+    const nivel = nivelPais(ctx.pais_origen_recursos, ctx);
+    const v = variables.find((x) => /origen de los fondos/i.test(x.pregunta));
+    if (v) {
+      // Tres opciones: bajo / medio / alto (gris o negra). México y los países
+      // sin observaciones caen en la primera; gris y negra en la última. La
+      // opción intermedia no tiene un criterio que la defina en el catálogo que
+      // tenemos, así que no se usa: elegirla sería inventar un «riesgo medio»
+      // de país que ninguna lista respalda.
+      const indice = nivel === 'nacional' || nivel === 'sin_observaciones' ? 0 : 2;
+      const opcion = v.opciones[indice];
+      if (opcion) {
+        out.push({
+          variable_codigo: v.codigo,
+          valor: opcion.valor,
+          etiqueta: opcion.label,
+          fuente: `los recursos vienen de ${ctx.pais_origen_recursos.toUpperCase()}: ${TEXTO_PAIS[nivel]}`,
+        });
       }
     }
   }
