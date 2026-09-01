@@ -19,6 +19,7 @@ import {
   ultimaEvaluacion,
 } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
+import { EstructuraSocietaria } from "@/components/clientes/EstructuraSocietaria";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import { paisesEnListas, zonasDeAtencion } from "@/lib/api/catalogos";
 import {
@@ -402,6 +403,12 @@ export default function ClientDetailPage() {
               para su sector, no según el perfil de actividad. Así no hay que
               tocar este condicional al entrar joyerías, vehículos, etc. */}
           {plantilla && <TabsTrigger value="matriz">Matriz de riesgo</TabsTrigger>}
+          {/* Sólo persona moral: el beneficiario controlador es de quien tiene
+              estructura de propiedad. Una persona física no la tiene, y la
+              pestaña sólo podría decir eso. */}
+          {client.tipo_persona === "moral" && (
+            <TabsTrigger value="estructura">Estructura y beneficiario</TabsTrigger>
+          )}
           <TabsTrigger value="operaciones">{esNotarias ? "Actos" : "Operaciones"}</TabsTrigger>
         </TabsList>
 
@@ -663,6 +670,12 @@ export default function ClientDetailPage() {
             </div>
           )}
         </TabsContent>
+        )}
+
+        {client.tipo_persona === "moral" && (
+          <TabsContent value="estructura">
+            <EstructuraSocietaria client={client} />
+          </TabsContent>
         )}
 
         <TabsContent value="operaciones">

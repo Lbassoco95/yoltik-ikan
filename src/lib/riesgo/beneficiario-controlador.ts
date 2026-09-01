@@ -175,6 +175,34 @@ export function estructuraNoDeterminable(estado: EstadoCascada): boolean {
   return estado.III === 'practicado_con_resultado';
 }
 
+/**
+ * El primer paso POSTERIOR ya practicado, cuando el que se está asentando pasa
+ * a «con resultado». Null si no hay conflicto.
+ */
+export function posteriorYaPracticado(
+  paso: Paso,
+  nuevoEstado: EstadoPaso,
+  estado: EstadoCascada,
+): Paso | null {
+  if (nuevoEstado !== 'practicado_con_resultado') return null;
+  const siguientes = ORDEN_PASOS.slice(ORDEN_PASOS.indexOf(paso) + 1);
+  return siguientes.find((p) => estado[p] !== 'no_practicado') ?? null;
+}
+
+/** En español, para que la pantalla no tenga que redactarlo. */
+export function motivoDelBloqueo(paso: Paso, estado: EstadoCascada): string {
+  const anteriores = ORDEN_PASOS.slice(0, ORDEN_PASOS.indexOf(paso));
+  const pendientes = anteriores.filter((p) => estado[p] === 'no_practicado');
+  if (pendientes.length > 0) {
+    return `falta practicar ${pendientes.length === 1 ? 'el paso' : 'los pasos'} ${pendientes.join(' y ')}.`;
+  }
+  const resuelto = anteriores.find((p) => estado[p] === 'practicado_con_resultado');
+  if (resuelto) {
+    return `el paso ${resuelto} ya arrojó beneficiarios controladores, así que la cascada terminó ahí.`;
+  }
+  return 'el orden de prelación del art. 23 Quinquies no lo permite.';
+}
+
 // =====================================================================
 // Mínimo de socios por tipo social
 // =====================================================================

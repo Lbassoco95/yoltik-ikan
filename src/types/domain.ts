@@ -110,6 +110,13 @@ export interface Client {
   pais_residencia_iso2: string | null;
   datos_kyc: Record<string, unknown>;
   datos_kyb: Record<string, unknown> | null;
+  /** Tipo social (migration 0049). De él depende el mínimo de socios, que
+   *  NUNCA es una constante global: la S.A.S. se constituye con un solo
+   *  accionista (LGSM art. 260). Sólo persona moral. */
+  tipo_social: string | null;
+  /** País de constitución. Fuera de México el mínimo de socios se rige por la
+   *  ley del lugar de constitución, no por la LGSM. */
+  pais_constitucion_clave: string | null;
   /** Condición de persona políticamente expuesta (migration 0038). Nulo = no se
    *  ha consultado, que NO es lo mismo que `no_pep`. */
   condicion_pep: CondicionPep | null;
