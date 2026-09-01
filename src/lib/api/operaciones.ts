@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
 import type { NuevaOperacionInput, Operation } from '@/types/domain';
+import { comoJson } from './json';
 
 export async function listarOperaciones(): Promise<Operation[]> {
   const { data, error } = await supabase
@@ -31,10 +32,10 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
     monto_mxn: input.monto_mxn,
     moneda_origen: input.moneda_origen ?? 'MXN',
     activo_virtual: input.activo_virtual ?? null,
-    contraparte: input.contraparte ?? null,
+    contraparte: comoJson(input.contraparte ?? null),
     fecha: input.fecha ?? new Date().toISOString(),
     instrumento_publico: input.instrumento_publico ?? null,
-    datos_acto: input.datos_acto ?? {},
+    datos_acto: comoJson(input.datos_acto ?? {}),
     forma_pago: input.forma_pago ?? null,
     pais_origen_recursos: input.pais_origen_recursos?.trim().toUpperCase() || null,
     efectivo_mxn: input.efectivo_mxn ?? null,

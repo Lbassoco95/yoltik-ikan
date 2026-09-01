@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
+import { comoJson } from './json';
 import type {
   ClasificacionRiesgo,
   Client,
@@ -54,7 +55,7 @@ export async function crearCliente(input: NuevoClienteInput): Promise<Client> {
     nacionalidad: input.nacionalidad ?? null,
     entidad_federativa: input.entidad_federativa ?? null,
     pais_residencia_iso2: input.pais_residencia_iso2 ?? null,
-    datos_kyc: input.datos_kyc ?? {},
+    datos_kyc: comoJson(input.datos_kyc ?? {}),
     // Factores del Capítulo III Ter y del catálogo de las RCG (migration 0041).
     // Se capturan en el alta y no después: el canal por el que llegó alguien
     // deja de saberse en cuanto pasa el día.

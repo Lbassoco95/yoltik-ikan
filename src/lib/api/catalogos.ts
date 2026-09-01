@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { EstadoCatalogo, ValorCatalogo } from '@/lib/catalogos';
 import type { ZonaAtencion } from '@/lib/riesgo/zona';
+import { comoJson } from './json';
 
 /** Estado de todos los catálogos: cuáles están cargados y desde cuándo.
  *  Lo lee cualquier usuario autenticado; escribirlos es sólo de Kawiil. */
@@ -44,7 +45,7 @@ export async function reemplazarValoresCatalogo(
 ): Promise<number> {
   const { data, error } = await supabase.rpc('reemplazar_valores_catalogo', {
     p_codigo: codigo,
-    p_valores: valores,
+    p_valores: comoJson(valores),
     p_motivo: motivo ?? null,
   });
   if (error) throw error;

@@ -263,7 +263,11 @@ export async function registrarCargaArchivo(
     for (let i = 0; i < input.registros.length; i += TAMANO_LOTE) {
       const lote = input.registros.slice(i, i + TAMANO_LOTE).map((r) => ({
         carga_id: cargaId,
-        accion: 'alta',
+        // `as const` y no `string`: dentro de un `.map()` el literal se ensancha
+        // solo, y la columna es un enum de dos valores. El valor aquí SIEMPRE es
+        // 'alta' —esta función carga, no da de baja—, así que no hay nada que
+        // decidir: sólo que el tipo lo diga.
+        accion: 'alta' as const,
         tipo_entidad: r.tipo_entidad ?? 'empresa',
         nombre: r.nombre,
         rfc: r.rfc ? normalizarRfc(r.rfc) : null,
