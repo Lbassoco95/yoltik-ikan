@@ -199,6 +199,19 @@ export interface NuevaOperacionInput {
 export interface MatrizOpcion {
   valor: number;
   label: string;
+  /**
+   * Identidad estable de la opción, independiente de su posición y de su
+   * puntaje.
+   *
+   * Existe porque el disparador de alto de oficio apuntaba a la POSICIÓN de la
+   * opción en el arreglo: al pasar el catálogo de actos de cuatro a once, el
+   * poder irrevocable ocupó el lugar del fideicomiso y empezó a disparar su
+   * alerta. No fallaba, respondía mal.
+   *
+   * En la variable de tipo de acto es el valor del catálogo del layout
+   * (`otorgamiento_poder`); en las demás puede quedar vacía.
+   */
+  clave?: string;
   /** Marca opcional para triggers de alto de oficio (no presente en el seed actual). */
   alto_de_oficio?: boolean;
 }
@@ -229,7 +242,21 @@ export interface TriggerAltoDeOficio {
   codigo: string;
   descripcion: string;
   variable_codigo?: string;
+  /**
+   * Dispara si la respuesta alcanza este valor. FRÁGIL por naturaleza: depende
+   * de que el orden y los puntajes de las opciones no cambien, y basta añadir
+   * una opción para que señale a otra cosa. Se conserva para las plantillas
+   * que ya lo usan; en las nuevas se prefiere `claves`.
+   */
   valor_minimo?: number;
+  /**
+   * Dispara si la opción elegida es una de éstas, por su `clave` estable.
+   *
+   * Es la forma correcta: un disparador de fideicomiso tiene que apuntar al
+   * fideicomiso, no al tercer renglón de una lista. Cuando hay `claves`, se
+   * ignora `valor_minimo`.
+   */
+  claves?: string[];
 }
 
 export interface MatrizConfig {

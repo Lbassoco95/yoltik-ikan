@@ -390,3 +390,112 @@ describe('forma de pago y origen de los recursos', () => {
     expect(s.find((x) => x.variable_codigo === 'XII-REC-01')?.valor).toBe(3);
   });
 });
+
+// =====================================================================
+// Matriz v2 (migration 0037): once actos con clave y magnitud relativa
+// =====================================================================
+const CONFIG_V2: MatrizConfig = {
+  ...CONFIG,
+  elementos: [
+    {
+      codigo: 'E1_ACTO',
+      nombre: 'Tipo de acto y operación',
+      variables: [
+        {
+          codigo: 'XII-ACT-01',
+          pregunta: 'Tipo de acto que se instrumenta',
+          opciones: [
+            { clave: 'transmision_inmueble', label: 'Transmisión de inmueble', valor: 3 },
+            { clave: 'otorgamiento_poder', label: 'Poder irrevocable', valor: 4 },
+            { clave: 'constitucion_personas_morales', label: 'Constitución de PM', valor: 3 },
+            { clave: 'fusion', label: 'Fusión', valor: 3 },
+            { clave: 'avaluo', label: 'Avalúo', valor: 2 },
+          ],
+        },
+        {
+          codigo: 'XII-ACT-02',
+          pregunta: 'Valor de la operación',
+          opciones: [
+            { clave: 'T1', label: 'Menor al 25 % del umbral del acto', valor: 1 },
+            { clave: 'T2', label: 'Del 25 % al 75 % del umbral', valor: 2 },
+            { clave: 'T3', label: 'Del 75 % al 150 % del umbral', valor: 3 },
+            { clave: 'T4', label: 'Igual o mayor al 150 % del umbral', valor: 4 },
+          ],
+        },
+        CONFIG.elementos[0].variables[2], // forma de pago, sin cambios
+      ],
+    },
+    ...CONFIG.elementos.slice(1),
+  ],
+};
+
+describe('la matriz v2 responde por clave, no por rótulo', () => {
+  it('los once actos del layout entran sin traducir nada', () => {
+    // La v1 sólo nombraba cuatro con los rótulos anteriores a la 0031 y había
+    // que traducir. La v2 los trae con su clave del catálogo.
+    for (const [acto, esperado] of [
+      ['transmision_inmueble', 3],
+      ['otorgamiento_poder', 4],
+      ['fusion', 3],
+      ['avaluo', 2],
+    ] as const) {
+      const s = prellenarMatriz(CONFIG_V2, { tipo_persona: 'fisica', tipo_acto: acto, ...GAFI });
+      expect(s.find((x) => x.variable_codigo === 'XII-ACT-01')?.valor).toBe(esperado);
+    }
+  });
+
+  it('un acto que la plantilla no lista sigue sin responderse', () => {
+    const s = prellenarMatriz(CONFIG_V2, {
+      tipo_persona: 'fisica', tipo_acto: 'escision', ...GAFI,
+    });
+    expect(s.find((x) => x.variable_codigo === 'XII-ACT-01')).toBeUndefined();
+  });
+});
+
+describe('la magnitud sólo se responde en la v2', () => {
+  it('la v1 no se toca: sus tramos son umbrales derogados de otra fracción', () => {
+    const s = prellenarMatriz(CONFIG, {
+      tipo_persona: 'fisica', tipo_acto: 'transmision_inmueble',
+      monto_uma: 6000, umbral_uma: 8000, ...GAFI,
+    });
+    expect(s.find((x) => x.variable_codigo === 'XII-ACT-02')).toBeUndefined();
+  });
+
+  it('la v2 mide contra el umbral del acto', () => {
+    const s = prellenarMatriz(CONFIG_V2, {
+      tipo_persona: 'fisica', tipo_acto: 'transmision_inmueble',
+      monto_uma: 6000, umbral_uma: 8000, ...GAFI, // 75 %
+    });
+    const m = s.find((x) => x.variable_codigo === 'XII-ACT-02');
+    expect(m?.etiqueta).toMatch(/75 % al 150 %/);
+    expect(m?.fuente).toMatch(/75 % del umbral/);
+  });
+
+  it('el mismo monto da tramos distintos según el acto', () => {
+    const inmueble = prellenarMatriz(CONFIG_V2, {
+      tipo_persona: 'fisica', tipo_acto: 'transmision_inmueble',
+      monto_uma: 8000, umbral_uma: 8000, ...GAFI,
+    });
+    const fideicomiso = prellenarMatriz(CONFIG_V2, {
+      tipo_persona: 'fisica', tipo_acto: 'transmision_inmueble',
+      monto_uma: 8000, umbral_uma: 4000, ...GAFI,
+    });
+    expect(inmueble.find((x) => x.variable_codigo === 'XII-ACT-02')?.valor).toBe(3);
+    expect(fideicomiso.find((x) => x.variable_codigo === 'XII-ACT-02')?.valor).toBe(4);
+  });
+
+  it('sin umbral usa los tramos absolutos y lo dice', () => {
+    const s = prellenarMatriz(CONFIG_V2, {
+      tipo_persona: 'fisica', tipo_acto: 'otorgamiento_poder',
+      monto_uma: 5000, umbral_uma: null, ...GAFI,
+    });
+    expect(s.find((x) => x.variable_codigo === 'XII-ACT-02')?.fuente).toMatch(/se avisa siempre/i);
+  });
+
+  it('sin monto no inventa una magnitud', () => {
+    const s = prellenarMatriz(CONFIG_V2, {
+      tipo_persona: 'fisica', tipo_acto: 'otorgamiento_poder', ...GAFI,
+    });
+    expect(s.find((x) => x.variable_codigo === 'XII-ACT-02')).toBeUndefined();
+  });
+});

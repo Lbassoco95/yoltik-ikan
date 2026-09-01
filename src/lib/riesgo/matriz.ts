@@ -97,14 +97,30 @@ export function triggersActivados(
   tipoPersona: TipoPersona,
   respuestas: Record<string, number>,
 ): TriggerAltoDeOficio[] {
-  const aplicables = new Set(variablesAplicables(config, tipoPersona).map((v) => v.codigo));
+  const variables = variablesAplicables(config, tipoPersona);
+  const porCodigo = new Map(variables.map((v) => [v.codigo, v]));
+
   return (config.triggers_alto_de_oficio ?? []).filter((t) => {
-    if (!t.variable_codigo || typeof t.valor_minimo !== 'number') return false;
+    if (!t.variable_codigo) return false;
     // Un trigger que apunta a una variable que no aplica a este tipo de
     // persona no dispara (ej. "PEP extranjero" de persona física en una moral).
-    if (!aplicables.has(t.variable_codigo)) return false;
+    const variable = porCodigo.get(t.variable_codigo);
+    if (!variable) return false;
     const respuesta = respuestas[t.variable_codigo];
-    return typeof respuesta === 'number' && respuesta >= t.valor_minimo;
+    if (typeof respuesta !== 'number') return false;
+
+    // Por CLAVE cuando la trae: un disparador de fideicomiso tiene que apuntar
+    // al fideicomiso, no al tercer renglón de una lista. Con `valor_minimo`
+    // bastaba añadir una opción para que señalara a otra cosa —y eso pasó: al
+    // pasar el catálogo de actos de cuatro a once, el poder irrevocable ocupó
+    // la posición del fideicomiso y disparaba su alerta.
+    if (t.claves && t.claves.length > 0) {
+      const elegida = variable.opciones.find((o) => o.valor === respuesta);
+      return elegida?.clave != null && t.claves.includes(elegida.clave);
+    }
+
+    // Forma antigua, para las plantillas que todavía la usan.
+    return typeof t.valor_minimo === 'number' && respuesta >= t.valor_minimo;
   });
 }
 

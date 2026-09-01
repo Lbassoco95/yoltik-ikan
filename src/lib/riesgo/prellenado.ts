@@ -1,5 +1,6 @@
 import type { MatrizConfig, MatrizVariable, TipoPersona } from '@/types/domain';
 import { variablesAplicables } from './matriz';
+import { magnitudDeOperacion } from './tramos';
 
 /**
  * Lo que la matriz puede responderse sola con lo que ya está capturado.
@@ -23,11 +24,11 @@ import { variablesAplicables } from './matriz';
  * ---------------------------------------------------------------------
  * Lo que HOY no se puede derivar, y por qué
  * ---------------------------------------------------------------------
- *   Valor de la operación en UMA
- *     La variable tiene los tramos 645 / 3,210 UMA: umbrales de ACTIVOS
- *     VIRTUALES del régimen anterior a la reforma DOF 16/07/2025, en una matriz
- *     de fe pública. Responderla sería clasificar contra cifras derogadas de
- *     otra fracción. Pendiente de que Kawiil-Cumplimiento fije los tramos.
+ *   Valor de la operación, SÓLO en la matriz v1
+ *     Sus tramos son 645 y 3,210 UMA: umbrales de activos virtuales del régimen
+ *     anterior a la reforma, en una matriz de fe pública. Responderlos sería
+ *     clasificar contra cifras derogadas de otra fracción. En la v2 (migration
+ *     0037) la variable mide proporción del umbral del acto y sí se responde.
  *
  *   Actividad o profesión · Giro de la sociedad
  *     La matriz pide bajo/medio/alto y nosotros capturamos una clave del
@@ -78,6 +79,11 @@ export interface ContextoPrellenado {
   forma_pago?: string | null;
   /** ISO2 del país de donde vienen los recursos (migration 0036). */
   pais_origen_recursos?: string | null;
+  /** Valor del acto en UMA, ya convertido con la UMA de SU fecha. */
+  monto_uma?: number | null;
+  /** El umbral de Aviso del acto, en UMA. Null cuando el Aviso procede siempre:
+   *  no es «no sé», es que no hay proporción que calcular. */
+  umbral_uma?: number | null;
   /** Países en listas GAFI, del snapshot que ya usa el Motor PLD. */
   gafi_gris?: Set<string>;
   gafi_negra?: Set<string>;
@@ -170,10 +176,42 @@ export function prellenarMatriz(
 
   // --- Tipo de acto -------------------------------------------------
   if (ctx.tipo_acto) {
-    const enMatriz = ACTO_EN_MATRIZ[ctx.tipo_acto];
-    if (enMatriz) {
-      const v = variables.find((x) => /tipo de acto/i.test(x.pregunta));
-      sugerir(v, enMatriz, 'el tipo de acto que se está instrumentando');
+    const v = variables.find((x) => /tipo de acto/i.test(x.pregunta));
+    // Por CLAVE cuando la plantilla la trae (matriz v2, migration 0037): los
+    // once actos del layout, sin traducir nada. La traducción de abajo es para
+    // la v1, que sólo nombra cuatro con los rótulos anteriores a la 0031.
+    const porClave = v?.opciones.find((o) => o.clave === ctx.tipo_acto);
+    if (v && porClave) {
+      out.push({
+        variable_codigo: v.codigo,
+        valor: porClave.valor,
+        etiqueta: porClave.label,
+        fuente: 'el tipo de acto que se está instrumentando',
+      });
+    } else {
+      const enMatriz = ACTO_EN_MATRIZ[ctx.tipo_acto];
+      if (enMatriz) sugerir(v, enMatriz, 'el tipo de acto que se está instrumentando');
+    }
+  }
+
+  // --- Magnitud, relativa al umbral del acto -------------------------
+  // Sólo la responde la matriz v2: la v1 tiene tramos absolutos de 645 y 3,210
+  // UMA, umbrales de activos virtuales derogados en una matriz de fe pública.
+  // Contestarlos sería clasificar contra cifras equivocadas de otra fracción.
+  if (ctx.monto_uma != null && Number.isFinite(ctx.monto_uma)) {
+    const v = variables.find((x) => /valor de la operaci/i.test(x.pregunta));
+    const porTramo = v?.opciones.some((o) => o.clave?.startsWith('T'));
+    if (v && porTramo) {
+      const m = magnitudDeOperacion(ctx.monto_uma, ctx.umbral_uma ?? null);
+      const opcion = v.opciones.find((o) => o.clave === m.tramo);
+      if (opcion) {
+        out.push({
+          variable_codigo: v.codigo,
+          valor: opcion.valor,
+          etiqueta: opcion.label,
+          fuente: m.fuente,
+        });
+      }
     }
   }
 
