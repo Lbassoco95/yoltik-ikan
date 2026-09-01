@@ -19,6 +19,8 @@ import {
   ultimaEvaluacion,
 } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
+import { EstructuraSocietaria } from "@/components/clientes/EstructuraSocietaria";
+import { Identificacion } from "@/components/clientes/Identificacion";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import { paisesEnListas, zonasDeAtencion } from "@/lib/api/catalogos";
 import {
@@ -402,6 +404,17 @@ export default function ClientDetailPage() {
               para su sector, no según el perfil de actividad. Así no hay que
               tocar este condicional al entrar joyerías, vehículos, etc. */}
           {plantilla && <TabsTrigger value="matriz">Matriz de riesgo</TabsTrigger>}
+          {/* Sólo persona moral: el beneficiario controlador es de quien tiene
+              estructura de propiedad. Una persona física no la tiene, y la
+              pestaña sólo podría decir eso. */}
+          {client.tipo_persona === "moral" && (
+            <TabsTrigger value="estructura">Estructura y beneficiario</TabsTrigger>
+          )}
+          {/* La identificación vive DENTRO del expediente, no en un tablero
+              aparte: lo que Didit resolvió de esta persona y su condición de
+              PPE son datos de este expediente, y buscarlos en otra pantalla
+              obliga a salirse de él para responder su pregunta más básica. */}
+          <TabsTrigger value="identificacion">Identificación</TabsTrigger>
           <TabsTrigger value="operaciones">{esNotarias ? "Actos" : "Operaciones"}</TabsTrigger>
         </TabsList>
 
@@ -664,6 +677,16 @@ export default function ClientDetailPage() {
           )}
         </TabsContent>
         )}
+
+        {client.tipo_persona === "moral" && (
+          <TabsContent value="estructura">
+            <EstructuraSocietaria client={client} />
+          </TabsContent>
+        )}
+
+        <TabsContent value="identificacion">
+          <Identificacion client={client} />
+        </TabsContent>
 
         <TabsContent value="operaciones">
           <div className="glass-card overflow-hidden">

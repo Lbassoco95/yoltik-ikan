@@ -16,13 +16,53 @@ import { join } from 'node:path';
 
 const DIR_MIGRATIONS = 'supabase/migrations';
 
+/**
+ * Quita los comentarios `--`, incluidos los que van DETRÁS de código.
+ *
+ * Antes sólo se quitaban los que ocupaban la línea entera, y eso se comía
+ * columnas de verdad: en `verificacion_identidad`, la línea
+ *
+ *     enviado_a text,   -- correo o teléfono, según el canal.
+ *
+ * dejaba el texto del comentario dentro del cuerpo del `create table`, y al
+ * partir por comas la columna siguiente —`resumen`— quedaba pegada a «según el
+ * canal.» y no se reconocía. Una columna que existe y el esquema no ve hace que
+ * la prueba de selects marque como inexistente algo perfectamente válido.
+ *
+ * Se respeta el estado de las comillas simples porque hay literales con
+ * guiones: `E'\\n---\\n'` aparece en varias migrations y cortar ahí partiría la
+ * sentencia a la mitad. Dos comillas seguidas —el escape de SQL— salen solas
+ * del alternado.
+ */
+function sinComentariosDeLinea(sql: string): string {
+  let fuera = '';
+  let enComilla = false;
+  for (let i = 0; i < sql.length; i++) {
+    const c = sql[i];
+    if (c === "'") {
+      enComilla = !enComilla;
+      fuera += c;
+      continue;
+    }
+    if (!enComilla && c === '-' && sql[i + 1] === '-') {
+      // Hasta el fin de línea, dejando el salto para no pegar dos sentencias.
+      const salto = sql.indexOf('\n', i);
+      if (salto === -1) break;
+      i = salto - 1;
+      continue;
+    }
+    fuera += c;
+  }
+  return fuera;
+}
+
 /** Columnas por tabla, leídas de las migrations en orden. */
 export function esquemaDeMigrations(): Map<string, Set<string>> {
   const tablas = new Map<string, Set<string>>();
   const archivos = readdirSync(DIR_MIGRATIONS).filter((f) => f.endsWith('.sql')).sort();
 
   for (const archivo of archivos) {
-    const sql = readFileSync(join(DIR_MIGRATIONS, archivo), 'utf8')
+    const conBloques = readFileSync(join(DIR_MIGRATIONS, archivo), 'utf8')
       // Los comentarios traen SQL de ejemplo y frases como "add column"; si no
       // se quitan, el esquema se llena de columnas que nadie creó.
       //
@@ -33,8 +73,8 @@ export function esquemaDeMigrations(): Map<string, Set<string>> {
       // en el esquema hace que la prueba de selects deje pasar un select que
       // pide algo que no existe, que es exactamente lo que esa prueba existe
       // para cazar.
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/^\s*--.*$/gm, '');
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+    const sql = sinComentariosDeLinea(conBloques);
 
     // create table [if not exists] [public.]nombre ( ... );
     const crea = /create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-z0-9_]+)\s*\(/gi;

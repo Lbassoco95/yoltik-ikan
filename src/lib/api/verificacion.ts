@@ -102,3 +102,95 @@ export function ligaWhatsApp(mensaje: string, telefono?: string | null): string 
   const destino = soloDigitos.length >= 10 ? soloDigitos : '';
   return `https://wa.me/${destino}?text=${encodeURIComponent(mensaje)}`;
 }
+
+export interface VerificacionDeCliente extends VerificacionVigente {
+  id: string;
+  url: string;
+}
+
+/**
+ * Todas las verificaciones de un compareciente, la más reciente primero.
+ *
+ * El historial y no sólo la vigente: una verificación rechazada seguida de una
+ * aprobada no es lo mismo que una aprobada a la primera, y el expediente
+ * debería poder enseñar la diferencia. La vista `v_verificacion_vigente` sirve
+ * para la lista general; dentro del expediente se ve el rastro completo.
+ */
+export async function verificacionesDeCliente(
+  clientId: string,
+): Promise<VerificacionDeCliente[]> {
+  const { data, error } = await supabase
+    .from('verificacion_identidad')
+    .select(
+      'id, client_id, didit_session_id, url, estado, canal, enviado_a, resumen, solicitada_en, resuelta_en',
+    )
+    .eq('client_id', clientId)
+    .order('solicitada_en', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((v) => ({
+    ...(v as unknown as VerificacionDeCliente),
+    verificacion_id: (v as { id: string }).id,
+  }));
+}
+
+/**
+ * Lo que Didit resolvió, con nombres en español.
+ *
+ * El `resumen` es jsonb y viene del proveedor: se lee a la defensiva y lo que
+ * no venga simplemente no se pinta. Lo que NO se hace es rellenar un hueco con
+ * un valor por defecto —«sin coincidencias» cuando el módulo no corrió es
+ * exactamente la afirmación que no se puede sostener.
+ */
+export interface ResumenLegible {
+  documento: {
+    tipo: string | null;
+    pais: string | null;
+    nombre_leido: string | null;
+    vence: string | null;
+    avisos: number;
+  } | null;
+  prueba_de_vida: { estado: string | null; puntaje: number | null } | null;
+  cotejo_facial: { estado: string | null; puntaje: number | null } | null;
+  listas: {
+    estado: string | null;
+    coincidencias: number;
+    categorias: string[];
+  } | null;
+}
+
+export function leerResumen(resumen: Record<string, unknown> | null | undefined): ResumenLegible {
+  const obj = (k: string): Record<string, unknown> | null => {
+    const v = resumen?.[k];
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+  };
+  const texto = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
+  const num = (v: unknown): number | null => (typeof v === 'number' ? v : null);
+
+  const doc = obj('documento');
+  const vida = obj('prueba_de_vida');
+  const cara = obj('cotejo_facial');
+  const listas = obj('listas');
+
+  return {
+    documento: doc
+      ? {
+          tipo: texto(doc.tipo),
+          pais: texto(doc.pais),
+          nombre_leido: texto(doc.nombre_leido),
+          vence: texto(doc.vence),
+          avisos: num(doc.avisos) ?? 0,
+        }
+      : null,
+    prueba_de_vida: vida ? { estado: texto(vida.estado), puntaje: num(vida.puntaje) } : null,
+    cotejo_facial: cara ? { estado: texto(cara.estado), puntaje: num(cara.puntaje) } : null,
+    listas: listas
+      ? {
+          estado: texto(listas.estado),
+          coincidencias: num(listas.coincidencias) ?? 0,
+          categorias: Array.isArray(listas.categorias)
+            ? listas.categorias.filter((c): c is string => typeof c === 'string')
+            : [],
+        }
+      : null,
+  };
+}
