@@ -51,6 +51,13 @@ begin
   insert into platform_admin (user_id, nombre) values (v_admin, 'Prueba Kawiil') on conflict do nothing;
   perform set_config('ikan.uid', v_admin::text, true);
 
+  -- Sobre una base con seeds ya hay una referencia XII —la notaría demo— y el
+  -- índice único no admite dos. Se le quita la marca a la que haya antes de
+  -- poner la de la prueba: si no, lo que falla es el montaje y no se llega a
+  -- probar nada, con la apariencia de que la migration está rota.
+  update organizations set es_referencia = false
+   where es_referencia and 'XII' = any(sectores);
+
   insert into organizations (rfc, razon_social, sectores, perfil_actividad, es_referencia)
   values ('REF010101AAA', 'Notaría de referencia', array['XII']::sector_av[], 'notarias', true)
   returning id into v_ref;
@@ -197,6 +204,10 @@ begin
   -- Lo importante no es que falle: es que NO cree la organización a medias y
   -- la devuelva como si estuviera lista. Ese sería el mismo error, con la
   -- apariencia de haberlo arreglado.
+  -- Con seeds, Ixim Pay ya es la referencia XVI, así que sin quitarle la marca
+  -- esta prueba pasaría por el camino contrario al que dice probar.
+  update organizations set es_referencia = false
+   where es_referencia and 'XVI' = any(sectores);
   begin
     perform public.provisionar_organizacion(
       'XVI010101DDD', 'Exchange sin referencia', 'XVI', 'activos_virtuales');
