@@ -27,7 +27,7 @@ import {
   type RespuestaSugerida,
 } from "@/lib/riesgo/prellenado";
 import { elementosAplicables, evaluarMatriz, respuestasCompletas } from "@/lib/riesgo/matriz";
-import { formatMxn } from "@/lib/utils";
+import { cn, formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
 import type { SectorAV, TipoPersona } from "@/types/domain";
@@ -116,6 +116,7 @@ export default function ClientDetailPage() {
         activo_virtual: ops[0]?.activo_virtual,
         forma_pago: ops[0]?.forma_pago,
         pais_origen_recursos: ops[0]?.pais_origen_recursos,
+        actividad_clave: client.actividad_economica_clave,
         gafi_gris: listas?.gafi_gris,
         gafi_negra: listas?.gafi_negra,
       })
@@ -287,9 +288,22 @@ export default function ClientDetailPage() {
                               campo vacío: el OC la firma sin saber de dónde
                               salió. */}
                           {delSistema && (
-                            <p className="text-[13px] text-accent mt-0.5">
-                              La respondió el sistema: {sugerida!.fuente}. Cámbiala si no
-                              corresponde.
+                            // Ámbar cuando salió de un valor por omisión y no de un
+                            // dato del expediente. Que las dos se vieran igual haría
+                            // que nadie fuera a revisar la que sí hace falta revisar.
+                            <p
+                              className={cn(
+                                "text-[13px] mt-0.5",
+                                sugerida!.por_defecto ? "text-warning" : "text-accent",
+                              )}
+                            >
+                              {sugerida!.por_defecto
+                                ? "Sin dato para determinarla: "
+                                : "La respondió el sistema: "}
+                              {sugerida!.fuente}
+                              {sugerida!.por_defecto
+                                ? " Revísala."
+                                : " Cámbiala si no corresponde."}
                             </p>
                           )}
                         </div>

@@ -256,11 +256,27 @@ describe('el pre-llenado NO responde lo que no puede saber', () => {
     expect(s.find((x) => x.variable_codigo === 'XII-ACT-03')).toBeUndefined();
   });
 
-  it('no deduce la actividad de riesgo del catálogo de la UIF', () => {
-    // Falta la regla que dice qué claves son de riesgo alto. Inventarla sería
-    // decidir metodología.
+  it('la actividad SIEMPRE se responde, incluso sin clave', () => {
+    // Es lo contrario de las demás y a propósito: dejarla en blanco sumaría
+    // cero, y cero en una escala aditiva es más bajo que la actividad más
+    // inocua de la lista. La clave desconocida acabaría puntuando mejor que un
+    // notario, y el expediente saldría limpio por un hueco.
     const s = prellenarMatriz(CONFIG, COMPLETO);
-    expect(s.find((x) => x.variable_codigo === 'XII-PF-03')).toBeUndefined();
+    const act = s.find((x) => x.variable_codigo === 'XII-PF-03');
+    expect(act?.valor).toBe(2); // medio por omisión
+    expect(act?.por_defecto).toBe(true);
+  });
+
+  it('la respuesta por omisión se distingue de la derivada', () => {
+    // Sin la marca, una respuesta que nadie determinó se ve igual que una que
+    // sale del expediente, y nadie va a ir a revisar la que hace falta revisar.
+    const porDefecto = prellenarMatriz(CONFIG, COMPLETO)
+      .find((x) => x.variable_codigo === 'XII-PF-03');
+    const derivada = prellenarMatriz(CONFIG, { ...COMPLETO, actividad_clave: '5721100' })
+      .find((x) => x.variable_codigo === 'XII-PF-03');
+    expect(porDefecto?.por_defecto).toBe(true);
+    expect(derivada?.por_defecto).toBeFalsy();
+    expect(derivada?.valor).toBe(3); // joyeros: Actividad Vulnerable
   });
 
   it('no deriva el origen de los fondos de la residencia', () => {
@@ -298,26 +314,22 @@ describe('lo que queda para el OC', () => {
       moneda_origen: 'MXN', ...GAFI,
     });
     const faltan = faltanPorResponder(CONFIG, 'fisica', respuestasDe(s));
-    // Sin forma de pago ni origen capturados: tres respondidas, cinco no.
-    expect(s).toHaveLength(3);
+    // Sin forma de pago ni origen capturados: cuatro respondidas —la actividad
+    // entra siempre— y cuatro no.
+    expect(s).toHaveLength(4);
     expect(faltan.map((v) => v.codigo).sort()).toEqual([
-      'XII-ACT-02', 'XII-ACT-03', 'XII-PF-02', 'XII-PF-03', 'XII-REC-01',
+      'XII-ACT-02', 'XII-ACT-03', 'XII-PF-02', 'XII-REC-01',
     ]);
   });
 
-  it('con el acto completo quedan sólo las dos que dependen de Cumplimiento', () => {
-    // Es el objetivo del bloque: que lo único sin responder sea lo que nadie
-    // puede derivar sin una decisión metodológica —los tramos de UMA y el
-    // riesgo de la actividad— más el PEP, que no se captura en ninguna parte.
+  it('sobre la v1, con el acto completo sólo falta el PEP y los tramos derogados', () => {
     const s = prellenarMatriz(CONFIG, {
       tipo_persona: 'fisica', pais_iso2: 'MX', tipo_acto: 'otorgamiento_poder',
-      moneda_origen: 'MXN', forma_pago: 'efectivo', pais_origen_recursos: 'MX', ...GAFI,
+      moneda_origen: 'MXN', forma_pago: 'efectivo', pais_origen_recursos: 'MX',
+      actividad_clave: '5620015', ...GAFI,
     });
     const faltan = faltanPorResponder(CONFIG, 'fisica', respuestasDe(s));
-    expect(s).toHaveLength(5);
-    expect(faltan.map((v) => v.codigo).sort()).toEqual([
-      'XII-ACT-02', 'XII-PF-02', 'XII-PF-03',
-    ]);
+    expect(faltan.map((v) => v.codigo).sort()).toEqual(['XII-ACT-02', 'XII-PF-02']);
   });
 
   it('sin ningún dato, todas quedan para el OC', () => {
@@ -497,5 +509,26 @@ describe('la magnitud sólo se responde en la v2', () => {
       tipo_persona: 'fisica', tipo_acto: 'otorgamiento_poder', ...GAFI,
     });
     expect(s.find((x) => x.variable_codigo === 'XII-ACT-02')).toBeUndefined();
+  });
+});
+
+describe('sobre la matriz v2, lo único que queda es el PEP', () => {
+  it('siete de ocho se responden con lo capturado', () => {
+    // El objetivo de todo el bloque. Lo único sin responder es la condición de
+    // PEP, y no porque no se derive: porque no hay dónde capturarla todavía.
+    const s = prellenarMatriz(CONFIG_V2, {
+      tipo_persona: 'fisica',
+      pais_iso2: 'MX',
+      tipo_acto: 'otorgamiento_poder',
+      monto_uma: 5000,
+      umbral_uma: null,
+      moneda_origen: 'MXN',
+      forma_pago: 'efectivo',
+      pais_origen_recursos: 'MX',
+      actividad_clave: '5620015', // notaría y correduría
+      ...GAFI,
+    });
+    const faltan = faltanPorResponder(CONFIG_V2, 'fisica', respuestasDe(s));
+    expect(faltan.map((v) => v.codigo)).toEqual(['XII-PF-02']);
   });
 });

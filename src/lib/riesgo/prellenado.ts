@@ -1,6 +1,7 @@
 import type { MatrizConfig, MatrizVariable, TipoPersona } from '@/types/domain';
 import { variablesAplicables } from './matriz';
 import { magnitudDeOperacion } from './tramos';
+import { riesgoDeActividad } from './actividad';
 
 /**
  * Lo que la matriz puede responderse sola con lo que ya está capturado.
@@ -30,10 +31,10 @@ import { magnitudDeOperacion } from './tramos';
  *     clasificar contra cifras derogadas de otra fracción. En la v2 (migration
  *     0037) la variable mide proporción del umbral del acto y sí se responde.
  *
- *   Actividad o profesión · Giro de la sociedad
- *     La matriz pide bajo/medio/alto y nosotros capturamos una clave del
- *     catálogo de la UIF con cientos de valores. Falta la regla que dice qué
- *     claves son de riesgo alto. Inventarla sería decidir metodología.
+ * La actividad y el giro SÍ se responden desde la Adenda 1: su apartado 3 fija
+ * la regla de asignación. Y se responden SIEMPRE, incluso cuando la clave no
+ * está en la tabla, porque dejarlas en blanco sumaría cero y cero es más bajo
+ * que la actividad más inocua. Esas van marcadas `por_defecto`.
  *
  *   Condición de PEP
  *     No hay ningún campo en Ikán donde se registre. No es que no se derive:
@@ -62,6 +63,16 @@ export interface RespuestaSugerida {
   etiqueta: string;
   /** De dónde salió, en español y sin jerga. Es lo que hace revisable la sugerencia. */
   fuente: string;
+  /**
+   * La respuesta salió de un VALOR POR DEFECTO, no de un dato del expediente.
+   *
+   * Hoy sólo la actividad económica: cuando la clave no está en la tabla de
+   * riesgo, se responde «medio» porque dejarla en blanco sería peor. Pero eso
+   * no es lo mismo que haberlo determinado, y la pantalla tiene que poder
+   * distinguirlo: una respuesta por omisión que se ve igual que una derivada
+   * es una respuesta que nadie va a ir a revisar.
+   */
+  por_defecto?: boolean;
 }
 
 /** Lo que el sistema conoce del compareciente y del acto al pre-llenar. */
@@ -79,6 +90,9 @@ export interface ContextoPrellenado {
   forma_pago?: string | null;
   /** ISO2 del país de donde vienen los recursos (migration 0036). */
   pais_origen_recursos?: string | null;
+  /** Clave del catálogo de la UIF: actividad económica en persona física,
+   *  giro mercantil en persona moral. */
+  actividad_clave?: string | null;
   /** Valor del acto en UMA, ya convertido con la UMA de SU fecha. */
   monto_uma?: number | null;
   /** El umbral de Aviso del acto, en UMA. Null cuando el Aviso procede siempre:
@@ -248,6 +262,33 @@ export function prellenarMatriz(
         sugerir(v, 'Moneda extranjera', `la operación está en ${ctx.moneda_origen.toUpperCase()}`);
       } else if (ctx.moneda_origen) {
         sugerir(v, 'No, solo moneda nacional', 'la operación está en pesos');
+      }
+    }
+  }
+
+  // --- Actividad o giro ------------------------------------------------
+  // SIEMPRE se responde, incluso sin clave capturada y con claves que la tabla
+  // no contempla. Dejarla en blanco sumaría cero, y cero en una escala aditiva
+  // es más bajo que la actividad más inocua de la lista: la clave desconocida
+  // acabaría puntuando mejor que un notario. Es el peor modo de falla posible,
+  // porque produce falsos negativos silenciosos.
+  {
+    const v = variables.find((x) =>
+      ctx.tipo_persona === 'moral'
+        ? /giro de la sociedad/i.test(x.pregunta)
+        : /actividad o profesi/i.test(x.pregunta),
+    );
+    if (v) {
+      const r = riesgoDeActividad(ctx.actividad_clave);
+      const opcion = v.opciones.find((o) => o.valor === r.valor);
+      if (opcion) {
+        out.push({
+          variable_codigo: v.codigo,
+          valor: opcion.valor,
+          etiqueta: opcion.label,
+          fuente: r.fuente,
+          por_defecto: !r.mapeada,
+        });
       }
     }
   }
