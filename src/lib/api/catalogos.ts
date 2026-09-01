@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { EstadoCatalogo, ValorCatalogo } from '@/lib/catalogos';
+import type { ZonaAtencion } from '@/lib/riesgo/zona';
 
 /** Estado de todos los catálogos: cuáles están cargados y desde cuándo.
  *  Lo lee cualquier usuario autenticado; escribirlos es sólo de Kawiil. */
@@ -63,18 +64,53 @@ export async function reemplazarValoresCatalogo(
 export async function paisesEnListas(): Promise<{
   gafi_gris: Set<string>;
   gafi_negra: Set<string>;
+  /**
+   * Plenario del GAFI del snapshot vigente (migration 0041), p. ej. «2026-06».
+   *
+   * El GAFI actualiza sus listas TRES VECES AL AÑO, y la referencia con la que
+   * se calificó un expediente tiene que poder reconstruirse: sin ella, una
+   * reclasificación posterior parece un error en lugar de una actualización.
+   *
+   * Null cuando las filas todavía no lo traen. Se toma el más alto de los que
+   * hay: si conviven dos, el vigente es el último publicado.
+   */
+  plenario: string | null;
 }> {
   const { data, error } = await supabase
     .from('country_risk_list')
-    .select('iso2, fuente, vigente_hasta')
+    .select('iso2, fuente, vigente_hasta, plenario')
     .in('fuente', ['gafi_gris', 'gafi_negra'])
     .is('vigente_hasta', null);
   if (error) throw error;
 
   const gris = new Set<string>();
   const negra = new Set<string>();
-  for (const f of (data ?? []) as { iso2: string; fuente: string }[]) {
+  let plenario: string | null = null;
+  for (const f of (data ?? []) as { iso2: string; fuente: string; plenario?: string | null }[]) {
     (f.fuente === 'gafi_negra' ? negra : gris).add(f.iso2.toUpperCase());
+    if (f.plenario && (plenario === null || f.plenario > plenario)) plenario = f.plenario;
   }
-  return { gafi_gris: gris, gafi_negra: negra };
+  return { gafi_gris: gris, gafi_negra: negra, plenario };
+}
+
+/**
+ * La lista interna de zonas geográficas de atención (migration 0041).
+ *
+ * Nace VACÍA a propósito: la determinación de qué zonas son de atención, a la
+ * luz de la evaluación nacional de riesgos, es de Kawiil-Cumplimiento. Mientras
+ * devuelva un arreglo vacío, la variable de zona de la matriz no se responde ni
+ * puntúa —ver `zona.ts` y `requiere_catalogo` en la plantilla—.
+ */
+export async function zonasDeAtencion(): Promise<ZonaAtencion[]> {
+  const { data, error } = await supabase
+    .from('zona_atencion')
+    .select('entidad_clave, municipio, nivel, motivo, vigente_hasta')
+    .is('vigente_hasta', null);
+  if (error) throw error;
+  return (data ?? []).map((z) => ({
+    entidad_clave: z.entidad_clave as string,
+    municipio: (z.municipio as string | null) ?? null,
+    nivel: z.nivel as number,
+    motivo: z.motivo as string,
+  }));
 }

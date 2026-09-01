@@ -1,7 +1,10 @@
 import type { MatrizConfig, MatrizVariable, TipoPersona } from '@/types/domain';
-import { variablesAplicables } from './matriz';
+import { variablesAplicables, type CatalogosDisponibles } from './matriz';
 import { magnitudDeOperacion } from './tramos';
 import { riesgoDeActividad } from './actividad';
+import { riesgoPaisMaximo, claveDeNivel, type PaisCapturado } from './pais';
+import { riesgoDeZona, type ZonaAtencion } from './zona';
+import { riesgoDeCanal, riesgoDeFrecuencia } from './perfil-transaccional';
 
 /**
  * Lo que la matriz puede responderse sola con lo que ya está capturado.
@@ -36,12 +39,24 @@ import { riesgoDeActividad } from './actividad';
  * está en la tabla, porque dejarlas en blanco sumaría cero y cero es más bajo
  * que la actividad más inocua. Esas van marcadas `por_defecto`.
  *
- *   Condición de PEP
- *     No hay ningún campo en Ikán donde se registre. No es que no se derive:
- *     es que el dato no existe.
+ *   Condición de PEP, mientras la coincidencia no esté RESUELTA
+ *     El campo existe desde la migration 0038, y una determinación de la célula
+ *     sí se responde —`no_pep` incluido, que es una determinación y no una
+ *     ausencia—. Lo que no se traduce a ninguna opción es una coincidencia del
+ *     screening que nadie ha revisado: las RCG reservan al sujeto obligado la
+ *     determinación del nivel.
  *
  *   Beneficiario controlador identificado
  *     El módulo de estructura societaria no existe todavía.
+ *
+ *   Zona geográfica nacional, mientras la lista interna esté VACÍA
+ *     La determinación de qué zonas son de atención es de Cumplimiento. Con la
+ *     lista vacía la variable no se responde y tampoco puntúa: ver `zona.ts`.
+ *
+ *   Canal de distribución, si no se capturó
+ *     No se deduce de que exista una verificación de Didit. Se puede verificar a
+ *     distancia a alguien que vino a la notaría, y suponerlo al revés
+ *     convertiría un dato administrativo en una calificación de riesgo.
  *
  * La forma de pago y el país de origen de los recursos SÍ se derivan desde la
  * migration 0036, que los añadió a la captura del acto. Antes no era que no se
@@ -50,8 +65,10 @@ import { riesgoDeActividad } from './actividad';
  * Del país de origen conviene decir lo que NO se hace: no se deriva de la
  * residencia del compareciente. Dónde vive alguien y de dónde salió el dinero
  * son cosas distintas, y confundirlas es exactamente lo que esa variable existe
- * para detectar. Se responde con el país que se capturó como origen, o no se
- * responde.
+ * para detectar. Desde la matriz v3 (migration 0042) los tres países
+ * —nacionalidad, residencia o constitución, y origen de los recursos— alimentan
+ * UNA sola variable que toma el más alto: siguen siendo tres datos distintos, y
+ * la divergencia entre ellos es precisamente la señal.
  *
  * Módulo puro: sin red, sin React. Se prueba solo.
  */
@@ -104,6 +121,26 @@ export interface ContextoPrellenado {
   /** Países en listas GAFI, del snapshot que ya usa el Motor PLD. */
   gafi_gris?: Set<string>;
   gafi_negra?: Set<string>;
+  /** Plenario del GAFI del snapshot (migration 0041). Viaja a la explicación
+   *  para que se pueda reconstruir contra qué versión se calificó. */
+  plenario_gafi?: string | null;
+
+  // --- Adenda 1, instrucciones 6, 7 y 10 (matriz v3) ------------------
+  /** ISO2 de la nacionalidad del compareciente. Distinta de la residencia:
+   *  la divergencia entre las dos es precisamente la señal. */
+  pais_nacionalidad?: string | null;
+  /** Cómo llegó el cliente (migration 0041). */
+  canal_distribucion?: string | null;
+  /** Lista interna de zonas de atención. Vacía = la variable no se responde. */
+  zonas_atencion?: ZonaAtencion[];
+  entidad_cliente?: string | null;
+  municipio_cliente?: string | null;
+  entidad_inmueble?: string | null;
+  municipio_inmueble?: string | null;
+  /** Operaciones al año que el cliente declaró esperar (Cap. III Ter). */
+  frecuencia_esperada_anual?: number | null;
+  /** Operaciones observadas en la ventana móvil de seis meses del art. 7. */
+  operaciones_en_ventana?: number;
 }
 
 /**
@@ -127,7 +164,11 @@ const ACTO_EN_MATRIZ: Record<string, string> = {
 /** Busca la opción cuyo texto empieza igual, sin depender de mayúsculas ni acentos. */
 function opcionPorTexto(v: MatrizVariable, texto: string) {
   const norm = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .trim();
   return v.opciones.find((o) => norm(o.label) === norm(texto));
 }
 
@@ -179,7 +220,8 @@ const TEXTO_PEP: Record<string, string> = {
 const FUENTE_PEP: Record<string, string> = {
   no_pep: 'el screening de listas no encontró coincidencias de PPE',
   pep_nacional: 'la célula de cumplimiento resolvió la coincidencia como PPE nacional',
-  pep_extranjera: 'la célula de cumplimiento resolvió la coincidencia como PPE federal o extranjera',
+  pep_extranjera:
+    'la célula de cumplimiento resolvió la coincidencia como PPE federal o extranjera',
   familiar_o_asociado:
     'la célula resolvió que es cónyuge, familiar hasta segundo grado o asociado cercano de una PPE',
 };
@@ -198,6 +240,40 @@ const TEXTO_PAIS: Record<ReturnType<typeof nivelPais>, string> = {
   negra: 'país en la lista negra del GAFI',
 };
 
+/**
+ * Los países del expediente, con la calidad en que entra cada uno.
+ *
+ * La residencia y la constitución comparten campo (`pais_iso2`) porque en el
+ * modelo de datos son la misma columna leída según la forma jurídica. El rol
+ * cambia para que la explicación diga cuál es.
+ */
+function paisesCapturados(ctx: ContextoPrellenado): PaisCapturado[] {
+  return [
+    { rol: 'nacionalidad', iso2: ctx.pais_nacionalidad },
+    {
+      rol: ctx.tipo_persona === 'moral' ? 'constitucion' : 'residencia',
+      iso2: ctx.pais_iso2,
+    },
+    { rol: 'origen_recursos', iso2: ctx.pais_origen_recursos },
+  ];
+}
+
+/**
+ * Las banderas booleanas que la matriz evalúa fuera del puntaje.
+ *
+ * Hoy sólo una: el llamado a la acción del GAFI. Va aparte de
+ * `prellenarMatriz` porque no es una respuesta a una variable —no suma
+ * puntos— sino una condición de flujo que fuerza la banda alta.
+ */
+export function indicadoresDerivados(ctx: ContextoPrellenado): Record<string, boolean> {
+  const r = riesgoPaisMaximo(paisesCapturados(ctx), {
+    gafi_gris: ctx.gafi_gris,
+    gafi_negra: ctx.gafi_negra,
+    plenario: ctx.plenario_gafi,
+  });
+  return { GAFI_LLAMADO_ACCION: r?.llamado_a_la_accion === true };
+}
+
 export function prellenarMatriz(
   config: MatrizConfig,
   ctx: ContextoPrellenado,
@@ -210,7 +286,12 @@ export function prellenarMatriz(
     if (!v) return;
     const opcion = opcionPorTexto(v, texto);
     if (!opcion) return;
-    out.push({ variable_codigo: v.codigo, valor: opcion.valor, etiqueta: opcion.label, fuente });
+    out.push({
+      variable_codigo: v.codigo,
+      valor: opcion.valor,
+      etiqueta: opcion.label,
+      fuente,
+    });
   };
 
   // --- Tipo de acto -------------------------------------------------
@@ -254,23 +335,50 @@ export function prellenarMatriz(
     }
   }
 
-  // --- País: residencia de la persona física, constitución de la moral ---
-  if (ctx.pais_iso2) {
-    const nivel = nivelPais(ctx.pais_iso2, ctx);
-    const v = variables.find((x) =>
-      ctx.tipo_persona === 'moral'
-        ? /jurisdicci[oó]n de constituci[oó]n/i.test(x.pregunta)
-        : /residencia/i.test(x.pregunta),
-    );
-    if (v) {
-      const opcion = opcionDePais(v, nivel);
-      if (opcion) {
+  // --- Riesgo país -----------------------------------------------------
+  // En la matriz v3 (migration 0042) es UNA variable que toma el valor MÁS ALTO
+  // de nacionalidad, residencia (o constitución) y origen de los recursos. No
+  // promedia: un promedio dejaría que dos países limpios diluyeran al tercero,
+  // que es justo el que importa.
+  //
+  // En la v1 y la v2 son tres variables sueltas, y se responden como antes.
+  {
+    const v = variables.find((x) => /riesgo pa[ií]s/i.test(x.pregunta));
+    const porClave = v?.opciones.some((o) => o.clave === 'riesgo');
+
+    if (v && porClave) {
+      const r = riesgoPaisMaximo(paisesCapturados(ctx), {
+        gafi_gris: ctx.gafi_gris,
+        gafi_negra: ctx.gafi_negra,
+        plenario: ctx.plenario_gafi,
+      });
+      const opcion = r ? v.opciones.find((o) => o.clave === claveDeNivel(r.nivel)) : undefined;
+      if (r && opcion) {
         out.push({
           variable_codigo: v.codigo,
           valor: opcion.valor,
           etiqueta: opcion.label,
-          fuente: `${TEXTO_PAIS[nivel]} (${ctx.pais_iso2.toUpperCase()}), contra el snapshot de listas de Ikán`,
+          fuente: r.fuente,
         });
+      }
+    } else if (ctx.pais_iso2) {
+      // Plantillas v1 y v2.
+      const nivel = nivelPais(ctx.pais_iso2, ctx);
+      const vViejo = variables.find((x) =>
+        ctx.tipo_persona === 'moral'
+          ? /jurisdicci[oó]n de constituci[oó]n/i.test(x.pregunta)
+          : /residencia/i.test(x.pregunta),
+      );
+      if (vViejo) {
+        const opcion = opcionDePais(vViejo, nivel);
+        if (opcion) {
+          out.push({
+            variable_codigo: vViejo.codigo,
+            valor: opcion.valor,
+            etiqueta: opcion.label,
+            fuente: `${TEXTO_PAIS[nivel]} (${ctx.pais_iso2.toUpperCase()}), contra el snapshot de listas de Ikán`,
+          });
+        }
       }
     }
   }
@@ -302,9 +410,7 @@ export function prellenarMatriz(
     const v = variables.find((x) => /condici[oó]n de pep/i.test(x.pregunta));
     const texto = TEXTO_PEP[ctx.condicion_pep];
     if (v && texto) {
-      const opcion = v.opciones.find((o) =>
-        o.label.toLowerCase().startsWith(texto.toLowerCase()),
-      );
+      const opcion = v.opciones.find((o) => o.label.toLowerCase().startsWith(texto.toLowerCase()));
       if (opcion) {
         out.push({
           variable_codigo: v.codigo,
@@ -351,9 +457,7 @@ export function prellenarMatriz(
       // Se busca por prefijo: la opción del seed dice «Bancarizado
       // (transferencia o cheque nominativo)» y el paréntesis es explicación, no
       // parte del valor.
-      const opcion = v.opciones.find((o) =>
-        o.label.toLowerCase().startsWith(texto.toLowerCase()),
-      );
+      const opcion = v.opciones.find((o) => o.label.toLowerCase().startsWith(texto.toLowerCase()));
       if (opcion) {
         out.push({
           variable_codigo: v.codigo,
@@ -388,6 +492,80 @@ export function prellenarMatriz(
     }
   }
 
+  // --- Canal de distribución -------------------------------------------
+  // No se deduce de que exista una verificación de Didit: se puede verificar a
+  // distancia a alguien que vino a la notaría, y suponerlo al revés convertiría
+  // un dato administrativo en una calificación de riesgo. Sin canal capturado,
+  // la variable se queda sin responder.
+  {
+    const v = variables.find((x) => /canal de distribuci/i.test(x.pregunta));
+    const r = riesgoDeCanal(ctx.canal_distribucion);
+    const opcion = v && r ? v.opciones.find((o) => o.clave === r.clave) : undefined;
+    if (v && r && opcion) {
+      out.push({
+        variable_codigo: v.codigo,
+        valor: opcion.valor,
+        etiqueta: opcion.label,
+        fuente: r.fuente,
+      });
+    }
+  }
+
+  // --- Zona geográfica nacional ----------------------------------------
+  // Con la lista interna vacía NO se responde, y la variable tampoco puntúa
+  // (`requiere_catalogo` en la plantilla). Contestar «sin observaciones»
+  // porque la lista está vacía le daría la calificación más baja a cualquier
+  // ubicación del país: el falso negativo silencioso de siempre.
+  {
+    const v = variables.find((x) => /zona geogr[aá]fica/i.test(x.pregunta));
+    const r = riesgoDeZona(
+      [
+        {
+          rol: 'inmueble',
+          entidad_clave: ctx.entidad_inmueble,
+          municipio: ctx.municipio_inmueble,
+        },
+        {
+          rol: 'domicilio_cliente',
+          entidad_clave: ctx.entidad_cliente,
+          municipio: ctx.municipio_cliente,
+        },
+      ],
+      ctx.zonas_atencion ?? [],
+    );
+    const opcion = v && r ? v.opciones.find((o) => o.valor === r.valor) : undefined;
+    if (v && r && opcion) {
+      out.push({
+        variable_codigo: v.codigo,
+        valor: opcion.valor,
+        etiqueta: opcion.label,
+        fuente: r.fuente,
+      });
+    }
+  }
+
+  // --- Perfil transaccional: frecuencia --------------------------------
+  // SIEMPRE se responde, como la actividad y por la misma razón: sin
+  // declaración la respuesta es la intermedia y va marcada `por_defecto`, no el
+  // mínimo. Un expediente al que le falta el dato no puede puntuar mejor que
+  // uno que lo tiene y está en orden.
+  {
+    const v = variables.find((x) => /frecuencia de operaci/i.test(x.pregunta));
+    if (v) {
+      const r = riesgoDeFrecuencia(ctx.frecuencia_esperada_anual, ctx.operaciones_en_ventana ?? 0);
+      const opcion = v.opciones.find((o) => o.clave === r.clave);
+      if (opcion) {
+        out.push({
+          variable_codigo: v.codigo,
+          valor: opcion.valor,
+          etiqueta: opcion.label,
+          fuente: r.fuente,
+          por_defecto: r.por_defecto,
+        });
+      }
+    }
+  }
+
   // Nunca dos respuestas para la misma variable.
   const vistas = new Set<string>();
   return out.filter((r) => {
@@ -402,8 +580,9 @@ export function faltanPorResponder(
   config: MatrizConfig,
   tipoPersona: TipoPersona,
   respuestas: Record<string, number>,
+  catalogos?: CatalogosDisponibles,
 ): MatrizVariable[] {
-  return variablesAplicables(config, tipoPersona).filter(
+  return variablesAplicables(config, tipoPersona, catalogos).filter(
     (v) => typeof respuestas[v.codigo] !== 'number',
   );
 }

@@ -121,7 +121,27 @@ export interface Client {
   activo: boolean;
   capturado_por: string | null;
   capturado_en: string;
+  /**
+   * Cómo llegó el cliente (migration 0041). Factor obligatorio de las RCG y el
+   * que más aplica a este producto, porque el onboarding es remoto.
+   *
+   * NO se deduce de que exista una verificación de Didit: se puede verificar a
+   * distancia a quien vino a la notaría.
+   */
+  canal_distribucion: CanalDistribucion | null;
+  /** Con `entidad_federativa_clave` forma la zona geográfica del domicilio. */
+  municipio: string | null;
+  /** Operaciones al año que el cliente declara esperar (Cap. III Ter de las
+   *  RCG). Es la única pieza del perfil transaccional que no se puede
+   *  calcular: la observada sale de la ventana móvil de seis meses. */
+  frecuencia_esperada_anual: number | null;
 }
+
+/** Valores del check de `client.canal_distribucion` (migration 0041). */
+export type CanalDistribucion =
+  | 'presencial'
+  | 'remoto_verificacion_reforzada'
+  | 'remoto_estandar';
 
 /** Payload de alta que captura el Operador. `organization_id` y `capturado_por`
  *  los resuelve la capa de API desde la sesión (no los envía el formulario). */
@@ -142,6 +162,9 @@ export interface NuevoClienteInput {
   entidad_federativa?: string;
   pais_residencia_iso2?: string;
   datos_kyc?: Record<string, unknown>;
+  canal_distribucion?: CanalDistribucion;
+  municipio?: string;
+  frecuencia_esperada_anual?: number;
 }
 
 export interface Operation {
@@ -173,6 +196,11 @@ export interface Operation {
   /** Día del pago. El art. 32 se mide con la UMA de ESE día, no la del
    *  instrumento. Nulo = se usa la del acto. */
   fecha_pago: string | null;
+  /** Clave del catálogo ENTIDAD FEDERATIVA donde está el inmueble (migration
+   *  0041). Distinta del domicilio del cliente: las dos cuentan como factor
+   *  geográfico, y se toma la más alta. */
+  entidad_federativa_inmueble: string | null;
+  municipio_inmueble: string | null;
   /** El pago viene de alguien distinto del cliente. Señal por sí misma. */
   pago_de_tercero: boolean | null;
   institucion_financiera: string | null;
@@ -227,6 +255,10 @@ export interface NuevaOperacionInput {
   pago_de_tercero?: boolean;
   institucion_financiera?: string;
   cuenta_ordenante?: string;
+  /** Zona geográfica del inmueble (migration 0041). Clave del catálogo
+   *  ENTIDAD FEDERATIVA; el municipio en texto libre. */
+  entidad_federativa_inmueble?: string;
+  municipio_inmueble?: string;
 }
 
 // =====================================================================
@@ -257,6 +289,36 @@ export interface MatrizVariable {
   criterio?: string;
   peso?: number;
   opciones: MatrizOpcion[];
+  /**
+   * Catálogo del que depende para poder responderse. Mientras ese catálogo esté
+   * vacío, la variable NO puntúa y queda fuera del máximo y del mínimo de la
+   * escala.
+   *
+   * Existe por la zona geográfica: su lista interna nace vacía porque la
+   * determinación de qué zonas son de atención es de Cumplimiento. Dejarla
+   * dentro de la escala con todos los expedientes en el mínimo los comprimiría
+   * a todos hacia abajo por una razón que no tiene que ver con su riesgo; y
+   * responderla «sin observaciones» sería peor todavía, porque se vería
+   * contestada y nadie iría a revisarla.
+   */
+  requiere_catalogo?: string;
+}
+
+/**
+ * Una bandera de sí o no que vive FUERA del puntaje.
+ *
+ * Existe porque agrupar lista gris y lista negra es aceptable para puntuar y no
+ * lo es para el flujo: el llamado a la acción del GAFI conlleva contramedidas,
+ * no simplemente diligencia reforzada. La forma de conciliar las dos cosas sin
+ * romper el diseño de tres opciones es dejar la variable de puntaje con tres
+ * valores y añadir el indicador aparte. El puntaje se agrupa; el flujo no.
+ */
+export interface MatrizIndicador {
+  codigo: string;
+  pregunta: string;
+  descripcion: string;
+  /** `piso` fuerza la banda alta; `informativo` sólo se muestra. */
+  efecto: 'piso' | 'informativo';
 }
 export interface MatrizElemento {
   codigo: string;
@@ -293,6 +355,14 @@ export interface TriggerAltoDeOficio {
    * ignora `valor_minimo`.
    */
   claves?: string[];
+  /**
+   * Dispara si el indicador booleano de este código está en true.
+   *
+   * No apunta a ninguna variable de puntaje: es el caso del llamado a la acción
+   * del GAFI, que la escala agrupa con la lista gris y el flujo tiene que
+   * separar.
+   */
+  indicador_codigo?: string;
 }
 
 export interface MatrizConfig {
@@ -303,6 +373,19 @@ export interface MatrizConfig {
     alto: MatrizEscalaRango;
   };
   triggers_alto_de_oficio: TriggerAltoDeOficio[];
+  /** Banderas de sí o no que no suman puntos pero pueden forzar la banda. */
+  indicadores?: MatrizIndicador[];
+  /**
+   * Las bandas de `escala_cliente` están en índice de 0 a 100, no en puntaje
+   * crudo. Sin esta marca el puntaje crudo se compara contra bandas que no son
+   * suyas, y con once variables cuyo máximo ronda los treinta puntos TODO
+   * clasificaría «bajo» contra una banda que empieza en 40.
+   */
+  escala_normalizada?: boolean;
+  /** Los cortes se calibraron contra datos reales. Mientras sea falso, la
+   *  clasificación se presenta como provisional. */
+  calibrada?: boolean;
+  nota_calibracion?: string;
 }
 export type EstadoPlantilla = 'borrador' | 'publicada';
 

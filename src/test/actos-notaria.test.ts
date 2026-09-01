@@ -80,23 +80,46 @@ describe('KYC o KYB, según a quién se conoce', () => {
   });
 });
 
-describe('los campos del acto llegan completos al insert', () => {
-  // `crearOperacion` arma la fila campo por campo, así que un campo nuevo en el
-  // formulario que nadie añada aquí se pierde en silencio: el alta responde
-  // 200, el acto se guarda, y el dato simplemente no está. Pasó con forma_pago
-  // y pais_origen_recursos.
-  it('la fila del insert cubre todo lo que el formulario captura', async () => {
+describe('los campos capturados llegan completos al insert', () => {
+  // `crearOperacion` y `crearCliente` arman la fila campo por campo, así que un
+  // campo nuevo en el tipo de entrada que nadie añada al insert se pierde en
+  // SILENCIO: el alta responde 200, el registro se guarda, y el dato
+  // simplemente no está. Ya pasó con forma_pago y pais_origen_recursos.
+  //
+  // La lista NO se escribe a mano aquí: se lee del tipo de entrada. Una lista
+  // escrita a mano tiene el mismo defecto que quiere prevenir —hay que
+  // acordarse de actualizarla— y falla el día que a alguien se le olvida.
+  async function camposDeLaInterfaz(nombre: string): Promise<string[]> {
+    const dominio = await readFile('src/types/domain.ts', 'utf8');
+    const inicio = dominio.indexOf(`export interface ${nombre} {`);
+    expect(inicio, `no se encontró ${nombre}`).toBeGreaterThan(-1);
+    const cuerpo = dominio.slice(inicio, dominio.indexOf('\n}', inicio));
+    return [...cuerpo.matchAll(/^\s{2}(\w+)\??:/gm)].map((m) => m[1]);
+  }
+
+  it('la fila de crearOperacion cubre todo NuevaOperacionInput', async () => {
     const fuente = await readFile('src/lib/api/operaciones.ts', 'utf8');
     const cuerpo = fuente.slice(
       fuente.indexOf('export async function crearOperacion'),
       fuente.indexOf('export async function actualizarDatosActo'),
     );
-    for (const campo of [
-      'client_id', 'tipo', 'monto_mxn', 'moneda_origen', 'activo_virtual',
-      'contraparte', 'fecha', 'instrumento_publico', 'datos_acto',
-      'forma_pago', 'pais_origen_recursos',
-    ]) {
+    const campos = await camposDeLaInterfaz('NuevaOperacionInput');
+    expect(campos.length).toBeGreaterThan(10);
+    for (const campo of campos) {
       expect(cuerpo, `crearOperacion no manda ${campo}`).toContain(`${campo}:`);
+    }
+  });
+
+  it('la fila de crearCliente cubre todo NuevoClienteInput', async () => {
+    const fuente = await readFile('src/lib/api/clientes.ts', 'utf8');
+    const cuerpo = fuente.slice(
+      fuente.indexOf('export async function crearCliente'),
+      fuente.indexOf('export async function getPlantillaRiesgoActiva'),
+    );
+    const campos = await camposDeLaInterfaz('NuevoClienteInput');
+    expect(campos.length).toBeGreaterThan(10);
+    for (const campo of campos) {
+      expect(cuerpo, `crearCliente no manda ${campo}`).toContain(`${campo}:`);
     }
   });
 });

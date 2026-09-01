@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Loader2, Save } from "lucide-react";
@@ -20,13 +20,22 @@ import {
 } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
-import { paisesEnListas } from "@/lib/api/catalogos";
+import { paisesEnListas, zonasDeAtencion } from "@/lib/api/catalogos";
 import {
   faltanPorResponder,
+  indicadoresDerivados,
   prellenarMatriz,
+  type ContextoPrellenado,
   type RespuestaSugerida,
 } from "@/lib/riesgo/prellenado";
-import { elementosAplicables, evaluarMatriz, respuestasCompletas } from "@/lib/riesgo/matriz";
+import {
+  elementosAplicables,
+  evaluarMatriz,
+  respuestasCompletas,
+  variablePuntua,
+  type ContextoEvaluacion,
+} from "@/lib/riesgo/matriz";
+import { operacionesEnVentana } from "@/lib/riesgo/perfil-transaccional";
 import { cn, formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
@@ -97,6 +106,23 @@ export default function ClientDetailPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // La lista interna de zonas de atención. Viene vacía hasta que Cumplimiento
+  // la cargue, y mientras esté vacía la variable de zona no puntúa ni se pide.
+  const { data: zonas = [] } = useQuery({
+    queryKey: ["zonas-atencion"],
+    queryFn: zonasDeAtencion,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Qué catálogos hay cargados hoy. Una variable que declara `requiere_catalogo`
+  // y cuyo catálogo falta queda fuera del máximo, del mínimo y de la captura:
+  // exigirla dejaría la matriz imposible de cerrar, y responderla «sin
+  // observaciones» le daría la calificación más baja a cualquier ubicación.
+  const catalogos = useMemo(
+    () => new Set(zonas.length > 0 ? ["zona_atencion"] : []),
+    [zonas.length],
+  );
+
   /**
    * Lo que la matriz se responde sola.
    *
@@ -105,23 +131,52 @@ export default function ClientDetailPage() {
    * una operación en dólares cambia una respuesta, y la matriz tiene que
    * enterarse sin que nadie vuelva a abrirla a mano.
    */
-  const sugeridas: RespuestaSugerida[] = plantilla && client
-    ? prellenarMatriz(plantilla.configuracion, {
-        tipo_persona: client.tipo_persona,
-        pais_iso2: client.pais_residencia_iso2,
-        tipo_acto: (ops[0]?.contraparte as Record<string, unknown> | null)?.tipo_acto as
-          | string
-          | undefined,
-        moneda_origen: ops[0]?.moneda_origen,
-        activo_virtual: ops[0]?.activo_virtual,
-        forma_pago: ops[0]?.forma_pago,
-        pais_origen_recursos: ops[0]?.pais_origen_recursos,
-        actividad_clave: client.actividad_economica_clave,
-        gafi_gris: listas?.gafi_gris,
-        gafi_negra: listas?.gafi_negra,
-      })
-    : [];
+  const contexto: ContextoPrellenado | null =
+    plantilla && client
+      ? {
+          tipo_persona: client.tipo_persona,
+          pais_iso2: client.pais_residencia_iso2,
+          // La nacionalidad, aparte de la residencia: la matriz v3 toma el más
+          // alto de los tres países y la DIVERGENCIA entre ellos es la señal.
+          pais_nacionalidad: client.pais_nacionalidad_clave,
+          tipo_acto: (ops[0]?.contraparte as Record<string, unknown> | null)?.tipo_acto as
+            | string
+            | undefined,
+          moneda_origen: ops[0]?.moneda_origen,
+          activo_virtual: ops[0]?.activo_virtual,
+          forma_pago: ops[0]?.forma_pago,
+          pais_origen_recursos: ops[0]?.pais_origen_recursos,
+          actividad_clave: client.actividad_economica_clave,
+          gafi_gris: listas?.gafi_gris,
+          gafi_negra: listas?.gafi_negra,
+          plenario_gafi: listas?.plenario,
+          canal_distribucion: client.canal_distribucion,
+          zonas_atencion: zonas,
+          entidad_cliente: client.entidad_federativa_clave,
+          municipio_cliente: client.municipio,
+          entidad_inmueble: ops[0]?.entidad_federativa_inmueble,
+          municipio_inmueble: ops[0]?.municipio_inmueble,
+          frecuencia_esperada_anual: client.frecuencia_esperada_anual,
+          // La MISMA ventana móvil de seis meses del art. 7 que usa el motor.
+          // Dos ventanas distintas para el mismo cliente sería la manera más
+          // fácil de que el sistema se contradiga sobre él.
+          operaciones_en_ventana: operacionesEnVentana(ops.map((o) => o.fecha)),
+        }
+      : null;
+
+  const sugeridas: RespuestaSugerida[] =
+    plantilla && contexto ? prellenarMatriz(plantilla.configuracion, contexto) : [];
   const porVariable = new Map(sugeridas.map((r) => [r.variable_codigo, r]));
+
+  // Las banderas booleanas que no suman puntos pero fuerzan la banda: hoy sólo
+  // el llamado a la acción del GAFI, que el puntaje agrupa con la lista gris
+  // —agrupar para puntuar es aceptable— y que el flujo tiene que separar,
+  // porque conlleva contramedidas y no simplemente diligencia reforzada.
+  const indicadores = contexto ? indicadoresDerivados(contexto) : {};
+  const ctxEvaluacion: ContextoEvaluacion = {
+    catalogos_disponibles: catalogos,
+    indicadores,
+  };
 
   // Se abre con lo que se respondió la última vez. Volver a capturar veinte
   // variables para cambiar una sola es la clase de fricción que hace que la
@@ -156,7 +211,11 @@ export default function ClientDetailPage() {
   }, [JSON.stringify(sugeridas)]);
 
   const guardar = useMutation({
-    mutationFn: () => evaluarRiesgoCliente(plantilla!, client!, respuestas),
+    mutationFn: () =>
+      evaluarRiesgoCliente(plantilla!, client!, respuestas, {
+        ...ctxEvaluacion,
+        plenario_gafi: listas?.plenario,
+      }),
     onSuccess: (r) => {
       queryClient.invalidateQueries({ queryKey: ["cliente", id] });
       queryClient.invalidateQueries({ queryKey: ["evaluacion", id] });
@@ -182,11 +241,11 @@ export default function ClientDetailPage() {
   const kyc = client.datos_kyc ?? {};
   const elementos = plantilla ? elementosAplicables(plantilla.configuracion, client.tipo_persona) : [];
   const completa = plantilla
-    ? respuestasCompletas(plantilla.configuracion, client.tipo_persona, respuestas)
+    ? respuestasCompletas(plantilla.configuracion, client.tipo_persona, respuestas, catalogos)
     : false;
   // Vista previa en vivo: mismo cálculo que se persistirá al guardar.
   const preview = completa
-    ? evaluarMatriz(plantilla!.configuracion, client.tipo_persona, respuestas)
+    ? evaluarMatriz(plantilla!.configuracion, client.tipo_persona, respuestas, ctxEvaluacion)
     : null;
 
   return (
@@ -275,6 +334,12 @@ export default function ClientDetailPage() {
                   <div className="space-y-3">
                     {el.variables.map((v) => {
                       const sugerida = porVariable.get(v.codigo);
+                      // Una variable cuyo catálogo no está cargado no puntúa y
+                      // no se pide. Se muestra deshabilitada y con el motivo:
+                      // esconderla dejaría a la matriz aparentando que ese
+                      // factor no existe, y las RCG lo exigen aunque hoy no se
+                      // pueda calificar.
+                      const sinCatalogo = !variablePuntua(v, catalogos);
                       // Sugerida y todavía sin tocar por el OC. Si él la
                       // cambió, deja de ser del sistema y la marca se va.
                       const delSistema =
@@ -283,6 +348,13 @@ export default function ClientDetailPage() {
                       <div key={v.codigo} className="grid grid-cols-2 gap-3 items-start">
                         <div>
                           <span className="text-sm text-muted-foreground">{v.pregunta}</span>
+                          {sinCatalogo && (
+                            <p className="text-[13px] mt-0.5 text-warning">
+                              No califica todavía: la lista interna «{v.requiere_catalogo}» está
+                              vacía. La variable queda fuera del puntaje hasta que Cumplimiento la
+                              cargue, en vez de responder «sin observaciones» a cualquier ubicación.
+                            </p>
+                          )}
                           {/* La fuente, siempre. Una respuesta que el software
                               puso y que nadie puede rastrear es peor que un
                               campo vacío: el OC la firma sin saber de dónde
@@ -309,6 +381,7 @@ export default function ClientDetailPage() {
                         </div>
                         <Select
                           value={respuestas[v.codigo]?.toString() ?? ""}
+                          disabled={sinCatalogo}
                           onValueChange={(val) =>
                             setRespuestas({ ...respuestas, [v.codigo]: Number(val) })
                           }
@@ -331,17 +404,60 @@ export default function ClientDetailPage() {
                 </div>
               ))}
 
+              {/* La bandera de flujo, aparte del puntaje. El llamado a la
+                  acción del GAFI conlleva CONTRAMEDIDAS, no diligencia
+                  reforzada: la escala lo agrupa con la lista gris y aquí se
+                  separa, porque el flujo no puede agruparlos. */}
+              {indicadores.GAFI_LLAMADO_ACCION && (
+                <div className="glass-card p-4 border-l-4 border-l-destructive">
+                  <p className="text-sm font-semibold text-foreground">
+                    País bajo llamado a la acción del GAFI
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Conlleva contramedidas, no sólo diligencia reforzada. El expediente entra en
+                    banda alta con independencia del puntaje y requiere revisión del Oficial de
+                    Cumplimiento antes de continuar.
+                  </p>
+                </div>
+              )}
+
               <div className="glass-card p-4 flex items-center justify-between gap-4">
                 <p className="text-sm text-muted-foreground">
                   {completa ? (
                     <>
-                      Captura completa. Score:{" "}
-                      <strong className="text-foreground">{preview!.score_total}</strong> · Riesgo:{" "}
+                      Captura completa.{" "}
+                      {preview!.indice != null ? (
+                        <>
+                          Índice:{" "}
+                          <strong className="text-foreground">{preview!.indice}</strong> de 100
+                          {" "}(puntaje {preview!.score_total} de {preview!.maximo})
+                        </>
+                      ) : (
+                        <>
+                          Score: <strong className="text-foreground">{preview!.score_total}</strong>
+                        </>
+                      )}{" "}
+                      · Riesgo:{" "}
                       <strong className={riesgoClase[preview!.clasificacion]}>
                         {preview!.clasificacion.toUpperCase()}
                       </strong>
                       {preview!.triggers_activados.length > 0 && (
                         <> · alto de oficio por {preview!.triggers_activados.join(", ")}</>
+                      )}
+                      {/* Los cortes de 40 y 70 no se han calibrado contra una
+                          muestra real. Presentarlos como definitivos es justo
+                          lo que la Adenda pide no hacer. */}
+                      {preview!.provisional && (
+                        <span className="block text-warning mt-1">
+                          Clasificación provisional: los cortes de la escala todavía no se han
+                          calibrado contra una muestra real de expedientes.
+                        </span>
+                      )}
+                      {preview!.variables_sin_catalogo.length > 0 && (
+                        <span className="block text-warning mt-1">
+                          {preview!.variables_sin_catalogo.length} variable(s) quedaron fuera del
+                          puntaje por falta de su lista interna.
+                        </span>
                       )}
                     </>
                   ) : (
@@ -350,11 +466,11 @@ export default function ClientDetailPage() {
                       <strong className="text-foreground">{sugeridas.length}</strong> de{" "}
                       <strong className="text-foreground">
                         {sugeridas.length + faltanPorResponder(
-                          plantilla!.configuracion, client.tipo_persona, respuestas,
+                          plantilla!.configuracion, client.tipo_persona, respuestas, catalogos,
                         ).length}
                       </strong>{" "}
-                      con lo que ya está capturado. Faltan las que no puede saber: el valor en
-                      UMA, la forma de pago, si es PEP y el riesgo de la actividad.
+                      con lo que ya está capturado. Faltan las que no puede saber por sí solo:
+                      si el compareciente es PEP y quién es el beneficiario controlador.
                     </>
                   )}
                 </p>

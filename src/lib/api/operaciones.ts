@@ -42,6 +42,12 @@ export async function crearOperacion(input: NuevaOperacionInput): Promise<Operat
     pago_de_tercero: input.pago_de_tercero ?? null,
     institucion_financiera: input.institucion_financiera?.trim() || null,
     cuenta_ordenante: input.cuenta_ordenante?.trim() || null,
+    // Zona geográfica del inmueble (migration 0041). Distinta del domicilio del
+    // cliente: las dos cuentan como factor geográfico y la matriz toma la más
+    // alta. Alguien domiciliado en Guadalajara que compra en una zona de
+    // atención es justo el caso que el factor existe para ver.
+    entidad_federativa_inmueble: input.entidad_federativa_inmueble?.trim() || null,
+    municipio_inmueble: input.municipio_inmueble?.trim() || null,
     capturado_por: uid,
   };
   const { data, error } = await supabase.from('operation').insert(fila).select('*').single();

@@ -1,5 +1,5 @@
 import type { MatrizConfig, MatrizVariable, TipoPersona } from '@/types/domain';
-import { variablesAplicables, PESO_POR_DEFECTO } from './matriz';
+import { variablesAplicables, PESO_POR_DEFECTO, type CatalogosDisponibles } from './matriz';
 
 /**
  * El índice normalizado de 0 a 100, y los pisos que ganan sobre la suma.
@@ -79,13 +79,24 @@ function maximoDeVariable(v: MatrizVariable): number {
 }
 
 /** El máximo posible de la configuración que aplica a este tipo de persona. */
-export function maximoPosible(config: MatrizConfig, tipoPersona: TipoPersona): number {
-  return variablesAplicables(config, tipoPersona).reduce((s, v) => s + maximoDeVariable(v), 0);
+export function maximoPosible(
+  config: MatrizConfig,
+  tipoPersona: TipoPersona,
+  catalogos?: CatalogosDisponibles,
+): number {
+  return variablesAplicables(config, tipoPersona, catalogos).reduce(
+    (s, v) => s + maximoDeVariable(v),
+    0,
+  );
 }
 
 /** El mínimo posible: todas las variables en su opción más baja. */
-export function minimoPosible(config: MatrizConfig, tipoPersona: TipoPersona): number {
-  return variablesAplicables(config, tipoPersona).reduce((s, v) => {
+export function minimoPosible(
+  config: MatrizConfig,
+  tipoPersona: TipoPersona,
+  catalogos?: CatalogosDisponibles,
+): number {
+  return variablesAplicables(config, tipoPersona, catalogos).reduce((s, v) => {
     const menor = v.opciones.reduce((m, o) => Math.min(m, o.valor), Infinity);
     return s + (v.peso ?? PESO_POR_DEFECTO) * (Number.isFinite(menor) ? menor : 0);
   }, 0);
@@ -109,10 +120,21 @@ export function calcularIndice(
   config: MatrizConfig,
   tipoPersona: TipoPersona,
   puntaje: number,
-  opciones: { pisos?: PisoActivo[]; puntajeExtra?: number; calibrada?: boolean } = {},
+  opciones: {
+    pisos?: PisoActivo[];
+    puntajeExtra?: number;
+    calibrada?: boolean;
+    /**
+     * Catálogos cargados. Una variable cuyo catálogo falta queda fuera del
+     * máximo Y del mínimo: si sólo saliera del numerador, el recorrido seguiría
+     * contando puntos que ningún expediente puede sumar y el índice de todos
+     * bajaría por una razón ajena a su riesgo.
+     */
+    catalogos?: CatalogosDisponibles;
+  } = {},
 ): ResultadoIndice {
-  const maximo = maximoPosible(config, tipoPersona);
-  const minimo = minimoPosible(config, tipoPersona);
+  const maximo = maximoPosible(config, tipoPersona, opciones.catalogos);
+  const minimo = minimoPosible(config, tipoPersona, opciones.catalogos);
   const total = puntaje + (opciones.puntajeExtra ?? 0);
 
   // Se normaliza sobre el RECORRIDO (máximo menos mínimo), no sobre el máximo a

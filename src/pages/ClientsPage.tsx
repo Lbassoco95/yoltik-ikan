@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { listarClientes, crearCliente, ultimasEvaluaciones } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
-import type { NuevoClienteInput, TipoPersona } from "@/types/domain";
+import type { CanalDistribucion, NuevoClienteInput, TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS, nivelConocimiento } from "@/lib/perfil-actividad";
@@ -69,6 +69,12 @@ const FORM_INICIAL = {
   entidad_federativa: "",
   entidad_federativa_clave: "",
   pais_residencia_iso2: "MX",
+  // Factores del catálogo de las RCG (migration 0041). Se capturan AQUÍ y no
+  // después: el canal por el que llegó alguien deja de saberse en cuanto pasa
+  // el día, y la frecuencia esperada sólo la sabe quien la declara.
+  canal_distribucion: "",
+  municipio: "",
+  frecuencia_esperada_anual: "",
   email: "",
   telefono: "",
   ocupacion: "",
@@ -239,6 +245,15 @@ export default function ClientsPage() {
         (form.entidad_federativa.trim() || undefined),
       entidad_federativa_clave: form.entidad_federativa_clave.trim() || undefined,
       pais_residencia_iso2: form.pais_residencia_iso2.trim() || undefined,
+      canal_distribucion:
+        (form.canal_distribucion as CanalDistribucion) || undefined,
+      municipio: form.municipio.trim() || undefined,
+      // Sin declaración se manda undefined, no cero: cero operaciones al año es
+      // una declaración y «no lo dijo» no lo es, y la matriz las trata distinto.
+      frecuencia_esperada_anual:
+        form.frecuencia_esperada_anual.trim() === ""
+          ? undefined
+          : Number(form.frecuencia_esperada_anual),
       datos_kyc,
     });
   }
@@ -508,6 +523,51 @@ export default function ClientsPage() {
                 maxLength={2}
                 onChange={(e) =>
                   setForm({ ...form, pais_residencia_iso2: e.target.value.toUpperCase() })
+                }
+              />
+            </div>
+            <div>
+              <Label>Municipio</Label>
+              <Input
+                value={form.municipio}
+                placeholder="Guadalajara"
+                onChange={(e) => setForm({ ...form, municipio: e.target.value })}
+              />
+            </div>
+            {/* Canal de distribución: uno de los cuatro factores obligatorios
+                de las RCG, y el que más aplica aquí porque el onboarding es
+                remoto. NO se deduce de que haya verificación de Didit: se puede
+                verificar a distancia a quien vino a la notaría. */}
+            <div>
+              <Label>Canal de distribución</Label>
+              <Select
+                value={form.canal_distribucion}
+                onValueChange={(v) => setForm({ ...form, canal_distribucion: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="presencial">Presencial ante el fedatario</SelectItem>
+                  <SelectItem value="remoto_verificacion_reforzada">
+                    Remoto con verificación reforzada
+                  </SelectItem>
+                  <SelectItem value="remoto_estandar">Remoto estándar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Perfil transaccional (Cap. III Ter). La frecuencia esperada es
+                la única pieza que no se puede calcular: la observada sale de la
+                ventana móvil de seis meses del art. 7. */}
+            <div>
+              <Label>Operaciones esperadas al año</Label>
+              <Input
+                type="number"
+                min={0}
+                value={form.frecuencia_esperada_anual}
+                placeholder="Lo que el cliente declara"
+                onChange={(e) =>
+                  setForm({ ...form, frecuencia_esperada_anual: e.target.value })
                 }
               />
             </div>

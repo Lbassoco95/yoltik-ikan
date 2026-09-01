@@ -46,6 +46,7 @@ import {
 import { getClavesPadron } from "@/lib/api/organizacion";
 import { PendientesAviso } from "@/components/aviso/PendientesAviso";
 import { CapturaActo } from "@/components/aviso/CapturaActo";
+import { SelectCatalogo } from "@/components/aviso/SelectCatalogo";
 import type { DatosActo } from "@/lib/aviso/valores-acto";
 import { useActiveRole } from "@/hooks/useActiveRole";
 import type { Operation } from "@/types/domain";
@@ -88,6 +89,12 @@ const FORM_INICIAL = {
   datos_acto: {} as DatosActo,
   forma_pago: "" as FormaPago | "",
   pais_origen_recursos: "",
+  // Zona geográfica del inmueble (migration 0041). Del INMUEBLE, no del
+  // domicilio del cliente: son cosas distintas y las dos cuentan como factor
+  // geográfico. Alguien domiciliado en Guadalajara que compra en una zona de
+  // atención es justo el caso que el factor existe para ver.
+  entidad_federativa_inmueble: "",
+  municipio_inmueble: "",
   efectivo_mxn: "",
   fecha_pago: "",
   pago_de_tercero: false,
@@ -321,6 +328,8 @@ export default function OperationsPage() {
       datos_acto: esNotarias ? form.datos_acto : undefined,
       forma_pago: form.forma_pago || undefined,
       pais_origen_recursos: form.pais_origen_recursos.trim().toUpperCase() || undefined,
+      entidad_federativa_inmueble: form.entidad_federativa_inmueble.trim() || undefined,
+      municipio_inmueble: form.municipio_inmueble.trim() || undefined,
       efectivo_mxn: form.efectivo_mxn ? Number(form.efectivo_mxn) : undefined,
       fecha_pago: form.fecha_pago || undefined,
       pago_de_tercero: form.pago_de_tercero || undefined,
@@ -893,6 +902,33 @@ export default function OperationsPage() {
                   Se coteja contra las listas del GAFI.
                 </p>
               </div>
+              {/* Zona geográfica nacional. Las RCG exigen zona geográfica como
+                  factor, y zona geográfica no es país: para una notaría que
+                  opera enteramente en territorio nacional, un campo de país que
+                  siempre responde «México» no discrimina en el noventa y tantos
+                  por ciento de los expedientes. */}
+              {esNotarias && (
+                <>
+                  <SelectCatalogo
+                    catalogo="entidad_federativa"
+                    etiqueta="Entidad federativa del inmueble"
+                    valor={form.entidad_federativa_inmueble}
+                    onChange={(v) => setForm({ ...form, entidad_federativa_inmueble: v })}
+                  />
+                  <div>
+                    <Label>Municipio del inmueble</Label>
+                    <Input
+                      placeholder="Zapopan"
+                      value={form.municipio_inmueble}
+                      onChange={(e) => setForm({ ...form, municipio_inmueble: e.target.value })}
+                    />
+                    <p className="text-[13px] text-muted-foreground mt-1">
+                      Se coteja contra la lista interna de zonas de atención, junto con el
+                      domicilio del compareciente. Se toma la más alta de las dos.
+                    </p>
+                  </div>
+                </>
+              )}
               {!esNotarias && (
                 <div>
                   <Label>Activo virtual</Label>
