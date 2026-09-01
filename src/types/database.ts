@@ -1928,6 +1928,71 @@ export type Database = {
         }
         Relationships: []
       }
+      regimen_pais: {
+        Row: {
+          iso2: string
+          nota: string | null
+          regimen_id: string
+        }
+        Insert: {
+          iso2: string
+          nota?: string | null
+          regimen_id: string
+        }
+        Update: {
+          iso2?: string
+          nota?: string | null
+          regimen_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regimen_pais_regimen_id_fkey"
+            columns: ["regimen_id"]
+            isOneToOne: false
+            referencedRelation: "regimen_sancion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regimen_sancion: {
+        Row: {
+          actualizado_fuente: string | null
+          autoridad: string
+          clase: string
+          clave: string
+          id: string
+          leido_en: string
+          nivel_territorial: string | null
+          nombre: string
+          notas: string | null
+          vigente: boolean
+        }
+        Insert: {
+          actualizado_fuente?: string | null
+          autoridad: string
+          clase: string
+          clave: string
+          id?: string
+          leido_en: string
+          nivel_territorial?: string | null
+          nombre: string
+          notas?: string | null
+          vigente?: boolean
+        }
+        Update: {
+          actualizado_fuente?: string | null
+          autoridad?: string
+          clase?: string
+          clave?: string
+          id?: string
+          leido_en?: string
+          nivel_territorial?: string | null
+          nombre?: string
+          notas?: string | null
+          vigente?: boolean
+        }
+        Relationships: []
+      }
       risk_element: {
         Row: {
           codigo: string
@@ -2776,6 +2841,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cargar_regimenes_2026_09: {
+        Args: never
+        Returns: {
+          autoridad_leida: string
+          jurisdicciones: number
+          regimenes: number
+        }[]
+      }
       cargar_snapshot_gafi_2026_06: { Args: never; Returns: number }
       catalogo_en_fecha: {
         Args: { p_codigo: string; p_fecha?: string }
@@ -2789,6 +2862,14 @@ export type Database = {
       clave_valida_en_catalogo: {
         Args: { p_clave: string; p_codigo: string; p_fecha?: string }
         Returns: boolean
+      }
+      cobertura_de_listas: {
+        Args: { p_org: string }
+        Returns: {
+          filas_vigentes: number
+          fuente: string
+          tamizada_por: string
+        }[]
       }
       configuracion_matriz_valida: { Args: { p_cfg: Json }; Returns: boolean }
       confirmar_parametro: {
@@ -2835,6 +2916,15 @@ export type Database = {
       descartar_carga_borrador: {
         Args: { p_carga_id: string; p_motivo: string }
         Returns: undefined
+      }
+      diagnostico_organizacion: {
+        Args: { p_org: string }
+        Returns: {
+          concepto: string
+          cuantos: number
+          detalle: string
+          listo: boolean
+        }[]
       }
       diferencia_carga_borrador: {
         Args: { p_carga_id: string }
@@ -2891,6 +2981,13 @@ export type Database = {
         Returns: undefined
       }
       normalizar_nombre: { Args: { p_texto: string }; Returns: string }
+      paises_sancionados_sin_catalogo: {
+        Args: { p_lectura?: string }
+        Returns: {
+          iso2: string
+          regimenes: string
+        }[]
+      }
       parametro_vigente: {
         Args: { p_codigo: string; p_fecha?: string; p_sector?: string }
         Returns: number
@@ -2901,6 +2998,27 @@ export type Database = {
         Returns: {
           desactivados: number
           promovidos: number
+        }[]
+      }
+      provisionar_organizacion: {
+        Args: {
+          p_domicilio_fiscal?: string
+          p_es_demostracion?: boolean
+          p_perfil_actividad: string
+          p_razon_social: string
+          p_representante_legal?: string
+          p_rfc: string
+          p_sector: Database["public"]["Enums"]["sector_av"]
+        }
+        Returns: string
+      }
+      proyectar_sanciones_a_paises: {
+        Args: { p_lectura?: string }
+        Returns: {
+          altas: number
+          cerradas: number
+          lista: string
+          organizacion: string
         }[]
       }
       publicar_matriz: {
@@ -2926,6 +3044,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      puede_provisionar: { Args: never; Returns: boolean }
       rango_por_anclar: {
         Args: { p_organization_id: string }
         Returns: {
@@ -2936,6 +3055,14 @@ export type Database = {
       reemplazar_valores_catalogo: {
         Args: { p_codigo: string; p_motivo?: string; p_valores: Json }
         Returns: number
+      }
+      regimenes_sin_jurisdiccion: {
+        Args: { p_lectura?: string }
+        Returns: {
+          autoridad: string
+          clave: string
+          nota: string
+        }[]
       }
       registrar_evento: {
         Args: {
