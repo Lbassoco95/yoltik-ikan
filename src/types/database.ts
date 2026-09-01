@@ -463,6 +463,7 @@ export type Database = {
           metodologia_version: number | null
           motivo_alto_de_oficio: string | null
           respuestas: Json
+          respuestas_clave: Json
           score_total: number
           snapshot_listas_plenario: string | null
           subtotales: Json
@@ -477,6 +478,7 @@ export type Database = {
           metodologia_version?: number | null
           motivo_alto_de_oficio?: string | null
           respuestas: Json
+          respuestas_clave?: Json
           score_total: number
           snapshot_listas_plenario?: string | null
           subtotales: Json
@@ -491,6 +493,7 @@ export type Database = {
           metodologia_version?: number | null
           motivo_alto_de_oficio?: string | null
           respuestas?: Json
+          respuestas_clave?: Json
           score_total?: number
           snapshot_listas_plenario?: string | null
           subtotales?: Json
