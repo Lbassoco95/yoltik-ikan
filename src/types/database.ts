@@ -2524,6 +2524,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cargar_snapshot_gafi_2026_06: { Args: never; Returns: number }
       catalogo_en_fecha: {
         Args: { p_codigo: string; p_fecha?: string }
         Returns: {
