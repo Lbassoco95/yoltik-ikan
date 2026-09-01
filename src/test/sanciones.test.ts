@@ -142,3 +142,70 @@ describe('el bloqueo y el piso son cosas distintas', () => {
     expect(indicadorDeSanciones(null)).toBe(false);
   });
 });
+
+// =====================================================================
+// De punta a punta: el indicador tiene que levantar el piso de verdad
+// =====================================================================
+// Que el indicador esté en la configuración no prueba nada: un indicador
+// listado y sin disparador se lee en la plantilla como si el control existiera,
+// que es peor que no tenerlo. Esto comprueba que el piso sale.
+import { evaluarMatriz } from '@/lib/riesgo/matriz';
+import { INDICADOR_PAIS_SANCIONADO } from '@/lib/riesgo/sanciones';
+import type { MatrizConfig } from '@/types/domain';
+
+const CONFIG_CON_PISO: MatrizConfig = {
+  elementos: [
+    {
+      codigo: 'E1',
+      nombre: 'Productos',
+      variables: [{ codigo: 'PROD-01', pregunta: '?', opciones: [{ valor: 1, label: 'bajo' }] }],
+    },
+  ],
+  escala_cliente: {
+    bajo: { min: 0, max: 33, acciones: '' },
+    medio: { min: 34, max: 66, acciones: '' },
+    alto: { min: 67, max: 100, acciones: '' },
+  },
+  escala_normalizada: true,
+  indicadores: [
+    {
+      codigo: INDICADOR_PAIS_SANCIONADO,
+      pregunta: '¿País bajo sanciones?',
+      descripcion: 'Piso de banda alta.',
+      efecto: 'piso',
+    },
+  ],
+  triggers_alto_de_oficio: [
+    {
+      codigo: INDICADOR_PAIS_SANCIONADO,
+      descripcion: 'País bajo régimen de sanciones.',
+      indicador_codigo: INDICADOR_PAIS_SANCIONADO,
+    },
+  ],
+};
+
+describe('el indicador levanta el piso en la evaluación', () => {
+  it('sin la bandera, la respuesta más baja da banda baja', () => {
+    const r = evaluarMatriz(CONFIG_CON_PISO, 'fisica', { 'PROD-01': 1 }, {
+      indicadores: { [INDICADOR_PAIS_SANCIONADO]: false },
+    });
+    expect(r.clasificacion).toBe('bajo');
+  });
+
+  it('con la bandera, la MISMA respuesta da banda alta', () => {
+    // Es el punto entero del piso: no suma puntos, cambia la banda. Si esto
+    // fallara, un país sancionado quedaría compensado por respuestas buenas y
+    // la matriz saldría en verde.
+    const r = evaluarMatriz(CONFIG_CON_PISO, 'fisica', { 'PROD-01': 1 }, {
+      indicadores: { [INDICADOR_PAIS_SANCIONADO]: true },
+    });
+    expect(r.clasificacion).toBe('alto');
+  });
+
+  it('y el disparador queda nombrado, para que el OC sepa cuál fue', () => {
+    const r = evaluarMatriz(CONFIG_CON_PISO, 'fisica', { 'PROD-01': 1 }, {
+      indicadores: { [INDICADOR_PAIS_SANCIONADO]: true },
+    });
+    expect(r.triggers_activados).toContain(INDICADOR_PAIS_SANCIONADO);
+  });
+});
