@@ -8,7 +8,12 @@ import {
   variablePuntua,
 } from '@/lib/riesgo/matriz';
 import { maximoPosible } from '@/lib/riesgo/indice';
-import { prellenarMatriz, indicadoresDerivados } from '@/lib/riesgo/prellenado';
+import {
+  prellenarMatriz,
+  indicadoresDerivados,
+  faltasExplicadas,
+  faltanPorResponder,
+} from '@/lib/riesgo/prellenado';
 import type { MatrizConfig, TipoPersona } from '@/types/domain';
 
 /**
@@ -355,6 +360,84 @@ describe('el indicador de llamado a la acción · piso sin puntaje', () => {
         ...gafi,
       }).GAFI_LLAMADO_ACCION,
     ).toBe(false);
+  });
+});
+
+describe('los huecos se explican, no se cuentan mal', () => {
+  /**
+   * La pantalla decía, con texto escrito a mano: «faltan las que no puede saber
+   * por sí solo: si el compareciente es PEP y quién es el beneficiario
+   * controlador». En un compareciente SIN ACTOS faltaban seis, no dos, y el OC
+   * leía que le faltaban dos casillas.
+   *
+   * Y la cuenta equivocada era lo de menos: los huecos se atienden en pantallas
+   * distintas —unos al registrar el acto, otros en el alta del cliente, sólo
+   * algunos los contesta el OC— y el texto los presentaba todos como suyos.
+   */
+  const SIN_ACTOS: Parameters<typeof faltasExplicadas>[1] = {
+    tipo_persona: 'fisica',
+    hay_actos: false,
+    pais_nacionalidad: 'MX',
+    pais_iso2: 'MX',
+    listas_cargadas: true,
+    gafi_gris: new Set<string>(),
+    gafi_negra: new Set<string>(),
+    actividad_clave: '4430200',
+    margen_perfil: 1,
+  };
+
+  it('las que dependen del acto se marcan «sin_actos», no como criterio del OC', () => {
+    const faltas = faltasExplicadas(CFG, SIN_ACTOS, {}, SIN_ZONAS);
+    const delActo = faltas.filter((f) => f.motivo === 'sin_actos').map((f) => f.variable_codigo);
+    expect(delActo).toContain('XII-ACT-01');
+    expect(delActo).toContain('XII-ACT-03');
+  });
+
+  it('con un acto registrado el motivo cambia: el dato falta, el acto no', () => {
+    const faltas = faltasExplicadas(CFG, { ...SIN_ACTOS, hay_actos: true }, {}, SIN_ZONAS);
+    const acto = faltas.find((f) => f.variable_codigo === 'XII-ACT-01');
+    expect(acto?.motivo).toBe('sin_dato');
+  });
+
+  it('la condición de PPE es criterio de una persona, siempre', () => {
+    const faltas = faltasExplicadas(CFG, SIN_ACTOS, {}, SIN_ZONAS);
+    const pep = faltas.find((f) => f.variable_codigo === 'XII-PF-02');
+    expect(pep?.motivo).toBe('requiere_criterio');
+  });
+
+  it('una coincidencia sin resolver lo dice con esas palabras', () => {
+    const faltas = faltasExplicadas(
+      CFG,
+      { ...SIN_ACTOS, condicion_pep: 'coincidencia_sin_resolver' },
+      {},
+      SIN_ZONAS,
+    );
+    expect(faltas.find((f) => f.variable_codigo === 'XII-PF-02')?.detalle).toContain(
+      'nadie la ha resuelto',
+    );
+  });
+
+  it('sin el parámetro del margen, la frecuencia se explica como parámetro faltante', () => {
+    const faltas = faltasExplicadas(
+      CFG,
+      { ...SIN_ACTOS, margen_perfil: null },
+      {},
+      SIN_ZONAS,
+    );
+    expect(faltas.find((f) => f.variable_codigo === 'XII-PTR-01')?.motivo).toBe('sin_parametro');
+  });
+
+  /** Que la cuenta cuadre: nada se queda sin explicar. */
+  it('toda variable sin responder tiene un motivo', () => {
+    const faltas = faltasExplicadas(CFG, SIN_ACTOS, {}, SIN_ZONAS);
+    const pendientes = faltanPorResponder(CFG, 'fisica', {}, SIN_ZONAS);
+    expect(faltas).toHaveLength(pendientes.length);
+    expect(faltas.every((f) => f.motivo && f.detalle.length > 0)).toBe(true);
+  });
+
+  it('la zona no cuenta como hueco cuando su lista está vacía', () => {
+    const faltas = faltasExplicadas(CFG, SIN_ACTOS, {}, SIN_ZONAS);
+    expect(faltas.some((f) => f.variable_codigo === 'XII-ZON-01')).toBe(false);
   });
 });
 

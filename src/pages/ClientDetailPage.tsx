@@ -22,10 +22,12 @@ import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import { paisesEnListas, zonasDeAtencion } from "@/lib/api/catalogos";
 import {
-  faltanPorResponder,
+  ACCION_POR_MOTIVO,
+  faltasExplicadas,
   indicadoresDerivados,
   prellenarMatriz,
   type ContextoPrellenado,
+  type MotivoFalta,
   type RespuestaSugerida,
 } from "@/lib/riesgo/prellenado";
 import {
@@ -199,6 +201,10 @@ export default function ClientDetailPage() {
           // Dos ventanas distintas para el mismo cliente sería la manera más
           // fácil de que el sistema se contradiga sobre él.
           operaciones_en_ventana: operacionesEnVentana(ops.map((o) => o.fecha)),
+          // «No hay actos» y «hay un acto al que le falta un dato» mandan al OC
+          // a pantallas distintas, así que la matriz tiene que poder decir cuál
+          // de las dos es.
+          hay_actos: ops.length > 0,
           // El margen del perfil transaccional sale del registro versionado y
           // firmado, no de una constante: la instrucción 12 de la Adenda retiró
           // el redondeo que equivalía a una tolerancia del 50 % no documentada.
@@ -311,6 +317,18 @@ export default function ClientDetailPage() {
   const completa = plantilla
     ? respuestasCompletas(plantilla.configuracion, client.tipo_persona, respuestas, catalogos)
     : false;
+  // Lo que falta, con el motivo de cada hueco.
+  const faltas =
+    plantilla && contexto
+      ? faltasExplicadas(plantilla.configuracion, contexto, respuestas, catalogos)
+      : [];
+  // Agrupadas por causa, en el orden en que el OC las va a atender: primero lo
+  // que se resuelve en otra pantalla, al final lo que le toca decidir a él.
+  const ORDEN_MOTIVO: MotivoFalta[] = ["sin_actos", "sin_dato", "sin_parametro", "requiere_criterio"];
+  const faltasPorMotivo = ORDEN_MOTIVO.map(
+    (m) => [m, faltas.filter((f) => f.motivo === m)] as const,
+  ).filter(([, lista]) => lista.length > 0);
+
   // Vista previa en vivo: mismo cálculo que se persistirá al guardar.
   const preview = completa
     ? evaluarMatriz(plantilla!.configuracion, client.tipo_persona, respuestas, ctxEvaluacion)
@@ -563,13 +581,22 @@ export default function ClientDetailPage() {
                     <>
                       El sistema respondió{" "}
                       <strong className="text-foreground">{sugeridas.length}</strong> de{" "}
-                      <strong className="text-foreground">
-                        {sugeridas.length + faltanPorResponder(
-                          plantilla!.configuracion, client.tipo_persona, respuestas, catalogos,
-                        ).length}
-                      </strong>{" "}
-                      con lo que ya está capturado. Faltan las que no puede saber por sí solo:
-                      si el compareciente es PEP y quién es el beneficiario controlador.
+                      <strong className="text-foreground">{sugeridas.length + faltas.length}</strong>{" "}
+                      con lo que ya está capturado.
+                      {/* Cada hueco con SU motivo. El texto anterior estaba
+                          escrito a mano y nombraba dos variables cuando podían
+                          faltar seis, y escondía que se atienden en lugares
+                          distintos: unas al registrar el acto, otras en el alta,
+                          y sólo algunas las contesta el OC. */}
+                      {faltasPorMotivo.map(([motivo, lista]) => (
+                        <span key={motivo} className="block mt-2">
+                          <strong className="text-foreground">
+                            {lista.length === 1 ? "Falta" : `Faltan ${lista.length}`}
+                          </strong>{" "}
+                          — {lista.map((f) => f.pregunta).join(" · ")}.{" "}
+                          <span className="text-warning">{ACCION_POR_MOTIVO[motivo]}</span>
+                        </span>
+                      ))}
                     </>
                   )}
                 </p>
