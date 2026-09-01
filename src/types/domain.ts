@@ -110,6 +110,12 @@ export interface Client {
   pais_residencia_iso2: string | null;
   datos_kyc: Record<string, unknown>;
   datos_kyb: Record<string, unknown> | null;
+  /** Condición de persona políticamente expuesta (migration 0038). Nulo = no se
+   *  ha consultado, que NO es lo mismo que `no_pep`. */
+  condicion_pep: CondicionPep | null;
+  /** Cómo se llegó a esa condición: fuente, fecha, resultado, quién resolvió.
+   *  Sin ella la condición es una afirmación sin respaldo. */
+  pep_evidencia: Record<string, unknown> | null;
   nivel_kyc: NivelKyc;
   alto_de_oficio: boolean;
   activo: boolean;
@@ -178,6 +184,21 @@ export interface Operation {
  * pagado del todo en efectivo.
  */
 export type FormaPago = 'bancarizado' | 'mixto' | 'efectivo';
+
+/**
+ * Condición de persona políticamente expuesta.
+ *
+ * `coincidencia_sin_resolver` no es un hueco: es el estado real de un
+ * expediente cuyo screening encontró algo y todavía nadie miró. Las RCG
+ * reservan al sujeto obligado la determinación del nivel, así que una
+ * coincidencia del proveedor no se convierte por sí sola en «es PPE».
+ */
+export type CondicionPep =
+  | 'no_pep'
+  | 'pep_nacional'
+  | 'pep_extranjera'
+  | 'familiar_o_asociado'
+  | 'coincidencia_sin_resolver';
 
 export interface NuevaOperacionInput {
   client_id: string;

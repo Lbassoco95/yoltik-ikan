@@ -532,3 +532,49 @@ describe('sobre la matriz v2, lo único que queda es el PEP', () => {
     expect(faltan.map((v) => v.codigo)).toEqual(['XII-PF-02']);
   });
 });
+
+describe('la condición de PPE sólo se responde cuando alguien la resolvió', () => {
+  const BASE = { tipo_persona: 'fisica' as const, ...GAFI };
+
+  it('una coincidencia sin resolver NO se traduce a ninguna opción', () => {
+    // Las RCG reservan al sujeto obligado la determinación del nivel. Responder
+    // desde el screening del proveedor sería atribuirle una decisión que no es
+    // suya, y además convertir un hallazgo sin revisar en una respuesta.
+    const s = prellenarMatriz(CONFIG, {
+      ...BASE, condicion_pep: 'coincidencia_sin_resolver',
+    });
+    expect(s.find((x) => x.variable_codigo === 'XII-PF-02')).toBeUndefined();
+  });
+
+  it('sin consultar tampoco se responde', () => {
+    // Nulo es «no se ha consultado», que no es «no es PPE».
+    expect(
+      prellenarMatriz(CONFIG, BASE).find((x) => x.variable_codigo === 'XII-PF-02'),
+    ).toBeUndefined();
+  });
+
+  it('no_pep SÍ se responde: es una determinación, no una ausencia', () => {
+    const s = prellenarMatriz(CONFIG, { ...BASE, condicion_pep: 'no_pep' });
+    const pep = s.find((x) => x.variable_codigo === 'XII-PF-02');
+    expect(pep?.valor).toBe(1);
+    expect(pep?.fuente).toMatch(/no encontró coincidencias/i);
+  });
+
+  it('los niveles resueltos por la célula se responden y dicen quién los resolvió', () => {
+    const nacional = prellenarMatriz(CONFIG, { ...BASE, condicion_pep: 'pep_nacional' })
+      .find((x) => x.variable_codigo === 'XII-PF-02');
+    expect(nacional?.valor).toBe(2);
+    expect(nacional?.fuente).toMatch(/célula de cumplimiento/i);
+
+    const extranjera = prellenarMatriz(CONFIG, { ...BASE, condicion_pep: 'pep_extranjera' })
+      .find((x) => x.variable_codigo === 'XII-PF-02');
+    expect(extranjera?.valor).toBe(3);
+  });
+
+  it('el familiar o asociado cuenta como el nivel más alto', () => {
+    // La Adenda los pone junto a la PPE extranjera entre los pisos de banda
+    // alta del apartado 5.2.
+    const s = prellenarMatriz(CONFIG, { ...BASE, condicion_pep: 'familiar_o_asociado' });
+    expect(s.find((x) => x.variable_codigo === 'XII-PF-02')?.valor).toBe(3);
+  });
+});

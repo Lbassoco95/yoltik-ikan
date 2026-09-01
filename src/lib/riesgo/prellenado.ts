@@ -93,6 +93,9 @@ export interface ContextoPrellenado {
   /** Clave del catálogo de la UIF: actividad económica en persona física,
    *  giro mercantil en persona moral. */
   actividad_clave?: string | null;
+  /** Condición de PPE resuelta (migration 0038). Nulo o sin resolver = la
+   *  variable no se responde: ver abajo. */
+  condicion_pep?: string | null;
   /** Valor del acto en UMA, ya convertido con la UMA de SU fecha. */
   monto_uma?: number | null;
   /** El umbral de Aviso del acto, en UMA. Null cuando el Aviso procede siempre:
@@ -158,6 +161,28 @@ function opcionDePais(v: MatrizVariable, nivel: ReturnType<typeof nivelPais>) {
   if (nivel === 'gris') return v.opciones[2];
   return cuatro ? v.opciones[3] : v.opciones[2];
 }
+
+/**
+ * La condición de PPE, en las palabras con que la matriz nombra la opción.
+ *
+ * `coincidencia_sin_resolver` NO está aquí a propósito: no tiene traducción
+ * porque no es una determinación. Mientras la célula no resuelva, la variable
+ * se queda sin responder y la pantalla lo dice.
+ */
+const TEXTO_PEP: Record<string, string> = {
+  no_pep: 'No es PEP',
+  pep_nacional: 'PEP nacional',
+  pep_extranjera: 'PEP federal',
+  familiar_o_asociado: 'PEP federal',
+};
+
+const FUENTE_PEP: Record<string, string> = {
+  no_pep: 'el screening de listas no encontró coincidencias de PPE',
+  pep_nacional: 'la célula de cumplimiento resolvió la coincidencia como PPE nacional',
+  pep_extranjera: 'la célula de cumplimiento resolvió la coincidencia como PPE federal o extranjera',
+  familiar_o_asociado:
+    'la célula resolvió que es cónyuge, familiar hasta segundo grado o asociado cercano de una PPE',
+};
 
 /** Lo capturado en el acto, en las palabras con que la matriz nombra la opción. */
 const TEXTO_FORMA_PAGO: Record<string, string> = {
@@ -262,6 +287,31 @@ export function prellenarMatriz(
         sugerir(v, 'Moneda extranjera', `la operación está en ${ctx.moneda_origen.toUpperCase()}`);
       } else if (ctx.moneda_origen) {
         sugerir(v, 'No, solo moneda nacional', 'la operación está en pesos');
+      }
+    }
+  }
+
+  // --- Condición de PPE ------------------------------------------------
+  // Sólo cuando alguien la RESOLVIÓ. Una coincidencia del screening que nadie
+  // ha revisado no se traduce a ninguna opción: las RCG reservan al sujeto
+  // obligado la determinación del nivel, y responderla desde el proveedor
+  // sería atribuirle una decisión que no es suya.
+  //
+  // Y `no_pep` sí se responde: es una determinación, no una ausencia.
+  if (ctx.condicion_pep && ctx.condicion_pep !== 'coincidencia_sin_resolver') {
+    const v = variables.find((x) => /condici[oó]n de pep/i.test(x.pregunta));
+    const texto = TEXTO_PEP[ctx.condicion_pep];
+    if (v && texto) {
+      const opcion = v.opciones.find((o) =>
+        o.label.toLowerCase().startsWith(texto.toLowerCase()),
+      );
+      if (opcion) {
+        out.push({
+          variable_codigo: v.codigo,
+          valor: opcion.valor,
+          etiqueta: opcion.label,
+          fuente: FUENTE_PEP[ctx.condicion_pep] ?? 'la condición de PPE registrada',
+        });
       }
     }
   }
