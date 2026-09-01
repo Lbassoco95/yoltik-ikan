@@ -230,6 +230,88 @@ export type Database = {
           },
         ]
       }
+      beneficiario_controlador: {
+        Row: {
+          apellido_materno: string | null
+          apellido_paterno: string
+          client_id: string
+          curp: string | null
+          fecha_nacimiento: string
+          id: string
+          identificado_en: string
+          identificado_por: string | null
+          nombre: string
+          nota: string | null
+          organization_id: string
+          pais_nacionalidad_clave: string
+          paso: string
+          rfc: string | null
+          sin_curp: boolean
+          sin_rfc: boolean
+          socio_id: string | null
+        }
+        Insert: {
+          apellido_materno?: string | null
+          apellido_paterno: string
+          client_id: string
+          curp?: string | null
+          fecha_nacimiento: string
+          id?: string
+          identificado_en?: string
+          identificado_por?: string | null
+          nombre: string
+          nota?: string | null
+          organization_id: string
+          pais_nacionalidad_clave: string
+          paso: string
+          rfc?: string | null
+          sin_curp?: boolean
+          sin_rfc?: boolean
+          socio_id?: string | null
+        }
+        Update: {
+          apellido_materno?: string | null
+          apellido_paterno?: string
+          client_id?: string
+          curp?: string | null
+          fecha_nacimiento?: string
+          id?: string
+          identificado_en?: string
+          identificado_por?: string | null
+          nombre?: string
+          nota?: string | null
+          organization_id?: string
+          pais_nacionalidad_clave?: string
+          paso?: string
+          rfc?: string | null
+          sin_curp?: boolean
+          sin_rfc?: boolean
+          socio_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beneficiario_controlador_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beneficiario_controlador_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beneficiario_controlador_socio_id_fkey"
+            columns: ["socio_id"]
+            isOneToOne: false
+            referencedRelation: "socio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cadena_auditoria: {
         Row: {
           actualizado_en: string
@@ -250,6 +332,54 @@ export type Database = {
           ultimo_hash?: string
         }
         Relationships: []
+      }
+      cascada_bc: {
+        Row: {
+          client_id: string
+          estado: Database["public"]["Enums"]["estado_paso_bc"]
+          id: string
+          nota: string | null
+          organization_id: string
+          paso: string
+          practicado_en: string | null
+          practicado_por: string | null
+        }
+        Insert: {
+          client_id: string
+          estado?: Database["public"]["Enums"]["estado_paso_bc"]
+          id?: string
+          nota?: string | null
+          organization_id: string
+          paso: string
+          practicado_en?: string | null
+          practicado_por?: string | null
+        }
+        Update: {
+          client_id?: string
+          estado?: Database["public"]["Enums"]["estado_paso_bc"]
+          id?: string
+          nota?: string | null
+          organization_id?: string
+          paso?: string
+          practicado_en?: string | null
+          practicado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cascada_bc_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cascada_bc_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       catalogo_sat: {
         Row: {
@@ -347,10 +477,12 @@ export type Database = {
           alto_de_oficio: boolean
           apellido_materno: string | null
           apellido_paterno: string | null
+          bc_exencion: string | null
           beneficiario_controlador: Json | null
           canal_distribucion: string | null
           capturado_en: string
           capturado_por: string | null
+          clave_pizarra: string | null
           condicion_pep: string | null
           curp: string | null
           datos_kyb: Json | null
@@ -368,11 +500,13 @@ export type Database = {
           nombre: string | null
           nombre_razon_social: string
           organization_id: string
+          pais_constitucion_clave: string | null
           pais_nacionalidad_clave: string | null
           pais_residencia_iso2: string | null
           pep_evidencia: Json | null
           rfc: string | null
           tipo_persona: Database["public"]["Enums"]["tipo_persona"]
+          tipo_social: string | null
           triggers_oficio: string[]
         }
         Insert: {
@@ -381,10 +515,12 @@ export type Database = {
           alto_de_oficio?: boolean
           apellido_materno?: string | null
           apellido_paterno?: string | null
+          bc_exencion?: string | null
           beneficiario_controlador?: Json | null
           canal_distribucion?: string | null
           capturado_en?: string
           capturado_por?: string | null
+          clave_pizarra?: string | null
           condicion_pep?: string | null
           curp?: string | null
           datos_kyb?: Json | null
@@ -402,11 +538,13 @@ export type Database = {
           nombre?: string | null
           nombre_razon_social: string
           organization_id: string
+          pais_constitucion_clave?: string | null
           pais_nacionalidad_clave?: string | null
           pais_residencia_iso2?: string | null
           pep_evidencia?: Json | null
           rfc?: string | null
           tipo_persona: Database["public"]["Enums"]["tipo_persona"]
+          tipo_social?: string | null
           triggers_oficio?: string[]
         }
         Update: {
@@ -415,10 +553,12 @@ export type Database = {
           alto_de_oficio?: boolean
           apellido_materno?: string | null
           apellido_paterno?: string | null
+          bc_exencion?: string | null
           beneficiario_controlador?: Json | null
           canal_distribucion?: string | null
           capturado_en?: string
           capturado_por?: string | null
+          clave_pizarra?: string | null
           condicion_pep?: string | null
           curp?: string | null
           datos_kyb?: Json | null
@@ -436,11 +576,13 @@ export type Database = {
           nombre?: string | null
           nombre_razon_social?: string
           organization_id?: string
+          pais_constitucion_clave?: string | null
           pais_nacionalidad_clave?: string | null
           pais_residencia_iso2?: string | null
           pep_evidencia?: Json | null
           rfc?: string | null
           tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
+          tipo_social?: string | null
           triggers_oficio?: string[]
         }
         Relationships: [
@@ -450,6 +592,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_tipo_social_fkey"
+            columns: ["tipo_social"]
+            isOneToOne: false
+            referencedRelation: "tipo_social"
+            referencedColumns: ["clave"]
           },
         ]
       }
@@ -1972,6 +2121,103 @@ export type Database = {
           },
         ]
       }
+      socio: {
+        Row: {
+          acciones: number | null
+          capturado_en: string
+          capturado_por: string | null
+          cargo: string | null
+          client_id: string
+          id: string
+          nombre_razon_social: string
+          organization_id: string
+          porcentaje_titularidad: number | null
+          porcentaje_voto: number | null
+          socio_client_id: string | null
+          tipo_persona: Database["public"]["Enums"]["tipo_persona"]
+        }
+        Insert: {
+          acciones?: number | null
+          capturado_en?: string
+          capturado_por?: string | null
+          cargo?: string | null
+          client_id: string
+          id?: string
+          nombre_razon_social: string
+          organization_id: string
+          porcentaje_titularidad?: number | null
+          porcentaje_voto?: number | null
+          socio_client_id?: string | null
+          tipo_persona: Database["public"]["Enums"]["tipo_persona"]
+        }
+        Update: {
+          acciones?: number | null
+          capturado_en?: string
+          capturado_por?: string | null
+          cargo?: string | null
+          client_id?: string
+          id?: string
+          nombre_razon_social?: string
+          organization_id?: string
+          porcentaje_titularidad?: number | null
+          porcentaje_voto?: number | null
+          socio_client_id?: string | null
+          tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "socio_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "socio_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "socio_socio_client_id_fkey"
+            columns: ["socio_client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tipo_social: {
+        Row: {
+          clave: string
+          fundamento: string
+          nombre: string
+          socios_maximo: number | null
+          socios_minimo: number
+          solo_personas_fisicas: boolean
+          vigente: boolean
+        }
+        Insert: {
+          clave: string
+          fundamento: string
+          nombre: string
+          socios_maximo?: number | null
+          socios_minimo: number
+          solo_personas_fisicas?: boolean
+          vigente?: boolean
+        }
+        Update: {
+          clave?: string
+          fundamento?: string
+          nombre?: string
+          socios_maximo?: number | null
+          socios_minimo?: number
+          solo_personas_fisicas?: boolean
+          vigente?: boolean
+        }
+        Relationships: []
+      }
       tipologia_av: {
         Row: {
           activa: boolean
@@ -2776,6 +3022,10 @@ export type Database = {
         | "confirmado_preocupante"
         | "descartado"
         | "falso_positivo"
+      estado_paso_bc:
+        | "no_practicado"
+        | "practicado_sin_resultado"
+        | "practicado_con_resultado"
       estado_plantilla: "borrador" | "publicada"
       estado_verificacion:
         | "no_iniciada"
@@ -2967,6 +3217,11 @@ export const Constants = {
         "confirmado_preocupante",
         "descartado",
         "falso_positivo",
+      ],
+      estado_paso_bc: [
+        "no_practicado",
+        "practicado_sin_resultado",
+        "practicado_con_resultado",
       ],
       estado_plantilla: ["borrador", "publicada"],
       estado_verificacion: [
