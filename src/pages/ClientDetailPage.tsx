@@ -18,12 +18,19 @@ import {
   getPlantillaRiesgoActiva,
   ultimaEvaluacion,
   ultimoCambioDeNivel,
+  guardarSubdivision,
 } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { EstructuraSocietaria } from "@/components/clientes/EstructuraSocietaria";
 import { Identificacion } from "@/components/clientes/Identificacion";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
-import { paisesEnListas, paisesSancionados, zonasDeAtencion } from "@/lib/api/catalogos";
+import {
+  paisesEnListas,
+  paisesQueExigenSubdivision,
+  paisesSancionados,
+  subdivisionesConRiesgo,
+  zonasDeAtencion,
+} from "@/lib/api/catalogos";
 import {
   ACCION_POR_MOTIVO,
   faltasExplicadas,
@@ -43,6 +50,7 @@ import {
 } from "@/lib/riesgo/matriz";
 import { operacionesEnVentana } from "@/lib/riesgo/perfil-transaccional";
 import { estaBloqueado, indicadorDeSanciones } from "@/lib/riesgo/sanciones";
+import { faltaSubdivision, paisDelDomicilio } from "@/lib/riesgo/subdivision";
 import { banderaBandaDeUmbral, umbralDelActo } from "@/lib/riesgo/tramos";
 import { cn, formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
@@ -145,6 +153,20 @@ export default function ClientDetailPage() {
     queryKey: ["cambio-nivel", id],
     queryFn: () => ultimoCambioDeNivel(id!),
     enabled: !!id,
+  });
+
+  // Las subdivisiones con nivel propio y los países que la exigen. Se leen de
+  // la base y no se escriben en el código: la lista cambia por determinación de
+  // una autoridad, y una copia aquí se queda vieja sin dar señal.
+  const { data: subdivisiones = [] } = useQuery({
+    queryKey: ["subdivisiones-riesgo"],
+    queryFn: subdivisionesConRiesgo,
+    staleTime: 60 * 60 * 1000,
+  });
+  const { data: exigenSubdivision } = useQuery({
+    queryKey: ["paises-exigen-subdivision"],
+    queryFn: paisesQueExigenSubdivision,
+    staleTime: 60 * 60 * 1000,
   });
 
   // La lista interna de zonas de atención. Viene vacía hasta que Cumplimiento
@@ -266,6 +288,31 @@ export default function ClientDetailPage() {
   // aviso que el riesgo alto trataría a un compareciente croata igual que a uno
   // iraní, que es justo lo que la Adenda 4 resolvió que no.
   const levantaPiso = indicadorDeSanciones(riesgoSanciones);
+
+  // La subdivisión del domicilio, cuando el país la exige. No bloquea el alta
+  // —el expediente se completa en pasos— pero tiene que verse: sin ella no se
+  // puede distinguir un acto en Leópolis de uno en una región ocupada.
+  const guardarSub = useMutation({
+    mutationFn: (clave: string | null) => guardarSubdivision(client!.id, clave),
+    onSuccess: () => {
+      toast.success("Subdivisión guardada");
+      queryClient.invalidateQueries({ queryKey: ["cliente", id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const paisDomicilio = paisDelDomicilio(client);
+  const subdivisionDelCliente = subdivisiones.find(
+    (x) => x.clave === client.subdivision_clave,
+  );
+  const subdivisionFalta =
+    exigenSubdivision != null &&
+    faltaSubdivision(
+      paisDomicilio,
+      client.subdivision_clave,
+      new Set(exigenSubdivision.keys()),
+      client.subdivision_fuera_de_lista,
+    );
   const ctxEvaluacion: ContextoEvaluacion = {
     catalogos_disponibles: catalogos,
     indicadores,
@@ -464,7 +511,52 @@ export default function ClientDetailPage() {
           <TabsTrigger value="operaciones">{esNotarias ? "Actos" : "Operaciones"}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="datos">
+        <TabsContent value="datos" className="space-y-4">
+          {/* La subdivisión sólo se ofrece cuando el país la exige. Pedirla
+              siempre sería un campo libre que nadie sabe rellenar; ofrecer sólo
+              las que tienen nivel la convierte en una pregunta contestable. */}
+          {paisDomicilio && exigenSubdivision?.has(paisDomicilio) && (
+            <div className="glass-card p-6 space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">
+                  Subdivisión del domicilio
+                </h3>
+                <p className="text-[13px] text-muted-foreground mt-0.5">
+                  {exigenSubdivision.get(paisDomicilio)}
+                </p>
+              </div>
+              <Select
+                value={
+                  client.subdivision_clave ??
+                  (client.subdivision_fuera_de_lista ? "fuera" : "")
+                }
+                onValueChange={(v) => guardarSub.mutate(v)}
+              >
+                <SelectTrigger className="max-w-md">
+                  <SelectValue placeholder="Sin capturar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fuera">
+                    Ninguna de las listadas — el domicilio está fuera de esas regiones
+                  </SelectItem>
+                  {subdivisiones
+                    .filter((x) => x.pais_iso2 === paisDomicilio)
+                    .map((x) => (
+                      <SelectItem key={x.clave} value={x.clave}>
+                        {x.nombre} · {x.clave}
+                        {x.pendiente_confirmacion ? " (pendiente de confirmar)" : ""}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Sólo aparecen las subdivisiones con nivel de riesgo propio. «Ninguna de las
+                listadas» es una respuesta válida y significa que el domicilio está en el país
+                pero fuera de las regiones alcanzadas.
+              </p>
+            </div>
+          )}
+
           <div className="glass-card p-6 grid grid-cols-2 gap-6">
             {[
               { label: "Nombre / Razón social", value: client.nombre_razon_social },
@@ -624,6 +716,43 @@ export default function ClientDetailPage() {
                     Operación en banda de umbral · +{bandera.puntos} puntos
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">{bandera.detalle}</p>
+                </div>
+              )}
+
+              {/* La subdivisión que falta. Va ANTES del nivel de país porque
+                  puede cambiarlo: Ucrania es riesgo alto y Crimea prohibición,
+                  y sin la subdivisión el expediente se está calificando con la
+                  mitad del dato. */}
+              {subdivisionFalta && paisDomicilio && (
+                <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <p className="text-sm font-semibold text-foreground">
+                    Falta la subdivisión del domicilio
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {exigenSubdivision?.get(paisDomicilio)}
+                  </p>
+                </div>
+              )}
+
+              {/* Y cuando sí está, se dice cuál y en qué nivel: una prohibición
+                  subnacional que no se nombra no se puede explicar. */}
+              {subdivisionDelCliente && (
+                <div
+                  className={cn(
+                    "glass-card p-4 border-l-4",
+                    subdivisionDelCliente.nivel_territorial === "prohibicion"
+                      ? "border-l-destructive"
+                      : "border-l-warning",
+                  )}
+                >
+                  <p className="text-sm font-semibold text-foreground">
+                    {subdivisionDelCliente.nombre}
+                    {subdivisionDelCliente.pendiente_confirmacion &&
+                      " — cobertura pendiente de confirmación"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {subdivisionDelCliente.derivacion}
+                  </p>
                 </div>
               )}
 

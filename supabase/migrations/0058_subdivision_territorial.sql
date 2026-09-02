@@ -127,7 +127,22 @@ on conflict (clave) do update
 -- En el domicilio del compareciente y en la ubicación del inmueble, que es lo
 -- que dice el apartado 2.2.
 alter table client
-  add column if not exists subdivision_clave text references subdivision_riesgo(clave);
+  add column if not exists subdivision_clave text references subdivision_riesgo(clave),
+  /**
+   * «Se preguntó y el domicilio está fuera de las regiones alcanzadas».
+   *
+   * Distinto de `subdivision_clave is null`, que es «no se ha preguntado». Sin
+   * esta distinción, quien contesta «ninguna de las listadas» deja el
+   * expediente con el campo vacío, el aviso sigue pidiéndolo para siempre, y un
+   * aviso que no se puede quitar contestando enseña a ignorarlo —que es peor
+   * que no tenerlo—.
+   */
+  add column if not exists subdivision_fuera_de_lista boolean not null default false;
+
+alter table client drop constraint if exists client_subdivision_coherente;
+alter table client
+  add constraint client_subdivision_coherente
+  check (not (subdivision_fuera_de_lista and subdivision_clave is not null));
 alter table operation
   add column if not exists subdivision_inmueble text references subdivision_riesgo(clave);
 
@@ -136,6 +151,10 @@ comment on column client.subdivision_clave is
   'general, OBLIGATORIA cuando el país sea Ucrania o Rusia: pedirla siempre '
   'encarece la captura sin ganancia, y un campo obligatorio que casi nunca '
   'importa enseña a rellenarlo de cualquier manera.';
+comment on column client.subdivision_fuera_de_lista is
+  'Se preguntó y el domicilio está fuera de las regiones alcanzadas. Distinto '
+  'de la columna en null, que es «no se ha preguntado»: sin la distinción, el '
+  'aviso no se puede quitar contestando y eso enseña a ignorarlo.';
 comment on column operation.subdivision_inmueble is
   'Subdivisión (ISO 3166-2) donde está el inmueble. La prohibición es '
   'subnacional: un inmueble en Crimea y otro en Leópolis no son el mismo acto '
@@ -194,7 +213,9 @@ language sql stable security definer set search_path = public as $$
                 else c.pais_residencia_iso2 end,
            c.pais_nacionalidad_clave, ''))
    where c.id = p_client
-     and coalesce(btrim(c.subdivision_clave), '') = '';
+     and coalesce(btrim(c.subdivision_clave), '') = ''
+     -- Contestar «ninguna de las listadas» es una respuesta, no una omisión.
+     and not c.subdivision_fuera_de_lista;
 $$;
 
 comment on function public.subdivision_pendiente(uuid) is

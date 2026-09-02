@@ -111,6 +111,30 @@ begin
     '0', v_n::text, v_n = 0);
 
   -- ------------------------------------------------------------------
+  -- 10 bis. «Ninguna de las listadas» es una respuesta, no una omisión
+  -- ------------------------------------------------------------------
+  -- Sin esta distinción el aviso no se puede quitar contestando, y un aviso
+  -- que no se puede quitar enseña a ignorarlo.
+  update client set pais_residencia_iso2 = 'UA', subdivision_clave = null,
+                    subdivision_fuera_de_lista = true
+   where id = v_cli;
+  select count(*) into v_n from public.subdivision_pendiente(v_cli);
+  insert into resultado values (15, 'Contestar «fuera de las listadas» quita el pendiente',
+    '0', v_n::text, v_n = 0);
+
+  -- Y las dos cosas a la vez no se admiten: si se elige una región, la
+  -- respuesta anterior tiene que apagarse.
+  begin
+    update client set subdivision_clave = 'UA-43' where id = v_cli;
+    insert into resultado values (16, 'No se puede estar «fuera de la lista» Y en una región',
+      'excepción', 'se admitió', false);
+  exception when check_violation then
+    insert into resultado values (16, 'No se puede estar «fuera de la lista» Y en una región',
+      'excepción', 'excepción', true);
+  end;
+  update client set subdivision_fuera_de_lista = false, subdivision_clave = null where id = v_cli;
+
+  -- ------------------------------------------------------------------
   -- 11. Las pendientes de confirmación se distinguen
   -- ------------------------------------------------------------------
   update client set pais_residencia_iso2 = 'UA', subdivision_clave = 'UA-65' where id = v_cli;

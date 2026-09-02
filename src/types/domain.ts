@@ -124,6 +124,13 @@ export interface Client {
   /** La clave con la que la emisora puede localizarse en la bolsa. Sin ella la
    *  excepción no aplica: el check de la base lo impone. */
   clave_pizarra: string | null;
+  /** Subdivisión ISO 3166-2 del domicilio (migration 0058). Opcional en
+   *  general, obligatoria cuando el país sea Ucrania o Rusia: una prohibición
+   *  subnacional no cabe en un código de país. */
+  subdivision_clave: string | null;
+  /** Se preguntó y el domicilio está fuera de las regiones alcanzadas. Distinto
+   *  de `subdivision_clave` en null, que es «no se ha preguntado». */
+  subdivision_fuera_de_lista: boolean;
   /** Condición de persona políticamente expuesta (migration 0038). Nulo = no se
    *  ha consultado, que NO es lo mismo que `no_pep`. */
   condicion_pep: CondicionPep | null;

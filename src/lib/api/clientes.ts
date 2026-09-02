@@ -250,3 +250,31 @@ export async function ultimoCambioDeNivel(clientId: string): Promise<CambioNivel
   if (error) throw error;
   return (data as unknown as CambioNivel) ?? null;
 }
+
+/**
+ * Guarda la subdivisión del domicilio (migration 0058).
+ *
+ * Se guarda sola y no dentro del alta porque llega después: el país se captura
+ * al dar de alta y la subdivisión sale cuando alguien mira el domicilio con
+ * detalle. Obligarla en el alta habría hecho lo que la migration evita a
+ * propósito —impedir guardar hasta tener el dato— y en una notaría el
+ * compareciente está delante.
+ */
+export async function guardarSubdivision(
+  clientId: string,
+  /** La clave, o `'fuera'` para «se preguntó y está fuera de las listadas». */
+  respuesta: string | 'fuera' | null,
+): Promise<void> {
+  const fuera = respuesta === 'fuera';
+  const { error } = await supabase
+    .from('client')
+    .update({
+      subdivision_clave: fuera ? null : respuesta?.trim() || null,
+      // Las dos viajan siempre: elegir una región después de haber contestado
+      // «fuera» tiene que apagar la respuesta anterior, o el check de la base lo
+      // rechaza y con razón.
+      subdivision_fuera_de_lista: fuera,
+    })
+    .eq('id', clientId);
+  if (error) throw error;
+}

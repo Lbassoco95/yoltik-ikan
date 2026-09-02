@@ -103,3 +103,17 @@ describe('de qué país se pide', () => {
     expect(paisDelDomicilio({ tipo_persona: 'fisica' })).toBeNull();
   });
 });
+
+describe('«ninguna de las listadas» es una respuesta', () => {
+  const EXIGEN = new Set(['UA', 'RU']);
+
+  it('contestar que está fuera de la lista quita el pendiente', () => {
+    // Sin esta distinción el aviso no se puede quitar contestando, y un aviso
+    // que no se puede quitar enseña a ignorarlo.
+    expect(faltaSubdivision('UA', null, EXIGEN, true)).toBe(false);
+  });
+
+  it('y no contestarlo lo mantiene', () => {
+    expect(faltaSubdivision('UA', null, EXIGEN, false)).toBe(true);
+  });
+});

@@ -106,9 +106,19 @@ export function faltaSubdivision(
   paisDelDomicilio: string | null | undefined,
   subdivision: string | null | undefined,
   paisesQueLaExigen: Set<string>,
+  /**
+   * Se preguntó y el domicilio está fuera de las regiones alcanzadas.
+   *
+   * Es una RESPUESTA, no una omisión. Sin distinguirla, quien contesta «ninguna
+   * de las listadas» deja el campo vacío, el aviso sigue pidiéndolo para
+   * siempre, y un aviso que no se puede quitar contestando enseña a ignorarlo
+   * —que es peor que no tenerlo—.
+   */
+  fueraDeLista = false,
 ): boolean {
   const pais = paisDelDomicilio?.trim().toUpperCase();
   if (!pais || !paisesQueLaExigen.has(pais)) return false;
+  if (fueraDeLista) return false;
   return (subdivision ?? '').trim() === '';
 }
 

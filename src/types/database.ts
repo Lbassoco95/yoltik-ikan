@@ -556,6 +556,8 @@ export type Database = {
           pais_residencia_iso2: string | null
           pep_evidencia: Json | null
           rfc: string | null
+          subdivision_clave: string | null
+          subdivision_fuera_de_lista: boolean
           tipo_persona: Database["public"]["Enums"]["tipo_persona"]
           tipo_social: string | null
           triggers_oficio: string[]
@@ -594,6 +596,8 @@ export type Database = {
           pais_residencia_iso2?: string | null
           pep_evidencia?: Json | null
           rfc?: string | null
+          subdivision_clave?: string | null
+          subdivision_fuera_de_lista?: boolean
           tipo_persona: Database["public"]["Enums"]["tipo_persona"]
           tipo_social?: string | null
           triggers_oficio?: string[]
@@ -632,6 +636,8 @@ export type Database = {
           pais_residencia_iso2?: string | null
           pep_evidencia?: Json | null
           rfc?: string | null
+          subdivision_clave?: string | null
+          subdivision_fuera_de_lista?: boolean
           tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
           tipo_social?: string | null
           triggers_oficio?: string[]
@@ -1666,6 +1672,7 @@ export type Database = {
           pago_de_tercero: boolean | null
           pais_origen_recursos: string | null
           requiere_aviso: boolean
+          subdivision_inmueble: string | null
           tipo: Database["public"]["Enums"]["tipo_operacion"]
         }
         Insert: {
@@ -1695,6 +1702,7 @@ export type Database = {
           pago_de_tercero?: boolean | null
           pais_origen_recursos?: string | null
           requiere_aviso?: boolean
+          subdivision_inmueble?: string | null
           tipo: Database["public"]["Enums"]["tipo_operacion"]
         }
         Update: {
@@ -1724,6 +1732,7 @@ export type Database = {
           pago_de_tercero?: boolean | null
           pais_origen_recursos?: string | null
           requiere_aviso?: boolean
+          subdivision_inmueble?: string | null
           tipo?: Database["public"]["Enums"]["tipo_operacion"]
         }
         Relationships: [
@@ -1854,6 +1863,21 @@ export type Database = {
           valor_numerico?: number
           vigente_desde?: string
           vigente_hasta?: string | null
+        }
+        Relationships: []
+      }
+      pais_exige_subdivision: {
+        Row: {
+          motivo: string
+          pais_iso2: string
+        }
+        Insert: {
+          motivo: string
+          pais_iso2: string
+        }
+        Update: {
+          motivo?: string
+          pais_iso2?: string
         }
         Relationships: []
       }
@@ -2345,6 +2369,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subdivision_riesgo: {
+        Row: {
+          clave: string
+          derivacion: string
+          nivel_territorial: string
+          nombre: string
+          pais_iso2: string
+          pendiente_confirmacion: boolean
+          vigente_desde: string
+          vigente_hasta: string | null
+        }
+        Insert: {
+          clave: string
+          derivacion: string
+          nivel_territorial: string
+          nombre: string
+          pais_iso2: string
+          pendiente_confirmacion?: boolean
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Update: {
+          clave?: string
+          derivacion?: string
+          nivel_territorial?: string
+          nombre?: string
+          pais_iso2?: string
+          pendiente_confirmacion?: boolean
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Relationships: []
       }
       tipo_social: {
         Row: {
