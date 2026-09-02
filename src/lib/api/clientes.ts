@@ -118,6 +118,9 @@ export interface EvaluacionPersistida {
   clasificacion: ClasificacionRiesgo;
   motivo_alto_de_oficio: string | null;
   evaluado_en: string;
+  /** Orden de llegada inequívoco (migration 0057). `evaluado_en` empata entre
+   *  evaluaciones guardadas en la misma transacción. */
+  secuencia: number;
 }
 
 /**
@@ -130,9 +133,9 @@ export interface EvaluacionPersistida {
 export async function ultimaEvaluacion(clientId: string): Promise<EvaluacionPersistida | null> {
   const { data, error } = await supabase
     .from('client_risk_assessment')
-    .select('id, client_id, template_id, respuestas, respuestas_clave, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
+    .select('id, client_id, template_id, respuestas, respuestas_clave, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en, secuencia')
     .eq('client_id', clientId)
-    .order('evaluado_en', { ascending: false })
+    .order('secuencia', { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
@@ -152,9 +155,9 @@ export async function ultimasEvaluaciones(
   if (clientIds.length === 0) return new Map();
   const { data, error } = await supabase
     .from('client_risk_assessment')
-    .select('id, client_id, template_id, respuestas, respuestas_clave, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en')
+    .select('id, client_id, template_id, respuestas, respuestas_clave, score_total, clasificacion, motivo_alto_de_oficio, evaluado_en, secuencia')
     .in('client_id', clientIds)
-    .order('evaluado_en', { ascending: false });
+    .order('secuencia', { ascending: false });
   if (error) throw error;
 
   const porCliente = new Map<string, EvaluacionPersistida>();
@@ -217,4 +220,33 @@ export async function evaluarRiesgoCliente(
   if (error) throw error;
 
   return { ...resultado, id: (data as { id: string }).id };
+}
+
+/** Un cambio de nivel de diligencia, tal como quedó asentado (migration 0057). */
+export interface CambioNivel {
+  desde: string;
+  hacia: string;
+  motivo: string;
+  automatico: boolean;
+  registrado_en: string;
+}
+
+/**
+ * El último cambio de nivel de diligencia del expediente.
+ *
+ * Se lee para PINTAR el por qué. Un nivel sin motivo a la vista es un número
+ * que nadie puede discutir: quien lo vea no sabe si está en N3 porque su
+ * matriz salió alta, porque hay un piso activo, o porque alguien lo subió a
+ * mano.
+ */
+export async function ultimoCambioDeNivel(clientId: string): Promise<CambioNivel | null> {
+  const { data, error } = await supabase
+    .from('cambio_nivel_diligencia')
+    .select('desde, hacia, motivo, automatico, registrado_en')
+    .eq('client_id', clientId)
+    .order('registrado_en', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as unknown as CambioNivel) ?? null;
 }

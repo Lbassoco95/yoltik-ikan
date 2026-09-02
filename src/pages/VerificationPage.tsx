@@ -12,6 +12,7 @@ import {
   type VerificacionVigente,
 } from "@/lib/api/verificacion";
 import { pendientesCompareciente, pendientesIdentificacion } from "@/lib/aviso/completitud";
+import { DETALLE_NIVEL, ETIQUETA_NIVEL } from "@/lib/riesgo/nivel-diligencia";
 import { useAuth } from "@/lib/auth-context";
 import { etiquetaConocimiento } from "@/lib/perfil-actividad";
 import type { TipoPersona } from "@/types/domain";
@@ -39,10 +40,20 @@ import { cn } from "@/lib/utils";
  * mismo dato que Comparecientes y desde aquí se abre la verificación.
  */
 
+/**
+ * Los niveles, con lo que significan de verdad.
+ *
+ * Las etiquetas anteriores decían que N2 era «Reforzado / Expediente
+ * ampliado», y no lo es: N2 es el nivel ESTÁNDAR, el de todo cliente. Reforzada
+ * es la N3. Un rótulo que llama reforzado a lo estándar hace creer que hay
+ * medidas aplicadas que nadie aplicó.
+ *
+ * Salen del módulo puro para que la pantalla y la base digan lo mismo.
+ */
 const NIVEL_KYC: Record<string, { etiqueta: string; detalle: string }> = {
-  N1: { etiqueta: "N1", detalle: "Identificación simplificada" },
-  N2: { etiqueta: "N2 · Reforzado", detalle: "Expediente ampliado" },
-  N3: { etiqueta: "N3 · Reforzada", detalle: "Cliente de riesgo alto" },
+  N1: { etiqueta: `N1 · ${ETIQUETA_NIVEL.N1}`, detalle: DETALLE_NIVEL.N1 },
+  N2: { etiqueta: `N2 · ${ETIQUETA_NIVEL.N2}`, detalle: DETALLE_NIVEL.N2 },
+  N3: { etiqueta: `N3 · ${ETIQUETA_NIVEL.N3}`, detalle: DETALLE_NIVEL.N3 },
 };
 
 /**

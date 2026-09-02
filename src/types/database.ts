@@ -333,6 +333,57 @@ export type Database = {
         }
         Relationships: []
       }
+      cambio_nivel_diligencia: {
+        Row: {
+          automatico: boolean
+          client_id: string
+          desde: Database["public"]["Enums"]["nivel_kyc"]
+          firmado_por: string | null
+          hacia: Database["public"]["Enums"]["nivel_kyc"]
+          id: string
+          motivo: string
+          organization_id: string
+          registrado_en: string
+        }
+        Insert: {
+          automatico: boolean
+          client_id: string
+          desde: Database["public"]["Enums"]["nivel_kyc"]
+          firmado_por?: string | null
+          hacia: Database["public"]["Enums"]["nivel_kyc"]
+          id?: string
+          motivo: string
+          organization_id: string
+          registrado_en?: string
+        }
+        Update: {
+          automatico?: boolean
+          client_id?: string
+          desde?: Database["public"]["Enums"]["nivel_kyc"]
+          firmado_por?: string | null
+          hacia?: Database["public"]["Enums"]["nivel_kyc"]
+          id?: string
+          motivo?: string
+          organization_id?: string
+          registrado_en?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cambio_nivel_diligencia_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambio_nivel_diligencia_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cascada_bc: {
         Row: {
           client_id: string
@@ -612,6 +663,7 @@ export type Database = {
           metodologia_version: number | null
           motivo_alto_de_oficio: string | null
           respuestas: Json
+          secuencia: number
           respuestas_clave: Json
           score_total: number
           snapshot_listas_plenario: string | null
@@ -642,6 +694,7 @@ export type Database = {
           metodologia_version?: number | null
           motivo_alto_de_oficio?: string | null
           respuestas?: Json
+          secuencia?: number
           respuestas_clave?: Json
           score_total?: number
           snapshot_listas_plenario?: string | null

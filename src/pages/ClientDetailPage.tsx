@@ -17,6 +17,7 @@ import {
   getCliente,
   getPlantillaRiesgoActiva,
   ultimaEvaluacion,
+  ultimoCambioDeNivel,
 } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { EstructuraSocietaria } from "@/components/clientes/EstructuraSocietaria";
@@ -49,6 +50,7 @@ import { PARAM } from "@/lib/parametros";
 import type { SectorAV, TipoPersona } from "@/types/domain";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS, labelTipoActo, nivelConocimiento } from "@/lib/perfil-actividad";
+import { DETALLE_NIVEL, ETIQUETA_NIVEL } from "@/lib/riesgo/nivel-diligencia";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
@@ -135,6 +137,14 @@ export default function ClientDetailPage() {
     queryKey: ["paises-sancionados", profile?.organization_id],
     queryFn: paisesSancionados,
     staleTime: 10 * 60 * 1000,
+  });
+
+  // Por qué está en el nivel que está. Un nivel sin motivo a la vista es un
+  // número que nadie puede discutir.
+  const { data: cambioNivel } = useQuery({
+    queryKey: ["cambio-nivel", id],
+    queryFn: () => ultimoCambioDeNivel(id!),
+    enabled: !!id,
   });
 
   // La lista interna de zonas de atención. Viene vacía hasta que Cumplimiento
@@ -414,11 +424,23 @@ export default function ClientDetailPage() {
         </div>
         <p className="text-sm text-muted-foreground mt-1">
           {tipoLabel[client.tipo_persona]} · {client.rfc ?? "sin RFC"} ·{" "}
-          {nivelConocimiento(client.tipo_persona, client.nivel_kyc)}
+          <span title={DETALLE_NIVEL[client.nivel_kyc]}>
+            {nivelConocimiento(client.tipo_persona, client.nivel_kyc)} ·{" "}
+            {ETIQUETA_NIVEL[client.nivel_kyc]}
+          </span>
           {client.alto_de_oficio && (
             <span className="ml-2 status-badge bg-destructive/10 text-destructive">Alto de oficio</span>
           )}
         </p>
+        {cambioNivel && (
+          <p className="text-[13px] text-muted-foreground mt-1 max-w-2xl">
+            {cambioNivel.automatico ? "Subió" : "Se movió"} de {cambioNivel.desde} a{" "}
+            {cambioNivel.hacia} el{" "}
+            {new Date(cambioNivel.registrado_en).toLocaleDateString("es-MX")}:{" "}
+            {cambioNivel.motivo}
+            {!cambioNivel.automatico && " (decisión firmada)"}
+          </p>
+        )}
       </div>
 
       <Tabs defaultValue="datos" className="space-y-4">

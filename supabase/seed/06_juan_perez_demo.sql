@@ -25,7 +25,10 @@ values (
     "ocupacion": "Empleado formal",
     "origen_recursos": "Nómina"
   }'::jsonb,
-  'N1', false, true
+  -- N2: es el nivel de todo cliente. N1 es diligencia SIMPLIFICADA y sólo cabe
+  -- en los supuestos que las Reglas permiten simplificar, con riesgo bajo
+  -- además (Adenda 4, apartado 7).
+  'N2', false, true
 )
 on conflict (id) do nothing;
 
