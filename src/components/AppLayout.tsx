@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 /**
  * Marco de la aplicación de clientes.
@@ -38,9 +39,7 @@ export default function AppLayout() {
         collapsed={colapsada}
         onToggle={() => setColapsada(!colapsada)}
         className={
-          menuMovil
-            ? "fixed inset-y-0 left-0 z-50 md:static"
-            : "hidden md:flex"
+          menuMovil ? "fixed inset-y-0 left-0 z-50 md:static" : "hidden md:flex"
         }
       />
 
@@ -53,7 +52,9 @@ export default function AppLayout() {
           }}
         />
         <main className="flex-1 min-w-0 p-4 sm:p-6 overflow-auto">
-          <Outlet />
+          <ErrorBoundary key={pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

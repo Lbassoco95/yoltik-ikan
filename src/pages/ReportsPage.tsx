@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Clock, Download, FileCode, Info, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Download,
+  FileCode,
+  Info,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,25 +18,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cargarPeriodo, guardarAviso, listarAvisos, periodosConActos } from "@/lib/api/avisos";
+import {
+  cargarPeriodo,
+  guardarAviso,
+  listarAvisos,
+  periodosConActos,
+} from "@/lib/api/avisos";
 import { anclarPorCierreDePeriodo } from "@/lib/api/bitacora";
 import { recorrerMotor } from "@/lib/api/operaciones";
 import { evaluarAvisoMensual } from "@/lib/aviso-mensual";
 import { generarAvisoXml } from "@/lib/aviso/generador-xml";
 import { labelTipoActo } from "@/lib/perfil-actividad";
 import { cn, formatMxn } from "@/lib/utils";
-
-/** AAAA-MM del mes en curso. */
-function mesActual() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
+import {
+  periodoDeApertura,
+  periodosOfrecidos,
+  situacionDelPeriodo,
+} from "@/lib/aviso/periodo";
 
 const nombreMes = (p: string) =>
-  new Date(`${p}-01T12:00:00`).toLocaleDateString("es-MX", { month: "long", year: "numeric" });
+  new Date(`${p}-01T12:00:00`).toLocaleDateString("es-MX", {
+    month: "long",
+    year: "numeric",
+  });
 
 export default function ReportsPage() {
-  const [periodo, setPeriodo] = useState(mesActual());
+  const [periodo, setPeriodo] = useState(() => periodoDeApertura([]));
+  // Una sola vez: si el usuario elige otro periodo, no se le mueve debajo.
+  const [aperturaHecha, setAperturaHecha] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: periodos = [] } = useQuery({
@@ -36,15 +53,23 @@ export default function ReportsPage() {
     queryFn: periodosConActos,
   });
 
-  // Si el mes en curso no tiene actos, se abre en el último que sí los tuvo:
-  // llegar a una pantalla vacía no dice si no hay nada o si algo falló.
+  // En cuanto se sabe qué periodos tienen actos, se abre en el más reciente
+  // CERRADO que los tenga. Llegar a una pantalla vacía no dice si no hay nada o
+  // si algo falló, y abrir en el mes en curso invita a presentar un periodo que
+  // todavía no se puede presentar.
   useEffect(() => {
-    if (periodos.length && !periodos.includes(periodo) && periodo === mesActual()) {
-      setPeriodo(periodos[0]);
+    if (!aperturaHecha && periodos.length) {
+      setPeriodo(periodoDeApertura(periodos));
+      setAperturaHecha(true);
     }
-  }, [periodos, periodo]);
+  }, [periodos, aperturaHecha]);
 
-  const { data: datos, isLoading, isError, error } = useQuery({
+  const {
+    data: datos,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["periodo-aviso", periodo],
     queryFn: () => cargarPeriodo(periodo),
   });
@@ -54,7 +79,14 @@ export default function ReportsPage() {
     queryFn: () => listarAvisos(periodo),
   });
 
-  const evaluacion = datos ? evaluarAvisoMensual(datos.operaciones, datos.hallazgos) : null;
+  const evaluacion = datos
+    ? evaluarAvisoMensual(datos.operaciones, datos.hallazgos)
+    : null;
+
+  // En qué situación está el periodo elegido: art. 23 de la LFPIORPI, día 17
+  // del mes siguiente. El mes en curso no se presenta —todavía le pueden entrar
+  // actos— y por eso el botón se apaga con su explicación, no en silencio.
+  const situacion = situacionDelPeriodo(periodo, avisos.length > 0);
 
   // Recorrer el motor desde aquí. La bandeja del OC tiene el mismo botón, pero
   // el bloqueo aparece en ESTA pantalla y mandar a buscarlo a otra es la forma
@@ -67,7 +99,9 @@ export default function ReportsPage() {
     onSuccess: (r) => {
       queryClient.invalidateQueries({ queryKey: ["periodo-aviso"] });
       queryClient.invalidateQueries({ queryKey: ["hallazgos"] });
-      queryClient.invalidateQueries({ queryKey: ["hallazgos", "abiertos", "count"] });
+      queryClient.invalidateQueries({
+        queryKey: ["hallazgos", "abiertos", "count"],
+      });
       toast.success(
         `${r.operaciones_evaluadas ?? r.operaciones_procesadas} operación(es) evaluadas. ` +
           `${r.operaciones_marcadas_aviso ?? 0} requieren aviso, ` +
@@ -91,7 +125,11 @@ export default function ReportsPage() {
         periodo,
         xml: r.xml,
         referencia,
-        operation_ids: enCeros ? [] : datos.operaciones.filter((o) => o.canal === "sppld").map((o) => o.id),
+        operation_ids: enCeros
+          ? []
+          : datos.operaciones
+              .filter((o) => o.canal === "sppld")
+              .map((o) => o.id),
         exento: enCeros,
         layout_version: "fep",
       });
@@ -127,7 +165,8 @@ export default function ReportsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Aviso mensual</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Se presenta a más tardar el día 17 del mes siguiente al periodo reportado.
+            Se presenta a más tardar el día 17 del mes siguiente al periodo
+            reportado.
           </p>
         </div>
         <Select value={periodo} onValueChange={setPeriodo}>
@@ -135,9 +174,12 @@ export default function ReportsPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {[...new Set([mesActual(), ...periodos])].sort().reverse().map((p) => (
+            {periodosOfrecidos(periodos).map((p) => (
               <SelectItem key={p} value={p}>
                 {nombreMes(p)}
+                {situacionDelPeriodo(p, false).estado === "en_curso"
+                  ? " · en curso"
+                  : ""}
               </SelectItem>
             ))}
           </SelectContent>
@@ -173,6 +215,25 @@ export default function ReportsPage() {
             />
           </div>
 
+          <Aviso
+            tono={
+              situacion.estado === "en_curso" ||
+              situacion.estado === "fuera_de_plazo"
+                ? "bloqueo"
+                : "recordatorio"
+            }
+            titulo={
+              situacion.estado === "en_curso"
+                ? `${nombreMes(periodo)} todavía no se presenta`
+                : situacion.estado === "presentado"
+                  ? `${nombreMes(periodo)} ya se presentó`
+                  : situacion.estado === "fuera_de_plazo"
+                    ? `${nombreMes(periodo)} está fuera de plazo`
+                    : `${nombreMes(periodo)} está por presentarse`
+            }
+            detalle={situacion.leyenda}
+          />
+
           {datos?.faltanClavesPadron && (
             <Aviso
               tono="bloqueo"
@@ -199,7 +260,9 @@ export default function ReportsPage() {
                     disabled={evaluar.isPending}
                     className="gap-2"
                   >
-                    {evaluar.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    {evaluar.isPending && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    )}
                     Evaluar ahora
                   </Button>
                 ) : undefined
@@ -208,7 +271,12 @@ export default function ReportsPage() {
           ))}
 
           {evaluacion?.recordatorios.map((r) => (
-            <Aviso key={r.motivo} tono="recordatorio" titulo={r.motivo} detalle={r.detalle} />
+            <Aviso
+              key={r.motivo}
+              tono="recordatorio"
+              titulo={r.motivo}
+              detalle={r.detalle}
+            />
           ))}
 
           {/* Generación */}
@@ -221,26 +289,31 @@ export default function ReportsPage() {
                     Generar el archivo XML de {nombreMes(periodo)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
-                    Se arma contra el formato de fe pública del SPPLD y se descarga listo para
-                    subir al portal. Queda guardado tal cual, con su versión de formato, y el
-                    hecho de haberlo generado entra en la bitácora encadenada.
+                    {situacion.presentable
+                      ? "Se arma contra el formato de fe pública del SPPLD y se descarga listo para subir al portal. Queda guardado tal cual, con su versión de formato, y el hecho de haberlo generado entra en la bitácora encadenada."
+                      : situacion.leyenda}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 shrink-0">
-                {evaluacion?.puedeEnCeros && (evaluacion?.reportables.length ?? 0) === 0 && (
-                  <Button
-                    variant="outline"
-                    onClick={() => generar.mutate(true)}
-                    disabled={generar.isPending}
-                  >
-                    Informe en ceros
-                  </Button>
-                )}
+                {evaluacion?.puedeEnCeros &&
+                  (evaluacion?.reportables.length ?? 0) === 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => generar.mutate(true)}
+                      disabled={generar.isPending || !situacion.presentable}
+                    >
+                      Informe en ceros
+                    </Button>
+                  )}
                 <Button
                   className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                   onClick={() => generar.mutate(false)}
-                  disabled={generar.isPending || (evaluacion?.reportables.length ?? 0) === 0}
+                  disabled={
+                    generar.isPending ||
+                    !situacion.presentable ||
+                    (evaluacion?.reportables.length ?? 0) === 0
+                  }
                 >
                   {generar.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -268,38 +341,43 @@ export default function ReportsPage() {
                   ))}
                 </ul>
                 <p className="text-[13px] text-muted-foreground mt-2 ml-6">
-                  No se genera el archivo hasta que esto se corrija. Un XML que el portal rechaza
-                  el día 17 es peor que no tener ninguno.
+                  No se genera el archivo hasta que esto se corrija. Un XML que
+                  el portal rechaza el día 17 es peor que no tener ninguno.
                 </p>
               </div>
             )}
 
-            {previo && previo.errores.length === 0 && previo.advertencias.length > 0 && (
-              <div className="rounded-lg bg-warning/10 p-3">
-                <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-warning shrink-0" />
-                  <p className="text-sm font-semibold text-foreground">
-                    El archivo se genera, pero sale incompleto
+            {previo &&
+              previo.errores.length === 0 &&
+              previo.advertencias.length > 0 && (
+                <div className="rounded-lg bg-warning/10 p-3">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-warning shrink-0" />
+                    <p className="text-sm font-semibold text-foreground">
+                      El archivo se genera, pero sale incompleto
+                    </p>
+                  </div>
+                  <ul className="mt-2 ml-6 space-y-1">
+                    {previo.advertencias.slice(0, 8).map((a, i) => (
+                      <li key={i} className="text-xs text-warning">
+                        {a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+            {previo &&
+              previo.errores.length === 0 &&
+              previo.advertencias.length === 0 && (
+                <div className="rounded-lg bg-success/10 p-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                  <p className="text-sm text-foreground">
+                    El archivo cumple lo que el formato del aviso pide. Listo
+                    para subir al portal.
                   </p>
                 </div>
-                <ul className="mt-2 ml-6 space-y-1">
-                  {previo.advertencias.slice(0, 8).map((a, i) => (
-                    <li key={i} className="text-xs text-warning">
-                      {a}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {previo && previo.errores.length === 0 && previo.advertencias.length === 0 && (
-              <div className="rounded-lg bg-success/10 p-3 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
-                <p className="text-sm text-foreground">
-                  El archivo cumple lo que el formato del aviso pide. Listo para subir al portal.
-                </p>
-              </div>
-            )}
+              )}
           </div>
 
           {/* Actos del periodo */}
@@ -307,7 +385,13 @@ export default function ReportsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  {["Fecha", "Tipo de acto", "Valor", "Canal", "Rebasa umbral"].map((h) => (
+                  {[
+                    "Fecha",
+                    "Tipo de acto",
+                    "Valor",
+                    "Canal",
+                    "Rebasa umbral",
+                  ].map((h) => (
                     <th
                       key={h}
                       className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
@@ -319,14 +403,19 @@ export default function ReportsPage() {
               </thead>
               <tbody>
                 {(datos?.operaciones ?? []).map((o) => (
-                  <tr key={o.id} className="border-b border-border last:border-0">
+                  <tr
+                    key={o.id}
+                    className="border-b border-border last:border-0"
+                  >
                     <td className="px-4 py-3 text-sm">
                       {new Date(o.fecha).toLocaleDateString("es-MX")}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-foreground">
                       {labelTipoActo(o.tipo_acto)}
                     </td>
-                    <td className="px-4 py-3 text-sm">{formatMxn(o.monto_mxn)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {formatMxn(o.monto_mxn)}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={cn(
@@ -339,12 +428,17 @@ export default function ReportsPage() {
                         {o.canal === "declaranot" ? "DeclaraNOT" : "SPPLD"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm">{o.rebasa_umbral ? "Sí" : "No"}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {o.rebasa_umbral ? "Sí" : "No"}
+                    </td>
                   </tr>
                 ))}
                 {(datos?.operaciones ?? []).length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                    <td
+                      colSpan={5}
+                      className="px-4 py-8 text-center text-muted-foreground text-sm"
+                    >
                       Sin actos registrados en {nombreMes(periodo)}.
                     </td>
                   </tr>
@@ -361,12 +455,17 @@ export default function ReportsPage() {
               </p>
               <ul className="space-y-2">
                 {avisos.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between gap-4 text-sm">
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between gap-4 text-sm"
+                  >
                     <span>
                       <span className="font-mono text-xs text-muted-foreground mr-2">
                         {a.referencia ?? a.id.slice(0, 8)}
                       </span>
-                      {a.exento ? "Informe en ceros" : `${a.operation_ids.length} acto(s)`}
+                      {a.exento
+                        ? "Informe en ceros"
+                        : `${a.operation_ids.length} acto(s)`}
                       <span className="text-muted-foreground">
                         {" · "}
                         {new Date(a.generado_en).toLocaleString("es-MX")}
@@ -377,7 +476,12 @@ export default function ReportsPage() {
                         variant="ghost"
                         size="sm"
                         className="gap-2"
-                        onClick={() => descargar(a.xml!, `aviso-${a.periodo}-${a.referencia}.xml`)}
+                        onClick={() =>
+                          descargar(
+                            a.xml!,
+                            `aviso-${a.periodo}-${a.referencia}.xml`,
+                          )
+                        }
                       >
                         <Download className="w-3.5 h-3.5" /> Descargar
                       </Button>
@@ -405,8 +509,12 @@ function Tarjeta({
   alerta?: boolean;
 }) {
   return (
-    <div className={cn("glass-card p-4", alerta && "border-l-4 border-l-warning")}>
-      <p className="text-xs text-muted-foreground uppercase tracking-wider">{titulo}</p>
+    <div
+      className={cn("glass-card p-4", alerta && "border-l-4 border-l-warning")}
+    >
+      <p className="text-xs text-muted-foreground uppercase tracking-wider">
+        {titulo}
+      </p>
       <p className="text-2xl font-bold text-foreground mt-1">{valor}</p>
       <p className="text-[13px] text-muted-foreground mt-1">{nota}</p>
     </div>
@@ -428,7 +536,12 @@ function Aviso({
 }) {
   const bloqueo = tono === "bloqueo";
   return (
-    <div className={cn("rounded-lg p-4 flex items-start gap-3", bloqueo ? "bg-destructive/10" : "bg-muted/50")}>
+    <div
+      className={cn(
+        "rounded-lg p-4 flex items-start gap-3",
+        bloqueo ? "bg-destructive/10" : "bg-muted/50",
+      )}
+    >
       {bloqueo ? (
         <AlertTriangle className="w-4 h-4 mt-0.5 text-destructive shrink-0" />
       ) : (

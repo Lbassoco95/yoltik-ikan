@@ -301,11 +301,17 @@ export default function ClientDetailPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // `client` es undefined mientras la consulta carga, y estas líneas corren
+  // ANTES de la guarda de más abajo: los hooks se ejecutan todos antes de
+  // cualquier return. Leer `client.subdivision_clave` sin protección reventaba
+  // en el PRIMER render de cada visita, y como no había ErrorBoundary el
+  // resultado era la pantalla en blanco. No fallaba a veces: fallaba siempre.
   const paisDomicilio = paisDelDomicilio(client);
   const subdivisionDelCliente = subdivisiones.find(
-    (x) => x.clave === client.subdivision_clave,
+    (x) => x.clave === client?.subdivision_clave,
   );
   const subdivisionFalta =
+    client != null &&
     exigenSubdivision != null &&
     faltaSubdivision(
       paisDomicilio,
