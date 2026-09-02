@@ -1217,6 +1217,11 @@ select o.razon_social, v.secuencia, v.motivo
 -- #####################################################################
 -- PASO 6 · El OC designado, la vigencia de la aprobación y el acto
 -- #####################################################################
+-- Las seis funciones llevan etiqueta de dollar-quoting con NOMBRE y no `$$`
+-- a secas: el editor SQL de Supabase parte el script del lado del cliente y
+-- con `$$` el corte puede caer dentro del cuerpo de una función. Si este
+-- paso vuelve a fallar, córrelo desde `apply_0062_solo.sql`, que es este
+-- mismo contenido en un archivo aparte.
 -- =====================================================================
 -- 0062 · El OC designado, la vigencia de la aprobación, y el acto
 -- =====================================================================
@@ -1280,7 +1285,7 @@ create or replace function public.designar_oficial_cumplimiento(
   p_es_titular boolean default false
 )
 returns void
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public as $designar$
 declare
   v_anterior uuid;
 begin
@@ -1297,7 +1302,7 @@ begin
       'organización. La designación no otorga el permiso: lo hace constar.';
   end if;
 
-  select oc_encargado_user_id into v_anterior from organizations where id = p_org;
+  v_anterior := (select oc_encargado_user_id from organizations where id = p_org);
 
   update organizations
      set oc_encargado_user_id = p_user,
@@ -1317,7 +1322,7 @@ begin
     ),
     'persona', auth.uid()
   );
-end $$;
+end $designar$;
 
 revoke all on function public.designar_oficial_cumplimiento(uuid, uuid, boolean) from public, anon;
 grant execute on function public.designar_oficial_cumplimiento(uuid, uuid, boolean) to authenticated;
@@ -1340,11 +1345,11 @@ create or replace function public.hay_autoaprobacion(
   p_client uuid
 )
 returns boolean
-language plpgsql stable security definer set search_path = public as $$
+language plpgsql stable security definer set search_path = public as $autoapro$
 declare
   v_oc uuid;
 begin
-  select oc_encargado_user_id into v_oc from organizations where id = p_org;
+  v_oc := (select oc_encargado_user_id from organizations where id = p_org);
 
   if p_aprobador is not null
      and exists (select 1 from client c where c.id = p_client and c.capturado_por = p_aprobador)
@@ -1358,7 +1363,7 @@ begin
 
   -- Sin designación, el comportamiento de la 0059.
   return public.has_rol('oc');
-end $$;
+end $autoapro$;
 
 comment on function public.hay_autoaprobacion(uuid, uuid, uuid) is
   'Si la aprobación la dio quien no puede ser un segundo par de ojos: el OC '
@@ -1372,7 +1377,7 @@ grant execute on function public.hay_autoaprobacion(uuid, uuid, uuid) to authent
 -- ---------------------------------------------------------------------
 create or replace function public.expediente_reforzado_vigente(p_client uuid)
 returns boolean
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = public as $vigente$
   select exists (
     select 1
       from expediente_reforzado e
@@ -1385,7 +1390,7 @@ language sql stable security definer set search_path = public as $$
              select max(a.secuencia) from client_risk_assessment a
               where a.client_id = p_client)
   );
-$$;
+$vigente$;
 
 comment on function public.expediente_reforzado_vigente(uuid) is
   'Si la aprobación del expediente reforzado sigue cubriendo. Deja de cubrir en '
@@ -1402,7 +1407,7 @@ create or replace function public.aprobar_expediente_reforzado(
   p_notas text default null
 )
 returns uuid
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public as $aprobar$
 declare
   v_org    uuid;
   v_uid    uuid := auth.uid();
@@ -1437,7 +1442,7 @@ begin
   end if;
 
   v_auto := public.hay_autoaprobacion(v_org, v_uid, p_client);
-  select oc_encargado_user_id into v_oc from organizations where id = v_org;
+  v_oc := (select oc_encargado_user_id from organizations where id = v_org);
 
   select max(a.secuencia) into v_seq
     from client_risk_assessment a where a.client_id = p_client;
@@ -1484,7 +1489,7 @@ begin
   );
 
   return v_id;
-end $$;
+end $aprobar$;
 
 -- ---------------------------------------------------------------------
 -- 4. El acto no entra sin la aprobación
@@ -1500,12 +1505,12 @@ comment on column operation.aprobacion_expediente_id is
   'los actos de clientes que no son de riesgo alto, donde no hace falta.';
 
 create or replace function public.trg_operacion_exige_aprobacion() returns trigger
-language plpgsql set search_path = public as $$
+language plpgsql set search_path = public as $trgacto$
 declare
   v_nivel nivel_kyc;
   v_apro  uuid;
 begin
-  select nivel_kyc into v_nivel from client where id = new.client_id;
+  v_nivel := (select nivel_kyc from client where id = new.client_id);
   if v_nivel is distinct from 'N3' then
     return new;
   end if;
@@ -1525,12 +1530,12 @@ begin
   -- reconstruir. Sin esto, una reaprobación posterior parecería haber cubierto
   -- un acto que en realidad se registró con otra.
   if new.aprobacion_expediente_id is null then
-    select id into v_apro from expediente_reforzado where client_id = new.client_id;
+    v_apro := (select id from expediente_reforzado where client_id = new.client_id);
     new.aprobacion_expediente_id := v_apro;
   end if;
 
   return new;
-end $$;
+end $trgacto$;
 
 drop trigger if exists operacion_exige_aprobacion on operation;
 create trigger operacion_exige_aprobacion
@@ -1551,7 +1556,7 @@ comment on function public.trg_operacion_exige_aprobacion() is
 -- hueco que nadie vuelve a ver.
 create or replace function public.n3_sin_aprobacion_vigente(p_org uuid default null)
 returns table (client_id uuid, nombre text, actos int, motivo text)
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = public as $sinapro$
   select c.id,
          c.nombre_razon_social,
          (select count(*)::int from operation o where o.client_id = c.id),
@@ -1569,7 +1574,7 @@ language sql stable security definer set search_path = public as $$
      and c.organization_id = coalesce(p_org, public.current_org_id())
      and not public.expediente_reforzado_vigente(c.id)
    order by 3 desc, 2;
-$$;
+$sinapro$;
 
 comment on function public.n3_sin_aprobacion_vigente(uuid) is
   'Comparecientes de riesgo alto sin aprobación vigente, con cuántos actos '
@@ -1581,7 +1586,7 @@ grant execute on function public.n3_sin_aprobacion_vigente(uuid) to authenticate
 
 
 -- ---------------------------------------------------------------------
--- CONTROL del paso 6. Esperado: columnas = 3, columna_acto = 1, fns = 4
+-- CONTROL. Esperado: columnas = 3, columna_acto = 1, fns = 4
 -- ---------------------------------------------------------------------
 select (select count(*) from information_schema.columns
          where table_name = 'organizations'
@@ -1594,8 +1599,8 @@ select (select count(*) from information_schema.columns
                              'expediente_reforzado_vigente','n3_sin_aprobacion_vigente')) as fns;
 
 -- Y quién está operando hoy en riesgo alto sin aprobación vigente. El
--- disparador sólo mira hacia adelante: esto es lo que ya estaba. Con
--- Leopoldo Bassoco Nova en N3, se espera verlo aquí hasta que se apruebe.
+-- disparador sólo mira hacia adelante: esto es lo que ya estaba. Con Leopoldo
+-- Bassoco Nova en N3, se espera verlo aquí hasta que se apruebe su expediente.
 select o.razon_social, n.nombre, n.actos, n.motivo
   from organizations o, public.n3_sin_aprobacion_vigente(o.id) n
  order by o.razon_social, n.actos desc;

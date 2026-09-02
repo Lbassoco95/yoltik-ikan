@@ -1,4 +1,23 @@
 -- =====================================================================
+-- PASO 6 SUELTO · el OC designado, la vigencia de la aprobación y el acto
+-- =====================================================================
+-- Mismo contenido que `supabase/migrations/0062_oc_designado_y_aprobacion_del_acto.sql`
+-- y que el paso 6 de `apply_0059_0061_por_pasos.sql`. Va aparte porque el
+-- editor SQL de Supabase parte el script del lado del cliente antes de
+-- mandarlo, y con un archivo largo es fácil que el corte caiga dentro del
+-- cuerpo de una función: eso fue lo que produjo el
+-- «relation "v_anterior" does not exist», que no venía del SQL sino del texto
+-- que llegó partido.
+--
+-- Aquí las seis funciones llevan etiqueta de dollar-quoting con NOMBRE
+-- ($designar$, $autoapro$, $vigente$, $aprobar$, $trgacto$, $sinapro$) en vez
+-- de `$$` a secas, para que ningún partidor pueda confundir dónde termina un
+-- cuerpo. Se ejecuta ENTERO, de una sola vez, después de los pasos 1 a 5.
+--
+-- No borra nada.
+-- =====================================================================
+
+-- =====================================================================
 -- 0062 · El OC designado, la vigencia de la aprobación, y el acto
 -- =====================================================================
 -- Fuente: Kawiil Mx · Célula de Cumplimiento, Adenda 5 del 01/09/2026,
@@ -359,3 +378,24 @@ comment on function public.n3_sin_aprobacion_vigente(uuid) is
 
 revoke all on function public.n3_sin_aprobacion_vigente(uuid) from public, anon;
 grant execute on function public.n3_sin_aprobacion_vigente(uuid) to authenticated;
+
+
+-- ---------------------------------------------------------------------
+-- CONTROL. Esperado: columnas = 3, columna_acto = 1, fns = 4
+-- ---------------------------------------------------------------------
+select (select count(*) from information_schema.columns
+         where table_name = 'organizations'
+           and column_name in ('oc_encargado_user_id','oc_designado_en','oc_es_titular')) as columnas,
+       (select count(*) from information_schema.columns
+         where table_name = 'operation' and column_name = 'aprobacion_expediente_id') as columna_acto,
+       (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+         where n.nspname = 'public'
+           and p.proname in ('designar_oficial_cumplimiento','hay_autoaprobacion',
+                             'expediente_reforzado_vigente','n3_sin_aprobacion_vigente')) as fns;
+
+-- Y quién está operando hoy en riesgo alto sin aprobación vigente. El
+-- disparador sólo mira hacia adelante: esto es lo que ya estaba. Con Leopoldo
+-- Bassoco Nova en N3, se espera verlo aquí hasta que se apruebe su expediente.
+select o.razon_social, n.nombre, n.actos, n.motivo
+  from organizations o, public.n3_sin_aprobacion_vigente(o.id) n
+ order by o.razon_social, n.actos desc;
