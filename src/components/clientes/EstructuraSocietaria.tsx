@@ -24,17 +24,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  EXENCION_BC,
+  EXENCION_BC_CERRADA,
   borrarBeneficiario,
   borrarSocio,
   crearSocio,
   getCascada,
   guardarDatosSociedad,
+  guardarExencionBc,
   listarBeneficiarios,
   listarSocios,
   listarTiposSociales,
   motivoDelBloqueo,
   practicarPaso,
   registrarBeneficiario,
+  type ExencionBc,
 } from "@/lib/api/beneficiario-controlador";
 import { listarClientes } from "@/lib/api/clientes";
 import {
@@ -130,6 +134,12 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
     [tipo, socios.length, client.pais_constitucion_clave],
   );
   const pasoI = useMemo(() => practicarPasoI(socios), [socios]);
+  // Exento sólo con la clave puesta: el art. 23 Quinquies 2 condiciona la
+  // excepción a que el cliente la proporcione, y sin ella no aplica aunque la
+  // sociedad cotice. La misma regla vive en el check de la base y en
+  // `bc_exento()`; aquí se lee, no se reinventa.
+  const exento =
+    client.bc_exencion === "bolsa_de_valores" && (client.clave_pizarra ?? "").trim() !== "";
 
   const invalidar = () => {
     qc.invalidateQueries({ queryKey: ["socios", clientId] });
@@ -137,6 +147,18 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
     qc.invalidateQueries({ queryKey: ["beneficiarios", clientId] });
     qc.invalidateQueries({ queryKey: ["cliente", clientId] });
   };
+
+  // La excepción del art. 23 Quinquies 2. Se guarda al vuelo como el tipo
+  // social: son datos del expediente, no un formulario que se envía.
+  const guardarExencion = useMutation({
+    mutationFn: (datos: { bc_exencion: ExencionBc | null; clave_pizarra: string | null }) =>
+      guardarExencionBc(clientId, datos),
+    onSuccess: () => {
+      toast.success("Excepción actualizada");
+      invalidar();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const guardarTipo = useMutation({
     mutationFn: (datos: { tipo_social: string | null; pais_constitucion_clave: string | null }) =>
@@ -360,6 +382,84 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
       </section>
 
       {/* ---------------------------------------------------------------
+          La excepción del art. 23 Quinquies 2
+      --------------------------------------------------------------- */}
+      <section className="glass-card p-6 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">
+            Excepción para no recabar beneficiario controlador
+          </h3>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            Es una prueba de categoría, no de nombre: no alcanza a empresas privadas, por grandes
+            o conocidas que sean.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="bc-exencion">Supuesto</Label>
+            <Select
+              value={client.bc_exencion ?? "ninguna"}
+              onValueChange={(v) =>
+                guardarExencion.mutate({
+                  bc_exencion: v === "ninguna" ? null : (v as ExencionBc),
+                  clave_pizarra: client.clave_pizarra,
+                })
+              }
+            >
+              <SelectTrigger id="bc-exencion">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ninguna">Ninguna — se identifica el beneficiario</SelectItem>
+                {EXENCION_BC.map((e) => (
+                  <SelectItem key={e.valor} value={e.valor}>
+                    {e.etiqueta}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {client.bc_exencion === "bolsa_de_valores" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="clave-pizarra">Clave de pizarra</Label>
+              <Input
+                id="clave-pizarra"
+                defaultValue={client.clave_pizarra ?? ""}
+                placeholder="Obligatoria"
+                onBlur={(e) => {
+                  const v = e.target.value.trim().toUpperCase() || null;
+                  if (v === (client.clave_pizarra ?? null)) return;
+                  guardarExencion.mutate({
+                    bc_exencion: "bolsa_de_valores",
+                    clave_pizarra: v,
+                  });
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                {EXENCION_BC[0].ayuda}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Una opción ausente sin explicación se lee como un olvido. */}
+        <p className="text-[13px] text-muted-foreground">{EXENCION_BC_CERRADA}</p>
+
+        {client.bc_exencion === "bolsa_de_valores" && !exento && (
+          <div className="rounded-md bg-warning/10 text-warning px-3 py-2.5 text-[13px] flex gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              <strong className="font-semibold">La excepción no está surtiendo efecto. </strong>
+              Falta la clave de pizarra, y sin ella el artículo no exime: hay que identificar al
+              beneficiario controlador igual.
+            </span>
+          </div>
+        )}
+      </section>
+
+      {/* ---------------------------------------------------------------
           La cascada
       --------------------------------------------------------------- */}
       <section className="glass-card p-6 space-y-4">
@@ -386,7 +486,16 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
           </div>
         )}
 
-        {!cascadaResuelta(estado) && (
+        {exento && (
+          <div className="rounded-md bg-success/10 text-success px-3 py-2.5 text-[13px]">
+            <strong className="font-semibold">Exento por el art. 23 Quinquies 2, fr. I. </strong>
+            Emisora con valores inscritos y clave de pizarra {client.clave_pizarra}. No hace falta
+            recabar los datos del beneficiario controlador, y la cascada queda disponible por si
+            se quiere practicar de todos modos.
+          </div>
+        )}
+
+        {!exento && !cascadaResuelta(estado) && (
           <div className="rounded-md bg-muted/60 px-3 py-2.5 text-[13px] text-muted-foreground">
             Expediente incompleto mientras el beneficiario controlador no esté resuelto.
             {siguientePaso(estado) && (

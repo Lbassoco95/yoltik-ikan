@@ -117,6 +117,13 @@ export interface Client {
   /** País de constitución. Fuera de México el mínimo de socios se rige por la
    *  ley del lugar de constitución, no por la LGSM. */
   pais_constitucion_clave: string | null;
+  /** Excepción del art. 23 Quinquies 2 (migrations 0049 y 0056). Hoy sólo
+   *  «bolsa_de_valores», y no de forma automática por cotizar: exige clave de
+   *  pizarra. La rama por anexo está cerrada hasta que existan los catálogos. */
+  bc_exencion: string | null;
+  /** La clave con la que la emisora puede localizarse en la bolsa. Sin ella la
+   *  excepción no aplica: el check de la base lo impone. */
+  clave_pizarra: string | null;
   /** Condición de persona políticamente expuesta (migration 0038). Nulo = no se
    *  ha consultado, que NO es lo mismo que `no_pep`. */
   condicion_pep: CondicionPep | null;
