@@ -40,19 +40,35 @@ import { ETIQUETA_ROL } from './pais';
  */
 
 /**
- * Los dos niveles del eje territorial que producen efecto.
+ * Los tres niveles del eje territorial.
  *
- * El tercero de la adenda —«atención»— no aparece porque no sale de estas dos
- * fuentes: es una lista interna revisada cada semestre, y hoy no existe. Cuando
- * exista, entra por `zona.ts`, que es donde viven los criterios propios.
+ * `atencion` se añadió con la Adenda 4: no sale sólo de un régimen, también de
+ * una excepción de nivel DENTRO de un régimen —Croacia y Eslovenia están en la
+ * definición reglamentaria del programa de Balcanes y son miembros de la Unión
+ * Europea— y de un catálogo propio con derivación escrita, donde entró Siria
+ * tras la revocación de su régimen comprehensivo.
+ *
+ * La diferencia que importa: `atencion` NO levanta el piso de banda alta. Suma
+ * puntos y nada más. Tratarla como riesgo alto marcaría a un compareciente
+ * croata igual que a uno iraní.
  */
-export type NivelSancion = 'prohibicion' | 'riesgo_alto';
+export type NivelSancion = 'prohibicion' | 'riesgo_alto' | 'atencion';
 
-export type Autoridad = 'onu' | 'ofac';
+/** De menor a mayor severidad. El orden del arreglo ES la jerarquía. */
+export const NIVELES_SANCION: NivelSancion[] = ['atencion', 'riesgo_alto', 'prohibicion'];
+
+export const ETIQUETA_NIVEL_SANCION: Record<NivelSancion, string> = {
+  prohibicion: 'jurisdicción bajo embargo territorial amplio',
+  riesgo_alto: 'jurisdicción con régimen de sanciones activo',
+  atencion: 'jurisdicción en atención',
+};
+
+export type Autoridad = 'onu' | 'ofac' | 'propio';
 
 export const ETIQUETA_AUTORIDAD: Record<Autoridad, string> = {
   onu: 'el Consejo de Seguridad de la ONU',
   ofac: 'OFAC',
+  propio: 'el criterio propio de Cumplimiento, con derivación escrita',
 };
 
 /**
@@ -66,6 +82,14 @@ export const ETIQUETA_AUTORIDAD: Record<Autoridad, string> = {
 export interface ListasSanciones {
   onu?: Map<string, NivelSancion>;
   ofac?: Map<string, NivelSancion>;
+  /**
+   * El catálogo propio de jurisdicciones en atención (Adenda 4).
+   *
+   * Aparte de las otras dos porque su autoridad es distinta: lo firma
+   * Cumplimiento, con derivación escrita, y no una autoridad externa.
+   * Mezclarlo con OFAC diría que lo dijo alguien que no lo dijo.
+   */
+  propio?: Map<string, NivelSancion>;
   /** Fecha de lectura de las páginas oficiales. Viaja a la evaluación. */
   lectura?: string | null;
 }
@@ -84,6 +108,8 @@ export function sancionesDePais(iso2: string, listas: ListasSanciones): SancionD
   if (onu) out.push({ autoridad: 'onu', nivel: onu });
   const ofac = listas.ofac?.get(p);
   if (ofac) out.push({ autoridad: 'ofac', nivel: ofac });
+  const propio = listas.propio?.get(p);
+  if (propio) out.push({ autoridad: 'propio', nivel: propio });
   return out;
 }
 
@@ -134,12 +160,12 @@ export function riesgoDeSanciones(
   if (alcanzados.length === 0) return null;
 
   const severidad = (s: PaisSancionado): number =>
-    s.sanciones.some((x) => x.nivel === 'prohibicion') ? 2 : 1;
+    Math.max(...s.sanciones.map((x) => NIVELES_SANCION.indexOf(x.nivel)));
 
   const determinante = alcanzados.reduce((mayor, s) =>
     severidad(s) > severidad(mayor) ? s : mayor,
   );
-  const nivel: NivelSancion = severidad(determinante) === 2 ? 'prohibicion' : 'riesgo_alto';
+  const nivel: NivelSancion = NIVELES_SANCION[severidad(determinante)];
   const hay_onu = alcanzados.some((s) => s.sanciones.some((x) => x.autoridad === 'onu'));
 
   const autoridades = determinante.sanciones
@@ -153,9 +179,9 @@ export function riesgoDeSanciones(
     hay_onu,
     lectura: listas.lectura ?? null,
     motivo:
-      `${ETIQUETA_ROL[determinante.rol]} (${determinante.iso2}) está bajo ` +
-      `${nivel === 'prohibicion' ? 'embargo amplio' : 'régimen de sanciones'} de ${autoridades}` +
-      (listas.lectura ? `, según la lectura del ${listas.lectura}` : '') +
+      `${ETIQUETA_ROL[determinante.rol]} (${determinante.iso2}) es ` +
+      `${ETIQUETA_NIVEL_SANCION[nivel]}, según ${autoridades}` +
+      (listas.lectura ? `, en la lectura del ${listas.lectura}` : '') +
       '.',
   };
 }
@@ -177,13 +203,38 @@ export function estaBloqueado(riesgo: RiesgoSanciones | null): boolean {
 
 /**
  * El código del indicador de la matriz que levanta el piso de banda alta.
- *
- * Sólo el nivel 2. El nivel 1 no es un piso: es un bloqueo, y presentarlo como
- * piso diría que se puede continuar con banda alta cuando lo que procede es
- * detenerse.
  */
 export const INDICADOR_PAIS_SANCIONADO = 'PAIS_SANCIONADO';
 
+/**
+ * ¿Levanta el piso de banda alta?
+ *
+ * La prohibición y el riesgo alto sí. La ATENCIÓN no: la Adenda 4 la definió
+ * como «suma puntos, sin piso», y con razón —Croacia y Eslovenia están ahí, y
+ * un piso de banda alta las trataría igual que a Irán—.
+ *
+ * Antes esta función devolvía `riesgo != null`, que era correcto cuando sólo
+ * había dos niveles y deja de serlo con tres. Es el tipo de comprobación que se
+ * queda vieja sin dar señal, porque sigue compilando y sigue devolviendo un
+ * booleano plausible.
+ */
 export function indicadorDeSanciones(riesgo: RiesgoSanciones | null): boolean {
-  return riesgo != null;
+  if (riesgo == null) return false;
+  return riesgo.nivel !== 'atencion';
 }
+
+/**
+ * Cuántos puntos suma el nivel de atención.
+ *
+ * NO está resuelto, y por eso esto existe en vez de una constante. La Adenda 4
+ * dice «suma puntos, sin piso» pero no cuántos, y la variable de país de la
+ * matriz tiene tres claves —nacional, sin observaciones, riesgo— y ninguna
+ * corresponde a «en atención». Elegir un valor sería inventar metodología.
+ *
+ * Hasta que Cumplimiento lo fije, la atención se ALMACENA, se PROYECTA y se
+ * MUESTRA, y no toca el puntaje. Mostrarla sin puntuarla es incompleto;
+ * puntuarla con un número inventado sería falso.
+ */
+export const PUNTOS_ATENCION_SIN_DEFINIR =
+  'El nivel de atención suma puntos según la Adenda 4, pero cuántos no está fijado: la variable ' +
+  'de país no tiene una clave para él. Se muestra sin puntuar hasta que Cumplimiento lo defina.';

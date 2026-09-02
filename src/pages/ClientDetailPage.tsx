@@ -41,7 +41,7 @@ import {
   type ContextoEvaluacion,
 } from "@/lib/riesgo/matriz";
 import { operacionesEnVentana } from "@/lib/riesgo/perfil-transaccional";
-import { estaBloqueado } from "@/lib/riesgo/sanciones";
+import { estaBloqueado, indicadorDeSanciones } from "@/lib/riesgo/sanciones";
 import { banderaBandaDeUmbral, umbralDelActo } from "@/lib/riesgo/tramos";
 import { cn, formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
@@ -252,6 +252,10 @@ export default function ClientDetailPage() {
   // bloqueo que no dice por qué no se puede levantar.
   const riesgoSanciones = contexto ? sancionesDelExpediente(contexto) : null;
   const bloqueado = estaBloqueado(riesgoSanciones);
+  // La atención no levanta piso: se informa y nada más. Pintarla con el mismo
+  // aviso que el riesgo alto trataría a un compareciente croata igual que a uno
+  // iraní, que es justo lo que la Adenda 4 resolvió que no.
+  const levantaPiso = indicadorDeSanciones(riesgoSanciones);
   const ctxEvaluacion: ContextoEvaluacion = {
     catalogos_disponibles: catalogos,
     indicadores,
@@ -619,7 +623,7 @@ export default function ClientDetailPage() {
               )}
 
               {/* El nivel 2: piso de banda alta, sin bloqueo. */}
-              {!bloqueado && riesgoSanciones && (
+              {!bloqueado && levantaPiso && riesgoSanciones && (
                 <div className="glass-card p-4 border-l-4 border-l-warning">
                   <p className="text-sm font-semibold text-foreground">
                     País bajo régimen de sanciones
@@ -630,6 +634,23 @@ export default function ClientDetailPage() {
                     {riesgoSanciones.hay_onu
                       ? " Alcanzado por el Consejo de Seguridad: las resoluciones vinculan a México y su omisión no se pondera con el enfoque basado en riesgo."
                       : " Alcanzado sólo por OFAC, que es derecho extranjero y no obliga a un fedatario mexicano: pesa como exposición a sanciones secundarias y valor indiciario."}
+                  </p>
+                </div>
+              )}
+
+              {/* El nivel 3: se informa y no puntúa. Cuántos puntos suma no
+                  está fijado —la variable de país no tiene clave para él— y
+                  poner un número inventado sería peor que no puntuarlo. */}
+              {!bloqueado && !levantaPiso && riesgoSanciones && (
+                <div className="glass-card p-4 border-l-4 border-l-muted">
+                  <p className="text-sm font-semibold text-foreground">
+                    Jurisdicción en atención
+                  </p>
+                  <p className="text-sm text-foreground mt-1">{riesgoSanciones.motivo}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    No levanta piso de banda alta ni bloquea: se informa para que el Oficial de
+                    Cumplimiento lo considere. Cuánto debe sumar al puntaje está pendiente de
+                    definirse, así que hoy no lo mueve.
                   </p>
                 </div>
               )}

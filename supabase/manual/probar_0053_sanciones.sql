@@ -49,10 +49,12 @@ begin
   -- ------------------------------------------------------------------
   select count(*) into v_n from regimen_sancion
    where autoridad = 'ofac' and leido_en = date '2026-09-01' and clase = 'territorial';
-  insert into resultado values (3, 'Veinticuatro territoriales', '24', v_n::text, v_n = 24);
+  -- 23 y no 24 desde la Adenda 4: PAARSS se reclasificó como personal porque
+  -- la OE 14312 revocó las sanciones amplias sobre Siria.
+  insert into resultado values (3, 'Veintitrés territoriales', '23', v_n::text, v_n = 23);
   select count(*) into v_n from regimen_sancion
    where autoridad = 'ofac' and leido_en = date '2026-09-01' and clase = 'personal';
-  insert into resultado values (4, 'Trece personales', '13', v_n::text, v_n = 13);
+  insert into resultado values (4, 'Catorce personales', '14', v_n::text, v_n = 14);
 
   -- ------------------------------------------------------------------
   -- 5. NINGÚN programa personal produce país
@@ -101,9 +103,12 @@ begin
   -- ------------------------------------------------------------------
   select count(distinct iso2) into v_n from country_risk_list
    where organization_id = v_org and vigente_hasta is null
-     and fuente in ('onu', 'ofac_sancionado');
-  insert into resultado values (10, 'La unión de ambas fuentes, muy por encima de uno o de seis',
-    '25', v_n::text, v_n = 25);
+     and fuente in ('onu', 'ofac_sancionado', 'manual');
+  -- 33 desde la Adenda 4. La derivación, para que el número no sea magia: 14 de
+  -- la ONU más 30 de OFAC —23 territoriales, con las ocho de Balcanes y sin
+  -- Siria— menos 12 que están en ambas, más Siria por el catálogo de atención.
+  insert into resultado values (10, 'La unión de las fuentes, muy por encima de uno o de seis',
+    '33', v_n::text, v_n = 33);
 
   -- ------------------------------------------------------------------
   -- 11. Un país bajo dos autoridades lo dice, no un booleano
@@ -122,9 +127,12 @@ begin
   -- ------------------------------------------------------------------
   -- 13. Lo pendiente queda a la vista, no enterrado
   -- ------------------------------------------------------------------
+  -- Antes reportaba Balkans-Related, que estaba cargado sin países porque no se
+  -- sabía cuáles. La Adenda 4 los resolvió, así que ahora no debe quedar
+  -- ninguno: un régimen territorial sin jurisdicción no marca a nadie.
   select count(*) into v_n from public.regimenes_sin_jurisdiccion();
-  insert into resultado values (13, 'Balkans-Related, territorial y sin países, se reporta',
-    '1', v_n::text, v_n = 1);
+  insert into resultado values (13, 'Ningún régimen territorial se quedó sin jurisdicción',
+    '0', v_n::text, v_n = 0);
 
   select count(*) into v_n from public.paises_sancionados_sin_catalogo();
   insert into resultado values (14, 'Sudán del Sur, sancionado y sin clave en el catálogo UIF, se reporta',

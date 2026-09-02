@@ -62,3 +62,7 @@
 \i 15_clave_actividad_demos.sql
 \i 16_regimen_vigente.sql
 \i 17_snapshot_gafi_2026_06.sql
+-- Sanciones ONU y OFAC (Adendas 3 y 4). Va después del GAFI porque las dos
+-- llenan `country_risk_list` y el orden hace legible el rastro, no porque una
+-- dependa de la otra.
+\i 18_sanciones_2026_09.sql
