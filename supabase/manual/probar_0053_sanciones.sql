@@ -34,7 +34,12 @@ declare
   v_msg    text;
 begin
   perform set_config('ikan.uid', '', true);
-  select id into v_org from organizations where razon_social like 'Notar%Demo%' limit 1;
+  -- La Notaría Demo GDL por su UUID de seed, no por `like 'Notar%Demo%' limit 1`.
+  -- Sin ORDER BY, ese limit 1 empezó a caer en la «Notaría de Demostración» que
+  -- crea la prueba de la 0034, que existe DESPUÉS del seed que proyecta las
+  -- sanciones y por tanto no tiene todavía ninguna fila de país. Las pruebas
+  -- fallaban por el orden en que se corrieran, no por el código.
+  v_org := '12121212-1212-1212-1212-121212121212';
 
   -- ------------------------------------------------------------------
   -- 1. Los 15 y los 37, tal como los enumeran las páginas
