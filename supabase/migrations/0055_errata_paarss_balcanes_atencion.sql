@@ -578,14 +578,15 @@ begin
   --
   -- La columna `clase` NO es de OFAC. OFAC dice expresamente que no mantiene
   -- una lista de países; la separación territorial/personal la hace Kawiil a
-  -- partir del objeto de cada programa. Veinticuatro territoriales y trece
-  -- personales.
+  -- partir del objeto de cada programa. Veintitrés territoriales y catorce
+  -- personales, tras la errata de PAARSS que corrigió la Adenda 4.
   insert into regimen_sancion (autoridad, clave, nombre, clase, nivel_territorial, actualizado_fuente, leido_en, notas)
   values
     ('ofac', 'Afghanistan-Related Sanctions', 'Afghanistan-Related Sanctions', 'territorial', 'riesgo_alto', date '2022-02-25', v_lectura, null),
-    -- Territorial, pero su vinculación son «Balcanes occidentales», que no es
-    -- un país. Qué jurisdicciones lo componen no lo dice la adenda, y elegirlas
-    -- por mi cuenta sería inventar metodología. Se carga SIN países.
+    -- Su vinculación son «Balcanes occidentales», que no es un país. La Adenda
+    -- 4 lo resolvió con la definición de 31 CFR § 588.315, y sus ocho
+    -- jurisdicciones se cargan más abajo: seis heredan el nivel del régimen y
+    -- Croacia y Eslovenia bajan a atención con su derivación escrita.
     ('ofac', 'Balkans-Related Sanctions', 'Balkans-Related Sanctions', 'territorial', 'riesgo_alto', date '2025-11-20', v_lectura,
      'Alcance definido en 31 CFR § 588.315: el territorio de la antigua República Federativa Socialista de Yugoslavia más Albania. La traducción de ese territorio a siete jurisdicciones actuales es interpretación de Kawiil, no del reglamento.'),
     ('ofac', 'Belarus Sanctions', 'Belarus Sanctions', 'territorial', 'riesgo_alto', date '2026-07-23', v_lectura, null),
@@ -619,11 +620,6 @@ begin
     ('ofac', 'Non-Proliferation Sanctions', 'Non-Proliferation Sanctions', 'personal', null, date '2026-08-24', v_lectura, null),
     ('ofac', 'North Korea Sanctions', 'North Korea Sanctions', 'territorial', 'prohibicion', date '2026-03-12', v_lectura,
      'Nivel 1 por embargo amplio y territorial.'),
-    -- Instrucción 33: pendiente confirmar el alcance tras la sustitución del
-    -- programa. Entra como riesgo alto —lo que su programa territorial activo
-    -- sostiene hoy— y NO como prohibición, que es justo lo que está por
-    -- confirmarse. Suponer el nivel más severo sin haberlo verificado sería
-    -- inventar en la dirección contraria.
     -- ERRATA de la Adenda 3, corregida por la Adenda 4: es PERSONAL. La OE
     -- 14312 del 30/06/2025 revocó las sanciones amplias sobre Siria y OFAC
     -- eliminó las Syrian Sanctions Regulations con efecto del 26/08/2025.
@@ -636,19 +632,20 @@ begin
     ('ofac', 'South Sudan-Related Sanctions', 'South Sudan-Related Sanctions', 'territorial', 'riesgo_alto', date '2023-12-08', v_lectura, null),
     ('ofac', 'Sudan and Darfur Sanctions', 'Sudan and Darfur Sanctions', 'territorial', 'riesgo_alto', date '2026-06-26', v_lectura, null),
     ('ofac', 'Transnational Criminal Organizations', 'Transnational Criminal Organizations', 'personal', null, date '2026-06-23', v_lectura, null),
-    -- La adenda lo vincula a «Ucrania y Rusia» y lo cuenta entre los 24
+    -- La adenda lo vincula a «Ucrania y Rusia» y lo cuenta entre los
     -- territoriales de nivel 2. El nivel 1 alcanza sólo a «las regiones
-    -- cubiertas de Ucrania», no al país entero, y esa distinción territorial no
-    -- se puede expresar con un ISO2: queda anotada aquí y pendiente de que
-    -- Cumplimiento diga cómo capturarla.
+    -- cubiertas de Ucrania», no al país entero, y un ISO2 no distingue
+    -- regiones. La Adenda 4 lo resolvió con una dimensión de subdivisión ISO
+    -- 3166-2 —instrucciones 35 y 36—, que está pendiente de construir.
     ('ofac', 'Ukraine-/Russia-related Sanctions', 'Ukraine-/Russia-related Sanctions', 'territorial', 'riesgo_alto', date '2026-05-08', v_lectura,
      'El nivel 1 alcanza sólo las regiones cubiertas de Ucrania, no el país entero. Un ISO2 no distingue regiones; pendiente de criterio.'),
     ('ofac', 'Venezuela-Related Sanctions', 'Venezuela-Related Sanctions', 'territorial', 'riesgo_alto', date '2026-08-27', v_lectura, null),
     ('ofac', 'Yemen-related Sanctions', 'Yemen-related Sanctions', 'territorial', 'riesgo_alto', date '2021-11-18', v_lectura, null)
   on conflict (autoridad, clave, leido_en) do nothing;
 
-  -- Las jurisdicciones de los programas territoriales de OFAC.
-  -- «Balkans-Related» no aparece: no se sabe qué países lo componen.
+  -- Las jurisdicciones de los programas territoriales de OFAC, con las seis de
+  -- Balcanes que heredan el nivel del régimen. PAARSS no aparece: designa
+  -- personas y no produce país.
   insert into regimen_pais (regimen_id, iso2)
   select r.id, m.iso2
     from (values
