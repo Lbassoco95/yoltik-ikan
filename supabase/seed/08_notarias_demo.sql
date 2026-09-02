@@ -76,7 +76,8 @@ values
    'María Fernanda', 'Ruiz', 'Demo', date '1990-02-02',
    'RUFM900202MJCXXX01', 'RUFM900202AB1', 'Mexicana', 'Jalisco', 'MX',
    '{"ocupacion": "Empresaria", "origen_recursos": "Actividad empresarial", "email": "maria.ruiz@demo.mx", "telefono": "+523300000001"}'::jsonb,
-   'N1', true),
+   -- N2: el nivel de todo cliente. Ver la nota de la 0057.
+   'N2', true),
   ('77777777-0000-0000-0000-000000000002',
    '12121212-1212-1212-1212-121212121212', 'moral',
    'Inmobiliaria Demo del Bajío S.A. de C.V. (DEMO)',
@@ -85,7 +86,7 @@ values
    null, null, null, null,
    null, 'IDB240101XX2', 'Mexicana', 'Jalisco', 'MX',
    '{"giro": "Desarrollo inmobiliario"}'::jsonb,
-   'N1', true)
+   'N2', true)
 on conflict (id) do nothing;
 
 -- =================== Actos / instrumentos DEMO ===================

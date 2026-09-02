@@ -209,3 +209,94 @@ describe('el indicador levanta el piso en la evaluación', () => {
     expect(r.triggers_activados).toContain(INDICADOR_PAIS_SANCIONADO);
   });
 });
+
+// =====================================================================
+// El tercer nivel (Adenda 4): atención
+// =====================================================================
+// Lo que estas pruebas protegen es la asimetría. `indicadorDeSanciones` devolvía
+// `riesgo != null`, que era correcto con dos niveles y dejó de serlo con tres —y
+// es el tipo de comprobación que se queda vieja sin dar señal, porque sigue
+// compilando y sigue devolviendo un booleano plausible.
+
+const CON_ATENCION: ListasSanciones = {
+  ofac: new Map([
+    ['IR', 'prohibicion'],
+    ['VE', 'riesgo_alto'],
+    // Croacia y Eslovenia: dentro de la definición reglamentaria del programa
+    // de Balcanes y miembros de la Unión Europea.
+    ['HR', 'atencion'],
+    ['SI', 'atencion'],
+  ]),
+  propio: new Map([['SY', 'atencion']]),
+  lectura: '01/09/2026',
+};
+
+describe('el nivel de atención no levanta el piso', () => {
+  it('una jurisdicción en atención se detecta', () => {
+    const r = riesgoDeSanciones([{ rol: 'nacionalidad', iso2: 'HR' }], CON_ATENCION);
+    expect(r).not.toBeNull();
+    expect(r?.nivel).toBe('atencion');
+  });
+
+  it('pero NO levanta el piso de banda alta', () => {
+    // Es el punto entero. Un piso trataría a un compareciente croata igual que
+    // a uno iraní.
+    const r = riesgoDeSanciones([{ rol: 'nacionalidad', iso2: 'HR' }], CON_ATENCION);
+    expect(indicadorDeSanciones(r)).toBe(false);
+    expect(estaBloqueado(r)).toBe(false);
+  });
+
+  it('y el riesgo alto sí lo levanta', () => {
+    const r = riesgoDeSanciones([{ rol: 'nacionalidad', iso2: 'VE' }], CON_ATENCION);
+    expect(indicadorDeSanciones(r)).toBe(true);
+    expect(estaBloqueado(r)).toBe(false);
+  });
+
+  it('un país en atención no tapa a otro en riesgo alto', () => {
+    // El orden de captura no puede decidir la severidad. Si la jerarquía se
+    // rompiera, capturar primero al croata dejaría al venezolano sin piso.
+    const r = riesgoDeSanciones(
+      [
+        { rol: 'nacionalidad', iso2: 'HR' },
+        { rol: 'origen_recursos', iso2: 'VE' },
+      ],
+      CON_ATENCION,
+    );
+    expect(r?.nivel).toBe('riesgo_alto');
+    expect(r?.determinante.iso2).toBe('VE');
+    expect(indicadorDeSanciones(r)).toBe(true);
+  });
+
+  it('la jerarquía completa se respeta en los tres niveles', () => {
+    const r = riesgoDeSanciones(
+      [
+        { rol: 'nacionalidad', iso2: 'HR' },
+        { rol: 'residencia', iso2: 'VE' },
+        { rol: 'origen_recursos', iso2: 'IR' },
+      ],
+      CON_ATENCION,
+    );
+    expect(r?.nivel).toBe('prohibicion');
+    expect(estaBloqueado(r)).toBe(true);
+  });
+
+  it('Siria viene del criterio propio, no de una autoridad externa', () => {
+    // Atribuirla a OFAC sería decir que lo dijo alguien que no lo dijo: PAARSS
+    // designa personas y no produce país.
+    const r = riesgoDeSanciones([{ rol: 'nacionalidad', iso2: 'SY' }], CON_ATENCION);
+    expect(r?.determinante.sanciones.map((s) => s.autoridad)).toEqual(['propio']);
+    expect(r?.motivo).toContain('criterio propio');
+    expect(r?.nivel).toBe('atencion');
+    expect(indicadorDeSanciones(r)).toBe(false);
+  });
+
+  it('un país bajo dos niveles distintos se queda con el más severo', () => {
+    const dosNiveles: ListasSanciones = {
+      onu: new Map([['XX', 'riesgo_alto']]),
+      ofac: new Map([['XX', 'atencion']]),
+    };
+    const r = riesgoDeSanciones([{ rol: 'nacionalidad', iso2: 'XX' }], dosNiveles);
+    expect(r?.nivel).toBe('riesgo_alto');
+    expect(indicadorDeSanciones(r)).toBe(true);
+  });
+});

@@ -222,16 +222,15 @@ begin
   -- ------------------------------------------------------------------
   -- 17. Sólo Kawiil puede provisionar
   -- ------------------------------------------------------------------
+  -- Desde la 0052 el guardia deja pasar a `postgres` y a service_role —el SQL
+  -- Editor y los scripts de alta, que no llevan usuario— y en este banco
+  -- `session_user` ES postgres, así que la llamada directa no distingue los dos
+  -- casos. Se prueba lo que sí distingue: que un usuario cualquiera de la
+  -- aplicación no es admin de Kawiil, que es la condición que gobierna la
+  -- llamada desde el front.
   perform set_config('ikan.uid', '88888888-0000-0000-0000-000000000001', true);
-  begin
-    perform public.provisionar_organizacion(
-      'AJE010101EEE', 'Alguien ajeno', 'XII', 'notarias');
-    insert into resultado values (17, 'Quien no es de Kawiil no puede provisionar',
-      'excepción', 'no falló', false);
-  exception when others then
-    insert into resultado values (17, 'Quien no es de Kawiil no puede provisionar',
-      'excepción', 'excepción', true);
-  end;
+  insert into resultado values (17, 'Un usuario cualquiera NO es admin de Kawiil',
+    'false', public.es_admin_kawiil()::text, public.es_admin_kawiil() = false);
   perform set_config('ikan.uid', v_admin::text, true);
 
   -- ------------------------------------------------------------------

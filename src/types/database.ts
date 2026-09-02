@@ -333,6 +333,57 @@ export type Database = {
         }
         Relationships: []
       }
+      cambio_nivel_diligencia: {
+        Row: {
+          automatico: boolean
+          client_id: string
+          desde: Database["public"]["Enums"]["nivel_kyc"]
+          firmado_por: string | null
+          hacia: Database["public"]["Enums"]["nivel_kyc"]
+          id: string
+          motivo: string
+          organization_id: string
+          registrado_en: string
+        }
+        Insert: {
+          automatico: boolean
+          client_id: string
+          desde: Database["public"]["Enums"]["nivel_kyc"]
+          firmado_por?: string | null
+          hacia: Database["public"]["Enums"]["nivel_kyc"]
+          id?: string
+          motivo: string
+          organization_id: string
+          registrado_en?: string
+        }
+        Update: {
+          automatico?: boolean
+          client_id?: string
+          desde?: Database["public"]["Enums"]["nivel_kyc"]
+          firmado_por?: string | null
+          hacia?: Database["public"]["Enums"]["nivel_kyc"]
+          id?: string
+          motivo?: string
+          organization_id?: string
+          registrado_en?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cambio_nivel_diligencia_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cambio_nivel_diligencia_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cascada_bc: {
         Row: {
           client_id: string
@@ -614,6 +665,7 @@ export type Database = {
           respuestas: Json
           respuestas_clave: Json
           score_total: number
+          secuencia: number
           snapshot_listas_plenario: string | null
           subtotales: Json
           template_id: string
@@ -629,6 +681,7 @@ export type Database = {
           respuestas: Json
           respuestas_clave?: Json
           score_total: number
+          secuencia?: number
           snapshot_listas_plenario?: string | null
           subtotales: Json
           template_id: string
@@ -644,6 +697,7 @@ export type Database = {
           respuestas?: Json
           respuestas_clave?: Json
           score_total?: number
+          secuencia?: number
           snapshot_listas_plenario?: string | null
           subtotales?: Json
           template_id?: string
@@ -1150,6 +1204,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      jurisdiccion_atencion: {
+        Row: {
+          derivacion: string
+          firmada_por: string | null
+          iso2: string
+          nombre: string
+          revisar_en: string
+          vigente_desde: string
+          vigente_hasta: string | null
+        }
+        Insert: {
+          derivacion: string
+          firmada_por?: string | null
+          iso2: string
+          nombre: string
+          revisar_en?: string
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Update: {
+          derivacion?: string
+          firmada_por?: string | null
+          iso2?: string
+          nombre?: string
+          revisar_en?: string
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Relationships: []
       }
       lista_carga: {
         Row: {
@@ -1930,17 +2014,23 @@ export type Database = {
       }
       regimen_pais: {
         Row: {
+          derivacion: string | null
           iso2: string
+          nivel_territorial: string | null
           nota: string | null
           regimen_id: string
         }
         Insert: {
+          derivacion?: string | null
           iso2: string
+          nivel_territorial?: string | null
           nota?: string | null
           regimen_id: string
         }
         Update: {
+          derivacion?: string | null
           iso2?: string
+          nivel_territorial?: string | null
           nota?: string | null
           regimen_id?: string
         }
@@ -2640,6 +2730,15 @@ export type Database = {
           },
         ]
       }
+      v_jurisdiccion_atencion: {
+        Row: {
+          derivacion: string | null
+          iso2: string | null
+          nombre: string | null
+          origen: string | null
+        }
+        Relationships: []
+      }
       v_listas_estado: {
         Row: {
           actualizada_al: string | null
@@ -2816,6 +2915,15 @@ export type Database = {
       }
     }
     Functions: {
+      bajar_nivel_diligencia: {
+        Args: {
+          p_client: string
+          p_hacia: Database["public"]["Enums"]["nivel_kyc"]
+          p_motivo: string
+        }
+        Returns: Database["public"]["Enums"]["nivel_kyc"]
+      }
+      bc_exento: { Args: { p_client: string }; Returns: boolean }
       cambiar_formato_folio: {
         Args: {
           p_ambito: Database["public"]["Enums"]["ambito_secuencial"]
@@ -2980,6 +3088,13 @@ export type Database = {
         Args: { p_id: string; p_notas?: string; p_status: string }
         Returns: undefined
       }
+      nivel_diligencia_exigido: {
+        Args: { p_client: string }
+        Returns: {
+          motivo: string
+          nivel: Database["public"]["Enums"]["nivel_kyc"]
+        }[]
+      }
       normalizar_nombre: { Args: { p_texto: string }; Returns: string }
       paises_sancionados_sin_catalogo: {
         Args: { p_lectura?: string }
@@ -3015,10 +3130,10 @@ export type Database = {
       proyectar_sanciones_a_paises: {
         Args: { p_lectura?: string }
         Returns: {
-          altas: number
           cerradas: number
           lista: string
           organizacion: string
+          vigentes: number
         }[]
       }
       publicar_matriz: {
@@ -3101,6 +3216,14 @@ export type Database = {
           registros_eliminados: number
           registros_recalculados: number
         }[]
+      }
+      sincronizar_nivel_diligencia: {
+        Args: {
+          p_clasificacion?: Database["public"]["Enums"]["clasificacion_riesgo"]
+          p_client: string
+          p_motivo_piso?: string
+        }
+        Returns: Database["public"]["Enums"]["nivel_kyc"]
       }
       urgencia_de_regla: {
         Args: { regla: Json }
@@ -3220,12 +3343,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3249,11 +3372,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3274,11 +3397,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3299,11 +3422,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3316,11 +3439,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { EstadoCatalogo, ValorCatalogo } from '@/lib/catalogos';
 import type { ZonaAtencion } from '@/lib/riesgo/zona';
+import { NIVELES_SANCION } from '@/lib/riesgo/sanciones';
 import type { ListasSanciones, NivelSancion } from '@/lib/riesgo/sanciones';
 import { comoJson } from './json';
 
@@ -114,12 +115,15 @@ export async function paisesSancionados(): Promise<ListasSanciones> {
   const { data, error } = await supabase
     .from('country_risk_list')
     .select('iso2, fuente, nivel, plenario')
-    .in('fuente', ['onu', 'ofac_sancionado'])
+    // `manual` es el catálogo propio de jurisdicciones en atención: criterio de
+    // Kawiil con derivación escrita, no de una autoridad externa.
+    .in('fuente', ['onu', 'ofac_sancionado', 'manual'])
     .is('vigente_hasta', null);
   if (error) throw error;
 
   const onu = new Map<string, NivelSancion>();
   const ofac = new Map<string, NivelSancion>();
+  const propio = new Map<string, NivelSancion>();
   let lectura: string | null = null;
 
   for (const f of (data ?? []) as {
@@ -128,16 +132,24 @@ export async function paisesSancionados(): Promise<ListasSanciones> {
     nivel: number;
     plenario?: string | null;
   }[]) {
-    const nivel: NivelSancion = f.nivel >= 3 ? 'prohibicion' : 'riesgo_alto';
-    const destino = f.fuente === 'onu' ? onu : ofac;
+    // El entero de la tabla va AL REVÉS que los niveles de la adenda: aquí 3 es
+    // lo más severo y allá el 1 es la prohibición. La traducción está también en
+    // `proyectar_sanciones_a_paises`, y las dos tienen que decir lo mismo: si se
+    // desincronizan, un país bajo embargo puede salir como simple atención.
+    const nivel: NivelSancion =
+      f.nivel >= 3 ? 'prohibicion' : f.nivel === 2 ? 'riesgo_alto' : 'atencion';
+    const destino = f.fuente === 'onu' ? onu : f.fuente === 'manual' ? propio : ofac;
     const iso2 = f.iso2.toUpperCase();
     // Si un país aparece dos veces en la misma fuente, se queda el más severo.
-    if (destino.get(iso2) !== 'prohibicion') destino.set(iso2, nivel);
+    const previo = destino.get(iso2);
+    if (previo == null || NIVELES_SANCION.indexOf(nivel) > NIVELES_SANCION.indexOf(previo)) {
+      destino.set(iso2, nivel);
+    }
     // `plenario` guarda «lectura DD/MM/AAAA» en estas dos fuentes.
     if (f.plenario && (lectura === null || f.plenario > lectura)) lectura = f.plenario;
   }
 
-  return { onu, ofac, lectura: lectura?.replace(/^lectura /, '') ?? null };
+  return { onu, ofac, propio, lectura: lectura?.replace(/^lectura /, '') ?? null };
 }
 
 /**

@@ -62,3 +62,11 @@
 \i 15_clave_actividad_demos.sql
 \i 16_regimen_vigente.sql
 \i 17_snapshot_gafi_2026_06.sql
+-- Sanciones ONU y OFAC (Adendas 3 y 4). Va después del GAFI porque las dos
+-- llenan `country_risk_list` y el orden hace legible el rastro, no porque una
+-- dependa de la otra.
+\i 18_sanciones_2026_09.sql
+-- Las organizaciones de referencia, de las que se provisionan las nuevas. Va
+-- en un seed y no sólo en la migration porque las migrations corren antes: en
+-- un proyecto nuevo la 0050 no encuentra estas organizaciones todavía.
+\i 19_organizaciones_de_referencia.sql

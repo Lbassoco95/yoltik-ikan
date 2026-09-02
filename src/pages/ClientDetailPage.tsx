@@ -17,6 +17,7 @@ import {
   getCliente,
   getPlantillaRiesgoActiva,
   ultimaEvaluacion,
+  ultimoCambioDeNivel,
 } from "@/lib/api/clientes";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { EstructuraSocietaria } from "@/components/clientes/EstructuraSocietaria";
@@ -41,7 +42,7 @@ import {
   type ContextoEvaluacion,
 } from "@/lib/riesgo/matriz";
 import { operacionesEnVentana } from "@/lib/riesgo/perfil-transaccional";
-import { estaBloqueado } from "@/lib/riesgo/sanciones";
+import { estaBloqueado, indicadorDeSanciones } from "@/lib/riesgo/sanciones";
 import { banderaBandaDeUmbral, umbralDelActo } from "@/lib/riesgo/tramos";
 import { cn, formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
@@ -49,6 +50,7 @@ import { PARAM } from "@/lib/parametros";
 import type { SectorAV, TipoPersona } from "@/types/domain";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS, labelTipoActo, nivelConocimiento } from "@/lib/perfil-actividad";
+import { DETALLE_NIVEL, ETIQUETA_NIVEL } from "@/lib/riesgo/nivel-diligencia";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
 
@@ -135,6 +137,14 @@ export default function ClientDetailPage() {
     queryKey: ["paises-sancionados", profile?.organization_id],
     queryFn: paisesSancionados,
     staleTime: 10 * 60 * 1000,
+  });
+
+  // Por qué está en el nivel que está. Un nivel sin motivo a la vista es un
+  // número que nadie puede discutir.
+  const { data: cambioNivel } = useQuery({
+    queryKey: ["cambio-nivel", id],
+    queryFn: () => ultimoCambioDeNivel(id!),
+    enabled: !!id,
   });
 
   // La lista interna de zonas de atención. Viene vacía hasta que Cumplimiento
@@ -252,6 +262,10 @@ export default function ClientDetailPage() {
   // bloqueo que no dice por qué no se puede levantar.
   const riesgoSanciones = contexto ? sancionesDelExpediente(contexto) : null;
   const bloqueado = estaBloqueado(riesgoSanciones);
+  // La atención no levanta piso: se informa y nada más. Pintarla con el mismo
+  // aviso que el riesgo alto trataría a un compareciente croata igual que a uno
+  // iraní, que es justo lo que la Adenda 4 resolvió que no.
+  const levantaPiso = indicadorDeSanciones(riesgoSanciones);
   const ctxEvaluacion: ContextoEvaluacion = {
     catalogos_disponibles: catalogos,
     indicadores,
@@ -410,11 +424,23 @@ export default function ClientDetailPage() {
         </div>
         <p className="text-sm text-muted-foreground mt-1">
           {tipoLabel[client.tipo_persona]} · {client.rfc ?? "sin RFC"} ·{" "}
-          {nivelConocimiento(client.tipo_persona, client.nivel_kyc)}
+          <span title={DETALLE_NIVEL[client.nivel_kyc]}>
+            {nivelConocimiento(client.tipo_persona, client.nivel_kyc)} ·{" "}
+            {ETIQUETA_NIVEL[client.nivel_kyc]}
+          </span>
           {client.alto_de_oficio && (
             <span className="ml-2 status-badge bg-destructive/10 text-destructive">Alto de oficio</span>
           )}
         </p>
+        {cambioNivel && (
+          <p className="text-[13px] text-muted-foreground mt-1 max-w-2xl">
+            {cambioNivel.automatico ? "Subió" : "Se movió"} de {cambioNivel.desde} a{" "}
+            {cambioNivel.hacia} el{" "}
+            {new Date(cambioNivel.registrado_en).toLocaleDateString("es-MX")}:{" "}
+            {cambioNivel.motivo}
+            {!cambioNivel.automatico && " (decisión firmada)"}
+          </p>
+        )}
       </div>
 
       <Tabs defaultValue="datos" className="space-y-4">
@@ -619,7 +645,7 @@ export default function ClientDetailPage() {
               )}
 
               {/* El nivel 2: piso de banda alta, sin bloqueo. */}
-              {!bloqueado && riesgoSanciones && (
+              {!bloqueado && levantaPiso && riesgoSanciones && (
                 <div className="glass-card p-4 border-l-4 border-l-warning">
                   <p className="text-sm font-semibold text-foreground">
                     País bajo régimen de sanciones
@@ -630,6 +656,23 @@ export default function ClientDetailPage() {
                     {riesgoSanciones.hay_onu
                       ? " Alcanzado por el Consejo de Seguridad: las resoluciones vinculan a México y su omisión no se pondera con el enfoque basado en riesgo."
                       : " Alcanzado sólo por OFAC, que es derecho extranjero y no obliga a un fedatario mexicano: pesa como exposición a sanciones secundarias y valor indiciario."}
+                  </p>
+                </div>
+              )}
+
+              {/* El nivel 3: se informa y no puntúa. Cuántos puntos suma no
+                  está fijado —la variable de país no tiene clave para él— y
+                  poner un número inventado sería peor que no puntuarlo. */}
+              {!bloqueado && !levantaPiso && riesgoSanciones && (
+                <div className="glass-card p-4 border-l-4 border-l-muted">
+                  <p className="text-sm font-semibold text-foreground">
+                    Jurisdicción en atención
+                  </p>
+                  <p className="text-sm text-foreground mt-1">{riesgoSanciones.motivo}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    No levanta piso de banda alta ni bloquea: se informa para que el Oficial de
+                    Cumplimiento lo considere. Cuánto debe sumar al puntaje está pendiente de
+                    definirse, así que hoy no lo mueve.
                   </p>
                 </div>
               )}

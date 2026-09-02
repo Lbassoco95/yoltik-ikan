@@ -351,3 +351,77 @@ export async function guardarDatosSociedad(
     .eq('id', clientId);
   if (error) throw error;
 }
+
+// =====================================================================
+// La excepción del art. 23 Quinquies 2
+// =====================================================================
+
+/**
+ * Los supuestos de excepción, y por qué sólo hay uno.
+ *
+ * El artículo 23 Quinquies 2 exime en dos casos, pero sólo uno se puede
+ * comprobar hoy. La fracción I —emisoras con valores inscritos— tiene prueba
+ * objetiva y autocontenida: la clave de pizarra. La fracción II remite a los
+ * Anexos 4 Bis, 6 Bis, 7-A y 7 Bis A, y dos de ellos son listas cerradas de
+ * entidades que no tenemos.
+ *
+ * Ofrecer la segunda sin catálogo detrás no sería una excepción: sería un clic
+ * que exime de identificar al beneficiario controlador, resuelto a criterio de
+ * quien captura. Está cerrada en la base (migration 0056) y no se ofrece aquí.
+ */
+export type ExencionBc = 'bolsa_de_valores';
+
+export const EXENCION_BC: {
+  valor: ExencionBc;
+  etiqueta: string;
+  ayuda: string;
+}[] = [
+  {
+    valor: 'bolsa_de_valores',
+    etiqueta: 'Emisora con valores inscritos en bolsa',
+    ayuda:
+      'Art. 23 Quinquies 2, fr. I. NO es automática por cotizar: el texto la condiciona a que ' +
+      'el cliente proporcione la clave de pizarra o el identificador con el que pueda ' +
+      'localizarse. Sin clave, la excepción no aplica.',
+  },
+];
+
+/** Lo que NO se ofrece, y por qué. La pantalla lo dice en voz alta: una opción
+ *  ausente sin explicación se lee como un olvido. */
+export const EXENCION_BC_CERRADA =
+  'La excepción por anexo (fr. II) está cerrada hasta que se carguen los Anexos 7-A y 7 Bis A ' +
+  'del Acuerdo del DOF 07/08/2026. Son listas cerradas de entidades y admitirla sin ellas la ' +
+  'convertiría en un clic que exime de identificar al beneficiario controlador.';
+
+export interface DatosExencion {
+  bc_exencion: ExencionBc | null;
+  clave_pizarra: string | null;
+}
+
+/**
+ * Declara o retira la excepción.
+ *
+ * La clave viaja SIEMPRE, incluso en null: retirar la excepción sin borrar la
+ * clave dejaría un dato que ya no sostiene nada y que la próxima vez se leería
+ * como si la excepción siguiera fundada.
+ */
+export async function guardarExencionBc(
+  clientId: string,
+  datos: DatosExencion,
+): Promise<void> {
+  const clave = datos.clave_pizarra?.trim().toUpperCase() || null;
+  if (datos.bc_exencion === 'bolsa_de_valores' && !clave) {
+    throw new Error(
+      'Falta la clave de pizarra. El art. 23 Quinquies 2 condiciona la excepción a que el ' +
+        'cliente la proporcione: sin ella no aplica, aunque la sociedad cotice.',
+    );
+  }
+  const { error } = await supabase
+    .from('client')
+    .update({
+      bc_exencion: datos.bc_exencion,
+      clave_pizarra: datos.bc_exencion == null ? null : clave,
+    })
+    .eq('id', clientId);
+  if (error) throw error;
+}
