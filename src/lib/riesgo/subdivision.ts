@@ -131,11 +131,32 @@ export function faltaSubdivision(
  * subdivisión por su pasaporte sería marcar por nacionalidad, que es
  * exactamente lo que la Adenda 3 dice que no se hace.
  */
-export function paisDelDomicilio(cliente: {
-  tipo_persona: 'fisica' | 'moral';
-  pais_residencia_iso2?: string | null;
-  pais_constitucion_clave?: string | null;
-}): string | null {
+export function paisDelDomicilio(
+  /**
+   * Acepta que NO haya cliente, y devuelve null.
+   *
+   * No es tolerancia por si acaso: en React los hooks de un componente se
+   * ejecutan TODOS antes de cualquier `return`, así que esta función se llama
+   * durante el primer render, cuando la consulta del expediente todavía no
+   * respondió y el cliente es `undefined`. Exigir el objeto hacía que ese
+   * primer render reventara con «undefined is not an object» y, sin nada que
+   * atrapara el error, la pantalla del compareciente quedaba EN BLANCO. No
+   * fallaba a veces: fallaba siempre, en cada visita.
+   *
+   * La guarda vive aquí y no en cada llamada porque «todavía no hay cliente» es
+   * una respuesta legítima a «de qué país es su domicilio», y la respuesta es
+   * ninguno.
+   */
+  cliente:
+    | {
+        tipo_persona: 'fisica' | 'moral';
+        pais_residencia_iso2?: string | null;
+        pais_constitucion_clave?: string | null;
+      }
+    | null
+    | undefined,
+): string | null {
+  if (!cliente) return null;
   const v =
     cliente.tipo_persona === 'moral'
       ? cliente.pais_constitucion_clave

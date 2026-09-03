@@ -102,6 +102,15 @@ describe('de qué país se pide', () => {
   it('null cuando no hay ninguno', () => {
     expect(paisDelDomicilio({ tipo_persona: 'fisica' })).toBeNull();
   });
+
+  it('sin cliente devuelve null en vez de reventar', () => {
+    // El caso real: los hooks de React corren TODOS antes de cualquier return,
+    // así que esto se llama en el primer render, cuando la consulta del
+    // expediente todavía no respondió. Exigir el objeto dejaba la pantalla del
+    // compareciente en blanco en cada visita.
+    expect(paisDelDomicilio(undefined)).toBeNull();
+    expect(paisDelDomicilio(null)).toBeNull();
+  });
 });
 
 describe('«ninguna de las listadas» es una respuesta', () => {
