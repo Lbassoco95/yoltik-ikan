@@ -175,6 +175,11 @@ export interface RegistroParaCarga {
   tipo_entidad?: string;
   situacion?: string | null;
   pais?: string | null;
+  /** Fila del archivo de origen. Es el desempate cuando un mismo RFC viene
+   *  varias veces en la misma carga: el SAT publica primero la determinación
+   *  y después su resolución, y sin este dato quién queda bloqueado lo
+   *  decidía el orden en que cayeran los lotes. Ver migration 0064. */
+  orden_origen?: number | null;
 }
 
 export interface CargaArchivoInput {
@@ -273,6 +278,7 @@ export async function registrarCargaArchivo(
         rfc: r.rfc ? normalizarRfc(r.rfc) : null,
         situacion: r.situacion ?? null,
         pais: r.pais ?? null,
+        orden_origen: r.orden_origen ?? null,
       }));
       const { error } = await supabase.from('lista_movimiento').insert(lote);
       if (error) {
