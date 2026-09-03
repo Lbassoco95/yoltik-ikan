@@ -65,6 +65,30 @@ export function estadoDeDidit(s: string): EstadoIkan {
   }
 }
 
+/**
+ * Los estados que sabemos leer.
+ *
+ * Existe porque `estadoDeDidit` colapsa lo desconocido en `en_progreso`, que es
+ * el default seguro para recibir un aviso —nunca convierte algo raro en
+ * «aprobada»— pero es peligroso para CORREGIR: la conciliación compara el
+ * estado del proveedor con el nuestro, y si el proveedor devolviera mañana un
+ * estado nuevo, «desconocido» se leería como una divergencia y degradaría una
+ * verificación aprobada a en_progreso. Antes de corregir hay que saber que se
+ * entendió lo que llegó.
+ */
+export const ESTADOS_CONOCIDOS: ReadonlySet<string> = new Set([
+  "Approved",
+  "Declined",
+  "In Review",
+  "Resubmitted",
+  "Abandoned",
+  "Expired",
+  "Kyc Expired",
+  "Not Started",
+  "In Progress",
+  "Awaiting User",
+]);
+
 /** Un estado es final cuando ya no va a cambiar solo. */
 export function esFinal(e: EstadoIkan): boolean {
   return (
