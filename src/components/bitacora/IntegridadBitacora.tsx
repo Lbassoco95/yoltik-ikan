@@ -125,7 +125,7 @@ export function IntegridadBitacora({
   const integra = resultado?.integra === true && roturasBase?.length === 0;
 
   return (
-    <div className="glass-card p-5 space-y-4">
+    <div className="estela-placa p-5 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 mt-0.5 text-primary shrink-0" />

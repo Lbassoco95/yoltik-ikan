@@ -7,9 +7,10 @@ import {
   type EstadoVerificacion,
 } from "@/lib/api/verificacion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Filter, Loader2, ShieldCheck } from "lucide-react";
+import { Search, Plus, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -260,17 +261,16 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">{L.clientes}</h1>
-        <Button
-          className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
-          onClick={() => setDialogAbierto(true)}
-        >
-          <Plus className="w-4 h-4" /> {L.clienteNuevoBtn}
-        </Button>
-      </div>
+      <EncabezadoSeccion
+        titulo={L.clientes}
+        acciones={
+          <Button className="gap-2" onClick={() => setDialogAbierto(true)}>
+            <Plus className="h-4 w-4" /> {L.clienteNuevoBtn}
+          </Button>
+        }
+      />
 
-      <div className="glass-card p-4 flex items-center gap-4">
+      <div className="estela-placa flex flex-wrap items-center gap-3 p-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -280,20 +280,34 @@ export default function ClientsPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-40">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="fisica">Persona Física</SelectItem>
-            <SelectItem value="moral">Persona Moral</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Tres opciones no necesitan un desplegable. Un <Select> obliga a
+            abrir, leer y elegir para saber qué filtros hay; en fichas están
+            todas a la vista y el activo se ve sin pulsar nada. */}
+        <div className="flex shrink-0 flex-wrap gap-1.5" role="group" aria-label="Filtrar por tipo de persona">
+          {([
+            { valor: "all", etiqueta: "Todos" },
+            { valor: "fisica", etiqueta: "Persona física" },
+            { valor: "moral", etiqueta: "Persona moral" },
+          ] as const).map((f) => (
+            <button
+              key={f.valor}
+              type="button"
+              aria-pressed={typeFilter === f.valor}
+              onClick={() => setTypeFilter(f.valor)}
+              className={cn(
+                "rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                typeFilter === f.valor
+                  ? "border-accent bg-accent/10 text-accent"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {f.etiqueta}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="glass-card overflow-hidden">
+      <div className="estela-placa overflow-hidden">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando clientes…
@@ -305,11 +319,11 @@ export default function ClientsPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-border bg-muted/50">
                 {["Nombre / Razón Social", "Tipo", "RFC", "Riesgo", "Conocimiento", "Alto de oficio", "Identidad", ""].map((h) => (
                   <th
                     key={h}
-                    className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3"
+                    className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                   >
                     {h}
                   </th>
@@ -320,7 +334,7 @@ export default function ClientsPage() {
               {filtered.map((client) => (
                 <tr
                   key={client.id}
-                  className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
+                  className="border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer transition-colors"
                   onClick={() => navigate(`/clientes/${client.id}`)}
                 >
                   <td className="px-4 py-3 text-sm font-medium text-foreground">
@@ -331,7 +345,7 @@ export default function ClientsPage() {
                       {tipoLabel[client.tipo_persona]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm font-mono text-muted-foreground">
+                  <td className="px-4 py-3 estela-dato text-sm text-muted-foreground">
                     {client.rfc ?? "—"}
                   </td>
                   <td className="px-4 py-3">
@@ -609,7 +623,7 @@ export default function ClientsPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+              className="gap-2"
               onClick={enviar}
               disabled={alta.isPending}
             >

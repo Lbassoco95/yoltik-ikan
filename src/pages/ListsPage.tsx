@@ -42,7 +42,7 @@ export default function ListsPage() {
       </div>
 
       {/* Buscador */}
-      <div className="glass-card p-4">
+      <div className="estela-placa p-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -66,7 +66,7 @@ export default function ListsPage() {
             ) : resultados.isError ? (
               <p className="text-sm text-destructive">{(resultados.error as Error).message}</p>
             ) : (resultados.data ?? []).length === 0 ? (
-              <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
+              <div className="flex items-start gap-3 rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
                 <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
                 <span>
                   Sin coincidencias para «{busqueda.trim()}» en las listas cargadas.
@@ -119,7 +119,7 @@ export default function ListsPage() {
 
       {/* Aviso cuando faltan listas por cargar */}
       {sinCargar.length > 0 && !estado.isLoading && (
-        <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
           <span>
             <strong>
@@ -137,16 +137,16 @@ export default function ListsPage() {
       {/* Estado por lista */}
       <div className="grid gap-3 md:grid-cols-2">
         {estado.isLoading ? (
-          <div className="glass-card p-8 flex items-center justify-center gap-2 text-muted-foreground md:col-span-2">
+          <div className="estela-placa p-8 flex items-center justify-center gap-2 text-muted-foreground md:col-span-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
           </div>
         ) : estado.isError ? (
-          <p className="glass-card p-6 text-sm text-destructive md:col-span-2">
+          <p className="estela-placa p-6 text-sm text-destructive md:col-span-2">
             {(estado.error as Error).message}
           </p>
         ) : (
           (estado.data ?? []).map((l) => (
-            <div key={l.codigo} className="glass-card p-5 space-y-3">
+            <div key={l.codigo} className="estela-placa p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <Shield

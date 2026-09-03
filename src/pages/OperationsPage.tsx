@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -464,17 +465,16 @@ export default function OperationsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">{L.operaciones}</h1>
-        <Button
-          className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
-          onClick={() => setDialogAbierto(true)}
-        >
-          <Plus className="w-4 h-4" /> {L.operacionNuevaBtn}
-        </Button>
-      </div>
+      <EncabezadoSeccion
+        titulo={L.operaciones}
+        acciones={
+          <Button className="gap-2" onClick={() => setDialogAbierto(true)}>
+            <Plus className="h-4 w-4" /> {L.operacionNuevaBtn}
+          </Button>
+        }
+      />
 
-      <div className="glass-card p-4">
+      <div className="estela-placa p-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -487,7 +487,7 @@ export default function OperationsPage() {
       </div>
 
       {esNotarias ? (
-        <div className="glass-card p-4">
+        <div className="estela-placa p-4">
           <p className="text-sm font-semibold text-foreground">
             Cuándo hay que avisar — fe pública
           </p>
@@ -534,7 +534,7 @@ export default function OperationsPage() {
         </div>
       )}
 
-      <div className="glass-card overflow-x-auto">
+      <div className="estela-placa overflow-x-auto">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando operaciones…
@@ -546,7 +546,7 @@ export default function OperationsPage() {
         ) : (
           <table className="w-full min-w-[48rem]">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-border bg-muted/50">
                 {[
                   "Fecha",
                   esNotarias ? "Compareciente" : "Cliente",
@@ -565,7 +565,7 @@ export default function OperationsPage() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                    className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                   >
                     {h}
                   </th>
@@ -583,7 +583,7 @@ export default function OperationsPage() {
                     // —la columna "Requiere aviso" lleva el texto—: refuerza.
                     op.requiere_aviso || op.evaluada_en == null
                       ? "bg-warning/5"
-                      : "hover:bg-muted/30",
+                      : "hover:bg-muted/50",
                   )}
                 >
                   <td className="px-4 py-3 text-sm">
@@ -1046,7 +1046,7 @@ export default function OperationsPage() {
                 </Button>
               )}
               <Button
-                className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+                className="gap-2"
                 onClick={() => enviar()}
                 disabled={alta.isPending}
               >
@@ -1146,7 +1146,7 @@ export default function OperationsPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+              className="gap-2"
               onClick={() => guardarExpediente.mutate()}
               disabled={guardarExpediente.isPending}
             >

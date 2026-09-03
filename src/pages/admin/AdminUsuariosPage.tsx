@@ -127,7 +127,7 @@ export default function AdminUsuariosPage() {
         </Button>
       </div>
 
-      <div className="glass-card overflow-x-auto">
+      <div className="estela-placa overflow-x-auto">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando usuarios…
@@ -145,11 +145,11 @@ export default function AdminUsuariosPage() {
         ) : (
           <table className="w-full min-w-[52rem]">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-border bg-muted/50">
                 {["Quién", "Organización", "Roles", "Segundo factor", "Último acceso", ""].map((h) => (
                   <th
                     key={h}
-                    className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                    className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                   >
                     {h}
                   </th>
@@ -242,7 +242,7 @@ export default function AdminUsuariosPage() {
                 {/* Decirlo antes, no después: entre que se repone y que la
                     persona vuelve a darse de alta, su cuenta se abre con sólo
                     la contraseña. */}
-                <p className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-warning-foreground">
+                <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-warning-foreground">
                   Hasta que vuelva a dar de alta su autenticador, esa cuenta se abre con sólo la
                   contraseña. Confirma por un canal aparte que quien lo pide es la persona.
                 </p>

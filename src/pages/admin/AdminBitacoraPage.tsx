@@ -28,7 +28,7 @@ export default function AdminBitacoraPage() {
         titulo="Integridad de la bitácora de plataforma"
       />
 
-      <div className="glass-card p-5">
+      <div className="estela-placa p-5">
         <p className="text-sm font-semibold text-foreground">Qué prueba y qué no</p>
         <ul className="mt-2 space-y-2 text-xs text-muted-foreground">
           <li>

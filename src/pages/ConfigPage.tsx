@@ -37,13 +37,13 @@ export default function ConfigPage() {
       </div>
 
       {org.isLoading ? (
-        <div className="glass-card p-8 flex items-center justify-center gap-2 text-muted-foreground">
+        <div className="estela-placa p-8 flex items-center justify-center gap-2 text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
         </div>
       ) : org.isError ? (
-        <p className="glass-card p-6 text-sm text-destructive">{(org.error as Error).message}</p>
+        <p className="estela-placa p-6 text-sm text-destructive">{(org.error as Error).message}</p>
       ) : !org.data ? (
-        <p className="glass-card p-6 text-sm text-warning-ink">
+        <p className="estela-placa p-6 text-sm text-warning-ink">
           No se encontró la organización de su perfil.
         </p>
       ) : (
@@ -51,7 +51,7 @@ export default function ConfigPage() {
           {/* Datos del sujeto obligado */}
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-4">Datos del sujeto obligado</h2>
-            <div className="glass-card p-6 grid gap-6 sm:grid-cols-2">
+            <div className="estela-placa p-6 grid gap-6 sm:grid-cols-2">
               {[
                 { label: "Razón social", value: org.data.razon_social },
                 { label: "RFC", value: org.data.rfc, mono: true },
@@ -105,7 +105,7 @@ export default function ConfigPage() {
                   <div
                     key={a.fraccion}
                     className={cn(
-                      "glass-card p-4 border-l-4",
+                      "estela-placa p-4 border-l-4",
                       habilitada ? "border-l-accent" : "border-l-transparent opacity-60",
                     )}
                   >
@@ -135,7 +135,7 @@ export default function ConfigPage() {
         <p className="text-xs text-muted-foreground mb-4">
           Altas y bajas de usuarios se gestionan con Kawiil.
         </p>
-        <div className="glass-card overflow-hidden">
+        <div className="estela-placa overflow-hidden">
           {usuarios.isLoading ? (
             <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
@@ -146,9 +146,9 @@ export default function ConfigPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border bg-muted/30">
+                  <tr className="border-b border-border bg-muted/50">
                     {["Nombre", "Correo", "Roles", "Estado"].map((h) => (
-                      <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">
+                      <th key={h} className="estela-antetitulo text-muted-foreground px-4 py-3 text-left">
                         {h}
                       </th>
                     ))}
@@ -196,7 +196,7 @@ export default function ConfigPage() {
         </div>
       </section>
 
-      <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
+      <div className="flex items-start gap-3 rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
         <span className="text-muted-foreground">
           <strong className="text-foreground">Pantalla de sólo lectura.</strong> Cambiar la razón

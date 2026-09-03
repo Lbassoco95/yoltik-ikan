@@ -169,7 +169,7 @@ export default function DashboardPage() {
             <div className="min-w-0">
               <p
                 className={cn(
-                  "estela-antetitulo m-0",
+                  "estela-antetitulo text-muted-foreground m-0",
                   urgeAlgo ? "text-ikan-ambar" : "text-accent",
                 )}
               >
@@ -216,12 +216,12 @@ export default function DashboardPage() {
             key={t.label}
             to={t.to}
             className={cn(
-              "rounded-md border border-border bg-card px-4 py-3.5 transition-colors hover:border-accent/50",
+              "estela-placa px-4 py-3.5 transition-colors hover:border-accent/50",
               t.alerta && "border-ikan-ambar/40",
             )}
           >
             <div className="flex items-start justify-between gap-2">
-              <span className="estela-antetitulo">{t.label}</span>
+              <span className="estela-antetitulo text-muted-foreground">{t.label}</span>
               <t.icono className={cn("h-4 w-4 shrink-0", t.alerta ? "text-ikan-ambar" : "text-muted-foreground")} />
             </div>
             <span className={cn(
@@ -248,7 +248,7 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* Tablero de hallazgos */}
-          <div className="rounded-md border border-border bg-card p-5">
+          <div className="estela-placa p-5">
             <h2 className="mb-4 text-base font-bold text-foreground">
               Hallazgos del Motor PLD
             </h2>
@@ -260,7 +260,7 @@ export default function DashboardPage() {
                 return (
                   <div key={col.titulo} className="rounded-md border border-border bg-muted/40 p-4">
                     <div className="flex items-baseline justify-between">
-                      <span className="estela-antetitulo">{col.titulo}</span>
+                      <span className="estela-antetitulo text-muted-foreground">{col.titulo}</span>
                       <span className="text-xl font-bold tabular-nums">{total}</span>
                     </div>
                     <ul className="mt-2 space-y-0.5">
@@ -280,7 +280,7 @@ export default function DashboardPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             {/* Actividad de 14 días. Una sola serie: el título la nombra y no
                 necesita leyenda. */}
-            <div className="rounded-md border border-border bg-card p-5">
+            <div className="estela-placa p-5">
               <h2 className="text-base font-bold text-foreground">
                 {esNotarias ? "Actos por día" : "Operaciones por día"}
               </h2>
@@ -310,7 +310,7 @@ export default function DashboardPage() {
 
             {/* Riesgo por nivel. Barras etiquetadas: el color acompaña, no
                 sustituye. */}
-            <div className="rounded-md border border-border bg-card p-5">
+            <div className="estela-placa p-5">
               <h2 className="text-base font-bold text-foreground">
                 Nivel de riesgo de {esNotarias ? "los comparecientes" : "los clientes"}
               </h2>
@@ -353,7 +353,7 @@ export default function DashboardPage() {
               enteros: están para que se vea que existen. Es la diferencia
               entre un registro de actividad y una bitácora oponible. */}
           {veBitacora && eventos.length > 0 && (
-            <div className="rounded-md border border-border bg-card p-5">
+            <div className="estela-placa p-5">
               <div className="mb-3 flex items-baseline justify-between gap-3">
                 <h2 className="text-base font-bold text-foreground">Lo último en la bitácora</h2>
                 <Link

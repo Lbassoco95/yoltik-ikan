@@ -39,7 +39,7 @@ function Banda({ etiqueta, min, max, acciones, tono }: {
 
 function Elemento({ el }: { el: MatrizElemento }) {
   return (
-    <div className="rounded-lg border border-border p-4">
+    <div className="rounded-md border border-border p-4">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-mono font-bold">{el.codigo}</span>
         <span className="text-sm font-semibold">{el.nombre}</span>
@@ -168,7 +168,7 @@ export default function MatrizRiesgoPage() {
       )}
 
       {sector == null && !isLoading && (
-        <div className="rounded-md border border-border bg-card p-5 text-sm text-muted-foreground">
+        <div className="estela-placa p-5 text-sm text-muted-foreground">
           La organización no tiene ninguna fracción registrada, así que no se puede saber
           qué matriz mostrar. Revisa <span className="estela-dato text-xs">organizations.sectores</span>.
         </div>
@@ -183,13 +183,13 @@ export default function MatrizRiesgoPage() {
           No se pudo cargar la matriz: {(error as Error)?.message}
         </div>
       ) : !mostrada ? (
-        <div className="rounded-md border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+        <div className="estela-placa p-8 text-center text-sm text-muted-foreground">
           Esta organización todavía no tiene una matriz configurada para el sector {sector}.
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            <div className="rounded-md border border-border bg-card p-4">
+            <div className="estela-placa p-4">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold">Versión {mostrada.version}</span>
@@ -238,7 +238,7 @@ export default function MatrizRiesgoPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-md border border-border bg-card p-4">
+            <div className="estela-placa p-4">
               <h2 className="text-sm font-semibold flex items-center gap-2 mb-3">
                 <ShieldCheck className="w-4 h-4" /> Bandas de clasificación
               </h2>
@@ -250,7 +250,7 @@ export default function MatrizRiesgoPage() {
             </div>
 
             {mostrada.configuracion.triggers_alto_de_oficio?.length > 0 && (
-              <div className="rounded-md border border-border bg-card p-4">
+              <div className="estela-placa p-4">
                 <h2 className="text-sm font-semibold mb-3">Alto de oficio</h2>
                 <ul className="space-y-1.5">
                   {mostrada.configuracion.triggers_alto_de_oficio.map((t) => (
@@ -263,7 +263,7 @@ export default function MatrizRiesgoPage() {
               </div>
             )}
 
-            <div className="rounded-md border border-border bg-card p-4">
+            <div className="estela-placa p-4">
               <h2 className="text-sm font-semibold flex items-center gap-2 mb-3">
                 <FileClock className="w-4 h-4" /> Histórico
               </h2>

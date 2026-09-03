@@ -285,16 +285,25 @@
      ESTELA — tipografía de expediente
      ───────────────────────────────────────────────────────────────────── */
 
-  /* Dato de expediente: RFC, CURP, folio, hash, importe, sello de tiempo. */
+  /* Dato de expediente: RFC, CURP, folio, hash, importe, sello de tiempo.
+     Sólo familia y cifra tabular; el grosor lo dice cada llamada. Fijarlo
+     aquí le ganaba al `font-bold` de los cartuchos por el mismo choque de
+     especificidad que el del antetítulo, y `cn()` no puede arbitrarlo porque
+     no sabe qué propiedades toca una clase propia. */
   .estela-dato {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    @apply font-medium tracking-tight;
+    @apply tracking-tight;
   }
 
-  /* Antetítulo: la etiqueta pequeña en versalitas que nombra el bloque. */
+  /* Antetítulo: la etiqueta pequeña en versalitas que nombra el bloque.
+     NO fija color a propósito. Cuando lo fijaba —`text-muted-foreground`— y
+     una llamada le pasaba otro —el ámbar de «lo que urge hoy», el gris claro
+     sobre el navy de la barra— las dos clases competían por la misma
+     propiedad con la misma especificidad, y ganaba la que Tailwind emitiera
+     después: el ámbar del héroe salía gris. El color va en cada llamada. */
   .estela-antetitulo {
-    @apply text-[10px] font-extrabold uppercase text-muted-foreground;
+    @apply text-[10px] font-extrabold uppercase;
     letter-spacing: 0.07em;
   }
 
@@ -303,12 +312,21 @@
      borde de 1 px en vez de sombra).
      ───────────────────────────────────────────────────────────────────── */
 
-  .glass-card {
-    @apply bg-card rounded-md border border-border;
+  /* La placa: la superficie base de ESTELA. 6 px de canto y una hairline de
+     1 px, sin sombra.
+
+     Se llamaba `.glass-card`, que viene del andamiaje y dice exactamente lo
+     contrario de lo que hace esta interfaz: «glass» es vidrio esmerilado
+     flotando por encima de la página. Aquí nada flota —la sombra se cambió
+     por línea a propósito— y una tarjeta de expediente es una placa grabada,
+     no un cristal. Un nombre que contradice al sistema es el primer sitio por
+     donde el sistema se deshace. */
+  .estela-placa {
+    @apply rounded-md border border-border bg-card;
   }
 
   .metric-card {
-    @apply glass-card p-4 relative overflow-hidden transition-colors duration-200;
+    @apply estela-placa relative overflow-hidden p-4 transition-colors duration-200;
   }
 
   .status-badge {

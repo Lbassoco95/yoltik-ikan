@@ -499,7 +499,7 @@ export default function ClientDetailPage() {
         <ArrowLeft className="w-4 h-4" /> {L.volverAClientes}
       </Link>
 
-      <div className="glass-card p-6">
+      <div className="estela-placa p-5">
         <div className="flex items-start justify-between gap-4">
           <h1 className="estela-titulo text-xl font-extrabold tracking-tight text-foreground">
             {client.nombre_razon_social}
@@ -584,7 +584,7 @@ export default function ClientDetailPage() {
               siempre sería un campo libre que nadie sabe rellenar; ofrecer sólo
               las que tienen nivel la convierte en una pregunta contestable. */}
           {paisDomicilio && exigenSubdivision?.has(paisDomicilio) && (
-            <div className="glass-card p-6 space-y-3">
+            <div className="estela-placa p-6 space-y-3">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">
                   Subdivisión del domicilio
@@ -629,7 +629,7 @@ export default function ClientDetailPage() {
             </div>
           )}
 
-          <div className="glass-card p-6 grid grid-cols-2 gap-6">
+          <div className="estela-placa p-6 grid grid-cols-2 gap-6">
             {[
               {
                 label: "Nombre / Razón social",
@@ -672,13 +672,13 @@ export default function ClientDetailPage() {
         {plantilla && (
           <TabsContent value="matriz">
             {!plantilla ? (
-              <div className="glass-card p-6 text-sm text-muted-foreground">
+              <div className="estela-placa p-6 text-sm text-muted-foreground">
                 Esta organización no tiene una matriz de riesgo vigente.
               </div>
             ) : (
               <div className="space-y-4">
                 {elementos.map((el) => (
-                  <div key={el.codigo} className="glass-card p-5">
+                  <div key={el.codigo} className="estela-placa p-5">
                     <p className="text-sm font-semibold text-foreground mb-3">
                       {el.nombre}
                     </p>
@@ -813,7 +813,7 @@ export default function ClientDetailPage() {
                   responde y la matriz no se puede cerrar. Decirlo evita que
                   alguien lo lea como un campo que se le olvidó contestar. */}
                 {!listasCargadas && (
-                  <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <div className="estela-placa p-4 border-l-4 border-l-warning">
                     <p className="text-sm text-muted-foreground">
                       Cargando el snapshot de listas del GAFI. El riesgo país no
                       se responde hasta que llegue: sin las listas, cualquier
@@ -824,7 +824,7 @@ export default function ClientDetailPage() {
 
                 {/* Los puntos que suman FUERA de la escala de magnitud. */}
                 {bandera && (
-                  <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <div className="estela-placa p-4 border-l-4 border-l-warning">
                     <p className="text-sm font-semibold text-foreground">
                       Operación en banda de umbral · +{bandera.puntos} puntos
                     </p>
@@ -839,7 +839,7 @@ export default function ClientDetailPage() {
                   y sin la subdivisión el expediente se está calificando con la
                   mitad del dato. */}
                 {subdivisionFalta && paisDomicilio && (
-                  <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <div className="estela-placa p-4 border-l-4 border-l-warning">
                     <p className="text-sm font-semibold text-foreground">
                       Falta la subdivisión del domicilio
                     </p>
@@ -854,7 +854,7 @@ export default function ClientDetailPage() {
                 {subdivisionDelCliente && (
                   <div
                     className={cn(
-                      "glass-card p-4 border-l-4",
+                      "estela-placa p-4 border-l-4",
                       subdivisionDelCliente.nivel_territorial === "prohibicion"
                         ? "border-l-destructive"
                         : "border-l-warning",
@@ -876,7 +876,7 @@ export default function ClientDetailPage() {
                   procede es detenerse y escalar. Por eso va antes que todo lo
                   demás y no se mezcla con el puntaje. */}
                 {bloqueado && riesgoSanciones && (
-                  <div className="glass-card p-4 border-l-4 border-l-destructive">
+                  <div className="estela-placa p-4 border-l-4 border-l-destructive">
                     <p className="text-sm font-semibold text-destructive">
                       Jurisdicción bajo embargo — no continuar sin escalar
                     </p>
@@ -892,7 +892,7 @@ export default function ClientDetailPage() {
 
                 {/* El nivel 2: piso de banda alta, sin bloqueo. */}
                 {!bloqueado && levantaPiso && riesgoSanciones && (
-                  <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <div className="estela-placa p-4 border-l-4 border-l-warning">
                     <p className="text-sm font-semibold text-foreground">
                       País bajo régimen de sanciones
                     </p>
@@ -913,7 +913,7 @@ export default function ClientDetailPage() {
                   está fijado —la variable de país no tiene clave para él— y
                   poner un número inventado sería peor que no puntuarlo. */}
                 {!bloqueado && !levantaPiso && riesgoSanciones && (
-                  <div className="glass-card p-4 border-l-4 border-l-muted">
+                  <div className="estela-placa p-4 border-l-4 border-l-muted">
                     <p className="text-sm font-semibold text-foreground">
                       Jurisdicción en atención
                     </p>
@@ -934,7 +934,7 @@ export default function ClientDetailPage() {
                   reforzada: la escala lo agrupa con la lista gris y aquí se
                   separa, porque el flujo no puede agruparlos. */}
                 {indicadores.GAFI_LLAMADO_ACCION && (
-                  <div className="glass-card p-4 border-l-4 border-l-destructive">
+                  <div className="estela-placa p-4 border-l-4 border-l-destructive">
                     <p className="text-sm font-semibold text-foreground">
                       País bajo llamado a la acción del GAFI
                     </p>
@@ -947,7 +947,7 @@ export default function ClientDetailPage() {
                   </div>
                 )}
 
-                <div className="glass-card p-4 flex items-center justify-between gap-4">
+                <div className="estela-placa p-4 flex items-center justify-between gap-4">
                   <p className="text-sm text-muted-foreground">
                     {completa ? (
                       <>
@@ -1059,10 +1059,10 @@ export default function ClientDetailPage() {
         </TabsContent>
 
         <TabsContent value="operaciones">
-          <div className="glass-card overflow-hidden">
+          <div className="estela-placa overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted/50">
                   {[
                     "Fecha",
                     esNotarias ? "Tipo de acto" : "Tipo",
@@ -1072,7 +1072,7 @@ export default function ClientDetailPage() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                      className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                     >
                       {h}
                     </th>

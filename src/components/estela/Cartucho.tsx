@@ -52,7 +52,7 @@ export function Cartucho({
     >
       <p
         className={cn(
-          "estela-antetitulo m-0",
+          "estela-antetitulo text-muted-foreground m-0",
           acento === "ambar" && "text-ikan-ambar",
         )}
       >

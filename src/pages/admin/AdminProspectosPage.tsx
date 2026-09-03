@@ -115,7 +115,7 @@ export default function AdminProspectosPage() {
         ))}
       </div>
 
-      <div className="glass-card overflow-x-auto">
+      <div className="estela-placa overflow-x-auto">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando prospectos…
@@ -127,11 +127,11 @@ export default function AdminProspectosPage() {
         ) : (
           <table className="w-full min-w-[52rem]">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-border bg-muted/50">
                 {["Quién", "Contacto", "Actividad", "Cumplimiento", "Llegó", "Estado", ""].map((h) => (
                   <th
                     key={h}
-                    className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                    className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                   >
                     {h}
                   </th>
@@ -271,7 +271,7 @@ export default function AdminProspectosPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+              className="gap-2"
               onClick={() => mover.mutate()}
               disabled={mover.isPending}
             >

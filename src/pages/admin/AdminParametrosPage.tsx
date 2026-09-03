@@ -165,7 +165,7 @@ export default function AdminParametrosPage() {
       </div>
 
       {sinConfirmar > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
           <span>
             <strong>
@@ -178,7 +178,7 @@ export default function AdminParametrosPage() {
         </div>
       )}
 
-      <div className="glass-card overflow-hidden">
+      <div className="estela-placa overflow-hidden">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
@@ -189,11 +189,11 @@ export default function AdminParametrosPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[56rem]">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted/50">
                   {["Parámetro", "Alcance", "Valor", "Vigencia", "Fuente", "Estado", ""].map((h) => (
                     <th
                       key={h}
-                      className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3"
+                      className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                     >
                       {h}
                     </th>

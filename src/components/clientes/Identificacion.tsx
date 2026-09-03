@@ -110,7 +110,7 @@ export function Identificacion({ client }: { client: Client }) {
       {/* ---------------------------------------------------------------
           Estado de la verificación
       --------------------------------------------------------------- */}
-      <section className="glass-card p-6 space-y-4">
+      <section className="estela-placa p-6 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-sm font-semibold text-foreground">
@@ -331,7 +331,7 @@ export function Identificacion({ client }: { client: Client }) {
       {/* ---------------------------------------------------------------
           Persona políticamente expuesta
       --------------------------------------------------------------- */}
-      <section className="glass-card p-6 space-y-3">
+      <section className="estela-placa p-6 space-y-3">
         <h3 className="text-sm font-semibold text-foreground">
           Persona políticamente expuesta
         </h3>
@@ -383,7 +383,7 @@ export function Identificacion({ client }: { client: Client }) {
       {/* ---------------------------------------------------------------
           Qué falta
       --------------------------------------------------------------- */}
-      <section className="glass-card p-6 space-y-3">
+      <section className="estela-placa p-6 space-y-3">
         <h3 className="text-sm font-semibold text-foreground">
           Qué le falta a este expediente
         </h3>
@@ -412,7 +412,7 @@ export function Identificacion({ client }: { client: Client }) {
 
       {/* Lo que no corre. Sin banner, un notario podría dar por hecha una
           comprobación que nadie hizo. */}
-      <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
+      <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
         <p className="text-[13px] text-foreground">
           <strong className="text-warning-ink">
@@ -449,7 +449,7 @@ function Bloque({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-border p-4">
+    <div className="rounded-md border border-border p-4">
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         {titulo}
       </h4>

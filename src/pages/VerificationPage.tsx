@@ -128,7 +128,7 @@ export default function VerificationPage() {
       {/* Lo que sigue sin integrarse, acotado. Didit resuelve quién es la
           persona; no consulta RENAPO ni las listas, y decir lo contrario sería
           darle al notario por hecha una comprobación que nadie hizo. */}
-      <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
+      <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
         <div className="text-sm text-foreground">
           <p>
@@ -157,7 +157,7 @@ export default function VerificationPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-card overflow-x-auto">
+        <div className="lg:col-span-2 estela-placa overflow-x-auto">
           {isLoading ? (
             <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" /> Cargando comparecientes…
@@ -169,11 +169,11 @@ export default function VerificationPage() {
           ) : (
             <table className="w-full min-w-[38rem]">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted/50">
                   {["Compareciente", "Conocimiento", "Expediente", "Identidad"].map((h) => (
                     <th
                       key={h}
-                      className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                      className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                     >
                       {h}
                     </th>
@@ -251,7 +251,7 @@ export default function VerificationPage() {
           )}
         </div>
 
-        <div className="glass-card p-6 h-fit">
+        <div className="estela-placa p-6 h-fit">
           <div className="flex items-start gap-2">
             <ShieldQuestion className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
             <div>
@@ -365,7 +365,7 @@ function Metrica({
   nota?: string;
 }) {
   return (
-    <div className="glass-card p-4">
+    <div className="estela-placa p-4">
       <p className="text-xs text-muted-foreground uppercase">{etiqueta}</p>
       <p className="text-2xl font-bold text-foreground mt-1">{valor}</p>
       {nota && <p className="text-[13px] text-muted-foreground">{nota}</p>}

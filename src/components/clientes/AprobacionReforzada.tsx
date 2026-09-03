@@ -80,14 +80,14 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
 
   if (isLoading) {
     return (
-      <div className="glass-card p-5 flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="estela-placa p-5 flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin" /> Cargando la aprobación…
       </div>
     );
   }
 
   return (
-    <div className="glass-card p-5 space-y-4">
+    <div className="estela-placa p-5 space-y-4">
       <div className="flex items-start gap-3">
         <ShieldCheck className="w-5 h-5 mt-0.5 text-primary shrink-0" />
         <div className="space-y-1">
@@ -201,7 +201,7 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
           <Button
             onClick={() => aprobar.mutate()}
             disabled={!calidad || aprobar.isPending}
-            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="gap-2"
           >
             {aprobar.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             {vigente ? "Volver a aprobar" : "Aprobar el expediente"}

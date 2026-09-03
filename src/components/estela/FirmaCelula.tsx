@@ -41,11 +41,11 @@ export function FirmaCelula({
         "flex flex-col gap-2.5",
         claro
           ? "border-t border-white/[0.12] px-[18px] py-4"
-          : "rounded-md border border-border bg-card p-4",
+          : "estela-placa p-4",
         className,
       )}
     >
-      <span className={cn("estela-antetitulo", claro && "text-[#8FA9A5]")}>
+      <span className={cn("estela-antetitulo text-muted-foreground", claro && "text-[#8FA9A5]")}>
         Tu célula de cumplimiento
       </span>
 

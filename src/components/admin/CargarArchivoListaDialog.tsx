@@ -120,7 +120,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           </div>
 
           {fuente && !soportada && (
-            <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+            <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
               <span>
                 <strong>Todavía no hay lector para «{fuente.nombre}».</strong> Su formato es XML
@@ -147,13 +147,13 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           )}
 
           {errorAnalisis && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               <strong>No se pudo leer el archivo.</strong> {errorAnalisis}
             </div>
           )}
 
           {analisis && (
-            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+            <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4">
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
                 <span className="font-semibold">{analisis.articulo}</span>
                 <span className="text-muted-foreground">

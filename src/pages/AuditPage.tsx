@@ -96,7 +96,7 @@ export default function AuditPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-card p-4">
+      <div className="estela-placa flex flex-wrap items-center gap-3 p-4">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -136,7 +136,7 @@ export default function AuditPage() {
 
       {/* overflow-x-auto y no -hidden: recortar el desbordamiento hace que
           en un teléfono se pierdan columnas sin manera de llegar a ellas. */}
-      <div className="overflow-x-auto rounded-md border border-border bg-card">
+      <div className="estela-placa overflow-x-auto">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando bitácora…
@@ -153,7 +153,7 @@ export default function AuditPage() {
                   (h) => (
                     <th
                       key={h}
-                      className="estela-antetitulo px-4 py-3 text-left"
+                      className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                     >
                       {h}
                     </th>
@@ -165,7 +165,7 @@ export default function AuditPage() {
               {filtrados.map((e) => (
                 <tr
                   key={e.id}
-                  className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                  className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => setDetalle(e)}
                 >
                   <td className="estela-dato px-4 py-3 text-xs text-muted-foreground">

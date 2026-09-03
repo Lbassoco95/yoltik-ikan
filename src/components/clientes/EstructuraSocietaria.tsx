@@ -190,7 +190,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
 
   if (client.tipo_persona !== "moral") {
     return (
-      <div className="glass-card p-6 text-sm text-muted-foreground">
+      <div className="estela-placa p-6 text-sm text-muted-foreground">
         La estructura societaria y el beneficiario controlador aplican a personas morales y
         fideicomisos. Este compareciente es persona física.
       </div>
@@ -204,7 +204,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
           y el anexo de identificación aplicable: sin tipo no se puede
           revisar nada.
       --------------------------------------------------------------- */}
-      <section className="glass-card p-6 space-y-4">
+      <section className="estela-placa p-6 space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Tipo de sociedad</h3>
           <p className="text-[13px] text-muted-foreground mt-0.5">
@@ -259,7 +259,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
       {/* ---------------------------------------------------------------
           Socios
       --------------------------------------------------------------- */}
-      <section className="glass-card p-6 space-y-4">
+      <section className="estela-placa p-6 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-sm font-semibold text-foreground">Estructura societaria</h3>
@@ -384,7 +384,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
       {/* ---------------------------------------------------------------
           La excepción del art. 23 Quinquies 2
       --------------------------------------------------------------- */}
-      <section className="glass-card p-6 space-y-4">
+      <section className="estela-placa p-6 space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground">
             Excepción para no recabar beneficiario controlador
@@ -462,7 +462,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
       {/* ---------------------------------------------------------------
           La cascada
       --------------------------------------------------------------- */}
-      <section className="glass-card p-6 space-y-4">
+      <section className="estela-placa p-6 space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground">
             Beneficiario controlador · art. 23 Quinquies
@@ -530,7 +530,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
       {/* ---------------------------------------------------------------
           Beneficiarios identificados
       --------------------------------------------------------------- */}
-      <section className="glass-card p-6 space-y-4">
+      <section className="estela-placa p-6 space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Beneficiarios controladores</h3>
           <p className="text-[13px] text-muted-foreground mt-0.5">
@@ -666,7 +666,7 @@ function PasoCard({
   return (
     <div
       className={cn(
-        "rounded-lg border border-border p-4",
+        "rounded-md border border-border p-4",
         !habilitado && estado === "no_practicado" && "opacity-60",
       )}
     >

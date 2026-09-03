@@ -73,7 +73,7 @@ export default function RulesEnginePage() {
           etiquetas sueltas; el cartucho es la forma que ESTELA le da a esto
           mismo. */}
       {isLoading ? (
-        <div className="flex items-center gap-2 rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
+        <div className="estela-placa flex items-center gap-2 p-4 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Cargando parámetros regulatorios…
         </div>
       ) : isError ? (
@@ -101,7 +101,7 @@ export default function RulesEnginePage() {
           era la primera en desaparecer al estrechar la ventana. En ESTELA cada
           umbral es una fila con su cartucho, y la fuente va debajo de la cifra
           —donde se lee— en vez de a su derecha. */}
-      <section className="rounded-md border border-border bg-card p-5">
+      <section className="estela-placa p-5">
         <h2 className="m-0 text-base font-bold text-foreground">Umbrales vigentes</h2>
         <p className="mb-4 mt-1 text-xs text-muted-foreground">
           Valores versionados con su fuente. Los edita un administrador de Kawiil; ninguna
@@ -178,7 +178,7 @@ export default function RulesEnginePage() {
       </div>
 
       {/* Behavior Rules — maqueta */}
-      <div className="rounded-md border border-border bg-card p-5 opacity-80">
+      <div className="estela-placa p-5 opacity-80">
         <h2 className="mb-4 text-base font-bold text-foreground">Reglas de comportamiento</h2>
         <div className="space-y-3">
           {behaviorRules.map((rule) => (
@@ -198,7 +198,7 @@ export default function RulesEnginePage() {
       </div>
 
       {/* Correlation Rules — maqueta */}
-      <div className="rounded-md border border-border bg-card p-5 opacity-80">
+      <div className="estela-placa p-5 opacity-80">
         <h2 className="mb-4 text-base font-bold text-foreground">Reglas de correlación</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {correlationRules.map((rule) => (
