@@ -246,3 +246,85 @@ describe('el resumen guarda el tipo de coincidencia, no con quién', () => {
     expect(texto).not.toContain('1970-01-01');
   });
 });
+
+describe('señales de canal (módulo IP_ANALYSIS)', () => {
+  // Recortado del payload REAL de una sesión de producción, con los valores
+  // sensibles cambiados. Los nombres de campo son los que devuelve Didit.
+  const conCanal = {
+    ip_analyses: [
+      {
+        status: 'Approved',
+        ip_country: 'Mexico',
+        ip_country_code: 'MX',
+        ip_state: 'Ciudad de Mexico',
+        ip_city: 'Cuauhtémoc',
+        latitude: 19.42,
+        longitude: -99.166,
+        ip_address: '203.0.113.7',
+        isp: 'Proveedor de ejemplo',
+        is_vpn_or_tor: false,
+        is_data_center: false,
+        time_zone: 'America/Mexico_City',
+        device_fingerprint: 'huella-de-ejemplo',
+        user_agent: 'Mozilla/5.0 (iPhone)',
+        ip: {
+          location: { latitude: 19.42, longitude: -99.166 },
+          distance_from_id_document: { distance: 8.84, direction: 'SW' },
+          distance_from_poa_document: null,
+        },
+        id_document: { location: { latitude: 19.366, longitude: -99.228 } },
+      },
+    ],
+  };
+
+  it('guarda el país y las banderas de red', () => {
+    const r = resumirDecision(conCanal) as Record<string, Record<string, unknown>>;
+    expect(r.canal.pais).toBe('Mexico');
+    expect(r.canal.pais_iso2).toBe('MX');
+    expect(r.canal.vpn_o_tor).toBe(false);
+    expect(r.canal.centro_de_datos).toBe(false);
+  });
+
+  it('guarda la DIVERGENCIA contra el documento, que es donde está la señal', () => {
+    // Que coincidan no dice gran cosa; que no coincidan es una señal barata y
+    // limpia. Y es un escalar derivado, no un punto en el mapa.
+    const r = resumirDecision(conCanal) as Record<string, Record<string, unknown>>;
+    expect(r.canal.divergencia_documento_km).toBe(8.84);
+    expect(r.canal.divergencia_documento_rumbo).toBe('SW');
+  });
+
+  it('NO guarda coordenadas, dirección de red ni huella de dispositivo', () => {
+    // Adenda 5 y Adenda 6 §5: país y banderas de red sí; dirección completa y
+    // coordenadas no. Es la prueba que impide que esto se relaje sin querer.
+    const texto = JSON.stringify(resumirDecision(conCanal));
+    expect(texto).not.toContain('19.42');
+    expect(texto).not.toContain('-99.166');
+    expect(texto).not.toContain('203.0.113.7');
+    expect(texto).not.toContain('huella-de-ejemplo');
+    expect(texto).not.toContain('Mozilla');
+    expect(texto).not.toContain('Cuauhtémoc');
+  });
+
+  it('sin bandera devuelta, null y no false', () => {
+    // «No se detectó VPN» y «no se miró» son afirmaciones distintas, y sólo una
+    // se puede sostener. Es el mismo modo de falla que el nulo silencioso.
+    const r = resumirDecision({
+      ip_analyses: [{ ip_country: 'Mexico', ip_country_code: 'MX' }],
+    }) as Record<string, Record<string, unknown>>;
+    expect(r.canal.vpn_o_tor).toBeNull();
+    expect(r.canal.centro_de_datos).toBeNull();
+  });
+
+  it('sin el módulo, no hay bloque de canal', () => {
+    const r = resumirDecision({ ip_analyses: null }) as Record<string, unknown>;
+    expect(r.canal).toBeUndefined();
+  });
+
+  it('aml_screenings en null no inventa un barrido', () => {
+    // Es el caso REAL de la primera verificación de producción: el módulo AML
+    // no estaba encendido en el workflow y la decisión trae null. Un «sin
+    // coincidencias» aquí sería afirmar que se barrió cuando no se barrió.
+    const r = resumirDecision({ aml_screenings: null }) as Record<string, unknown>;
+    expect(r.listas).toBeUndefined();
+  });
+});

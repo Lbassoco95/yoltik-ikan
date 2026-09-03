@@ -17,6 +17,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { esFinal, estadoDeDidit, resumirDecision, verificarWebhook } from '../_shared/didit.ts';
+import { custodiarArtefactos, modulosAplicados } from '../_shared/artefactos.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -71,6 +72,11 @@ Deno.serve(async (req) => {
     .update({
       estado,
       resumen,
+      // Qué módulos corrieron DE VERDAD en esta sesión. No los que el workflow
+      // tenga hoy: la primera verificación de producción corrió sin barrido de
+      // listas porque el módulo se encendió después, y sin este dato el
+      // expediente no podría decirlo.
+      features_aplicadas: modulosAplicados(evento.decision),
       ultimo_evento_id: evento.event_id ?? null,
       resuelta_en: esFinal(estado) ? new Date().toISOString() : null,
     })
@@ -141,6 +147,51 @@ Deno.serve(async (req) => {
       p_actor_tipo: 'sistema',
       p_actor_id: null,
     });
+  }
+
+  // --- Custodia de los artefactos (Adenda 7, apartado 1) --------------
+  //
+  // Va DESPUÉS de responder, no antes. Didit cuenta como fallo cualquier
+  // respuesta que tarde más de cinco segundos, y bajar dos o cuatro imágenes no
+  // cabe en ese presupuesto: hacerlo en línea convertiría una descarga lenta en
+  // una entrega reintentada, que es peor que la descarga lenta.
+  //
+  // Y es el camino RÁPIDO, no la garantía. La garantía es la conciliación: si
+  // esto falla, o si la entrega nunca llega, el expediente queda sin artefactos
+  // y la conciliación lo levanta. Las dos vías hacen lo mismo y no se estorban
+  // porque la llave (verificación, tipo) es única.
+  //
+  // Las ligas de la decisión vienen firmadas y vencen en horas: por eso se bajan
+  // ahora y no se guardan para después.
+  if (esFinal(estado) && estado === 'aprobada') {
+    const tarea = (async () => {
+      const r = await custodiarArtefactos(supabase as never, {
+        verificacionId: fila.id,
+        organizationId: fila.organization_id,
+        clientId: fila.client_id,
+        decision: evento.decision,
+      });
+      if (r.fallidos.length > 0) {
+        console.error('[didit-webhook] artefactos no custodiados:', r.fallidos);
+        await supabase.rpc('registrar_hallazgo_conciliacion', {
+          p_session: evento.session_id,
+          p_hallazgo: 'sin_artefactos',
+          p_org: fila.organization_id,
+          p_verificacion: fila.id,
+          p_detalle:
+            'La descarga desde el webhook falló en: ' +
+            r.fallidos.map((f) => `${f.tipo} (${f.motivo})`).join(', ') +
+            '. La conciliación lo reintentará.',
+        });
+      }
+    })();
+
+    // `waitUntil` deja la tarea viva después de responder. Si el entorno no lo
+    // ofrece se espera: es peor perder la custodia que arriesgar el plazo.
+    const runtime = (globalThis as { EdgeRuntime?: { waitUntil: (p: Promise<unknown>) => void } })
+      .EdgeRuntime;
+    if (runtime?.waitUntil) runtime.waitUntil(tarea);
+    else await tarea;
   }
 
   // 2xx dentro de 5 segundos: pasado ese plazo Didit lo cuenta como fallo y

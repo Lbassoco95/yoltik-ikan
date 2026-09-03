@@ -9,7 +9,10 @@ import {
   verificacionesDeCliente,
   type EstadoVerificacion,
 } from "@/lib/api/verificacion";
-import { pendientesCompareciente, pendientesIdentificacion } from "@/lib/aviso/completitud";
+import {
+  pendientesCompareciente,
+  pendientesIdentificacion,
+} from "@/lib/aviso/completitud";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import type { Client, CondicionPep } from "@/types/domain";
@@ -44,11 +47,13 @@ const TEXTO_PEP: Record<CondicionPep, { etiqueta: string; detalle: string }> = {
   },
   pep_nacional: {
     etiqueta: "PPE nacional",
-    detalle: "Cumplimiento resolvió la coincidencia como persona políticamente expuesta nacional.",
+    detalle:
+      "Cumplimiento resolvió la coincidencia como persona políticamente expuesta nacional.",
   },
   pep_extranjera: {
     etiqueta: "PPE federal o extranjera",
-    detalle: "Cumplimiento resolvió la coincidencia como PPE federal o extranjera.",
+    detalle:
+      "Cumplimiento resolvió la coincidencia como PPE federal o extranjera.",
   },
   familiar_o_asociado: {
     etiqueta: "Familiar o asociado de una PPE",
@@ -108,10 +113,12 @@ export function Identificacion({ client }: { client: Client }) {
       <section className="glass-card p-6 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Verificación de identidad</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              Verificación de identidad
+            </h3>
             <p className="text-[13px] text-muted-foreground mt-0.5">
-              Didit comprueba que la persona es quien dice ser: documento oficial, prueba de vida y
-              cotejo facial.
+              Didit comprueba que la persona es quien dice ser: documento
+              oficial, prueba de vida y cotejo facial.
             </p>
           </div>
           {client.tipo_persona === "fisica" && (
@@ -123,9 +130,10 @@ export function Identificacion({ client }: { client: Client }) {
 
         {client.tipo_persona === "moral" ? (
           <p className="text-sm text-muted-foreground">
-            A una sociedad no se le verifica la identidad: no tiene documento oficial ni cara. Lo
-            que se identifica de una persona moral son las personas físicas detrás, y eso vive en
-            la pestaña «Estructura y beneficiario».
+            A una sociedad no se le verifica la identidad: no tiene documento
+            oficial ni cara. Lo que se identifica de una persona moral son las
+            personas físicas detrás, y eso vive en la pestaña «Estructura y
+            beneficiario».
           </p>
         ) : isLoading ? (
           <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -137,7 +145,8 @@ export function Identificacion({ client }: { client: Client }) {
           </p>
         ) : !vigente ? (
           <p className="text-sm text-muted-foreground">
-            No se le ha pedido la verificación. El expediente no está identificado.
+            No se le ha pedido la verificación. El expediente no está
+            identificado.
           </p>
         ) : (
           <>
@@ -146,8 +155,11 @@ export function Identificacion({ client }: { client: Client }) {
                 {ETIQUETA_ESTADO[vigente.estado]}
               </span>
               <span className="text-[13px] text-muted-foreground">
-                Enviada el {new Date(vigente.solicitada_en).toLocaleString("es-MX")}
-                {vigente.enviado_a ? ` a ${vigente.enviado_a}` : " en esta pantalla"}
+                Enviada el{" "}
+                {new Date(vigente.solicitada_en).toLocaleString("es-MX")}
+                {vigente.enviado_a
+                  ? ` a ${vigente.enviado_a}`
+                  : " en esta pantalla"}
                 {vigente.resuelta_en &&
                   ` · resuelta el ${new Date(vigente.resuelta_en).toLocaleString("es-MX")}`}
               </span>
@@ -164,14 +176,20 @@ export function Identificacion({ client }: { client: Client }) {
                 {resumen.documento && (
                   <Bloque titulo="Documento de identidad">
                     <Dato etiqueta="Tipo" valor={resumen.documento.tipo} />
-                    <Dato etiqueta="País emisor" valor={resumen.documento.pais} />
-                    <Dato etiqueta="Nombre leído" valor={resumen.documento.nombre_leido} />
+                    <Dato
+                      etiqueta="País emisor"
+                      valor={resumen.documento.pais}
+                    />
+                    <Dato
+                      etiqueta="Nombre leído"
+                      valor={resumen.documento.nombre_leido}
+                    />
                     <Dato etiqueta="Vence" valor={resumen.documento.vence} />
                     {resumen.documento.avisos > 0 && (
                       <p className="text-[13px] text-warning mt-1">
                         {resumen.documento.avisos} aviso
-                        {resumen.documento.avisos === 1 ? "" : "s"} del proveedor sobre el
-                        documento.
+                        {resumen.documento.avisos === 1 ? "" : "s"} del
+                        proveedor sobre el documento.
                       </p>
                     )}
                   </Bloque>
@@ -197,8 +215,8 @@ export function Identificacion({ client }: { client: Client }) {
                       />
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      Las imágenes y los datos biométricos se quedan en Didit. Aquí sólo el
-                      resultado.
+                      Las imágenes y los datos biométricos se quedan en Didit.
+                      Aquí sólo el resultado.
                     </p>
                   </Bloque>
                 )}
@@ -221,8 +239,58 @@ export function Identificacion({ client }: { client: Client }) {
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground mt-1.5">
-                      Con QUÉ persona coincidió no se guarda: eso es información de un tercero y se
-                      queda en el proveedor.
+                      Con QUÉ persona coincidió no se guarda: eso es información
+                      de un tercero y se queda en el proveedor.
+                    </p>
+                  </Bloque>
+                )}
+                {resumen.canal && (
+                  /* «Ubicación de la sesión», NO del cliente. La
+                     geolocalización por red no es el domicilio del
+                     compareciente ni el lugar del acto: en fe pública la
+                     ubicación relevante es la del inmueble y la del domicilio
+                     declarado. Rotularla mal llevaría a concluir de más. */
+                  <Bloque titulo="Ubicación de la sesión">
+                    <Dato
+                      etiqueta="País de conexión"
+                      valor={resumen.canal.pais ?? "sin dato"}
+                    />
+                    {resumen.canal.vpn_o_tor !== null && (
+                      <Dato
+                        etiqueta="VPN o Tor"
+                        valor={
+                          resumen.canal.vpn_o_tor
+                            ? "Sí, detectado"
+                            : "No detectado"
+                        }
+                      />
+                    )}
+                    {resumen.canal.centro_de_datos !== null && (
+                      <Dato
+                        etiqueta="Centro de datos"
+                        valor={
+                          resumen.canal.centro_de_datos
+                            ? "Sí, detectado"
+                            : "No detectado"
+                        }
+                      />
+                    )}
+                    {resumen.canal.divergencia_documento_km !== null && (
+                      <Dato
+                        etiqueta="Distancia al domicilio del documento"
+                        valor={
+                          `${Math.round(resumen.canal.divergencia_documento_km)} km` +
+                          (resumen.canal.divergencia_documento_rumbo
+                            ? ` al ${resumen.canal.divergencia_documento_rumbo}`
+                            : "")
+                        }
+                      />
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Del canal se conserva el país y las banderas de red. La
+                      dirección completa y las coordenadas no se guardan: son
+                      evidencia de por dónde se conectó, no de dónde vive. Lo
+                      que vale es la divergencia, no el punto.
                     </p>
                   </Bloque>
                 )}
@@ -230,7 +298,8 @@ export function Identificacion({ client }: { client: Client }) {
             ) : (
               vigente.estado === "aprobada" && (
                 <p className="text-[13px] text-muted-foreground">
-                  El proveedor no devolvió detalle por módulo en esta verificación.
+                  El proveedor no devolvió detalle por módulo en esta
+                  verificación.
                 </p>
               )
             )}
@@ -244,7 +313,10 @@ export function Identificacion({ client }: { client: Client }) {
                 </summary>
                 <ul className="mt-2 space-y-1">
                   {verificaciones.slice(1).map((v) => (
-                    <li key={v.id} className="text-[13px] text-muted-foreground">
+                    <li
+                      key={v.id}
+                      className="text-[13px] text-muted-foreground"
+                    >
                       {new Date(v.solicitada_en).toLocaleString("es-MX")} ·{" "}
                       {ETIQUETA_ESTADO[v.estado]}
                     </li>
@@ -260,11 +332,14 @@ export function Identificacion({ client }: { client: Client }) {
           Persona políticamente expuesta
       --------------------------------------------------------------- */}
       <section className="glass-card p-6 space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Persona políticamente expuesta</h3>
+        <h3 className="text-sm font-semibold text-foreground">
+          Persona políticamente expuesta
+        </h3>
         {client.condicion_pep == null ? (
           <p className="text-sm text-muted-foreground">
-            Sin consultar. No es lo mismo que «no es PPE»: nadie lo ha preguntado todavía. La
-            consulta corre con el screening de listas de la verificación.
+            Sin consultar. No es lo mismo que «no es PPE»: nadie lo ha
+            preguntado todavía. La consulta corre con el screening de listas de
+            la verificación.
           </p>
         ) : (
           <>
@@ -309,7 +384,9 @@ export function Identificacion({ client }: { client: Client }) {
           Qué falta
       --------------------------------------------------------------- */}
       <section className="glass-card p-6 space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Qué le falta a este expediente</h3>
+        <h3 className="text-sm font-semibold text-foreground">
+          Qué le falta a este expediente
+        </h3>
         {faltantes.length === 0 ? (
           <p className="text-sm text-success flex items-center gap-2">
             <ShieldCheck className="w-4 h-4" />
@@ -321,8 +398,11 @@ export function Identificacion({ client }: { client: Client }) {
               <li key={`${p.no}-${p.campo}`} className="flex gap-2 text-[13px]">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-warning" />
                 <span>
-                  <strong className="font-medium text-foreground">{p.campo}</strong>{" "}
-                  <span className="text-muted-foreground">({p.no})</span> — {p.detalle}
+                  <strong className="font-medium text-foreground">
+                    {p.campo}
+                  </strong>{" "}
+                  <span className="text-muted-foreground">({p.no})</span> —{" "}
+                  {p.detalle}
                 </span>
               </li>
             ))}
@@ -335,9 +415,11 @@ export function Identificacion({ client }: { client: Client }) {
       <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
         <p className="text-[13px] text-foreground">
-          <strong className="text-warning">Verificar identidad no es integrar el expediente.</strong>{" "}
-          Dos piezas del artículo 18 todavía no corren aquí: la validación de la CURP contra RENAPO
-          y la consulta del listado 69-B del SAT.
+          <strong className="text-warning">
+            Verificar identidad no es integrar el expediente.
+          </strong>{" "}
+          Dos piezas del artículo 18 todavía no corren aquí: la validación de la
+          CURP contra RENAPO y la consulta del listado 69-B del SAT.
         </p>
       </div>
 
@@ -350,14 +432,22 @@ export function Identificacion({ client }: { client: Client }) {
         nombreOrganizacion={profile?.organization_name ?? "Su notaría"}
         onCerrar={() => setEnviando(false)}
         onEnviada={() =>
-          qc.invalidateQueries({ queryKey: ["verificaciones-cliente", client.id] })
+          qc.invalidateQueries({
+            queryKey: ["verificaciones-cliente", client.id],
+          })
         }
       />
     </div>
   );
 }
 
-function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Bloque({
+  titulo,
+  children,
+}: {
+  titulo: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-lg border border-border p-4">
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -384,7 +474,10 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
  * El puntaje sin el estado no dice nada —¿86 de qué?— y el estado sin el
  * puntaje esconde un aprobado raspado. Van juntos o no van.
  */
-function etiquetaModulo(estado: string | null, puntaje: number | null): string | null {
+function etiquetaModulo(
+  estado: string | null,
+  puntaje: number | null,
+): string | null {
   const est =
     estado === "Approved"
       ? "Aprobado"

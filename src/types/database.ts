@@ -46,6 +46,126 @@ export type Database = {
           },
         ]
       }
+      allegado: {
+        Row: {
+          apellido_materno: string | null
+          apellido_paterno: string | null
+          capturado_en: string
+          capturado_por: string | null
+          client_id: string
+          curp: string | null
+          fecha: string | null
+          id: string
+          justificacion_vinculo: string | null
+          nombre: string | null
+          organization_id: string
+          pais_clave: string | null
+          porcentaje_participacion: number | null
+          razon_social: string | null
+          rfc: string | null
+          sin_curp: boolean
+          sin_rfc: boolean
+          tipo_persona: Database["public"]["Enums"]["tipo_persona"]
+          vinculo: Database["public"]["Enums"]["vinculo_allegado"]
+        }
+        Insert: {
+          apellido_materno?: string | null
+          apellido_paterno?: string | null
+          capturado_en?: string
+          capturado_por?: string | null
+          client_id: string
+          curp?: string | null
+          fecha?: string | null
+          id?: string
+          justificacion_vinculo?: string | null
+          nombre?: string | null
+          organization_id: string
+          pais_clave?: string | null
+          porcentaje_participacion?: number | null
+          razon_social?: string | null
+          rfc?: string | null
+          sin_curp?: boolean
+          sin_rfc?: boolean
+          tipo_persona: Database["public"]["Enums"]["tipo_persona"]
+          vinculo: Database["public"]["Enums"]["vinculo_allegado"]
+        }
+        Update: {
+          apellido_materno?: string | null
+          apellido_paterno?: string | null
+          capturado_en?: string
+          capturado_por?: string | null
+          client_id?: string
+          curp?: string | null
+          fecha?: string | null
+          id?: string
+          justificacion_vinculo?: string | null
+          nombre?: string | null
+          organization_id?: string
+          pais_clave?: string | null
+          porcentaje_participacion?: number | null
+          razon_social?: string | null
+          rfc?: string | null
+          sin_curp?: boolean
+          sin_rfc?: boolean
+          tipo_persona?: Database["public"]["Enums"]["tipo_persona"]
+          vinculo?: Database["public"]["Enums"]["vinculo_allegado"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allegado_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "allegado_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      allegado_sin_declarar: {
+        Row: {
+          client_id: string
+          declarado_en: string
+          declarado_por: string | null
+          organization_id: string
+          vinculo: Database["public"]["Enums"]["vinculo_allegado"]
+        }
+        Insert: {
+          client_id: string
+          declarado_en?: string
+          declarado_por?: string | null
+          organization_id: string
+          vinculo: Database["public"]["Enums"]["vinculo_allegado"]
+        }
+        Update: {
+          client_id?: string
+          declarado_en?: string
+          declarado_por?: string | null
+          organization_id?: string
+          vinculo?: Database["public"]["Enums"]["vinculo_allegado"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allegado_sin_declarar_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "allegado_sin_declarar_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       anclaje: {
         Row: {
           actualizado_en: string
@@ -99,6 +219,80 @@ export type Database = {
           raiz_merkle?: string
         }
         Relationships: []
+      }
+      artefacto_verificacion: {
+        Row: {
+          client_id: string
+          descargado_en: string
+          id: string
+          mime_type: string | null
+          nombre_archivo: string
+          organization_id: string
+          sha256: string
+          storage_path: string
+          tamano_bytes: number | null
+          tipo: Database["public"]["Enums"]["tipo_artefacto"]
+          url_origen: string | null
+          verificacion_id: string
+        }
+        Insert: {
+          client_id: string
+          descargado_en?: string
+          id?: string
+          mime_type?: string | null
+          nombre_archivo: string
+          organization_id: string
+          sha256: string
+          storage_path: string
+          tamano_bytes?: number | null
+          tipo: Database["public"]["Enums"]["tipo_artefacto"]
+          url_origen?: string | null
+          verificacion_id: string
+        }
+        Update: {
+          client_id?: string
+          descargado_en?: string
+          id?: string
+          mime_type?: string | null
+          nombre_archivo?: string
+          organization_id?: string
+          sha256?: string
+          storage_path?: string
+          tamano_bytes?: number | null
+          tipo?: Database["public"]["Enums"]["tipo_artefacto"]
+          url_origen?: string | null
+          verificacion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artefacto_verificacion_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "artefacto_verificacion_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "artefacto_verificacion_verificacion_id_fkey"
+            columns: ["verificacion_id"]
+            isOneToOne: false
+            referencedRelation: "v_verificacion_vigente"
+            referencedColumns: ["verificacion_id"]
+          },
+          {
+            foreignKeyName: "artefacto_verificacion_verificacion_id_fkey"
+            columns: ["verificacion_id"]
+            isOneToOne: false
+            referencedRelation: "verificacion_identidad"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_log: {
         Row: {
@@ -721,6 +915,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_subdivision_clave_fkey"
+            columns: ["subdivision_clave"]
+            isOneToOne: false
+            referencedRelation: "subdivision_riesgo"
+            referencedColumns: ["clave"]
           },
           {
             foreignKeyName: "client_tipo_social_fkey"
@@ -1416,6 +1617,67 @@ export type Database = {
           },
         ]
       }
+      conciliacion_verificacion: {
+        Row: {
+          detalle: string | null
+          detectada_en: string
+          didit_session_id: string
+          hallazgo: string
+          id: string
+          nota_resolucion: string | null
+          organization_id: string | null
+          resuelta_en: string | null
+          resuelta_por: string | null
+          verificacion_id: string | null
+        }
+        Insert: {
+          detalle?: string | null
+          detectada_en?: string
+          didit_session_id: string
+          hallazgo: string
+          id?: string
+          nota_resolucion?: string | null
+          organization_id?: string | null
+          resuelta_en?: string | null
+          resuelta_por?: string | null
+          verificacion_id?: string | null
+        }
+        Update: {
+          detalle?: string | null
+          detectada_en?: string
+          didit_session_id?: string
+          hallazgo?: string
+          id?: string
+          nota_resolucion?: string | null
+          organization_id?: string | null
+          resuelta_en?: string | null
+          resuelta_por?: string | null
+          verificacion_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conciliacion_verificacion_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conciliacion_verificacion_verificacion_id_fkey"
+            columns: ["verificacion_id"]
+            isOneToOne: false
+            referencedRelation: "v_verificacion_vigente"
+            referencedColumns: ["verificacion_id"]
+          },
+          {
+            foreignKeyName: "conciliacion_verificacion_verificacion_id_fkey"
+            columns: ["verificacion_id"]
+            isOneToOne: false
+            referencedRelation: "verificacion_identidad"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracion_folio: {
         Row: {
           actualizado_en: string
@@ -1452,6 +1714,73 @@ export type Database = {
             foreignKeyName: "configuracion_folio_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consulta_secretaria_economia: {
+        Row: {
+          client_id: string
+          estado: Database["public"]["Enums"]["estado_consulta_se"]
+          evaluacion_secuencia: number | null
+          fecha_consulta: string | null
+          folio: string | null
+          id: string
+          medio: string | null
+          nombre_archivo: string | null
+          organization_id: string
+          realizada_por: string | null
+          registrado_en: string
+          resultado: Database["public"]["Enums"]["resultado_consulta_se"] | null
+          storage_path: string | null
+        }
+        Insert: {
+          client_id: string
+          estado?: Database["public"]["Enums"]["estado_consulta_se"]
+          evaluacion_secuencia?: number | null
+          fecha_consulta?: string | null
+          folio?: string | null
+          id?: string
+          medio?: string | null
+          nombre_archivo?: string | null
+          organization_id: string
+          realizada_por?: string | null
+          registrado_en?: string
+          resultado?:
+            | Database["public"]["Enums"]["resultado_consulta_se"]
+            | null
+          storage_path?: string | null
+        }
+        Update: {
+          client_id?: string
+          estado?: Database["public"]["Enums"]["estado_consulta_se"]
+          evaluacion_secuencia?: number | null
+          fecha_consulta?: string | null
+          folio?: string | null
+          id?: string
+          medio?: string | null
+          nombre_archivo?: string | null
+          organization_id?: string
+          realizada_por?: string | null
+          registrado_en?: string
+          resultado?:
+            | Database["public"]["Enums"]["resultado_consulta_se"]
+            | null
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consulta_secretaria_economia_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consulta_secretaria_economia_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1501,6 +1830,211 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      cuestionario_reforzado: {
+        Row: {
+          aplicado_por: string | null
+          client_id: string
+          creado_en: string
+          evidencia_atribucion: Json | null
+          evidencia_integridad: Json | null
+          firmado_en: string | null
+          id: string
+          mecanismo: Database["public"]["Enums"]["mecanismo_firma"] | null
+          organization_id: string
+          respuestas: Json
+          verificacion_id: string | null
+        }
+        Insert: {
+          aplicado_por?: string | null
+          client_id: string
+          creado_en?: string
+          evidencia_atribucion?: Json | null
+          evidencia_integridad?: Json | null
+          firmado_en?: string | null
+          id?: string
+          mecanismo?: Database["public"]["Enums"]["mecanismo_firma"] | null
+          organization_id: string
+          respuestas?: Json
+          verificacion_id?: string | null
+        }
+        Update: {
+          aplicado_por?: string | null
+          client_id?: string
+          creado_en?: string
+          evidencia_atribucion?: Json | null
+          evidencia_integridad?: Json | null
+          firmado_en?: string | null
+          id?: string
+          mecanismo?: Database["public"]["Enums"]["mecanismo_firma"] | null
+          organization_id?: string
+          respuestas?: Json
+          verificacion_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuestionario_reforzado_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuestionario_reforzado_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuestionario_reforzado_verificacion_id_fkey"
+            columns: ["verificacion_id"]
+            isOneToOne: false
+            referencedRelation: "v_verificacion_vigente"
+            referencedColumns: ["verificacion_id"]
+          },
+          {
+            foreignKeyName: "cuestionario_reforzado_verificacion_id_fkey"
+            columns: ["verificacion_id"]
+            isOneToOne: false
+            referencedRelation: "verificacion_identidad"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documento_admitido_por_origen: {
+        Row: {
+          origen_clave: string
+          tipo_clave: string
+        }
+        Insert: {
+          origen_clave: string
+          tipo_clave: string
+        }
+        Update: {
+          origen_clave?: string
+          tipo_clave?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documento_admitido_por_origen_origen_clave_fkey"
+            columns: ["origen_clave"]
+            isOneToOne: false
+            referencedRelation: "origen_recursos"
+            referencedColumns: ["clave"]
+          },
+          {
+            foreignKeyName: "documento_admitido_por_origen_tipo_clave_fkey"
+            columns: ["tipo_clave"]
+            isOneToOne: false
+            referencedRelation: "tipo_documento_origen"
+            referencedColumns: ["clave"]
+          },
+        ]
+      }
+      documento_origen: {
+        Row: {
+          client_id: string
+          descripcion: string | null
+          emisor: string
+          emitido_por_tercero: boolean
+          fecha_documento: string
+          id: string
+          justificacion: string | null
+          mime_type: string | null
+          moneda: string
+          monto_acreditado: number | null
+          nombre_archivo: string
+          organization_id: string
+          origen_clave: string
+          periodo_desde: string | null
+          periodo_hasta: string | null
+          revisado_en: string | null
+          revisado_por_oc: string | null
+          storage_path: string
+          subido_en: string
+          subido_por: string | null
+          tamano_bytes: number | null
+          tipo_clave: string
+        }
+        Insert: {
+          client_id: string
+          descripcion?: string | null
+          emisor: string
+          emitido_por_tercero: boolean
+          fecha_documento: string
+          id?: string
+          justificacion?: string | null
+          mime_type?: string | null
+          moneda?: string
+          monto_acreditado?: number | null
+          nombre_archivo: string
+          organization_id: string
+          origen_clave: string
+          periodo_desde?: string | null
+          periodo_hasta?: string | null
+          revisado_en?: string | null
+          revisado_por_oc?: string | null
+          storage_path: string
+          subido_en?: string
+          subido_por?: string | null
+          tamano_bytes?: number | null
+          tipo_clave: string
+        }
+        Update: {
+          client_id?: string
+          descripcion?: string | null
+          emisor?: string
+          emitido_por_tercero?: boolean
+          fecha_documento?: string
+          id?: string
+          justificacion?: string | null
+          mime_type?: string | null
+          moneda?: string
+          monto_acreditado?: number | null
+          nombre_archivo?: string
+          organization_id?: string
+          origen_clave?: string
+          periodo_desde?: string | null
+          periodo_hasta?: string | null
+          revisado_en?: string | null
+          revisado_por_oc?: string | null
+          storage_path?: string
+          subido_en?: string
+          subido_por?: string | null
+          tamano_bytes?: number | null
+          tipo_clave?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documento_origen_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documento_origen_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documento_origen_origen_clave_fkey"
+            columns: ["origen_clave"]
+            isOneToOne: false
+            referencedRelation: "origen_recursos"
+            referencedColumns: ["clave"]
+          },
+          {
+            foreignKeyName: "documento_origen_tipo_clave_fkey"
+            columns: ["tipo_clave"]
+            isOneToOne: false
+            referencedRelation: "tipo_documento_origen"
+            referencedColumns: ["clave"]
           },
         ]
       }
@@ -1595,6 +2129,60 @@ export type Database = {
           versiones?: Json
         }
         Relationships: []
+      }
+      expediente_reforzado: {
+        Row: {
+          aprobado_en: string | null
+          aprobado_por: string | null
+          autoaprobacion: boolean
+          calidad: Database["public"]["Enums"]["calidad_aprobacion"] | null
+          client_id: string
+          creado_en: string
+          evaluacion_secuencia: number | null
+          id: string
+          notas: string | null
+          organization_id: string
+        }
+        Insert: {
+          aprobado_en?: string | null
+          aprobado_por?: string | null
+          autoaprobacion?: boolean
+          calidad?: Database["public"]["Enums"]["calidad_aprobacion"] | null
+          client_id: string
+          creado_en?: string
+          evaluacion_secuencia?: number | null
+          id?: string
+          notas?: string | null
+          organization_id: string
+        }
+        Update: {
+          aprobado_en?: string | null
+          aprobado_por?: string | null
+          autoaprobacion?: boolean
+          calidad?: Database["public"]["Enums"]["calidad_aprobacion"] | null
+          client_id?: string
+          creado_en?: string
+          evaluacion_secuencia?: number | null
+          id?: string
+          notas?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expediente_reforzado_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expediente_reforzado_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       folio_secuencial: {
         Row: {
@@ -2292,6 +2880,7 @@ export type Database = {
       operation: {
         Row: {
           activo_virtual: string | null
+          aprobacion_expediente_id: string | null
           aprobacion_relacion_id: string | null
           aprobada_en: string | null
           aprobada_por: string | null
@@ -2330,6 +2919,7 @@ export type Database = {
         }
         Insert: {
           activo_virtual?: string | null
+          aprobacion_expediente_id?: string | null
           aprobacion_relacion_id?: string | null
           aprobada_en?: string | null
           aprobada_por?: string | null
@@ -2370,6 +2960,7 @@ export type Database = {
         }
         Update: {
           activo_virtual?: string | null
+          aprobacion_expediente_id?: string | null
           aprobacion_relacion_id?: string | null
           aprobada_en?: string | null
           aprobada_por?: string | null
@@ -2410,6 +3001,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "operation_aprobacion_expediente_id_fkey"
+            columns: ["aprobacion_expediente_id"]
+            isOneToOne: false
+            referencedRelation: "expediente_reforzado"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "operation_aprobacion_relacion_id_fkey"
             columns: ["aprobacion_relacion_id"]
             isOneToOne: false
@@ -2429,6 +3027,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operation_subdivision_inmueble_fkey"
+            columns: ["subdivision_inmueble"]
+            isOneToOne: false
+            referencedRelation: "subdivision_riesgo"
+            referencedColumns: ["clave"]
           },
         ]
       }
@@ -2498,6 +3103,97 @@ export type Database = {
         }
         Relationships: []
       }
+      origen_declarado: {
+        Row: {
+          client_id: string
+          declarado_en: string
+          declarado_por: string | null
+          detalle: string | null
+          id: string
+          monto_mxn: number | null
+          organization_id: string
+          origen_clave: string
+        }
+        Insert: {
+          client_id: string
+          declarado_en?: string
+          declarado_por?: string | null
+          detalle?: string | null
+          id?: string
+          monto_mxn?: number | null
+          organization_id: string
+          origen_clave: string
+        }
+        Update: {
+          client_id?: string
+          declarado_en?: string
+          declarado_por?: string | null
+          detalle?: string | null
+          id?: string
+          monto_mxn?: number | null
+          organization_id?: string
+          origen_clave?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "origen_declarado_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "origen_declarado_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "origen_declarado_origen_clave_fkey"
+            columns: ["origen_clave"]
+            isOneToOne: false
+            referencedRelation: "origen_recursos"
+            referencedColumns: ["clave"]
+          },
+        ]
+      }
+      origen_recursos: {
+        Row: {
+          clave: string
+          nombre: string
+          orden: number
+          vigente: boolean
+        }
+        Insert: {
+          clave: string
+          nombre: string
+          orden: number
+          vigente?: boolean
+        }
+        Update: {
+          clave?: string
+          nombre?: string
+          orden?: number
+          vigente?: boolean
+        }
+        Relationships: []
+      }
+      pais_exige_subdivision: {
+        Row: {
+          motivo: string
+          pais_iso2: string
+        }
+        Insert: {
+          motivo: string
+          pais_iso2: string
+        }
+        Update: {
+          motivo?: string
+          pais_iso2?: string
+        }
+        Relationships: []
+      }
       parametro_regulatorio: {
         Row: {
           codigo: string
@@ -2552,21 +3248,6 @@ export type Database = {
           valor_numerico?: number
           vigente_desde?: string
           vigente_hasta?: string | null
-        }
-        Relationships: []
-      }
-      pais_exige_subdivision: {
-        Row: {
-          motivo: string
-          pais_iso2: string
-        }
-        Insert: {
-          motivo: string
-          pais_iso2: string
-        }
-        Update: {
-          motivo?: string
-          pais_iso2?: string
         }
         Relationships: []
       }
@@ -3092,6 +3773,27 @@ export type Database = {
         }
         Relationships: []
       }
+      tipo_documento_origen: {
+        Row: {
+          clave: string
+          emisor_tercero_por_naturaleza: boolean
+          nombre: string
+          vigente: boolean
+        }
+        Insert: {
+          clave: string
+          emisor_tercero_por_naturaleza: boolean
+          nombre: string
+          vigente?: boolean
+        }
+        Update: {
+          clave?: string
+          emisor_tercero_por_naturaleza?: boolean
+          nombre?: string
+          vigente?: boolean
+        }
+        Relationships: []
+      }
       tipo_social: {
         Row: {
           clave: string
@@ -3276,6 +3978,7 @@ export type Database = {
           didit_workflow_id: string | null
           enviado_a: string | null
           estado: Database["public"]["Enums"]["estado_verificacion"]
+          features_aplicadas: string[] | null
           id: string
           organization_id: string
           resuelta_en: string | null
@@ -3284,6 +3987,7 @@ export type Database = {
           solicitada_por: string | null
           ultimo_evento_id: string | null
           url: string
+          workflow_version: number | null
         }
         Insert: {
           canal: string
@@ -3292,6 +3996,7 @@ export type Database = {
           didit_workflow_id?: string | null
           enviado_a?: string | null
           estado?: Database["public"]["Enums"]["estado_verificacion"]
+          features_aplicadas?: string[] | null
           id?: string
           organization_id: string
           resuelta_en?: string | null
@@ -3300,6 +4005,7 @@ export type Database = {
           solicitada_por?: string | null
           ultimo_evento_id?: string | null
           url: string
+          workflow_version?: number | null
         }
         Update: {
           canal?: string
@@ -3308,6 +4014,7 @@ export type Database = {
           didit_workflow_id?: string | null
           enviado_a?: string | null
           estado?: Database["public"]["Enums"]["estado_verificacion"]
+          features_aplicadas?: string[] | null
           id?: string
           organization_id?: string
           resuelta_en?: string | null
@@ -3316,6 +4023,7 @@ export type Database = {
           solicitada_por?: string | null
           ultimo_evento_id?: string | null
           url?: string
+          workflow_version?: number | null
         }
         Relationships: [
           {
@@ -3746,6 +4454,32 @@ export type Database = {
       }
     }
     Functions: {
+      allegados_exigen_documentacion: {
+        Args: { p_client: string }
+        Returns: boolean
+      }
+      allegados_sin_preguntar: {
+        Args: { p_client: string }
+        Returns: {
+          vinculo: string
+        }[]
+      }
+      aprobar_expediente_reforzado: {
+        Args: {
+          p_calidad: Database["public"]["Enums"]["calidad_aprobacion"]
+          p_client: string
+          p_notas?: string
+        }
+        Returns: string
+      }
+      artefactos_faltantes: {
+        Args: { p_verificacion: string }
+        Returns: {
+          motivo: string
+          tipo: string
+        }[]
+      }
+      asentar_adenda_5: { Args: { p_org: string }; Returns: boolean }
       bajar_nivel_diligencia: {
         Args: {
           p_client: string
@@ -3755,6 +4489,13 @@ export type Database = {
         Returns: Database["public"]["Enums"]["nivel_kyc"]
       }
       bc_exento: { Args: { p_client: string }; Returns: boolean }
+      bloques_cuestionario_pendientes: {
+        Args: { p_client: string }
+        Returns: {
+          bloque: string
+          etiqueta: string
+        }[]
+      }
       calcular_autoaprobacion: {
         Args: {
           p_aprobador: string
@@ -3864,6 +4605,10 @@ export type Database = {
         Args: { p_carga_id: string; p_motivo: string }
         Returns: undefined
       }
+      designar_oficial_cumplimiento: {
+        Args: { p_es_titular?: boolean; p_org: string; p_user: string }
+        Returns: undefined
+      }
       diagnostico_organizacion: {
         Args: { p_org: string }
         Returns: {
@@ -3886,6 +4631,27 @@ export type Database = {
         Returns: string
       }
       es_admin_kawiil: { Args: never; Returns: boolean }
+      expediente_exportable: {
+        Args: { p_client: string }
+        Returns: {
+          detalle: string
+          listo: boolean
+          seccion: string
+        }[]
+      }
+      expediente_reforzado_vigente: {
+        Args: { p_client: string }
+        Returns: boolean
+      }
+      expedientes_para_revision_total: {
+        Args: { p_org?: string }
+        Returns: {
+          aprobado_en: string
+          calidad: string
+          client_id: string
+          nombre: string
+        }[]
+      }
       fecha_compromiso_propuesta: {
         Args: { p_detectado?: string }
         Returns: string
@@ -3909,6 +4675,10 @@ export type Database = {
         Args: { target_rol: Database["public"]["Enums"]["rol_usuario"] }
         Returns: boolean
       }
+      hay_autoaprobacion: {
+        Args: { p_aprobador: string; p_client: string; p_org: string }
+        Returns: boolean
+      }
       json_canonico: { Args: { p: Json }; Returns: string }
       limite_efectivo_del_acto: {
         Args: { p_tipo_acto: string }
@@ -3927,11 +4697,28 @@ export type Database = {
         Args: { p_id: string; p_notas?: string; p_status: string }
         Returns: undefined
       }
+      n3_sin_aprobacion_vigente: {
+        Args: { p_org?: string }
+        Returns: {
+          actos: number
+          client_id: string
+          motivo: string
+          nombre: string
+        }[]
+      }
       nivel_diligencia_exigido: {
         Args: { p_client: string }
         Returns: {
           motivo: string
           nivel: Database["public"]["Enums"]["nivel_kyc"]
+        }[]
+      }
+      nivel_territorial_del_expediente: {
+        Args: { p_client: string }
+        Returns: {
+          detalle: string
+          nivel: string
+          origen: string
         }[]
       }
       normalizar_nombre: { Args: { p_texto: string }; Returns: string }
@@ -4031,6 +4818,16 @@ export type Database = {
         }
         Returns: string
       }
+      registrar_hallazgo_conciliacion: {
+        Args: {
+          p_detalle?: string
+          p_hallazgo: string
+          p_org?: string
+          p_session: string
+          p_verificacion?: string
+        }
+        Returns: string
+      }
       render_folio: {
         Args: {
           p_anio: number
@@ -4063,6 +4860,21 @@ export type Database = {
           p_motivo_piso?: string
         }
         Returns: Database["public"]["Enums"]["nivel_kyc"]
+      }
+      subdivision_pendiente: {
+        Args: { p_client: string }
+        Returns: {
+          motivo: string
+          pais: string
+        }[]
+      }
+      suficiencia_origen_recursos: {
+        Args: { p_client: string; p_monto_operacion?: number }
+        Returns: {
+          cumple: boolean
+          detalle: string
+          regla: string
+        }[]
       }
       urgencia_de_regla: {
         Args: { regla: Json }
@@ -4156,6 +4968,10 @@ export type Database = {
         | "pep_nacional"
         | "pep_extranjero"
         | "manual"
+      mecanismo_firma:
+        | "efirma_sat"
+        | "prestador_reconocido"
+        | "constancia_conservacion"
       modo_actualizacion_lista: "snapshot" | "movimientos"
       naturaleza_allegado:
         | "conyuge"
@@ -4175,6 +4991,11 @@ export type Database = {
       rol_usuario: "operador" | "oc" | "admin"
       sector_av: "IV" | "V" | "VII" | "VIII" | "XV" | "XVI" | "XII"
       severidad_tipologia: "baja" | "media" | "alta" | "critica"
+      tipo_artefacto:
+        | "documento_frente"
+        | "documento_reverso"
+        | "documento_frente_completo"
+        | "documento_reverso_completo"
       tipo_aviso: "24h" | "mensual"
       tipo_bitacora_hallazgo:
         | "cambio_estado"
@@ -4189,6 +5010,12 @@ export type Database = {
         | "deposito_fiat"
         | "otro"
       tipo_persona: "fisica" | "moral"
+      vinculo_allegado:
+        | "conyuge"
+        | "concubina_concubinario"
+        | "dependiente_economico"
+        | "sociedad_vinculo_patrimonial"
+        | "otro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4380,6 +5207,11 @@ export const Constants = {
         "pep_extranjero",
         "manual",
       ],
+      mecanismo_firma: [
+        "efirma_sat",
+        "prestador_reconocido",
+        "constancia_conservacion",
+      ],
       modo_actualizacion_lista: ["snapshot", "movimientos"],
       naturaleza_allegado: [
         "conyuge",
@@ -4401,6 +5233,12 @@ export const Constants = {
       rol_usuario: ["operador", "oc", "admin"],
       sector_av: ["IV", "V", "VII", "VIII", "XV", "XVI", "XII"],
       severidad_tipologia: ["baja", "media", "alta", "critica"],
+      tipo_artefacto: [
+        "documento_frente",
+        "documento_reverso",
+        "documento_frente_completo",
+        "documento_reverso_completo",
+      ],
       tipo_aviso: ["24h", "mensual"],
       tipo_bitacora_hallazgo: [
         "cambio_estado",
@@ -4417,6 +5255,13 @@ export const Constants = {
         "otro",
       ],
       tipo_persona: ["fisica", "moral"],
+      vinculo_allegado: [
+        "conyuge",
+        "concubina_concubinario",
+        "dependiente_economico",
+        "sociedad_vinculo_patrimonial",
+        "otro",
+      ],
     },
   },
 } as const

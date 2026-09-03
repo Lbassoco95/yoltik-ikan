@@ -9,14 +9,28 @@
 
 /** Estados que Didit manda, literales y sensibles a mayúsculas. */
 export type EstadoDidit =
-  | 'Not Started' | 'In Progress' | 'Awaiting User' | 'In Review'
-  | 'Approved' | 'Declined' | 'Resubmitted' | 'Abandoned'
-  | 'Expired' | 'Kyc Expired';
+  | "Not Started"
+  | "In Progress"
+  | "Awaiting User"
+  | "In Review"
+  | "Approved"
+  | "Declined"
+  | "Resubmitted"
+  | "Abandoned"
+  | "Expired"
+  | "Kyc Expired";
 
 /** El enum de la migration 0032. */
 export type EstadoIkan =
-  | 'no_iniciada' | 'en_progreso' | 'en_revision' | 'aprobada'
-  | 'rechazada' | 'reenviada' | 'abandonada' | 'expirada' | 'error';
+  | "no_iniciada"
+  | "en_progreso"
+  | "en_revision"
+  | "aprobada"
+  | "rechazada"
+  | "reenviada"
+  | "abandonada"
+  | "expirada"
+  | "error";
 
 /**
  * Traduce el estado de Didit al nuestro.
@@ -28,23 +42,61 @@ export type EstadoIkan =
  */
 export function estadoDeDidit(s: string): EstadoIkan {
   switch (s) {
-    case 'Approved':      return 'aprobada';
-    case 'Declined':      return 'rechazada';
-    case 'In Review':     return 'en_revision';
-    case 'Resubmitted':   return 'reenviada';
-    case 'Abandoned':     return 'abandonada';
-    case 'Expired':
-    case 'Kyc Expired':   return 'expirada';
-    case 'Not Started':   return 'no_iniciada';
-    case 'In Progress':
-    case 'Awaiting User': return 'en_progreso';
-    default:              return 'en_progreso';
+    case "Approved":
+      return "aprobada";
+    case "Declined":
+      return "rechazada";
+    case "In Review":
+      return "en_revision";
+    case "Resubmitted":
+      return "reenviada";
+    case "Abandoned":
+      return "abandonada";
+    case "Expired":
+    case "Kyc Expired":
+      return "expirada";
+    case "Not Started":
+      return "no_iniciada";
+    case "In Progress":
+    case "Awaiting User":
+      return "en_progreso";
+    default:
+      return "en_progreso";
   }
 }
 
+/**
+ * Los estados que sabemos leer.
+ *
+ * Existe porque `estadoDeDidit` colapsa lo desconocido en `en_progreso`, que es
+ * el default seguro para recibir un aviso —nunca convierte algo raro en
+ * «aprobada»— pero es peligroso para CORREGIR: la conciliación compara el
+ * estado del proveedor con el nuestro, y si el proveedor devolviera mañana un
+ * estado nuevo, «desconocido» se leería como una divergencia y degradaría una
+ * verificación aprobada a en_progreso. Antes de corregir hay que saber que se
+ * entendió lo que llegó.
+ */
+export const ESTADOS_CONOCIDOS: ReadonlySet<string> = new Set([
+  "Approved",
+  "Declined",
+  "In Review",
+  "Resubmitted",
+  "Abandoned",
+  "Expired",
+  "Kyc Expired",
+  "Not Started",
+  "In Progress",
+  "Awaiting User",
+]);
+
 /** Un estado es final cuando ya no va a cambiar solo. */
 export function esFinal(e: EstadoIkan): boolean {
-  return e === 'aprobada' || e === 'rechazada' || e === 'expirada' || e === 'abandonada';
+  return (
+    e === "aprobada" ||
+    e === "rechazada" ||
+    e === "expirada" ||
+    e === "abandonada"
+  );
 }
 
 /**
@@ -61,12 +113,16 @@ export function esFinal(e: EstadoIkan): boolean {
  */
 export function acortarFlotantes(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(acortarFlotantes);
-  if (v && typeof v === 'object') {
+  if (v && typeof v === "object") {
     return Object.fromEntries(
-      Object.entries(v as Record<string, unknown>).map(([k, x]) => [k, acortarFlotantes(x)]),
+      Object.entries(v as Record<string, unknown>).map(([k, x]) => [
+        k,
+        acortarFlotantes(x),
+      ]),
     );
   }
-  if (typeof v === 'number' && !Number.isInteger(v) && v % 1 === 0) return Math.trunc(v);
+  if (typeof v === "number" && !Number.isInteger(v) && v % 1 === 0)
+    return Math.trunc(v);
   return v;
 }
 
@@ -74,18 +130,22 @@ export function acortarFlotantes(v: unknown): unknown {
  *  se respeta: ahí la posición es significativa. */
 export function ordenarClaves(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(ordenarClaves);
-  if (v && typeof v === 'object') {
-    return Object.keys(v as object).sort().reduce<Record<string, unknown>>((acc, k) => {
-      acc[k] = ordenarClaves((v as Record<string, unknown>)[k]);
-      return acc;
-    }, {});
+  if (v && typeof v === "object") {
+    return Object.keys(v as object)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, k) => {
+        acc[k] = ordenarClaves((v as Record<string, unknown>)[k]);
+        return acc;
+      }, {});
   }
   return v;
 }
 
 /** El texto exacto sobre el que Didit calcula la firma. */
 export function canonico(cuerpoCrudo: string): string {
-  return JSON.stringify(ordenarClaves(acortarFlotantes(JSON.parse(cuerpoCrudo))));
+  return JSON.stringify(
+    ordenarClaves(acortarFlotantes(JSON.parse(cuerpoCrudo))),
+  );
 }
 
 /** Comparación en tiempo constante. Con `===` sobre cadenas, el tiempo de
@@ -100,18 +160,32 @@ export function igualEnTiempoConstante(a: string, b: string): boolean {
 async function hmacHex(secreto: string, texto: string): Promise<string> {
   const cripto = globalThis.crypto;
   const llave = await cripto.subtle.importKey(
-    'raw', new TextEncoder().encode(secreto),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+    "raw",
+    new TextEncoder().encode(secreto),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
   );
-  const firma = await cripto.subtle.sign('HMAC', llave, new TextEncoder().encode(texto));
-  return Array.from(new Uint8Array(firma)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  const firma = await cripto.subtle.sign(
+    "HMAC",
+    llave,
+    new TextEncoder().encode(texto),
+  );
+  return Array.from(new Uint8Array(firma))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export interface ResultadoVerificacion {
   ok: boolean;
   /** Por qué NO es válida. Se distingue el motivo para poder registrarlo: una
    *  firma mala y una entrega vieja son incidentes distintos. */
-  motivo?: 'sin_firma' | 'sin_fecha' | 'caducada' | 'firma_invalida' | 'cuerpo_ilegible';
+  motivo?:
+    | "sin_firma"
+    | "sin_fecha"
+    | "caducada"
+    | "firma_invalida"
+    | "cuerpo_ilegible";
 }
 
 /** Ventana de frescura, en segundos. La fija Didit. */
@@ -131,23 +205,25 @@ export async function verificarWebhook(
   secreto: string,
   ahoraSegundos: number = Date.now() / 1000,
 ): Promise<ResultadoVerificacion> {
-  if (!firma) return { ok: false, motivo: 'sin_firma' };
+  if (!firma) return { ok: false, motivo: "sin_firma" };
 
   const ts = Number(marcaTiempo);
-  if (!marcaTiempo || !Number.isFinite(ts)) return { ok: false, motivo: 'sin_fecha' };
-  if (Math.abs(ahoraSegundos - ts) > VENTANA_SEGUNDOS) return { ok: false, motivo: 'caducada' };
+  if (!marcaTiempo || !Number.isFinite(ts))
+    return { ok: false, motivo: "sin_fecha" };
+  if (Math.abs(ahoraSegundos - ts) > VENTANA_SEGUNDOS)
+    return { ok: false, motivo: "caducada" };
 
   let texto: string;
   try {
     texto = canonico(cuerpoCrudo);
   } catch {
-    return { ok: false, motivo: 'cuerpo_ilegible' };
+    return { ok: false, motivo: "cuerpo_ilegible" };
   }
 
   const esperada = await hmacHex(secreto, texto);
   return igualEnTiempoConstante(esperada, firma)
     ? { ok: true }
-    : { ok: false, motivo: 'firma_invalida' };
+    : { ok: false, motivo: "firma_invalida" };
 }
 
 /**
@@ -163,14 +239,14 @@ export async function verificarWebhook(
  * consintió que estuvieran.
  */
 export function resumirDecision(decision: unknown): Record<string, unknown> {
-  if (!decision || typeof decision !== 'object') return {};
+  if (!decision || typeof decision !== "object") return {};
   const d = decision as Record<string, unknown>;
 
   /** El primer nodo de un arreglo de módulo, o null. En V3 cada módulo puede
    *  correr varias veces sobre nodos distintos del grafo; para el resumen basta
    *  el primero, y si algún día hacen falta todos se indexa por `node_id`. */
   const primero = (arr: unknown): Record<string, unknown> | null =>
-    Array.isArray(arr) && arr.length > 0 && arr[0] && typeof arr[0] === 'object'
+    Array.isArray(arr) && arr.length > 0 && arr[0] && typeof arr[0] === "object"
       ? (arr[0] as Record<string, unknown>)
       : null;
 
@@ -178,6 +254,7 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
   const vida = primero(d.liveness_checks);
   const cara = primero(d.face_matches);
   const aml = primero(d.aml_screenings);
+  const canal = primero(d.ip_analyses);
 
   const resumen: Record<string, unknown> = {};
 
@@ -185,15 +262,24 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
     resumen.documento = {
       tipo: id.document_type ?? null,
       pais: id.issuing_state ?? null,
-      nombre_leido: [id.first_name, id.last_name].filter(Boolean).join(' ') || null,
+      nombre_leido:
+        [id.first_name, id.last_name].filter(Boolean).join(" ") || null,
       // El número del documento NO se guarda: identifica por sí solo y ya está
       // en Didit. Si Kawiil-Cumplimiento lo pide para el expediente, se añade.
       vence: id.expiration_date ?? null,
       avisos: Array.isArray(id.warnings) ? id.warnings.length : 0,
     };
   }
-  if (vida) resumen.prueba_de_vida = { estado: vida.status ?? null, puntaje: vida.score ?? null };
-  if (cara) resumen.cotejo_facial = { estado: cara.status ?? null, puntaje: cara.score ?? null };
+  if (vida)
+    resumen.prueba_de_vida = {
+      estado: vida.status ?? null,
+      puntaje: vida.score ?? null,
+    };
+  if (cara)
+    resumen.cotejo_facial = {
+      estado: cara.status ?? null,
+      puntaje: cara.score ?? null,
+    };
   if (aml) {
     resumen.listas = {
       estado: aml.status ?? null,
@@ -212,6 +298,60 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
       categorias: categoriasDeCoincidencias(aml),
     };
   }
+  if (canal) {
+    /**
+     * Señales de canal, con el recorte de la Adenda 5 y la Adenda 6 §5:
+     * PAÍS Y BANDERAS DE RED SÍ; DIRECCIÓN COMPLETA Y COORDENADAS NO.
+     *
+     * La decisión trae `latitude`, `longitude` e `ip_address`, y también la
+     * dirección del documento con sus coordenadas. Nada de eso se copia. No es
+     * una omisión: es que la geolocalización por red NO es el domicilio del
+     * cliente ni el lugar del acto —es evidencia sobre el canal por el que se
+     * conectó—, y rotularla como ubicación del cliente llevaría a un analista a
+     * concluir de más. En fe pública la ubicación jurídicamente relevante es la
+     * del inmueble y la del domicilio declarado.
+     *
+     * Lo que sí se guarda es la DIVERGENCIA, que es donde está la señal: Didit
+     * calcula la distancia entre la procedencia de la sesión y la del documento
+     * de identidad. Que coincidan no dice gran cosa; que no coincidan es una
+     * señal barata y limpia. Y es un escalar derivado, no un punto en el mapa.
+     */
+    const dist = (
+      nodo: unknown,
+      llave: string,
+    ): Record<string, unknown> | null => {
+      if (!nodo || typeof nodo !== "object") return null;
+      const v = (nodo as Record<string, unknown>)[llave];
+      return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
+    };
+    const contraDocumento = dist(canal.ip, "distance_from_id_document");
+    const contraComprobante = dist(canal.ip, "distance_from_poa_document");
+
+    resumen.canal = {
+      pais: canal.ip_country ?? null,
+      pais_iso2: canal.ip_country_code ?? null,
+      // Las tres banderas de red. `null` cuando el módulo no las devolvió, que
+      // NO es lo mismo que `false`: «no se detectó VPN» y «no se miró» son
+      // afirmaciones distintas y sólo una se puede sostener.
+      vpn_o_tor:
+        typeof canal.is_vpn_or_tor === "boolean" ? canal.is_vpn_or_tor : null,
+      centro_de_datos:
+        typeof canal.is_data_center === "boolean" ? canal.is_data_center : null,
+      divergencia_documento_km:
+        typeof contraDocumento?.distance === "number"
+          ? contraDocumento.distance
+          : null,
+      divergencia_documento_rumbo:
+        typeof contraDocumento?.direction === "string"
+          ? contraDocumento.direction
+          : null,
+      divergencia_comprobante_km:
+        typeof contraComprobante?.distance === "number"
+          ? contraComprobante.distance
+          : null,
+    };
+  }
+
   return resumen;
 }
 
@@ -227,7 +367,9 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
  * «no es PEP» silencioso, que es justo lo que una visita de verificación
  * desarma primero.
  */
-export function categoriasDeCoincidencias(aml: Record<string, unknown>): string[] {
+export function categoriasDeCoincidencias(
+  aml: Record<string, unknown>,
+): string[] {
   const total = Number(aml.total_hits ?? 0);
   if (!Number.isFinite(total) || total <= 0) return [];
 
@@ -237,23 +379,29 @@ export function categoriasDeCoincidencias(aml: Record<string, unknown>): string[
     | Record<string, unknown>[]
     | undefined;
 
-  if (!lista) return ['sin_clasificar'];
+  if (!lista) return ["sin_clasificar"];
 
   const fuera = new Set<string>();
   for (const hit of lista) {
-    if (!hit || typeof hit !== 'object') continue;
+    if (!hit || typeof hit !== "object") continue;
     // Otra vez a la defensiva: el nombre del campo varía entre versiones.
-    const crudo = [hit.category, hit.type, hit.list_type, hit.match_type, hit.categories]
+    const crudo = [
+      hit.category,
+      hit.type,
+      hit.list_type,
+      hit.match_type,
+      hit.categories,
+    ]
       .flat()
-      .filter((x): x is string => typeof x === 'string');
+      .filter((x): x is string => typeof x === "string");
 
     if (crudo.length === 0) {
-      fuera.add('sin_clasificar');
+      fuera.add("sin_clasificar");
       continue;
     }
     for (const c of crudo) fuera.add(normalizarCategoria(c));
   }
-  return fuera.size > 0 ? [...fuera].sort() : ['sin_clasificar'];
+  return fuera.size > 0 ? [...fuera].sort() : ["sin_clasificar"];
 }
 
 /**
@@ -265,9 +413,9 @@ export function categoriasDeCoincidencias(aml: Record<string, unknown>): string[
  */
 function normalizarCategoria(crudo: string): string {
   const c = crudo.toLowerCase();
-  if (c.includes('pep') || c.includes('political')) return 'pep';
-  if (c.includes('sanction') || c.includes('sancion')) return 'sancion';
-  if (c.includes('adverse') || c.includes('media')) return 'nota_adversa';
-  if (c.includes('warning') || c.includes('watch')) return 'lista_de_atencion';
-  return 'sin_clasificar';
+  if (c.includes("pep") || c.includes("political")) return "pep";
+  if (c.includes("sanction") || c.includes("sancion")) return "sancion";
+  if (c.includes("adverse") || c.includes("media")) return "nota_adversa";
+  if (c.includes("warning") || c.includes("watch")) return "lista_de_atencion";
+  return "sin_clasificar";
 }

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 
 /**
  * Verificación de identidad del compareciente (Didit).
@@ -10,23 +10,30 @@ import { supabase } from '@/lib/supabase';
  */
 
 export type EstadoVerificacion =
-  | 'no_iniciada' | 'en_progreso' | 'en_revision' | 'aprobada'
-  | 'rechazada' | 'reenviada' | 'abandonada' | 'expirada' | 'error';
+  | "no_iniciada"
+  | "en_progreso"
+  | "en_revision"
+  | "aprobada"
+  | "rechazada"
+  | "reenviada"
+  | "abandonada"
+  | "expirada"
+  | "error";
 
 /** Cómo se le hace llegar la verificación al compareciente. En una notaría el
  *  caso más común es que esté ahí mismo, así que 'presencial' no es un extra. */
-export type CanalVerificacion = 'correo' | 'liga' | 'presencial';
+export type CanalVerificacion = "correo" | "liga" | "presencial";
 
 export const ETIQUETA_ESTADO: Record<EstadoVerificacion, string> = {
-  no_iniciada: 'Enviada, sin abrir',
-  en_progreso: 'En proceso',
-  en_revision: 'En revisión de Didit',
-  aprobada: 'Identidad verificada',
-  rechazada: 'No pasó la verificación',
-  reenviada: 'Se le pidió repetir un paso',
-  abandonada: 'La dejó a medias',
-  expirada: 'Caducó sin completarse',
-  error: 'No se pudo abrir',
+  no_iniciada: "Enviada, sin abrir",
+  en_progreso: "En proceso",
+  en_revision: "En revisión de Didit",
+  aprobada: "Identidad verificada",
+  rechazada: "No pasó la verificación",
+  reenviada: "Se le pidió repetir un paso",
+  abandonada: "La dejó a medias",
+  expirada: "Caducó sin completarse",
+  error: "No se pudo abrir",
 };
 
 export interface VerificacionVigente {
@@ -45,7 +52,9 @@ export interface VerificacionVigente {
 
 /** La última verificación de cada compareciente de la organización. */
 export async function verificacionesVigentes(): Promise<VerificacionVigente[]> {
-  const { data, error } = await supabase.from('v_verificacion_vigente').select('*');
+  const { data, error } = await supabase
+    .from("v_verificacion_vigente")
+    .select("*");
   if (error) throw error;
   return (data ?? []) as unknown as VerificacionVigente[];
 }
@@ -68,9 +77,12 @@ export async function abrirVerificacion(
   canal: CanalVerificacion,
   enviadoA?: string,
 ): Promise<SesionAbierta> {
-  const { data, error } = await supabase.functions.invoke('didit-crear-sesion', {
-    body: { client_id: clientId, canal, enviado_a: enviadoA ?? null },
-  });
+  const { data, error } = await supabase.functions.invoke(
+    "didit-crear-sesion",
+    {
+      body: { client_id: clientId, canal, enviado_a: enviadoA ?? null },
+    },
+  );
   if (error) {
     // El cuerpo del error trae el mensaje útil de la función; `error.message`
     // a secas suele ser un «non-2xx status» que no le dice nada a nadie.
@@ -87,7 +99,10 @@ export async function abrirVerificacion(
 }
 
 /** Mensaje con el que se le manda la liga por WhatsApp o mensaje de texto. */
-export function mensajeParaCompareciente(nombreNotaria: string, url: string): string {
+export function mensajeParaCompareciente(
+  nombreNotaria: string,
+  url: string,
+): string {
   return (
     `${nombreNotaria} necesita verificar su identidad antes de continuar con su trámite.\n\n` +
     `Abra esta liga desde su teléfono y siga los pasos. Le tomará un par de minutos y ` +
@@ -97,9 +112,12 @@ export function mensajeParaCompareciente(nombreNotaria: string, url: string): st
 }
 
 /** Abre WhatsApp con el mensaje listo. Sin número, deja elegir contacto. */
-export function ligaWhatsApp(mensaje: string, telefono?: string | null): string {
-  const soloDigitos = (telefono ?? '').replace(/\D/g, '');
-  const destino = soloDigitos.length >= 10 ? soloDigitos : '';
+export function ligaWhatsApp(
+  mensaje: string,
+  telefono?: string | null,
+): string {
+  const soloDigitos = (telefono ?? "").replace(/\D/g, "");
+  const destino = soloDigitos.length >= 10 ? soloDigitos : "";
   return `https://wa.me/${destino}?text=${encodeURIComponent(mensaje)}`;
 }
 
@@ -120,12 +138,12 @@ export async function verificacionesDeCliente(
   clientId: string,
 ): Promise<VerificacionDeCliente[]> {
   const { data, error } = await supabase
-    .from('verificacion_identidad')
+    .from("verificacion_identidad")
     .select(
-      'id, client_id, didit_session_id, url, estado, canal, enviado_a, resumen, solicitada_en, resuelta_en',
+      "id, client_id, didit_session_id, url, estado, canal, enviado_a, resumen, solicitada_en, resuelta_en",
     )
-    .eq('client_id', clientId)
-    .order('solicitada_en', { ascending: false });
+    .eq("client_id", clientId)
+    .order("solicitada_en", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((v) => ({
     ...(v as unknown as VerificacionDeCliente),
@@ -156,20 +174,48 @@ export interface ResumenLegible {
     coincidencias: number;
     categorias: string[];
   } | null;
+  /**
+   * Señales del canal por el que se conectó el compareciente.
+   *
+   * Se llama «canal» y no «ubicación» a propósito: la geolocalización por red
+   * NO es el domicilio del cliente ni el lugar del acto. En fe pública la
+   * ubicación jurídicamente relevante es la del inmueble y la del domicilio
+   * declarado, y rotular esto como ubicación del cliente llevaría a concluir de
+   * más. En pantalla la etiqueta correcta es «ubicación de la sesión».
+   */
+  canal: {
+    pais: string | null;
+    pais_iso2: string | null;
+    /** null = el módulo no lo devolvió. Distinto de false. */
+    vpn_o_tor: boolean | null;
+    centro_de_datos: boolean | null;
+    /** Distancia entre la procedencia de la sesión y la del documento. */
+    divergencia_documento_km: number | null;
+    divergencia_documento_rumbo: string | null;
+    divergencia_comprobante_km: number | null;
+  } | null;
 }
 
-export function leerResumen(resumen: Record<string, unknown> | null | undefined): ResumenLegible {
+export function leerResumen(
+  resumen: Record<string, unknown> | null | undefined,
+): ResumenLegible {
   const obj = (k: string): Record<string, unknown> | null => {
     const v = resumen?.[k];
-    return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+    return v && typeof v === "object" && !Array.isArray(v)
+      ? (v as Record<string, unknown>)
+      : null;
   };
-  const texto = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
-  const num = (v: unknown): number | null => (typeof v === 'number' ? v : null);
+  const texto = (v: unknown): string | null =>
+    typeof v === "string" && v ? v : null;
+  const num = (v: unknown): number | null => (typeof v === "number" ? v : null);
 
-  const doc = obj('documento');
-  const vida = obj('prueba_de_vida');
-  const cara = obj('cotejo_facial');
-  const listas = obj('listas');
+  const doc = obj("documento");
+  const vida = obj("prueba_de_vida");
+  const cara = obj("cotejo_facial");
+  const listas = obj("listas");
+  const canal = obj("canal");
+  const bool = (v: unknown): boolean | null =>
+    typeof v === "boolean" ? v : null;
 
   return {
     documento: doc
@@ -181,15 +227,32 @@ export function leerResumen(resumen: Record<string, unknown> | null | undefined)
           avisos: num(doc.avisos) ?? 0,
         }
       : null,
-    prueba_de_vida: vida ? { estado: texto(vida.estado), puntaje: num(vida.puntaje) } : null,
-    cotejo_facial: cara ? { estado: texto(cara.estado), puntaje: num(cara.puntaje) } : null,
+    prueba_de_vida: vida
+      ? { estado: texto(vida.estado), puntaje: num(vida.puntaje) }
+      : null,
+    cotejo_facial: cara
+      ? { estado: texto(cara.estado), puntaje: num(cara.puntaje) }
+      : null,
     listas: listas
       ? {
           estado: texto(listas.estado),
           coincidencias: num(listas.coincidencias) ?? 0,
           categorias: Array.isArray(listas.categorias)
-            ? listas.categorias.filter((c): c is string => typeof c === 'string')
+            ? listas.categorias.filter(
+                (c): c is string => typeof c === "string",
+              )
             : [],
+        }
+      : null,
+    canal: canal
+      ? {
+          pais: texto(canal.pais),
+          pais_iso2: texto(canal.pais_iso2),
+          vpn_o_tor: bool(canal.vpn_o_tor),
+          centro_de_datos: bool(canal.centro_de_datos),
+          divergencia_documento_km: num(canal.divergencia_documento_km),
+          divergencia_documento_rumbo: texto(canal.divergencia_documento_rumbo),
+          divergencia_comprobante_km: num(canal.divergencia_comprobante_km),
         }
       : null,
   };
