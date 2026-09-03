@@ -1,18 +1,32 @@
-/* La tipografía va EMPAQUETADA, no desde el CDN de Google.
+/* Sistema visual ESTELA — Ikán
+ *
+ * Ikán como estela digital: una piedra tallada donde cada cifra queda fechada,
+ * con fuente y firmada. De ahí las tres decisiones que gobiernan todo lo demás:
+ * el radio de 6 px (tallado, no burbuja), el borde de 1 px en vez de sombra, y
+ * la greca —el motivo de escalones— usada en tres sitios y en ninguno más.
+ *
+ * La tipografía va EMPAQUETADA, no desde el CDN de Google.
  *
  * El nivel 3 de entrega es on-prem en casa del cliente: una instalación que
  * depende de una llamada saliente a fonts.googleapis.com se queda sin
  * tipografía —y además le cuenta a Google quién abre la plataforma de
  * cumplimiento de un notario, que no es asunto suyo.
  *
- * UNA SOLA FAMILIA en toda la aplicación —cliente, consola y login—: dos
- * tipografías conviviendo es una inconsistencia que se ve y no compra nada.
- * Cuál debe ser sigue pendiente de Dirección (el brandbook v2.1 §06 pide
- * Sora); cambiarla son estos imports y `--font-sans`, el resto no se entera. */
-@import '@fontsource/plus-jakarta-sans/400.css';
-@import '@fontsource/plus-jakarta-sans/500.css';
-@import '@fontsource/plus-jakarta-sans/600.css';
-@import '@fontsource/plus-jakarta-sans/700.css';
+ * ESTELA resuelve la pregunta que quedó abierta el 30/08/2026: la familia es
+ * **Sora**, como pedía el brandbook v2.1 §06. Y añade una segunda familia con
+ * un trabajo que la primera no puede hacer: **JetBrains Mono** para el dato de
+ * expediente —RFC, CURP, folios, hashes, importes en UMA, sellos de tiempo,
+ * códigos de regla—. No es decoración: en una cifra que se coteja contra un
+ * documento oficial, el ancho fijo es lo que deja comparar carácter por
+ * carácter. Sora para leer, Mono para cotejar. */
+@import "@fontsource/sora/400.css";
+@import "@fontsource/sora/500.css";
+@import "@fontsource/sora/600.css";
+@import "@fontsource/sora/700.css";
+@import "@fontsource/sora/800.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/700.css";
 
 @tailwind base;
 @tailwind components;
@@ -20,16 +34,21 @@
 
 @layer base {
   :root {
-    --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-sans: "Sora", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-    --background: 210 17% 98%;
-    --foreground: 0 0% 18%;
+    /* Verde Hielo #F0F5F4 — el fondo de la aplicación deja de ser gris
+       neutro. El blanco queda para las superficies de tarjeta, que es lo que
+       hace que una tarjeta se lea como tarjeta sin necesidad de sombra. */
+    --background: 168 20% 95%;
+    /* Navy Profundo: el texto principal es el color de marca, no un negro */
+    --foreground: 213 68% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 18%;
+    --card-foreground: 213 68% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 18%;
+    --popover-foreground: 213 68% 15%;
 
     /* Navy Profundo #0C2340 */
     --primary: 213 68% 15%;
@@ -53,7 +72,10 @@
        producto de cumplimiento tiene que distinguir «esto está roto» —cadena
        rota, aviso rechazado, campo inválido— de «esto le toca atender», que
        es el ámbar. Sin esa distinción las dos cosas se leen igual y la
-       urgente se pierde entre las otras. */
+       urgente se pierde entre las otras.
+
+       ESTELA añade el Barro #8C3B2E al lado: el rojo dice «roto», el barro
+       dice «vencido o irreversible». Uno como máximo por pantalla. */
     --destructive: 4 68% 42%;
     --destructive-foreground: 0 0% 100%;
 
@@ -67,14 +89,17 @@
     --success: 160 50% 33%;
     --success-foreground: 0 0% 100%;
 
-
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
+    /* Borde #DCE7E4 — la hairline que sustituye a la sombra. En ESTELA la
+       estructura se dibuja con línea, no con profundidad. */
+    --border: 168 20% 88%;
+    --input: 168 20% 88%;
     /* El foco es Jade, como el resto de lo accionable. Estaba en el navy
        viejo, que se confunde con el borde y no se ve al tabular. */
     --ring: 171 100% 28%;
 
-    --radius: 0.625rem;
+    /* 6 px. El scaffold traía 10 px, que redondea la tarjeta hasta que parece
+       una burbuja de mensajería. Una estela tiene canto. */
+    --radius: 0.375rem;
 
     /* Mismo Navy Profundo que --primary: la barra y la estructura son lo mismo */
     --sidebar-background: 213 68% 15%;
@@ -89,6 +114,48 @@
     --sidebar-ring: 171 100% 28%;
     --sidebar-muted: 213 40% 27%;
   }
+
+  /* Modo oscuro. La barra lateral y las cabeceras NO cambian: siguen siendo
+     navy en los dos modos, porque son la estructura de la estela y la
+     estructura no se invierte. Lo que cambia es el papel: el fondo pasa del
+     Verde Hielo al Navy base #071525 y la superficie de tarjeta al #0F2438. */
+  .dark {
+    --background: 210 58% 8%;
+    --foreground: 168 20% 95%;
+
+    --card: 210 45% 14%;
+    --card-foreground: 168 20% 95%;
+
+    --popover: 210 45% 14%;
+    --popover-foreground: 168 20% 95%;
+
+    --primary: 168 20% 95%;
+    --primary-foreground: 213 68% 15%;
+
+    --secondary: 213 45% 22%;
+    --secondary-foreground: 168 20% 95%;
+
+    --muted: 210 45% 18%;
+    /* Gris técnico aclarado: el #6B8C87 sobre navy no llega a AA */
+    --muted-foreground: 168 14% 66%;
+
+    --accent: 171 100% 33%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 4 62% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 41 100% 52%;
+    --warning-foreground: 213 68% 15%;
+
+    --success: 160 45% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Borde #1B3A5C */
+    --border: 211 55% 23%;
+    --input: 211 55% 23%;
+    --ring: 171 100% 40%;
+  }
 }
 
 @layer base {
@@ -101,38 +168,126 @@
     font-family: var(--font-sans);
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-sans);
     @apply font-bold tracking-tight;
+  }
+
+  /* El Mint es un realce, nunca un fondo —salvo aquí, donde la selección
+     necesita contraste máximo contra el navy del texto. */
+  ::selection {
+    background: #1ddba8;
+    color: #0c2340;
   }
 }
 
 @layer utilities {
+  /* ─────────────────────────────────────────────────────────────────────
+     ESTELA — la greca (motivo de escalones). Tres usos y ninguno más:
+       1. cenefa      — franja horizontal en el marco y bajo cada H1
+       2. canto       — borde vertical tallado del <Cartucho>
+       3. muesca      — esquina escalonada de la tarjeta (.estela-tallada)
+     Nunca como textura de fondo repetida, nunca sobre texto, nunca en
+     colores fuera del jade y el ámbar.
+     ───────────────────────────────────────────────────────────────────── */
+
+  /* Cenefa de 12 px: navy de fondo, línea jade, puntos mint en los picos.
+     Va arriba del marco de la aplicación. */
+  .estela-cenefa {
+    height: 12px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Crect width='24' height='12' fill='%230C2340'/%3E%3Cpolyline points='0,12 0,7 6,7 6,2 12,2 12,7 18,7 18,2 24,2 24,7' fill='none' stroke='%2300917C' stroke-width='2'/%3E%3Ccircle cx='6' cy='7' r='1.4' fill='%231DDBA8'/%3E%3Ccircle cx='18' cy='7' r='1.4' fill='%231DDBA8'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+  }
+
+  /* Regla corta bajo un H1 de sección: la misma greca, sin fondo. */
+  .estela-regla {
+    width: 64px;
+    height: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='10'%3E%3Cpolyline points='0,10 0,6 5,6 5,2 10,2 10,6 15,6 15,2 20,2 20,6 25,6 25,2 30,2 30,6' fill='none' stroke='%2300917C' stroke-width='2'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+  }
+
+  /* Canto tallado: reemplaza el borde izquierdo plano de un bloque de
+     fundamento. 8×20, trazo jade. */
+  .estela-canto {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='20'%3E%3Cpolyline points='8,0 3,0 3,5 8,5 8,10 3,10 3,15 8,15 8,20' fill='none' stroke='%2300917C' stroke-width='2'/%3E%3C/svg%3E");
+    background-repeat: repeat-y;
+    background-position: left top;
+  }
+
+  /* Columna de greca tenue al canto de la barra lateral. Opacidad 0.06: se
+     intuye, no se lee. */
+  .estela-columna {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='40'%3E%3Cpolyline points='16,0 8,0 8,10 16,10 16,20 8,20 8,30 16,30 16,40' fill='none' stroke='%231DDBA8' stroke-width='1.5' opacity='0.06'/%3E%3C/svg%3E");
+    background-repeat: repeat-y;
+    background-position: right top;
+  }
+
+  /* Muesca escalonada de dos peldaños en la esquina superior izquierda.
+     Va en tarjetas de expediente, hallazgo y umbral —no en todas: si todo
+     lleva muesca, la muesca deja de señalar nada. */
+  .estela-tallada {
+    clip-path: polygon(
+      14px 0,
+      100% 0,
+      100% 100%,
+      0 100%,
+      0 22px,
+      7px 22px,
+      7px 14px,
+      14px 14px
+    );
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     ESTELA — tipografía de expediente
+     ───────────────────────────────────────────────────────────────────── */
+
+  /* Dato de expediente: RFC, CURP, folio, hash, importe, sello de tiempo. */
+  .estela-dato {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    @apply font-medium tracking-tight;
+  }
+
+  /* Antetítulo: la etiqueta pequeña en versalitas que nombra el bloque. */
+  .estela-antetitulo {
+    @apply text-[10px] font-extrabold uppercase text-muted-foreground;
+    letter-spacing: 0.07em;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     Utilidades heredadas del andamiaje, alineadas a ESTELA (radio 6 px,
+     borde de 1 px en vez de sombra).
+     ───────────────────────────────────────────────────────────────────── */
+
   .glass-card {
-    @apply bg-card rounded-xl border border-border shadow-sm;
+    @apply bg-card rounded-md border border-border;
   }
 
   .metric-card {
-    @apply glass-card p-5 relative overflow-hidden transition-all duration-200 hover:shadow-md;
+    @apply glass-card p-4 relative overflow-hidden transition-colors duration-200;
   }
 
   .status-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold;
   }
 
-  /* Ikán — utilidades específicas Yoltik (paleta navy/jade/mint/ámbar
-     vía tokens ikan.* y CSS vars HSL del scaffold). */
-
   .ikan-card {
-    @apply bg-card rounded-lg border border-border shadow-sm p-5;
+    @apply bg-card rounded-md border border-border p-4;
   }
 
   .ikan-btn-primary {
-    @apply bg-ikan-jade text-white px-4 py-2 rounded-md font-semibold hover:opacity-90 transition;
+    @apply bg-ikan-jade text-white px-4 py-2 rounded-md font-bold hover:bg-ikan-jade-oscuro transition-colors;
   }
 
   .ikan-btn-secondary {
-    @apply bg-card text-ikan-navy border border-border px-4 py-2 rounded-md font-semibold hover:bg-muted transition;
+    @apply bg-card text-ikan-navy border border-border px-4 py-2 rounded-md font-bold hover:bg-muted transition-colors;
   }
 
   .ikan-badge-bajo {
@@ -140,7 +295,7 @@
   }
 
   .ikan-badge-medio {
-    @apply inline-flex items-center bg-warning/10 text-warning px-2 py-0.5 rounded text-xs font-semibold;
+    @apply inline-flex items-center bg-warning/15 text-warning-foreground px-2 py-0.5 rounded text-xs font-semibold;
   }
 
   .ikan-badge-alto {
@@ -148,6 +303,6 @@
   }
 
   .demo-banner {
-    @apply inline-flex items-center gap-1 bg-warning/10 border border-warning text-warning px-3 py-1 text-xs rounded font-semibold;
+    @apply inline-flex items-center gap-1 bg-warning/10 border border-warning text-warning-foreground px-3 py-1 text-xs rounded font-semibold;
   }
 }
