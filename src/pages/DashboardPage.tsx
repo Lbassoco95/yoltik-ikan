@@ -161,8 +161,10 @@ export default function DashboardPage() {
       {!isLoading && (
         <div
           className={cn(
-            "estela-tallada rounded-md border bg-card p-5 sm:p-6",
-            urgeAlgo ? "border-ikan-ambar/40" : "border-border",
+            "estela-filo rounded-md border bg-card p-5 sm:p-6",
+            urgeAlgo
+              ? "border-ikan-ambar/40 border-t-ikan-ambar"
+              : "border-border border-t-accent",
           )}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">

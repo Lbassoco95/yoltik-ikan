@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
  *
  * La sombra dice «esto flota encima»; el borde dice «esto está tallado
  * aquí». Un expediente de cumplimiento es lo segundo. Para las tarjetas que
- * además llevan muesca en la esquina —expediente, hallazgo, umbral— se añade
- * `estela-tallada` en el className.
+ * además señalan algo —lo que urge, un umbral, un hallazgo— se añade
+ * `estela-filo` y un `border-t-*` de color en el className.
  */
 const Card = React.forwardRef<
   HTMLDivElement,

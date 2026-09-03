@@ -198,14 +198,14 @@ export default function ReportsPage() {
       {situacion.limite != null && situacion.diasParaElLimite != null && (
         <div
           className={cn(
-            "estela-tallada flex flex-wrap items-center justify-between gap-4 rounded-md border bg-card p-5",
+            "estela-filo flex flex-wrap items-center justify-between gap-4 rounded-md border bg-card p-5",
             situacion.estado === "fuera_de_plazo"
-              ? "border-ikan-barro/40"
+              ? "border-ikan-barro/40 border-t-ikan-barro"
               : situacion.estado === "presentado"
-                ? "border-success/40"
+                ? "border-success/40 border-t-success"
                 : situacion.diasParaElLimite <= 7
-                  ? "border-ikan-ambar/40"
-                  : "border-border",
+                  ? "border-ikan-ambar/40 border-t-ikan-ambar"
+                  : "border-border border-t-accent",
           )}
         >
           <div className="min-w-0">

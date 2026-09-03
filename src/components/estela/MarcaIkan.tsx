@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { EndosoYoltik } from "@/components/estela/EndosoYoltik";
 
 /** Sobre qué activo usar en cada sitio:
  *
@@ -47,7 +48,7 @@ export function IconoIkan({
 interface MarcaIkanProps {
   /** `claro` para fondos navy (barra lateral, login); `oscuro` para papel. */
   tono?: "claro" | "oscuro";
-  /** Sin el endoso «Por Yoltik»: para espacios de una sola línea. */
+  /** Sin el endoso «Powered by Yoltik»: para espacios de una sola línea. */
   sinEndoso?: boolean;
   /** Sólo el icono, sin logotipo: la barra lateral plegada. */
   soloIcono?: boolean;
@@ -77,20 +78,19 @@ export function MarcaIkan({
               ? "text-white"
               : "text-ikan-navy dark:text-foreground",
           )}
-          style={{ fontSize: Math.round(size * 0.53) }}
+          style={{ fontSize: Math.round(size * 0.5) }}
         >
           Ikán
         </span>
+        {/* «Por Yoltik» era una palabra en gris que se leía como un pie de
+            página. El endoso ahora se ve: el logotipo de Yoltik, pequeño,
+            detrás de un «Powered by». */}
         {!sinEndoso && (
-          <span
-            className={cn(
-              "mt-0.5 font-medium",
-              tono === "claro" ? "text-[#8FA9A5]" : "text-muted-foreground",
-            )}
-            style={{ fontSize: Math.round(size * 0.32) }}
-          >
-            Por Yoltik
-          </span>
+          <EndosoYoltik
+            tono={tono}
+            alto={Math.max(12, Math.round(size * 0.34))}
+            className="mt-1"
+          />
         )}
       </span>
     </span>

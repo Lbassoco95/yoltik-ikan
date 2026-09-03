@@ -58,14 +58,14 @@ export function AppSidebar({
           el endoso. Ahora el hexágono real de marca, no un icono de relleno. */}
       <div
         className={cn(
-          "flex h-16 items-center border-b border-white/[0.12] px-5",
+          "flex items-center border-b border-white/[0.12] px-5 py-4",
           collapsed && "justify-center px-0",
         )}
       >
         <MarcaIkan
           tono="claro"
           soloIcono={collapsed}
-          size={collapsed ? 30 : 34}
+          size={collapsed ? 32 : 40}
         />
       </div>
 

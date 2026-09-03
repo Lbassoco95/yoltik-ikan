@@ -135,7 +135,7 @@ export default function AlertsPage() {
                       type="button"
                       onClick={() => setExpedienteId(h.id)}
                       aria-label={`Abrir expediente del hallazgo ${h.tipologia_codigo} — ${h.tipologia_nombre}`}
-                      className="estela-tallada w-full cursor-pointer rounded-md border border-border bg-muted/40 p-3.5 text-left transition-colors hover:border-accent/50 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="w-full cursor-pointer rounded-md border border-border bg-muted/40 p-3.5 text-left transition-colors hover:border-accent/50 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="estela-dato text-xs font-bold text-accent">

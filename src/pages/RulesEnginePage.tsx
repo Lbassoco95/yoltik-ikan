@@ -120,7 +120,7 @@ export default function RulesEnginePage() {
               return (
                 <div
                   key={`${param!.codigo}-${param!.sector}`}
-                  className="estela-tallada grid gap-4 rounded-md border border-border p-4 sm:grid-cols-[1.1fr_1.5fr_auto] sm:items-center"
+                  className="grid gap-4 rounded-md border border-border p-4 sm:grid-cols-[1.1fr_1.5fr_auto] sm:items-center"
                 >
                   <div className="min-w-0">
                     <p className="m-0 text-sm font-semibold text-foreground">{param!.nombre}</p>

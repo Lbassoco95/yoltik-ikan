@@ -202,7 +202,7 @@
      ESTELA — la greca (motivo de escalones). Tres usos y ninguno más:
        1. cenefa      — franja horizontal en el marco y bajo cada H1
        2. canto       — borde vertical tallado del <Cartucho>
-       3. muesca      — esquina escalonada de la tarjeta (.estela-tallada)
+       3. filo        — canto de acento de la tarjeta (.estela-filo)
      Nunca como textura de fondo repetida, nunca sobre texto, nunca en
      colores fuera del jade y el ámbar.
      ───────────────────────────────────────────────────────────────────── */
@@ -265,20 +265,21 @@
       0 0;
   }
 
-  /* Muesca escalonada de dos peldaños en la esquina superior izquierda.
-     Va en tarjetas de expediente, hallazgo y umbral —no en todas: si todo
-     lleva muesca, la muesca deja de señalar nada. */
-  .estela-tallada {
-    clip-path: polygon(
-      14px 0,
-      100% 0,
-      100% 100%,
-      0 100%,
-      0 22px,
-      7px 22px,
-      7px 14px,
-      14px 14px
-    );
+  /* Filo de acento: 3 px de color en el canto superior de la tarjeta.
+     Es lo que distingue una tarjeta que señala algo —lo que urge, un umbral,
+     un hallazgo— de una tarjeta cualquiera.
+
+     Ocupa el sitio que ESTELA le daba a la muesca escalonada de la esquina.
+     La muesca se quitó por lo que se ve en pantalla y no en el mockup: a
+     tamaño real no se lee como una esquina tallada, se lee como un recorte
+     mal hecho —dos cuadritos que le faltan a la tarjeta— y en el login, que
+     es lo primero que alguien ve del producto, parece un fallo de
+     renderizado. Un motivo de marca que se confunde con un error deja de
+     funcionar como motivo de marca. El contraste hace el mismo trabajo, se
+     lee a cualquier tamaño y no depende de que el navegador dibuje bien un
+     clip-path. */
+  .estela-filo {
+    border-top-width: 3px;
   }
 
   /* ─────────────────────────────────────────────────────────────────────
