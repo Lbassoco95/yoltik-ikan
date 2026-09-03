@@ -13,6 +13,7 @@
  * sitio.
  */
 export { Cartucho } from "./Cartucho";
+export { CartuchoParametro } from "./CartuchoParametro";
 export { SelloVigencia } from "./SelloVigencia";
 export { FirmaCelula } from "./FirmaCelula";
 export { BitacoraLinea } from "./BitacoraLinea";

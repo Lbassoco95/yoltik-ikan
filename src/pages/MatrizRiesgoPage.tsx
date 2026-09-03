@@ -114,7 +114,7 @@ export default function MatrizRiesgoPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Matriz de riesgo de cliente</h1>
+          <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Matriz de riesgo de cliente</h1>
           <p className="text-sm text-muted-foreground">
             Metodología vigente y su histórico de versiones. Una versión publicada es
             inmutable: los cambios se hacen en un borrador y se publican como versión nueva.

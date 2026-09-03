@@ -52,7 +52,7 @@ export default function RulesEnginePage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Motor de Reglas</h1>
+      <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Motor de Reglas</h1>
 
       {/* UMA vigente — dato real con su fuente */}
       <div className="glass-card p-4">

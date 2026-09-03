@@ -52,7 +52,7 @@ export default function AdminCatalogosPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
+        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">
           Catálogos del formato del aviso
         </h1>
         <p className="text-sm text-muted-foreground mt-1 max-w-3xl">

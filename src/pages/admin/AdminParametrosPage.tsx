@@ -153,7 +153,7 @@ export default function AdminParametrosPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-start gap-4">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-foreground">Parámetros regulatorios</h1>
+          <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Parámetros regulatorios</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Valores fijados por una autoridad, con su vigencia y su fuente. El motor y el front
             los leen de aquí; ninguno declara cifras propias.

@@ -56,7 +56,7 @@ export default function AlertsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Bandeja de hallazgos</h1>
+          <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Bandeja de hallazgos</h1>
           <p className="text-sm text-muted-foreground">
             Hallazgos generados por el Motor PLD. El OC confirma, marca inusual/preocupante o descarta.
           </p>

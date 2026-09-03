@@ -30,7 +30,7 @@ export default function ConfigPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
+        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Configuración</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Los datos de su organización y quién tiene acceso. Para cambiarlos, contacte a Kawiil.
         </p>

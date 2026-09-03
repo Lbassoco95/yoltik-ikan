@@ -15,7 +15,7 @@ export default function AdminBitacoraPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Bitácora de plataforma</h1>
+        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Bitácora de plataforma</h1>
         <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
           Cada carga de catálogo, cada movimiento de lista y cada cambio de parámetro queda aquí,
           encadenado por hashes. Es lo que permite responderle a un cliente con qué versión del

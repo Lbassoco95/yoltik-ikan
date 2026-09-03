@@ -34,7 +34,7 @@ export default function ListsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Listas restrictivas</h1>
+        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Listas restrictivas</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Las mantiene Kawiil y se actualizan para todas las organizaciones a la vez. Tu
           organización las consulta; no las edita.

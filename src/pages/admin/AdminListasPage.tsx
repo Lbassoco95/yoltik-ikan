@@ -120,7 +120,7 @@ export default function AdminListasPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Listas restrictivas</h1>
+          <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Listas restrictivas</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Catálogo de plataforma. Sólo Kawiil actualiza estas listas; las organizaciones
             cliente las consumen y no pueden escribirlas. Lo que se apruebe aquí queda vigente

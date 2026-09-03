@@ -48,7 +48,7 @@ export function AppSidebar({
         // diagonal —no un plano— y una columna de greca a 0.06 de opacidad al
         // borde derecho: se intuye al mirarla de reojo y no compite con nada.
         // Se queda navy en los dos modos: la estructura no se invierte.
-        "estela-columna relative flex shrink-0 flex-col bg-ikan-navy bg-gradient-to-b from-ikan-navy-claro via-ikan-navy to-[#081A30] text-ikan-hielo transition-all duration-300 ease-in-out",
+        "estela-canto-barra relative flex shrink-0 flex-col bg-ikan-navy text-ikan-hielo transition-all duration-300 ease-in-out",
         collapsed ? "w-[68px]" : "w-[260px]",
         className,
       )}

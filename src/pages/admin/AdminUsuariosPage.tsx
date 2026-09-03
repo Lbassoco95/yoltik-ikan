@@ -91,7 +91,7 @@ export default function AdminUsuariosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Usuarios y segundo factor</h1>
+        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Usuarios y segundo factor</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Quién puede entrar a Ikán y con qué segundo factor. Desde aquí se repone el TOTP de
           quien perdió el teléfono, sin abrir la base de datos y dejando constancia en la

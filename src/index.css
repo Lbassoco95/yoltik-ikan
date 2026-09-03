@@ -212,6 +212,22 @@
     background-repeat: repeat-x;
   }
 
+  /* La misma regla, pero dentro del propio H1 en vez de como hermano.
+     Puesta como elemento aparte se convertía en hijo del flex de la cabecera
+     —y se colocaba entre el título y el botón de la derecha— o le caía encima
+     el `space-y` del contenedor y quedaba a 24 px de despegue. Dentro del H1
+     no le pasa ninguna de las dos cosas, y de paso una pantalla nueva la
+     hereda con sólo poner la clase. */
+  .estela-titulo::after {
+    content: "";
+    display: block;
+    width: 64px;
+    height: 10px;
+    margin-top: 8px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='10'%3E%3Cpolyline points='0,10 0,6 5,6 5,2 10,2 10,6 15,6 15,2 20,2 20,6 25,6 25,2 30,2 30,6' fill='none' stroke='%2300917C' stroke-width='2'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+  }
+
   /* Canto tallado: reemplaza el borde izquierdo plano de un bloque de
      fundamento. 8×20, trazo jade. */
   .estela-canto {
@@ -220,12 +236,22 @@
     background-position: left top;
   }
 
-  /* Columna de greca tenue al canto de la barra lateral. Opacidad 0.06: se
-     intuye, no se lee. */
-  .estela-columna {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='40'%3E%3Cpolyline points='16,0 8,0 8,10 16,10 16,20 8,20 8,30 16,30 16,40' fill='none' stroke='%231DDBA8' stroke-width='1.5' opacity='0.06'/%3E%3C/svg%3E");
-    background-repeat: repeat-y;
-    background-position: right top;
+  /* El canto de la barra lateral: el degradado navy en diagonal y, encima, la
+     columna de greca a 0.06 de opacidad —se intuye al mirarla de reojo y no
+     compite con la navegación—.
+     Las dos capas van en la MISMA regla a propósito. Puestas por separado
+     —una en esta clase y el degradado con `bg-gradient-to-b`— las dos escriben
+     `background-image` y sólo sobrevive la que quede después en la hoja: o se
+     perdía el degradado o se perdía la greca, según el orden con que Tailwind
+     emitiera las utilidades. */
+  .estela-canto-barra {
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='40'%3E%3Cpolyline points='16,0 8,0 8,10 16,10 16,20 8,20 8,30 16,30 16,40' fill='none' stroke='%231DDBA8' stroke-width='1.5' opacity='0.06'/%3E%3C/svg%3E"),
+      linear-gradient(160deg, #0f2a4d 0%, #0c2340 45%, #081a30 100%);
+    background-repeat: repeat-y, no-repeat;
+    background-position:
+      right top,
+      0 0;
   }
 
   /* Muesca escalonada de dos peldaños en la esquina superior izquierda.

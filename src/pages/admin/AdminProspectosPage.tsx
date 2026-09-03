@@ -95,7 +95,7 @@ export default function AdminProspectosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Prospectos</h1>
+        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Prospectos</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Quien llena el formulario del sitio llega aquí. Sólo lo ve Kawiil; ninguna organización
           cliente tiene acceso a estos datos.

@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowLeftRight, Clock, Loader2, Users } from "lucide-react";
+import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
+import { CartuchoParametro } from "@/components/estela/CartuchoParametro";
 import { useAuth } from "@/lib/auth-context";
 import { metricasTablero } from "@/lib/api/dashboard";
 import { useParametros } from "@/hooks/useParametros";
@@ -45,8 +47,11 @@ const RIESGO: Record<ClasificacionRiesgo, { label: string; barra: string; texto:
 export default function DashboardPage() {
   const { profile, perfilActividad } = useAuth();
   const esNotarias = perfilActividad === "notarias";
-  const { valor: valorParam } = useParametros();
+  const { valor: valorParam, parametro: buscarParam } = useParametros();
   const umaMxn = valorParam(PARAM.UMA_DIARIA);
+  // El registro completo, no sólo el número: es lo que deja pintar el
+  // cartucho con su fundamento —fuente, DOF, vigencia, quién lo validó—.
+  const uma = buscarParam(PARAM.UMA_DIARIA);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["tablero"],
@@ -62,6 +67,10 @@ export default function DashboardPage() {
     [data],
   );
 
+  const abiertos = data?.hallazgosAbiertos ?? 0;
+  const urgentes = data?.hallazgosUrgentes ?? 0;
+  const urgeAlgo = abiertos > 0 || urgentes > 0;
+
   const tiles = [
     {
       label: esNotarias ? "Comparecientes activos" : "Clientes activos",
@@ -76,84 +85,147 @@ export default function DashboardPage() {
       to: "/operaciones",
     },
     {
-      label: "Hallazgos por atender",
-      valor: data?.hallazgosAbiertos,
+      label: "Sin matriz evaluada",
+      valor: data?.clientesSinEvaluar,
       icono: AlertTriangle,
-      to: "/alertas",
-      alerta: (data?.hallazgosAbiertos ?? 0) > 0,
+      to: "/clientes",
+      alerta: (data?.clientesSinEvaluar ?? 0) > 0,
+      nota: "Requisito de debida diligencia",
     },
     {
-      label: "Con atención inmediata",
-      valor: data?.hallazgosUrgentes,
+      label: "Confirmados este periodo",
+      valor:
+        (data?.hallazgosPorEstado.confirmado_inusual ?? 0) +
+        (data?.hallazgosPorEstado.confirmado_preocupante ?? 0),
       icono: Clock,
       to: "/alertas",
-      alerta: (data?.hallazgosUrgentes ?? 0) > 0,
-      nota: "SLA interno de 24 h",
     },
   ];
 
   if (isError) {
     return (
-      <div className="glass-card p-6 text-sm text-destructive">
+      <div className="rounded-md border border-destructive/30 bg-card p-5 text-sm text-destructive">
         {(error as Error).message}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          Hola, {profile?.nombre ?? ""}
-        </h1>
-        {/* Sin `capitalize`: pintaba «Domingo, 30 De Agosto De 2026». Las
-            mayúsculas de título son del inglés; en español va todo en minúscula
-            salvo la inicial de la oración. */}
-        <p className="text-sm text-muted-foreground first-letter:uppercase">
-          {new Date().toLocaleDateString("es-MX", { dateStyle: "long" })}
-          {umaMxn != null && (
-            <span> · UMA vigente {formatMxn(umaMxn, true)}</span>
-          )}
-        </p>
-      </div>
+    <div className="space-y-5 animate-fade-in">
+      {/* Sin `capitalize` en la fecha: pintaba «Domingo, 30 De Agosto De 2026».
+          Las mayúsculas de título son del inglés; en español va todo en
+          minúscula salvo la inicial de la oración. */}
+      <EncabezadoSeccion
+        titulo={`Hola, ${profile?.nombre ?? ""}`}
+        descripcion={
+          <span className="first-letter:uppercase">
+            {new Date().toLocaleDateString("es-MX", { dateStyle: "long" })}
+          </span>
+        }
+      />
 
-      {/* Cifras. Sin variación porcentual: no hay histórico que la sostenga. */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* ESTELA pide una sola cosa arriba del todo: lo que urge hoy. Antes las
+          cuatro cifras salían del mismo tamaño y con el mismo peso, así que
+          «hallazgos por atender» pesaba igual que «clientes activos» y quien
+          abría el tablero tenía que leer las cuatro para saber si le tocaba
+          hacer algo. Ahora lo urgente ocupa una tarjeta ancha con muesca y el
+          resto se demota a fila de cifras.
+
+          La tarjeta cambia de tono con lo que hay, no de forma: ámbar cuando
+          hay algo que atender, jade cuando no. El estado va en el texto —el
+          color sólo refuerza—. */}
+      {!isLoading && (
+        <div
+          className={cn(
+            "estela-tallada rounded-md border bg-card p-5 sm:p-6",
+            urgeAlgo ? "border-ikan-ambar/40" : "border-border",
+          )}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  "estela-antetitulo m-0",
+                  urgeAlgo ? "text-ikan-ambar" : "text-accent",
+                )}
+              >
+                {urgeAlgo ? "Lo que urge hoy" : "Al corriente"}
+              </p>
+              <h2 className="m-0 mt-1 text-lg font-bold text-foreground">
+                {urgeAlgo
+                  ? `${abiertos} hallazgo${abiertos === 1 ? "" : "s"} por atender`
+                  : "No hay hallazgos por atender"}
+              </h2>
+              <p className="m-0 mt-1 text-[13px] text-muted-foreground">
+                {urgeAlgo
+                  ? "El Motor PLD los levantó. Confirmarlos o descartarlos es del Oficial de Cumplimiento."
+                  : "Si esperabas alguno, corre el motor desde Alertas."}
+              </p>
+            </div>
+
+            {urgentes > 0 && (
+              // El único ámbar macizo de la pantalla. Texto navy sobre ámbar:
+              // el blanco no llega a contraste AA.
+              <span className="shrink-0 rounded-sm border-l-[3px] border-ikan-ambar bg-warning/15 px-3 py-1.5 text-xs font-bold text-warning-foreground dark:text-ikan-ambar">
+                {urgentes} con atención inmediata · SLA interno 24 h
+              </span>
+            )}
+          </div>
+
+          {abiertos > 0 && (
+            <Link
+              to="/alertas"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent px-3.5 py-2 text-xs font-bold text-accent-foreground transition-colors hover:bg-ikan-jade-oscuro"
+            >
+              Ir a la bandeja de hallazgos
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* Cifras demotadas. Sin variación porcentual: no hay histórico que la
+          sostenga. Los dos contadores de hallazgos ya viven en el héroe, así
+          que aquí sólo queda el volumen de cartera. */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {tiles.map((t) => (
           <Link
             key={t.label}
             to={t.to}
             className={cn(
-              "glass-card p-5 transition-colors hover:border-accent/40",
-              t.alerta && "border-destructive/30",
+              "rounded-md border border-border bg-card px-4 py-3.5 transition-colors hover:border-accent/50",
+              t.alerta && "border-ikan-ambar/40",
             )}
           >
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t.label}
-              </span>
-              <t.icono className={cn("w-4 h-4 shrink-0", t.alerta ? "text-destructive" : "text-muted-foreground")} />
+              <span className="estela-antetitulo">{t.label}</span>
+              <t.icono className={cn("h-4 w-4 shrink-0", t.alerta ? "text-ikan-ambar" : "text-muted-foreground")} />
             </div>
             <span className={cn(
-              "block text-3xl font-bold tabular-nums mt-2",
-              t.alerta ? "text-destructive" : "text-foreground",
+              "mt-1.5 block text-2xl font-extrabold tabular-nums",
+              t.alerta ? "text-ikan-ambar" : "text-foreground",
             )}>
               {isLoading ? "—" : (t.valor ?? 0).toLocaleString("es-MX")}
             </span>
-            {t.nota && <span className="block text-[13px] text-muted-foreground mt-0.5">{t.nota}</span>}
+            {t.nota && <span className="mt-0.5 block text-xs text-muted-foreground">{t.nota}</span>}
           </Link>
         ))}
       </div>
 
+      {/* El cartucho de la UMA. La cifra ya salía en el subtítulo de la
+          cabecera, suelta y sin decir de dónde venía: quien la leía no tenía
+          forma de comprobarla. La base guardaba fuente, publicación en el DOF
+          y vigencia desde el principio; lo que faltaba era enseñarlas. */}
+      {uma && <CartuchoParametro parametro={uma} titulo="UMA vigente" />}
+
       {isLoading ? (
-        <div className="glass-card p-10 flex items-center justify-center gap-2 text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 rounded-md border border-border bg-card p-10 text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" /> Cargando el tablero…
         </div>
       ) : (
         <>
           {/* Tablero de hallazgos */}
-          <div className="glass-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">
+          <div className="rounded-md border border-border bg-card p-5">
+            <h2 className="mb-4 text-base font-bold text-foreground">
               Hallazgos del Motor PLD
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -162,11 +234,9 @@ export default function DashboardPage() {
                   (n, e) => n + (data?.hallazgosPorEstado[e] ?? 0), 0,
                 );
                 return (
-                  <div key={col.titulo} className="rounded-lg border border-border bg-muted/20 p-4">
+                  <div key={col.titulo} className="rounded-md border border-border bg-muted/40 p-4">
                     <div className="flex items-baseline justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        {col.titulo}
-                      </span>
+                      <span className="estela-antetitulo">{col.titulo}</span>
                       <span className="text-xl font-bold tabular-nums">{total}</span>
                     </div>
                     <ul className="mt-2 space-y-0.5">
@@ -181,18 +251,13 @@ export default function DashboardPage() {
                 );
               })}
             </div>
-            {(data?.hallazgosAbiertos ?? 0) === 0 && (
-              <p className="text-sm text-muted-foreground mt-4">
-                No hay hallazgos por atender. Si esperabas alguno, corre el motor desde Alertas.
-              </p>
-            )}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {/* Actividad de 14 días. Una sola serie: el título la nombra y no
                 necesita leyenda. */}
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-semibold text-foreground">
+            <div className="rounded-md border border-border bg-card p-5">
+              <h2 className="text-base font-bold text-foreground">
                 {esNotarias ? "Actos por día" : "Operaciones por día"}
               </h2>
               <p className="text-xs text-muted-foreground mb-4">Últimos 14 días</p>
@@ -203,7 +268,7 @@ export default function DashboardPage() {
                       {d.total}
                     </span>
                     <div
-                      className="w-full rounded-t bg-accent transition-colors group-hover:bg-accent/80"
+                      className="w-full rounded-t-sm bg-accent transition-colors group-hover:bg-ikan-jade-oscuro"
                       style={{ height: `${Math.max((d.total / maxOps) * 100, d.total > 0 ? 6 : 2)}%` }}
                       title={`${new Date(d.fecha + "T12:00:00").toLocaleDateString("es-MX")}: ${d.total}`}
                     />
@@ -221,8 +286,8 @@ export default function DashboardPage() {
 
             {/* Riesgo por nivel. Barras etiquetadas: el color acompaña, no
                 sustituye. */}
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-semibold text-foreground">
+            <div className="rounded-md border border-border bg-card p-5">
+              <h2 className="text-base font-bold text-foreground">
                 Nivel de riesgo de {esNotarias ? "los comparecientes" : "los clientes"}
               </h2>
               <p className="text-xs text-muted-foreground mb-4">
@@ -248,8 +313,8 @@ export default function DashboardPage() {
                             <span className="text-xs"> · {pct}%</span>
                           </span>
                         </div>
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                          <div className={cn("h-full rounded-full", cfg.barra)} style={{ width: `${pct}%` }} />
+                        <div className="h-1.5 overflow-hidden rounded-sm bg-muted">
+                          <div className={cn("h-full rounded-sm", cfg.barra)} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
@@ -257,13 +322,6 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {(data?.clientesSinEvaluar ?? 0) > 0 && (
-                <p className="text-xs text-warning mt-4 pt-3 border-t border-border">
-                  {data!.clientesSinEvaluar}{" "}
-                  {esNotarias ? "comparecientes" : "clientes"} sin matriz evaluada. La
-                  clasificación de riesgo es un requisito de la debida diligencia.
-                </p>
-              )}
             </div>
           </div>
         </>

@@ -31,15 +31,14 @@ export function EncabezadoSeccion({
       )}
     >
       <div className="min-w-0">
-        <h1 className="m-0 text-2xl font-extrabold tracking-tight text-foreground">
+        <h1 className="estela-titulo m-0 text-2xl font-extrabold tracking-tight text-foreground">
           {titulo}
         </h1>
         {descripcion && (
-          <p className="m-0 mt-1 text-[13.5px] text-muted-foreground">
+          <p className="m-0 mt-1.5 text-[13.5px] text-muted-foreground">
             {descripcion}
           </p>
         )}
-        <div className="estela-regla mt-2" aria-hidden />
       </div>
       {acciones && (
         <div className="flex shrink-0 flex-wrap items-center gap-2">

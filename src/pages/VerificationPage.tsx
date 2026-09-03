@@ -123,7 +123,7 @@ export default function VerificationPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Identificación del compareciente</h1>
+      <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Identificación del compareciente</h1>
 
       {/* Lo que sigue sin integrarse, acotado. Didit resuelve quién es la
           persona; no consulta RENAPO ni las listas, y decir lo contrario sería

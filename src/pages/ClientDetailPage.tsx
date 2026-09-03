@@ -501,7 +501,7 @@ export default function ClientDetailPage() {
 
       <div className="glass-card p-6">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="estela-titulo text-xl font-extrabold tracking-tight text-foreground">
             {client.nombre_razon_social}
           </h1>
           <div className="text-right shrink-0">
