@@ -71,7 +71,7 @@ export default function ListsPage() {
                 <span>
                   Sin coincidencias para «{busqueda.trim()}» en las listas cargadas.
                   {totalVigentes === 0 && (
-                    <strong className="block mt-1 text-warning">
+                    <strong className="block mt-1 text-warning-ink">
                       Cuidado: todavía no hay ninguna lista cargada, así que este resultado no
                       significa que la persona esté limpia.
                     </strong>
@@ -91,7 +91,7 @@ export default function ListsPage() {
                     )}
                   >
                     <AlertTriangle
-                      className={cn("w-4 h-4 mt-0.5 shrink-0", r.bloqueante ? "text-destructive" : "text-warning")}
+                      className={cn("w-4 h-4 mt-0.5 shrink-0", r.bloqueante ? "text-destructive" : "text-warning-ink")}
                     />
                     <div className="text-sm flex-1">
                       <p className="font-semibold">{r.nombre}</p>
@@ -103,7 +103,7 @@ export default function ListsPage() {
                           <> · desde el {new Date(r.alta_fecha).toLocaleDateString("es-MX")}</>
                         )}
                       </p>
-                      <p className={cn("text-xs mt-1 font-medium", r.bloqueante ? "text-destructive" : "text-warning")}>
+                      <p className={cn("text-xs mt-1 font-medium", r.bloqueante ? "text-destructive" : "text-warning-ink")}>
                         {r.bloqueante
                           ? "Coincidencia que exige acción antes de continuar con la operación."
                           : "Señal informativa: no confirma nada por sí sola, pero justifica debida diligencia reforzada."}
@@ -120,7 +120,7 @@ export default function ListsPage() {
       {/* Aviso cuando faltan listas por cargar */}
       {sinCargar.length > 0 && !estado.isLoading && (
         <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
           <span>
             <strong>
               {sinCargar.length === 1
@@ -183,7 +183,7 @@ export default function ListsPage() {
                     Actualizada al {new Date(l.actualizada_al + "T12:00:00").toLocaleDateString("es-MX")}
                   </span>
                 ) : (
-                  <span className="status-badge bg-warning/10 text-warning text-xs">
+                  <span className="status-badge bg-warning/10 text-warning-ink text-xs">
                     Sin datos cargados
                   </span>
                 )}

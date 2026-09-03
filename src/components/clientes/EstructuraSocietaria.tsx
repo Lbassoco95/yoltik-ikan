@@ -279,7 +279,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
         <div
           className={cn(
             "rounded-md px-3 py-2.5 text-[13px] flex gap-2",
-            revision.cumple ? "bg-success/10 text-success" : "bg-warning/10 text-warning",
+            revision.cumple ? "bg-success/10 text-success" : "bg-warning/10 text-warning-ink",
           )}
         >
           {revision.cumple ? (
@@ -323,7 +323,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
                     <td className="py-2.5 text-sm">
                       <div className="font-medium">{s.nombre_razon_social}</div>
                       {alcanza && (
-                        <div className="text-xs text-warning mt-0.5">
+                        <div className="text-xs text-warning-ink mt-0.5">
                           Alcanza el umbral: {motivoDeUmbral(s)}
                         </div>
                       )}
@@ -448,7 +448,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
         <p className="text-[13px] text-muted-foreground">{EXENCION_BC_CERRADA}</p>
 
         {client.bc_exencion === "bolsa_de_valores" && !exento && (
-          <div className="rounded-md bg-warning/10 text-warning px-3 py-2.5 text-[13px] flex gap-2">
+          <div className="rounded-md bg-warning/10 text-warning-ink px-3 py-2.5 text-[13px] flex gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
               <strong className="font-semibold">La excepción no está surtiendo efecto. </strong>
@@ -475,7 +475,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
         </div>
 
         {estructuraNoDeterminable(estado) && (
-          <div className="rounded-md bg-warning/10 text-warning px-3 py-2.5 text-[13px] flex gap-2">
+          <div className="rounded-md bg-warning/10 text-warning-ink px-3 py-2.5 text-[13px] flex gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
               <strong className="font-semibold">Estructura de control no determinable. </strong>
@@ -574,7 +574,7 @@ export function EstructuraSocietaria({ client }: { client: Client }) {
                   </td>
                   <td className="py-2.5 text-sm">
                     {b.paso === "III" ? (
-                      <span className="status-badge bg-warning/10 text-warning">
+                      <span className="status-badge bg-warning/10 text-warning-ink">
                         III · no determinable
                       </span>
                     ) : (
@@ -930,7 +930,7 @@ function DialogSocio({
           )}
 
           {chocaConTipoSocial && (
-            <p className="text-[13px] text-warning">
+            <p className="text-[13px] text-warning-ink">
               La S.A.S. sólo admite personas físicas como accionistas (LGSM art. 260). Revisa el
               tipo social o el socio.
             </p>

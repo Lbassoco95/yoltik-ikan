@@ -129,10 +129,10 @@ export default function VerificationPage() {
           persona; no consulta RENAPO ni las listas, y decir lo contrario sería
           darle al notario por hecha una comprobación que nadie hizo. */}
       <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
-        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
         <div className="text-sm text-foreground">
           <p>
-            <strong className="text-warning">Verificar identidad no es integrar el expediente.</strong>{" "}
+            <strong className="text-warning-ink">Verificar identidad no es integrar el expediente.</strong>{" "}
             La verificación comprueba que la persona es quien dice ser. La identificación del
             artículo 18 es más que eso, y hay dos piezas que todavía no corren aquí: la validación
             de la CURP contra RENAPO y la consulta de listas (OFAC, ONU, PEP, 69-B).
@@ -210,7 +210,7 @@ export default function VerificationPage() {
                             "status-badge text-xs",
                             faltan === 0
                               ? "bg-success/10 text-success"
-                              : "bg-warning/10 text-warning",
+                              : "bg-warning/10 text-warning-ink",
                           )}
                         >
                           {faltan === 0
@@ -285,7 +285,7 @@ export default function VerificationPage() {
             </p>
           </div>
 
-          <p className="text-[13px] text-warning mt-4">
+          <p className="text-[13px] text-warning-ink mt-4">
             Los umbrales de aprobación —score de documento, de prueba de vida, de face match— los
             fija el proveedor junto con el Oficial de Cumplimiento. No se inventan aquí.
           </p>
@@ -337,7 +337,7 @@ function EstadoIdentidad({
         ? "bg-destructive/10 text-destructive"
         : estado === "en_progreso" || estado === "no_iniciada" || estado === "en_revision"
           ? "bg-accent/10 text-accent"
-          : "bg-warning/10 text-warning";
+          : "bg-warning/10 text-warning-ink";
 
   return (
     <div className="flex items-center gap-2">

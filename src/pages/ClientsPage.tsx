@@ -674,7 +674,7 @@ function EstadoIdentidad({
         ? "bg-destructive/10 text-destructive"
         : estado === "en_progreso" || estado === "no_iniciada" || estado === "en_revision"
           ? "bg-accent/10 text-accent"
-          : "bg-warning/10 text-warning";
+          : "bg-warning/10 text-warning-ink";
 
   return (
     <div className="flex items-center gap-2">

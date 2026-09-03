@@ -49,7 +49,7 @@ const ETIQUETA: Record<string, string> = Object.fromEntries(
 
 /** El color refuerza; el texto es el que lleva el significado. */
 const CLASE_ESTADO: Record<string, string> = {
-  nuevo: "bg-warning/10 text-warning",
+  nuevo: "bg-warning/10 text-warning-ink",
   contactado: "bg-accent/10 text-accent",
   en_diagnostico: "bg-accent/10 text-accent",
   cliente: "bg-success/10 text-success",

@@ -121,7 +121,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
 
           {fuente && !soportada && (
             <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
               <span>
                 <strong>Todavía no hay lector para «{fuente.nombre}».</strong> Su formato es XML
                 y su parser es un trabajo aparte. Por ahora sólo se pueden cargar los listados
@@ -177,7 +177,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
 
               {analisis.descartadas.length > 0 && (
                 <div className="text-xs space-y-1 border-t border-border pt-2">
-                  <p className="text-warning font-medium">
+                  <p className="text-warning-ink font-medium">
                     {analisis.descartadas.length} filas no se pudieron interpretar y no se cargarán:
                   </p>
                   <ul className="text-muted-foreground space-y-0.5 max-h-28 overflow-y-auto">

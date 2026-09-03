@@ -127,7 +127,7 @@ export function SelectCatalogo({
             onChange={(e) => onChange(e.target.value.trim().toUpperCase())}
           />
           {!cargando && (
-            <p className="text-[13px] text-warning mt-1">
+            <p className="text-[13px] text-warning-ink mt-1">
               DEMO — sin integración real: el catálogo de la UIF todavía no está cargado en Ikán,
               así que la clave se captura a mano. La carga Kawiil desde la consola de plataforma.
             </p>

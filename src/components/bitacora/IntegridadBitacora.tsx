@@ -251,7 +251,7 @@ export function IntegridadBitacora({
                   "text-[13px] mt-2 ml-6",
                   resultado.cubiertoHasta >= resultado.eventosVerificados
                     ? "text-success"
-                    : "text-warning",
+                    : "text-warning-ink",
                 )}
               >
                 {advertenciaDeAlcance(resultado)}
@@ -448,7 +448,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
         ) : pendiente ? (
           <Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" />
         ) : (
-          <AlertTriangle className="w-4 h-4 mt-0.5 text-warning shrink-0" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-warning-ink shrink-0" />
         )}
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">
@@ -500,7 +500,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
           </p>
 
           {ancla.eventos_sin_anclar > 0 && (
-            <p className="text-[13px] text-warning">
+            <p className="text-[13px] text-warning-ink">
               {ancla.eventos_sin_anclar.toLocaleString("es-MX")} evento
               {ancla.eventos_sin_anclar === 1 ? "" : "s"} sin cobertura externa:
               son los posteriores al último anclaje. El anclaje corre a diario y

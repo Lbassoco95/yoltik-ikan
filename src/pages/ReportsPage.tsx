@@ -352,14 +352,14 @@ export default function ReportsPage() {
               previo.advertencias.length > 0 && (
                 <div className="rounded-lg bg-warning/10 p-3">
                   <div className="flex items-center gap-2">
-                    <Info className="w-4 h-4 text-warning shrink-0" />
+                    <Info className="w-4 h-4 text-warning-ink shrink-0" />
                     <p className="text-sm font-semibold text-foreground">
                       El archivo se genera, pero sale incompleto
                     </p>
                   </div>
                   <ul className="mt-2 ml-6 space-y-1">
                     {previo.advertencias.slice(0, 8).map((a, i) => (
-                      <li key={i} className="text-xs text-warning">
+                      <li key={i} className="text-xs text-warning-ink">
                         {a}
                       </li>
                     ))}
@@ -421,7 +421,7 @@ export default function ReportsPage() {
                         className={cn(
                           "status-badge",
                           o.canal === "declaranot"
-                            ? "bg-warning/15 text-warning"
+                            ? "bg-warning/15 text-warning-ink"
                             : "bg-muted text-muted-foreground",
                         )}
                       >

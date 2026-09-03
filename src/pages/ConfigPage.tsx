@@ -43,7 +43,7 @@ export default function ConfigPage() {
       ) : org.isError ? (
         <p className="glass-card p-6 text-sm text-destructive">{(org.error as Error).message}</p>
       ) : !org.data ? (
-        <p className="glass-card p-6 text-sm text-warning">
+        <p className="glass-card p-6 text-sm text-warning-ink">
           No se encontró la organización de su perfil.
         </p>
       ) : (

@@ -83,6 +83,15 @@
     --warning: 41 100% 47%;
     /* Navy sobre ámbar: el blanco sobre #F0A500 no llega a contraste AA */
     --warning-foreground: 213 68% 15%;
+    /* El ámbar de RELLENO y el ámbar de TINTA no pueden ser el mismo color.
+       #F0A500 sobre blanco da 1.9:1 de contraste: por debajo incluso del
+       mínimo para texto grande. La aplicación lo usaba como color de texto en
+       noventa y un sitios —«pendiente de validación», «sin confirmar», el
+       plazo de conservación de la bitácora—, es decir, justo en las frases
+       que alguien tiene que poder leer. Éste es el mismo ámbar bajado de
+       luminosidad hasta 5.5:1 sobre blanco; el relleno sigue siendo el de
+       marca. */
+    --warning-ink: 41 100% 30%;
 
     /* Verde Ikán #2A7F62 — lo que está en orden. Distinto del Jade a
        propósito: el Jade es lo que se puede hacer, éste lo ya resuelto. */
@@ -147,6 +156,8 @@
 
     --warning: 41 100% 52%;
     --warning-foreground: 213 68% 15%;
+    /* Sobre navy el problema se invierte: aquí el ámbar hay que aclararlo. */
+    --warning-ink: 41 100% 62%;
 
     --success: 160 45% 45%;
     --success-foreground: 0 0% 100%;

@@ -65,7 +65,7 @@ export default function AdminCatalogosPage() {
 
       {sinCargar.length > 0 && (
         <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
           <span>
             <strong>
               {sinCargar.length} de {catalogos.length} catálogos sin cargar.
@@ -137,7 +137,7 @@ export default function AdminCatalogosPage() {
                           {c.valores_vigentes.toLocaleString("es-MX")}
                         </span>
                       ) : (
-                        <span className="status-badge bg-warning/10 text-warning">
+                        <span className="status-badge bg-warning/10 text-warning-ink">
                           Sin cargar
                         </span>
                       )}
@@ -268,7 +268,7 @@ function DialogCarga({
               >
                 <div className="flex items-center gap-2">
                   {previo.fueraDePatron.length > 0 ? (
-                    <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+                    <AlertTriangle className="w-4 h-4 text-warning-ink shrink-0" />
                   ) : (
                     <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                   )}
@@ -278,7 +278,7 @@ function DialogCarga({
                   </p>
                 </div>
                 {previo.fueraDePatron.length > 0 && (
-                  <p className="text-[13px] text-warning mt-1 ml-6">
+                  <p className="text-[13px] text-warning-ink mt-1 ml-6">
                     {previo.fueraDePatron.length} clave(s) no cumplen{" "}
                     <code>{catalogo.clave_patron}</code> — por ejemplo{" "}
                     <code>{previo.fueraDePatron[0].clave}</code>. La carga no
@@ -328,7 +328,7 @@ function DialogCarga({
               </div>
 
               {catalogo.valores_vigentes > 0 && (
-                <p className="text-[13px] text-warning">
+                <p className="text-[13px] text-warning-ink">
                   Este catálogo ya tiene {catalogo.valores_vigentes} valores.
                   Los actuales no se borran: se cierra su vigencia con la fecha
                   de hoy, para que un aviso presentado antes se pueda auditar

@@ -50,6 +50,9 @@ export default {
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+          /* `text-warning-ink` para texto; `bg-warning` para relleno. Son
+             colores distintos a propósito: ver la nota en index.css. */
+          ink: "hsl(var(--warning-ink))",
         },
         success: {
           DEFAULT: "hsl(var(--success))",

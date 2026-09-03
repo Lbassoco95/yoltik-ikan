@@ -71,8 +71,8 @@ const tipoLabel: Record<TipoPersona, string> = {
 };
 
 const riesgoClase: Record<"bajo" | "medio" | "alto", string> = {
-  bajo: "text-jade",
-  medio: "text-warning",
+  bajo: "text-success",
+  medio: "text-warning-ink",
   alto: "text-destructive",
 };
 
@@ -715,7 +715,7 @@ export default function ClientDetailPage() {
                                 {v.pregunta}
                               </span>
                               {sinCatalogo && (
-                                <p className="text-[13px] mt-0.5 text-warning">
+                                <p className="text-[13px] mt-0.5 text-warning-ink">
                                   No califica todavía: la lista interna «
                                   {v.requiere_catalogo}» está vacía. La variable
                                   queda fuera del puntaje hasta que Cumplimiento
@@ -735,7 +735,7 @@ export default function ClientDetailPage() {
                                   className={cn(
                                     "text-[13px] mt-0.5",
                                     sugerida!.por_defecto
-                                      ? "text-warning"
+                                      ? "text-warning-ink"
                                       : "text-accent",
                                   )}
                                 >
@@ -984,14 +984,14 @@ export default function ClientDetailPage() {
                           muestra real. Presentarlos como definitivos es justo
                           lo que la Adenda pide no hacer. */}
                         {preview!.provisional && (
-                          <span className="block text-warning mt-1">
+                          <span className="block text-warning-ink mt-1">
                             Clasificación provisional: los cortes de la escala
                             todavía no se han calibrado contra una muestra real
                             de expedientes.
                           </span>
                         )}
                         {preview!.variables_sin_catalogo.length > 0 && (
-                          <span className="block text-warning mt-1">
+                          <span className="block text-warning-ink mt-1">
                             {preview!.variables_sin_catalogo.length} variable(s)
                             quedaron fuera del puntaje por falta de su lista
                             interna.
@@ -1022,7 +1022,7 @@ export default function ClientDetailPage() {
                                 : `Faltan ${lista.length}`}
                             </strong>{" "}
                             — {lista.map((f) => f.pregunta).join(" · ")}.{" "}
-                            <span className="text-warning">
+                            <span className="text-warning-ink">
                               {ACCION_POR_MOTIVO[motivo]}
                             </span>
                           </span>
@@ -1108,7 +1108,7 @@ export default function ClientDetailPage() {
                     </td>
                     <td className="px-4 py-3">
                       {op.requiere_aviso ? (
-                        <span className="status-badge bg-warning/10 text-warning">
+                        <span className="status-badge bg-warning/10 text-warning-ink">
                           Sí
                         </span>
                       ) : (

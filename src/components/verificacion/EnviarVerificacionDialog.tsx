@@ -155,7 +155,7 @@ export function EnviarVerificacionDialog({
                   comparece en su representación, y quienes resulten sus beneficiarios
                   controladores.
                 </p>
-                <p className="text-xs text-warning">
+                <p className="text-xs text-warning-ink">
                   Capturar esa estructura —socios, porcentajes y las personas morales
                   intermedias— todavía no está en Ikán. Por ahora, da de alta a cada persona
                   física por separado y verifícala desde su propio expediente.

@@ -190,7 +190,7 @@ export default function AdminUsuariosPage() {
                       <span
                         className={cn(
                           "status-badge text-xs gap-1",
-                          conFactor ? "bg-success/10 text-success" : "bg-warning/10 text-warning",
+                          conFactor ? "bg-success/10 text-success" : "bg-warning/10 text-warning-ink",
                         )}
                       >
                         {conFactor ? (

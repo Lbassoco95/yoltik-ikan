@@ -315,7 +315,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                       'status-badge text-xs',
                       contexto.matriz_evaluada
                         ? 'bg-success/10 text-success'
-                        : 'bg-warning/10 text-warning',
+                        : 'bg-warning/10 text-warning-ink',
                     )}
                   >
                     {contexto.matriz_evaluada
@@ -327,7 +327,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                       'status-badge text-xs',
                       contexto.perfil_declarado
                         ? 'bg-muted text-muted-foreground'
-                        : 'bg-warning/10 text-warning',
+                        : 'bg-warning/10 text-warning-ink',
                     )}
                   >
                     {contexto.perfil_declarado
@@ -337,7 +337,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                 </div>
 
                 {!contexto.matriz_evaluada && (
-                  <p className="text-xs text-warning mt-2">
+                  <p className="text-xs text-warning-ink mt-2">
                     La debida diligencia está incompleta: evalúa su matriz antes de resolver.
                   </p>
                 )}
@@ -387,7 +387,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
 
             {esMock && (
               <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-warning" />
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-warning-ink" />
                 <span>
                   <strong>DEMO — sin integración real.</strong> Este hallazgo usa datos simulados
                   (listas de riesgo o analítica on-chain como snapshot en BD).

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, FileClock, Loader2, Plus, Send, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { EncabezadoSeccion } from '@/components/estela/EncabezadoSeccion';
+import { SelloVigencia } from '@/components/estela/SelloVigencia';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -112,27 +114,34 @@ export default function MatrizRiesgoPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Matriz de riesgo de cliente</h1>
-          <p className="text-sm text-muted-foreground">
-            Metodología vigente y su histórico de versiones. Una versión publicada es
-            inmutable: los cambios se hacen en un borrador y se publican como versión nueva.
-          </p>
-        </div>
-        {esOc && !borrador && (
-          <Button className="gap-2" onClick={() => crear.mutate()} disabled={crear.isPending}>
-            {crear.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Nueva versión
-          </Button>
-        )}
-      </div>
+      <EncabezadoSeccion
+        titulo="Matriz de riesgo de cliente"
+        descripcion="Metodología vigente y su histórico de versiones. Una versión publicada es inmutable: los cambios se hacen en un borrador y se publican como versión nueva."
+        acciones={
+          <>
+            {esOc && !borrador && (
+              <Button className="gap-2" onClick={() => crear.mutate()} disabled={crear.isPending}>
+                {crear.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Nueva versión
+              </Button>
+            )}
+            {/* El sello va aquí y no en Motor de reglas porque aquí la versión
+                existe de verdad: `client_risk_template` versiona, publica y
+                archiva. «Inmutable» tampoco es una frase de diseño —una
+                versión publicada no se edita, se sucede—, así que el sello
+                dice lo que el modelo ya garantiza. */}
+            {activa && (
+              <SelloVigencia version={activa.version} size={78} />
+            )}
+          </>
+        }
+      />
 
       {/* La ponderación NO está validada, pero el cálculo sí existe: la matriz
           evalúa y persiste el assessment desde 864ec92. El aviso anterior decía
           que no calculaba, y era falso. */}
-      <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
-        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+      <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ikan-ambar" aria-hidden />
         <span>
           <strong>Ponderación sin validar.</strong> El puntaje sí se calcula y se guarda
           al evaluar a un cliente, pero los pesos y las bandas de esta plantilla son una
@@ -159,9 +168,9 @@ export default function MatrizRiesgoPage() {
       )}
 
       {sector == null && !isLoading && (
-        <div className="glass-card p-6 text-sm text-muted-foreground">
+        <div className="rounded-md border border-border bg-card p-5 text-sm text-muted-foreground">
           La organización no tiene ninguna fracción registrada, así que no se puede saber
-          qué matriz mostrar. Revisa <span className="font-mono text-xs">organizations.sectores</span>.
+          qué matriz mostrar. Revisa <span className="estela-dato text-xs">organizations.sectores</span>.
         </div>
       )}
 
@@ -174,13 +183,13 @@ export default function MatrizRiesgoPage() {
           No se pudo cargar la matriz: {(error as Error)?.message}
         </div>
       ) : !mostrada ? (
-        <div className="glass-card p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-md border border-border bg-card p-8 text-center text-sm text-muted-foreground">
           Esta organización todavía no tiene una matriz configurada para el sector {sector}.
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            <div className="glass-card p-4">
+            <div className="rounded-md border border-border bg-card p-4">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold">Versión {mostrada.version}</span>
@@ -188,14 +197,14 @@ export default function MatrizRiesgoPage() {
                     className={cn(
                       'status-badge text-xs',
                       mostrada.estado === 'borrador'
-                        ? 'bg-warning/20 text-warning'
-                        : 'bg-jade/15 text-jade',
+                        ? 'bg-warning/15 text-warning-ink'
+                        : 'bg-success/10 text-success',
                     )}
                   >
                     {mostrada.estado === 'borrador' ? 'Borrador' : 'Publicada'}
                   </span>
                   {mostrada.activa && (
-                    <span className="status-badge bg-primary/10 text-primary text-xs">Vigente</span>
+                    <span className="status-badge bg-accent/10 text-accent text-xs">Vigente</span>
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -229,19 +238,19 @@ export default function MatrizRiesgoPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="glass-card p-4">
+            <div className="rounded-md border border-border bg-card p-4">
               <h2 className="text-sm font-semibold flex items-center gap-2 mb-3">
                 <ShieldCheck className="w-4 h-4" /> Bandas de clasificación
               </h2>
               <div className="space-y-2">
-                <Banda etiqueta="bajo" tono="border-jade/40 bg-jade/5" {...mostrada.configuracion.escala_cliente.bajo} />
+                <Banda etiqueta="bajo" tono="border-success/40 bg-success/5" {...mostrada.configuracion.escala_cliente.bajo} />
                 <Banda etiqueta="medio" tono="border-warning/40 bg-warning/5" {...mostrada.configuracion.escala_cliente.medio} />
                 <Banda etiqueta="alto" tono="border-destructive/40 bg-destructive/5" {...mostrada.configuracion.escala_cliente.alto} />
               </div>
             </div>
 
             {mostrada.configuracion.triggers_alto_de_oficio?.length > 0 && (
-              <div className="glass-card p-4">
+              <div className="rounded-md border border-border bg-card p-4">
                 <h2 className="text-sm font-semibold mb-3">Alto de oficio</h2>
                 <ul className="space-y-1.5">
                   {mostrada.configuracion.triggers_alto_de_oficio.map((t) => (
@@ -254,7 +263,7 @@ export default function MatrizRiesgoPage() {
               </div>
             )}
 
-            <div className="glass-card p-4">
+            <div className="rounded-md border border-border bg-card p-4">
               <h2 className="text-sm font-semibold flex items-center gap-2 mb-3">
                 <FileClock className="w-4 h-4" /> Histórico
               </h2>

@@ -4,7 +4,11 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowLeftRight, Clock, Loader2, Users } from "lucide-react";
 import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
 import { CartuchoParametro } from "@/components/estela/CartuchoParametro";
+import { BitacoraLinea } from "@/components/estela/BitacoraLinea";
+import { listarEventos } from "@/lib/api/bitacora";
+import { actorLegible, descripcionEvento } from "@/lib/bitacora-labels";
 import { useAuth } from "@/lib/auth-context";
+import { useActiveRole } from "@/hooks/useActiveRole";
 import { metricasTablero } from "@/lib/api/dashboard";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
@@ -39,13 +43,14 @@ const COLUMNAS: { estados: EstadoHallazgo[]; titulo: string }[] = [
  *  contra el fondo y ámbar y verde quedan cerca para daltonismo protán. */
 const RIESGO: Record<ClasificacionRiesgo, { label: string; barra: string; texto: string }> = {
   bajo:        { label: "Bajo",           barra: "bg-success",     texto: "text-success" },
-  medio:       { label: "Medio",          barra: "bg-warning",     texto: "text-warning" },
+  medio:       { label: "Medio",          barra: "bg-warning",     texto: "text-warning-ink" },
   alto:        { label: "Alto",           barra: "bg-destructive", texto: "text-destructive" },
   alto_oficio: { label: "Alto de oficio", barra: "bg-destructive", texto: "text-destructive" },
 };
 
 export default function DashboardPage() {
   const { profile, perfilActividad } = useAuth();
+  const { activeRole } = useActiveRole();
   const esNotarias = perfilActividad === "notarias";
   const { valor: valorParam, parametro: buscarParam } = useParametros();
   const umaMxn = valorParam(PARAM.UMA_DIARIA);
@@ -56,6 +61,25 @@ export default function DashboardPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["tablero"],
     queryFn: metricasTablero,
+  });
+
+  /**
+   * Lo último que pasó, en el tablero.
+   *
+   * La bitácora ya existía, pero sólo se llegaba a ella entrando a Auditoría y
+   * pasando por tres filtros. Puesta aquí responde a otra pregunta, que es la
+   * que alguien se hace al abrir por la mañana: qué se movió desde ayer. Ocho
+   * líneas —lo que cabe sin desplazar—; la pantalla completa sigue en
+   * Auditoría.
+   *
+   * El operador no la ve: la política `evento_select` sólo devuelve filas a OC
+   * y Admin, así que pedirla con su sesión sería una consulta que vuelve vacía.
+   */
+  const veBitacora = activeRole === "oc" || activeRole === "admin";
+  const { data: eventos = [] } = useQuery({
+    queryKey: ["tablero", "bitacora"],
+    queryFn: () => listarEventos({ limite: 8 }),
+    enabled: veBitacora,
   });
 
   const maxOps = useMemo(
@@ -166,7 +190,7 @@ export default function DashboardPage() {
             {urgentes > 0 && (
               // El único ámbar macizo de la pantalla. Texto navy sobre ámbar:
               // el blanco no llega a contraste AA.
-              <span className="shrink-0 rounded-sm border-l-[3px] border-ikan-ambar bg-warning/15 px-3 py-1.5 text-xs font-bold text-warning-foreground dark:text-ikan-ambar">
+              <span className="shrink-0 rounded-sm border-l-[3px] border-ikan-ambar bg-warning/15 px-3 py-1.5 text-xs font-bold text-warning-ink">
                 {urgentes} con atención inmediata · SLA interno 24 h
               </span>
             )}
@@ -324,6 +348,37 @@ export default function DashboardPage() {
 
             </div>
           </div>
+
+          {/* El hilo de bitácora. Los hashes no están para que nadie los lea
+              enteros: están para que se vea que existen. Es la diferencia
+              entre un registro de actividad y una bitácora oponible. */}
+          {veBitacora && eventos.length > 0 && (
+            <div className="rounded-md border border-border bg-card p-5">
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h2 className="text-base font-bold text-foreground">Lo último en la bitácora</h2>
+                <Link
+                  to="/auditoria"
+                  className="shrink-0 text-xs font-semibold text-accent hover:underline"
+                >
+                  Ver la bitácora completa
+                </Link>
+              </div>
+              <div>
+                {eventos.map((e) => (
+                  <BitacoraLinea
+                    key={e.id}
+                    sello={new Date(e.registrado_en).toLocaleString("es-MX", {
+                      dateStyle: "short",
+                      timeStyle: "medium",
+                    })}
+                    hash={e.cadena_hash}
+                    descripcion={descripcionEvento(e)}
+                    actor={actorLegible(e)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

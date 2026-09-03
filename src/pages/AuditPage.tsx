@@ -18,66 +18,18 @@ import {
 } from "@/components/ui/select";
 import { IntegridadBitacora } from "@/components/bitacora/IntegridadBitacora";
 import { facetasEventos, listarEventos, type EventoListado } from "@/lib/api/bitacora";
+import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
+// Los nombres legibles de los eventos vivían aquí dentro. Ahora los comparte
+// con el hilo de bitácora del tablero: dos pantallas que llaman distinto al
+// mismo evento se leen como dos cosas distintas.
+import {
+  accionLegible,
+  actorLegible,
+  entidadLegible,
+  tipoLegible,
+} from "@/lib/bitacora-labels";
 
 const TODOS = "all";
-
-/** El actor, en palabras. `persona` sin id es un evento del sistema sin sesión
- *  (un job, una migración): decirlo es mejor que enseñar un UUID vacío. */
-function actorLegible(e: EventoListado): string {
-  switch (e.actor_tipo) {
-    case "motor":
-      return "Motor PLD";
-    case "job":
-      return "Proceso programado";
-    case "sistema":
-      return "Sistema";
-    default:
-      return e.actor_id ? e.actor_id.slice(0, 8) : "Sin sesión";
-  }
-}
-
-/** `operation.insert` → "Alta de operación". Lo que no esté en el mapa se
- *  muestra tal cual: inventarle un nombre a un evento nuevo sería peor. */
-const OPERACION: Record<string, string> = {
-  insert: "Alta",
-  update: "Cambio",
-  delete: "Baja",
-};
-
-/**
- * Nombre de la tabla → nombre en español.
- *
- * El filtro y la columna enseñaban el identificador crudo de la base
- * (`operation`, `catalogo_valor`), que sólo significa algo para quien conoce el
- * esquema. Lo que no esté aquí se muestra tal cual: es preferible un
- * identificador feo a un nombre inventado.
- */
-const ENTIDAD: Record<string, string> = {
-  client: "Compareciente",
-  operation: "Acto u operación",
-  hallazgo: "Hallazgo",
-  hallazgo_bitacora: "Movimiento de hallazgo",
-  aviso: "Aviso",
-  catalogo_valor: "Valor de catálogo",
-  lista_movimiento: "Movimiento de lista",
-  parametro_regulatorio: "Parámetro regulatorio",
-};
-
-function entidadLegible(entidad: string): string {
-  return ENTIDAD[entidad] ?? entidad;
-}
-
-function accionLegible(tipo: string): string {
-  const [, op] = tipo.split(".");
-  return OPERACION[op] ?? tipo;
-}
-
-/** `operation.insert` → "Alta · Acto u operación", para el desplegable. */
-function tipoLegible(tipo: string): string {
-  const [entidad, op] = tipo.split(".");
-  if (!op) return tipo;
-  return `${OPERACION[op] ?? op} · ${entidadLegible(entidad)}`;
-}
 
 export default function AuditPage() {
   const [search, setSearch] = useState("");
@@ -116,7 +68,10 @@ export default function AuditPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Auditoría</h1>
+      <EncabezadoSeccion
+        titulo="Auditoría"
+        descripcion="La cadena de eventos de esta organización, encadenada por hashes."
+      />
 
       <IntegridadBitacora />
 
@@ -124,8 +79,8 @@ export default function AuditPage() {
           sale de la LFPIORPI —su artículo 18 habla de cinco—. Se corrige y se
           marca como referencia, igual que el resto de cifras regulatorias del
           repo, hasta que Kawiil-Cumplimiento la confirme. */}
-      <div className="bg-primary/5 border border-primary/20 rounded-lg px-4 py-3 flex items-start gap-3">
-        <Shield className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+      <div className="flex items-start gap-3 rounded-md border border-border bg-muted/50 px-4 py-3">
+        <Shield className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
         {/* Decía «es inmutable», que afirma más de lo que el sistema sostiene:
             quien tenga acceso de administrador a la base sí puede escribir. Lo
             que sí se sostiene —y es lo que importa— es que se detecta. Misma
@@ -134,14 +89,14 @@ export default function AuditPage() {
           Los registros de la bitácora no se modifican ni se borran desde Ikán, y una corrección
           entra como registro nuevo. Cualquier alteración posterior rompe el encadenamiento de
           hashes y se detecta al verificar.{" "}
-          <span className="text-warning">
+          <span className="text-warning-ink">
             El plazo de conservación de cinco años (LFPIORPI artículo 18) está pendiente de
             confirmar con Kawiil-Cumplimiento.
           </span>
         </p>
       </div>
 
-      <div className="glass-card p-4 flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-card p-4">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -181,7 +136,7 @@ export default function AuditPage() {
 
       {/* overflow-x-auto y no -hidden: recortar el desbordamiento hace que
           en un teléfono se pierdan columnas sin manera de llegar a ellas. */}
-      <div className="glass-card overflow-x-auto">
+      <div className="overflow-x-auto rounded-md border border-border bg-card">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando bitácora…
@@ -193,12 +148,12 @@ export default function AuditPage() {
         ) : (
           <table className="w-full min-w-[44rem]">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-border bg-muted/50">
                 {["#", "Momento", "Acción", "Entidad", "Objeto", "Actor", "Encadenamiento"].map(
                   (h) => (
                     <th
                       key={h}
-                      className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                      className="estela-antetitulo px-4 py-3 text-left"
                     >
                       {h}
                     </th>
@@ -213,23 +168,23 @@ export default function AuditPage() {
                   className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
                   onClick={() => setDetalle(e)}
                 >
-                  <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
+                  <td className="estela-dato px-4 py-3 text-xs text-muted-foreground">
                     {e.secuencia}
                   </td>
-                  <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
+                  <td className="estela-dato px-4 py-3 text-xs text-muted-foreground">
                     {new Date(e.registrado_en).toLocaleString("es-MX")}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="status-badge bg-primary/10 text-primary">
+                    <span className="inline-flex items-center rounded-sm bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
                       {accionLegible(e.tipo)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">{entidadLegible(e.entidad)}</td>
-                  <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
+                  <td className="estela-dato px-4 py-3 text-xs text-muted-foreground">
                     {e.entidad_id ? e.entidad_id.slice(0, 8) : "—"}
                   </td>
                   <td className="px-4 py-3 text-sm">{actorLegible(e)}</td>
-                  <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
+                  <td className="estela-dato px-4 py-3 text-xs text-muted-foreground">
                     {e.cadena_hash.slice(0, 12)}…
                   </td>
                 </tr>
@@ -271,7 +226,7 @@ export default function AuditPage() {
               <Campo etiqueta="Actor">
                 {actorLegible(detalle)}
                 {detalle.actor_id && (
-                  <span className="font-mono text-xs text-muted-foreground ml-2">
+                  <span className="estela-dato ml-2 text-xs text-muted-foreground">
                     {detalle.actor_id}
                   </span>
                 )}
@@ -280,7 +235,7 @@ export default function AuditPage() {
               <Campo etiqueta="Objeto">
                 {detalle.entidad}
                 {detalle.entidad_id && (
-                  <span className="font-mono text-xs text-muted-foreground ml-2">
+                  <span className="estela-dato ml-2 text-xs text-muted-foreground">
                     {detalle.entidad_id}
                   </span>
                 )}
@@ -290,14 +245,14 @@ export default function AuditPage() {
                   acto de 2025 con las reglas de 2025. */}
               {Object.keys(detalle.versiones ?? {}).length > 0 && (
                 <Campo etiqueta="Versiones vigentes">
-                  <pre className="text-[13px] font-mono bg-muted/40 rounded p-2 overflow-x-auto">
+                  <pre className="estela-dato overflow-x-auto rounded-sm bg-muted/60 p-2 text-[13px]">
                     {JSON.stringify(detalle.versiones, null, 2)}
                   </pre>
                 </Campo>
               )}
 
               <Campo etiqueta="Contenido registrado">
-                <pre className="text-[13px] font-mono bg-muted/40 rounded p-2 overflow-x-auto">
+                <pre className="estela-dato overflow-x-auto rounded-sm bg-muted/60 p-2 text-[13px]">
                   {JSON.stringify(detalle.payload, null, 2)}
                 </pre>
               </Campo>

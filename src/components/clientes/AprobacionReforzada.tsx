@@ -106,9 +106,9 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
       </div>
 
       {vigente ? (
-        <div className="rounded-md border border-jade/30 bg-jade/5 p-3 space-y-1">
+        <div className="space-y-1 rounded-md border border-success/30 bg-success/5 p-3">
           <p className="text-sm font-medium text-foreground flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-jade" />
+            <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
             Aprobado y vigente
           </p>
           <p className="text-xs text-muted-foreground">
@@ -125,7 +125,7 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
             </p>
           )}
           {aprobacion?.autoaprobacion && (
-            <p className="text-xs text-warning">
+            <p className="text-xs text-warning-ink">
               Autoaprobación: quien aprobó es el Oficial de Cumplimiento
               designado o quien capturó el expediente. Fija responsabilidad y
               fecha, pero no es un segundo par de ojos, y por eso este
@@ -138,7 +138,7 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
       ) : (
         <div className="rounded-md border border-warning/40 bg-warning/5 p-3 space-y-1">
           <p className="text-sm font-medium text-foreground flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-warning" />
+            <AlertTriangle className="w-4 h-4 text-warning-ink" />
             {aprobacion?.aprobado_en
               ? "La aprobación dejó de cubrir"
               : "Sin aprobación: los actos están frenados"}

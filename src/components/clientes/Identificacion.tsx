@@ -32,9 +32,9 @@ const TONO_ESTADO: Record<EstadoVerificacion, string> = {
   aprobada: "bg-success/10 text-success",
   rechazada: "bg-destructive/10 text-destructive",
   error: "bg-destructive/10 text-destructive",
-  expirada: "bg-warning/10 text-warning",
-  abandonada: "bg-warning/10 text-warning",
-  reenviada: "bg-warning/10 text-warning",
+  expirada: "bg-warning/10 text-warning-ink",
+  abandonada: "bg-warning/10 text-warning-ink",
+  reenviada: "bg-warning/10 text-warning-ink",
   en_revision: "bg-muted text-foreground",
   en_progreso: "bg-muted text-foreground",
   no_iniciada: "bg-muted/60 text-muted-foreground",
@@ -186,7 +186,7 @@ export function Identificacion({ client }: { client: Client }) {
                     />
                     <Dato etiqueta="Vence" valor={resumen.documento.vence} />
                     {resumen.documento.avisos > 0 && (
-                      <p className="text-[13px] text-warning mt-1">
+                      <p className="text-[13px] text-warning-ink mt-1">
                         {resumen.documento.avisos} aviso
                         {resumen.documento.avisos === 1 ? "" : "s"} del
                         proveedor sobre el documento.
@@ -231,7 +231,7 @@ export function Identificacion({ client }: { client: Client }) {
                         {resumen.listas.categorias.map((c) => (
                           <span
                             key={c}
-                            className="status-badge bg-warning/10 text-warning text-xs"
+                            className="status-badge bg-warning/10 text-warning-ink text-xs"
                           >
                             {TEXTO_CATEGORIA[c] ?? c}
                           </span>
@@ -350,8 +350,8 @@ export function Identificacion({ client }: { client: Client }) {
                   client.condicion_pep === "no_pep"
                     ? "bg-success/10 text-success"
                     : client.condicion_pep === "coincidencia_sin_resolver"
-                      ? "bg-warning/10 text-warning"
-                      : "bg-warning/10 text-warning",
+                      ? "bg-warning/10 text-warning-ink"
+                      : "bg-warning/10 text-warning-ink",
                 )}
               >
                 {TEXTO_PEP[client.condicion_pep].etiqueta}
@@ -396,7 +396,7 @@ export function Identificacion({ client }: { client: Client }) {
           <ul className="space-y-2">
             {faltantes.map((p) => (
               <li key={`${p.no}-${p.campo}`} className="flex gap-2 text-[13px]">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-warning" />
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-warning-ink" />
                 <span>
                   <strong className="font-medium text-foreground">
                     {p.campo}
@@ -413,9 +413,9 @@ export function Identificacion({ client }: { client: Client }) {
       {/* Lo que no corre. Sin banner, un notario podría dar por hecha una
           comprobación que nadie hizo. */}
       <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
-        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
         <p className="text-[13px] text-foreground">
-          <strong className="text-warning">
+          <strong className="text-warning-ink">
             Verificar identidad no es integrar el expediente.
           </strong>{" "}
           Dos piezas del artículo 18 todavía no corren aquí: la validación de la

@@ -28,7 +28,7 @@ const badgeVariants = cva(
         accent: "border-transparent bg-accent/10 text-accent",
         success: "border-transparent bg-success/10 text-success",
         warning:
-          "border-transparent bg-warning/15 text-warning-foreground dark:text-ikan-ambar",
+          "border-transparent bg-warning/15 text-warning-ink",
         barro:
           "border-transparent bg-ikan-barro/10 text-ikan-barro dark:text-[#D08672]",
       },
