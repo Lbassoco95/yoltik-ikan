@@ -628,6 +628,22 @@ select (select count(*) from origen_recursos) as origenes,
 -- #####################################################################
 -- PASO 3 · Lo declarado, lo aportado, el bucket y la suficiencia
 -- #####################################################################
+
+-- ---------------------------------------------------------------------
+-- GUARDA · este paso necesita el PASO 2 aplicado
+-- ---------------------------------------------------------------------
+-- Sin esto el paso falla con «relation "origen_recursos" does not exist», que es cierto
+-- pero no dice qué hacer. Los pasos van EN ORDEN, del 1 al 6.
+do $guarda$
+begin
+  if to_regclass('public.origen_recursos') is null then
+    raise exception
+      'Falta el PASO 2. Este paso necesita los catálogos de origen de recursos y todavía no está en esta base. '
+      'Corre `estado_adenda5.sql` para ver en qué paso vas, aplica los pasos que falten '
+      'en orden, y vuelve a este.';
+  end if;
+end $guarda$;
+
 -- =====================================================================
 -- Lo declarado y lo aportado
 -- =====================================================================
@@ -1161,6 +1177,22 @@ select (select count(*) from information_schema.tables
 -- #####################################################################
 -- PASO 5 · El asiento en la bitácora, y las comprobaciones
 -- #####################################################################
+
+-- ---------------------------------------------------------------------
+-- GUARDA · este paso necesita el PASO 1 aplicado
+-- ---------------------------------------------------------------------
+-- Sin esto el paso falla con «relation "expediente_reforzado" does not exist», que es cierto
+-- pero no dice qué hacer. Los pasos van EN ORDEN, del 1 al 6.
+do $guarda$
+begin
+  if to_regclass('public.expediente_reforzado') is null then
+    raise exception
+      'Falta el PASO 1. Este paso necesita la función asentar_adenda_5, que crea el paso 4 y todavía no está en esta base. '
+      'Corre `estado_adenda5.sql` para ver en qué paso vas, aplica los pasos que falten '
+      'en orden, y vuelve a este.';
+  end if;
+end $guarda$;
+
 -- =====================================================================
 -- Seed · Asientos metodológicos en la bitácora de cada organización
 -- =====================================================================
@@ -1217,6 +1249,22 @@ select o.razon_social, v.secuencia, v.motivo
 -- #####################################################################
 -- PASO 6 · El OC designado, la vigencia de la aprobación y el acto
 -- #####################################################################
+
+-- ---------------------------------------------------------------------
+-- GUARDA · este paso necesita el PASO 1 aplicado
+-- ---------------------------------------------------------------------
+-- Sin esto el paso falla con «relation "expediente_reforzado" does not exist», que es cierto
+-- pero no dice qué hacer. Los pasos van EN ORDEN, del 1 al 6.
+do $guarda$
+begin
+  if to_regclass('public.expediente_reforzado') is null then
+    raise exception
+      'Falta el PASO 1. Este paso necesita la tabla expediente_reforzado y todavía no está en esta base. '
+      'Corre `estado_adenda5.sql` para ver en qué paso vas, aplica los pasos que falten '
+      'en orden, y vuelve a este.';
+  end if;
+end $guarda$;
+
 -- Las seis funciones llevan etiqueta de dollar-quoting con NOMBRE y no `$$`
 -- a secas: el editor SQL de Supabase parte el script del lado del cliente y
 -- con `$$` el corte puede caer dentro del cuerpo de una función. Si este

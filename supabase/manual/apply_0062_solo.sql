@@ -53,6 +53,21 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
+-- GUARDA · este paso necesita el PASO 1 aplicado
+-- ---------------------------------------------------------------------
+-- Sin esto el paso falla con «relation "expediente_reforzado" does not exist», que es cierto
+-- pero no dice qué hacer. Los pasos van EN ORDEN, del 1 al 6.
+do $guarda$
+begin
+  if to_regclass('public.expediente_reforzado') is null then
+    raise exception
+      'Falta el PASO 1. Este paso necesita la tabla expediente_reforzado y todavía no está en esta base. '
+      'Corre `estado_adenda5.sql` para ver en qué paso vas, aplica los pasos que falten '
+      'en orden, y vuelve a este.';
+  end if;
+end $guarda$;
+
+-- ---------------------------------------------------------------------
 -- 1. El Oficial de Cumplimiento es designado, no inferido
 -- ---------------------------------------------------------------------
 alter table organizations
