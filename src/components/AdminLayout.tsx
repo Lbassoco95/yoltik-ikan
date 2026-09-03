@@ -1,8 +1,18 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { LogOut, ShieldCheck, Database, SlidersHorizontal, ListOrdered, Link2, UserPlus, Users } from "lucide-react";
+import {
+  LogOut,
+  ShieldCheck,
+  Database,
+  SlidersHorizontal,
+  ListOrdered,
+  Link2,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 /**
  * Marco de la consola de plataforma. Deliberadamente distinto del de la app de
@@ -12,7 +22,11 @@ import { cn } from "@/lib/utils";
 const SECCIONES = [
   { to: "/prospectos", label: "Prospectos", icon: UserPlus },
   { to: "/listas", label: "Listas restrictivas", icon: Database },
-  { to: "/parametros", label: "Parámetros regulatorios", icon: SlidersHorizontal },
+  {
+    to: "/parametros",
+    label: "Parámetros regulatorios",
+    icon: SlidersHorizontal,
+  },
   { to: "/catalogos", label: "Catálogos del layout", icon: ListOrdered },
   { to: "/usuarios", label: "Usuarios y 2FA", icon: Users },
   { to: "/bitacora", label: "Bitácora", icon: Link2 },
@@ -85,13 +99,16 @@ export function AdminLayout() {
           de una sola organización. */}
       <div className="bg-warning/10 border-b border-warning/30 px-6 py-2">
         <p className="text-xs text-warning-foreground">
-          Lo que se configure aquí aplica a <strong>todas las organizaciones</strong> de la
-          plataforma, sin importar su actividad.
+          Lo que se configure aquí aplica a{" "}
+          <strong>todas las organizaciones</strong> de la plataforma, sin
+          importar su actividad.
         </p>
       </div>
 
       <main className="flex-1 p-6 max-w-[1400px] w-full mx-auto">
-        <Outlet />
+        <ErrorBoundary key={location.pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );

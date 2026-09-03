@@ -168,7 +168,25 @@ begin
   select 14, 'Eventos sin anclar', '32', eventos_sin_anclar::text, eventos_sin_anclar = 32
     from v_anclaje_estado where organization_id = v_org;
 
-  delete from cadena_auditoria where organization_id in (v_org, v_otra);
+  -- La cabeza de la cadena se REPONE, no se borra.
+  --
+  -- Borrarla dejaba los eventos de Ixim Pay sin cabeza: el siguiente
+  -- `registrar_evento` la volvía a crear en cero y pedía la secuencia 1, que ya
+  -- existía, y reventaba con llave duplicada. En una base compartida eso rompe
+  -- todas las pruebas posteriores, no ésta —lo cazó la corrida completa, donde
+  -- la 0053 falló sin tener nada que ver—.
+  update cadena_auditoria c
+     set ultima_secuencia = coalesce(u.secuencia, 0),
+         ultimo_hash = coalesce(u.cadena_hash, repeat('0', 64))
+    from (select e.organization_id, e.secuencia, e.cadena_hash
+            from evento_auditoria e
+           where e.organization_id = v_org
+           order by e.secuencia desc limit 1) u
+   where c.organization_id = v_org and u.organization_id = c.organization_id;
+
+  -- La organización inventada de la prueba sí se va entera: no tiene eventos
+  -- reales de los que quedar descolgada.
+  delete from cadena_auditoria where organization_id = v_otra;
 end;
 $$;
 

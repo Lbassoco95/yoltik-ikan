@@ -3,6 +3,7 @@ import type { EstadoCatalogo, ValorCatalogo } from '@/lib/catalogos';
 import type { ZonaAtencion } from '@/lib/riesgo/zona';
 import { NIVELES_SANCION } from '@/lib/riesgo/sanciones';
 import type { ListasSanciones, NivelSancion } from '@/lib/riesgo/sanciones';
+import type { Subdivision } from '@/lib/riesgo/subdivision';
 import { comoJson } from './json';
 
 /** Estado de todos los catálogos: cuáles están cargados y desde cuándo.
@@ -172,4 +173,41 @@ export async function zonasDeAtencion(): Promise<ZonaAtencion[]> {
     nivel: z.nivel as number,
     motivo: z.motivo as string,
   }));
+}
+
+/**
+ * Las subdivisiones con nivel de riesgo (migration 0058).
+ *
+ * No es un catálogo de todas las subdivisiones del mundo: son las que cambian
+ * la calificación. Pedir «la subdivisión» de cualquier país sería un campo
+ * libre que nadie sabe rellenar; ofrecer sólo las que puntúan lo convierte en
+ * una pregunta contestable.
+ */
+export async function subdivisionesConRiesgo(): Promise<Subdivision[]> {
+  const { data, error } = await supabase
+    .from('subdivision_riesgo')
+    .select('clave, pais_iso2, nombre, nivel_territorial, derivacion, pendiente_confirmacion')
+    .is('vigente_hasta', null)
+    .order('clave');
+  if (error) throw error;
+  return (data ?? []) as unknown as Subdivision[];
+}
+
+/**
+ * Los países donde la subdivisión es obligatoria, con su motivo.
+ *
+ * Se lee en vez de escribirse en el front: la lista cambia por determinación de
+ * una autoridad, y una copia en el código se queda vieja sin dar señal.
+ */
+export async function paisesQueExigenSubdivision(): Promise<Map<string, string>> {
+  const { data, error } = await supabase
+    .from('pais_exige_subdivision')
+    .select('pais_iso2, motivo');
+  if (error) throw error;
+  return new Map(
+    (data ?? []).map((p) => [
+      (p as { pais_iso2: string }).pais_iso2.toUpperCase(),
+      (p as { motivo: string }).motivo,
+    ]),
+  );
 }
