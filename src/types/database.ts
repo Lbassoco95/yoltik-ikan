@@ -2712,6 +2712,7 @@ export type Database = {
           nombre: string
           oficio_fecha: string | null
           oficio_numero: string | null
+          orden_origen: number | null
           pais: string | null
           registro_id: string | null
           rfc: string | null
@@ -2729,6 +2730,7 @@ export type Database = {
           nombre: string
           oficio_fecha?: string | null
           oficio_numero?: string | null
+          orden_origen?: number | null
           pais?: string | null
           registro_id?: string | null
           rfc?: string | null
@@ -2746,6 +2748,7 @@ export type Database = {
           nombre?: string
           oficio_fecha?: string | null
           oficio_numero?: string | null
+          orden_origen?: number | null
           pais?: string | null
           registro_id?: string | null
           rfc?: string | null
@@ -2770,6 +2773,7 @@ export type Database = {
           alta_oficio: string | null
           baja_fecha: string | null
           baja_oficio: string | null
+          carga_ultima: string | null
           curp: string | null
           fuente_id: string
           id: string
@@ -2777,6 +2781,7 @@ export type Database = {
           nombre: string
           nombre_normalizado: string | null
           nombres_alternos: string[]
+          orden_origen_ultimo: number | null
           pais: string | null
           raw_payload: Json | null
           rfc: string | null
@@ -2790,6 +2795,7 @@ export type Database = {
           alta_oficio?: string | null
           baja_fecha?: string | null
           baja_oficio?: string | null
+          carga_ultima?: string | null
           curp?: string | null
           fuente_id: string
           id?: string
@@ -2797,6 +2803,7 @@ export type Database = {
           nombre: string
           nombre_normalizado?: string | null
           nombres_alternos?: string[]
+          orden_origen_ultimo?: number | null
           pais?: string | null
           raw_payload?: Json | null
           rfc?: string | null
@@ -2810,6 +2817,7 @@ export type Database = {
           alta_oficio?: string | null
           baja_fecha?: string | null
           baja_oficio?: string | null
+          carga_ultima?: string | null
           curp?: string | null
           fuente_id?: string
           id?: string
@@ -2817,6 +2825,7 @@ export type Database = {
           nombre?: string
           nombre_normalizado?: string | null
           nombres_alternos?: string[]
+          orden_origen_ultimo?: number | null
           pais?: string | null
           raw_payload?: Json | null
           rfc?: string | null
@@ -4616,6 +4625,16 @@ export type Database = {
           cuantos: number
           detalle: string
           listo: boolean
+        }[]
+      }
+      conflictos_de_carga: {
+        Args: { p_carga_id: string }
+        Returns: {
+          filas: number[]
+          nombre: string
+          rfc: string
+          situacion_vigente: string
+          situaciones: string[]
         }[]
       }
       diferencia_carga_borrador: {
