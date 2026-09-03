@@ -18,6 +18,11 @@
 -- indirecto a propósito: preguntarle a la tabla de control sería preguntarle a
 -- quien no sabe.
 --
+-- La firma de la 0040 mide la VENTANA de la tipología XII-01, no el asiento
+-- que esa migration escribe. El asiento era una firma débil: la 0040 se sale
+-- sin escribirlo cuando la ventana ya está corregida, así que «sin asiento» no
+-- distinguía «no corrió» de «no hacía falta». La ventana sí lo distingue.
+--
 -- Cinco firmas van marcadas [efecto de DATOS]: la 0031, 0037, 0040, 0042 y
 -- 0054 no crean tablas, cambian datos —la matriz XII, un asiento, un
 -- indicador—. En producción deben salir APLICADA porque las organizaciones ya
@@ -114,8 +119,10 @@ begin
     case when exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'pep_desde_resumen') then 'APLICADA' else 'FALTA' end);
   insert into ikan_migraciones values ('0039_pago_y_articulo_32', 'función limite_efectivo_del_acto',
     case when exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'limite_efectivo_del_acto') then 'APLICADA' else 'FALTA' end);
-  insert into ikan_migraciones values ('0040_ventana_acumulacion_seis_meses', 'asiento ventana_acumulacion_corregida [efecto de DATOS]',
-    case when exists (select 1 from evento_auditoria where tipo = 'ventana_acumulacion_corregida') then 'APLICADA' else 'FALTA' end);
+  insert into ikan_migraciones values ('0040_ventana_acumulacion_seis_meses', 'ventana de XII-01 en seis meses [efecto de DATOS]',
+    case when exists (select 1 from tipologia_av
+                       where codigo = 'XII-01' and activa
+                         and regla_dsl->>'ventana' = '6M') then 'APLICADA' else 'FALTA' end);
   insert into ikan_migraciones values ('0041_factores_rcg', 'tabla zona_atencion',
     case when to_regclass('public.zona_atencion') is not null then 'APLICADA' else 'FALTA' end);
   insert into ikan_migraciones values ('0042_matriz_xii_v3', 'matriz XII versión 3 [efecto de DATOS]',
