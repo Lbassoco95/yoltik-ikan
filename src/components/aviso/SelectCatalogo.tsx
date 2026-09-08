@@ -109,7 +109,7 @@ export function SelectCatalogo({
                       <span className="flex-1">{v.descripcion}</span>
                       {/* Al margen y en pequeño: sirve para depurar un aviso
                           rechazado, no para elegir. */}
-                      <span className="ml-2 font-mono text-[11px] text-muted-foreground shrink-0">
+                      <span className="ml-2 estela-dato text-[11px] text-muted-foreground shrink-0">
                         {v.clave}
                       </span>
                     </CommandItem>

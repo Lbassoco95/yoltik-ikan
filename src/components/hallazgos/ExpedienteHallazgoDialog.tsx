@@ -346,10 +346,10 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
 
             <div className="grid grid-cols-2 gap-4">
               <Campo label="Folio">
-                <span className="font-mono">{folio(hallazgo)}</span>
+                <span className="estela-dato">{folio(hallazgo)}</span>
               </Campo>
               <Campo label="Tipología">
-                <span className="font-mono">{hallazgo.tipologia_codigo}</span> ·{' '}
+                <span className="estela-dato">{hallazgo.tipologia_codigo}</span> ·{' '}
                 {hallazgo.tipologia_nombre}
               </Campo>
               <Campo label="Compareciente">

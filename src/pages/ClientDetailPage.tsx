@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -160,7 +160,31 @@ export default function ClientDetailPage() {
   });
   const identidad = verificaciones[0] ?? null;
 
-  const [pestana, setPestana] = useState("datos");
+  /**
+   * El apartado abierto, y en la URL.
+   *
+   * Sin esto no había forma de mandar a alguien directo a la identificación de
+   * un compareciente: cualquier enlace al expediente caía siempre en «Datos
+   * generales» y había que decirle «y ahora haz clic en Identificación». Con
+   * el apartado en la URL, la lista de comparecientes y el módulo de identidad
+   * llevan al sitio exacto, y la dirección se puede pegar en un correo.
+   */
+  const [parametrosUrl, setParametrosUrl] = useSearchParams();
+  const pestana = parametrosUrl.get("apartado") ?? "datos";
+  const setPestana = (valor: string) => {
+    setParametrosUrl(
+      (previos) => {
+        const siguientes = new URLSearchParams(previos);
+        if (valor === "datos") siguientes.delete("apartado");
+        else siguientes.set("apartado", valor);
+        return siguientes;
+      },
+      // Cambiar de apartado no es navegar: si empujara al historial, el botón
+      // de volver del navegador recorrería las pestañas una a una en vez de
+      // salir del expediente.
+      { replace: true },
+    );
+  };
 
   const { data: evaluacion } = useQuery({
     queryKey: ["evaluacion", id],

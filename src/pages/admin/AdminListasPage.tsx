@@ -426,7 +426,7 @@ export default function AdminListasPage() {
                       value={l.rfc}
                       onChange={(e) => actualizarLinea(i, "rfc", e.target.value)}
                       placeholder="Opcional"
-                      className="font-mono"
+                      className="estela-dato"
                     />
                   </div>
                   <div>
@@ -434,7 +434,7 @@ export default function AdminListasPage() {
                     <Input
                       value={l.oficio_numero}
                       onChange={(e) => actualizarLinea(i, "oficio_numero", e.target.value)}
-                      className="font-mono"
+                      className="estela-dato"
                     />
                   </div>
                   <div>

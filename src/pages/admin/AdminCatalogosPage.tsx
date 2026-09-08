@@ -313,7 +313,7 @@ function DialogCarga({
                 <ul className="space-y-0.5">
                   {previo.valores.slice(0, 8).map((v) => (
                     <li key={v.clave} className="text-xs">
-                      <span className="font-mono text-muted-foreground mr-2">
+                      <span className="estela-dato text-muted-foreground mr-2">
                         {v.clave}
                       </span>
                       {v.descripcion}

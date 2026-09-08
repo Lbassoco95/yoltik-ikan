@@ -336,7 +336,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
           <tbody>
             {anclajes.map((a) => (
               <tr key={a.id} className="border-t border-border">
-                <td className="px-3 py-2 text-xs font-mono">
+                <td className="px-3 py-2 text-xs estela-dato">
                   {a.desde_secuencia}–{a.hasta_secuencia}
                 </td>
                 <td className="px-3 py-2 text-xs">{MOTIVO_LABEL[a.motivo]}</td>
@@ -360,7 +360,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
                   </span>
                 </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">
-                  <span className="font-mono">
+                  <span className="estela-dato">
                     {a.bloque_btc?.toLocaleString("es-MX") ?? "—"}
                   </span>
                   {a.fecha_bloque && (
@@ -534,7 +534,7 @@ function Dato({
         {etiqueta}
       </p>
       <p
-        className={`text-sm font-semibold text-foreground mt-0.5 ${mono ? "font-mono" : ""}`}
+        className={`text-sm font-semibold text-foreground mt-0.5 ${mono ? "estela-dato" : ""}`}
       >
         {valor}
       </p>

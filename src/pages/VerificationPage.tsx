@@ -4,6 +4,9 @@ import { AlertTriangle, Loader2, ShieldCheck, ShieldQuestion } from "lucide-reac
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { EnviarVerificacionDialog } from "@/components/verificacion/EnviarVerificacionDialog";
+import { EstadoIdentidad } from "@/components/verificacion/EstadoIdentidad";
+import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
+import { TONO_ESTADO } from "@/lib/verificacion-labels";
 import { listarClientes } from "@/lib/api/clientes";
 import {
   ETIQUETA_ESTADO,
@@ -123,13 +126,16 @@ export default function VerificationPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Identificación del compareciente</h1>
+      <EncabezadoSeccion
+        titulo="Identificación del compareciente"
+        descripcion="Quién está verificado y quién no, y qué le falta a cada expediente."
+      />
 
       {/* Lo que sigue sin integrarse, acotado. Didit resuelve quién es la
           persona; no consulta RENAPO ni las listas, y decir lo contrario sería
           darle al notario por hecha una comprobación que nadie hizo. */}
       <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3">
-        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ikan-ambar" aria-hidden />
         <div className="text-sm text-foreground">
           <p>
             <strong className="text-warning-ink">Verificar identidad no es integrar el expediente.</strong>{" "}
@@ -187,7 +193,10 @@ export default function VerificationPage() {
                     detalle: "",
                   };
                   return (
-                    <tr key={cliente.id} className="border-b border-border last:border-0">
+                    <tr
+                      key={cliente.id}
+                      className="border-b border-border transition-colors last:border-0 hover:bg-muted/50"
+                    >
                       <td className="px-4 py-3">
                         <Link
                           to={`/clientes/${cliente.id}`}
@@ -195,7 +204,9 @@ export default function VerificationPage() {
                         >
                           {cliente.nombre_razon_social}
                         </Link>
-                        <p className="text-[13px] text-muted-foreground">{cliente.rfc ?? "sin RFC"}</p>
+                        <p className="estela-dato text-[13px] text-muted-foreground">
+                          {cliente.rfc ?? "sin RFC"}
+                        </p>
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-sm">
@@ -210,7 +221,7 @@ export default function VerificationPage() {
                             "status-badge text-xs",
                             faltan === 0
                               ? "bg-success/10 text-success"
-                              : "bg-warning/10 text-warning-ink",
+                              : "bg-warning/15 text-warning-ink",
                           )}
                         >
                           {faltan === 0
@@ -222,6 +233,7 @@ export default function VerificationPage() {
                       </td>
                       <td className="px-4 py-3">
                         <EstadoIdentidad
+                          clientId={cliente.id}
                           estado={estado}
                           onVerificar={() =>
                             setAVerificar({
@@ -306,54 +318,6 @@ export default function VerificationPage() {
   );
 }
 
-/**
- * Estado de identidad de un compareciente.
- *
- * Sin verificación no se dice «no verificado», que suena a que falló: se
- * ofrece hacerla. Y cuando está aprobada se dice «identidad verificada», nunca
- * «identificado» a secas — identificar en el sentido del artículo 18 es
- * integrar el expediente, y eso es más que verificar quién es alguien.
- */
-function EstadoIdentidad({
-  estado,
-  onVerificar,
-}: {
-  estado: EstadoVerificacion | undefined;
-  onVerificar: () => void;
-}) {
-  if (!estado) {
-    return (
-      <Button size="sm" variant="ghost" className="gap-2" onClick={onVerificar}>
-        <ShieldCheck className="w-4 h-4" /> Verificar
-      </Button>
-    );
-  }
-
-  // El color refuerza; el texto lleva el significado.
-  const clase =
-    estado === "aprobada"
-      ? "bg-success/10 text-success"
-      : estado === "rechazada"
-        ? "bg-destructive/10 text-destructive"
-        : estado === "en_progreso" || estado === "no_iniciada" || estado === "en_revision"
-          ? "bg-accent/10 text-accent"
-          : "bg-warning/10 text-warning-ink";
-
-  return (
-    <div className="flex items-center gap-2">
-      <span className={cn("status-badge text-xs whitespace-nowrap", clase)}>
-        {ETIQUETA_ESTADO[estado]}
-      </span>
-      {/* Se puede reintentar salvo cuando ya está aprobada: volver a pedirla
-          ahí sólo gasta una verificación y confunde a la persona. */}
-      {estado !== "aprobada" && (
-        <Button size="sm" variant="ghost" onClick={onVerificar} className="h-7 px-2 text-xs">
-          Reenviar
-        </Button>
-      )}
-    </div>
-  );
-}
 
 function Metrica({
   etiqueta,
@@ -366,9 +330,11 @@ function Metrica({
 }) {
   return (
     <div className="estela-placa p-4">
-      <p className="text-xs text-muted-foreground uppercase">{etiqueta}</p>
-      <p className="text-2xl font-bold text-foreground mt-1">{valor}</p>
-      {nota && <p className="text-[13px] text-muted-foreground">{nota}</p>}
+      <p className="estela-antetitulo text-muted-foreground">{etiqueta}</p>
+      <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">
+        {valor}
+      </p>
+      {nota && <p className="mt-0.5 text-xs text-muted-foreground">{nota}</p>}
     </div>
   );
 }

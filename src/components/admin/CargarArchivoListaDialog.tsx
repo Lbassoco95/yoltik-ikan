@@ -139,7 +139,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) void analizar(f); }}
               />
               <p className="text-[13px] text-muted-foreground mt-1">
-                Los listados del SAT vienen con extensión <span className="font-mono">.xls</span>{" "}
+                Los listados del SAT vienen con extensión <span className="estela-dato">.xls</span>{" "}
                 pero son CSV. Súbelos tal cual los descargaste, sin abrirlos ni reguardarlos en
                 Excel: al hacerlo cambia la codificación y se pierden los acentos.
               </p>

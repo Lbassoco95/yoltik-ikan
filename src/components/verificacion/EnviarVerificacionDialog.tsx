@@ -265,7 +265,7 @@ export function EnviarVerificacionDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="liga-verif">Liga de la verificación</Label>
                 <div className="flex gap-2">
-                  <Input id="liga-verif" readOnly value={url} className="font-mono text-xs" />
+                  <Input id="liga-verif" readOnly value={url} className="estela-dato text-xs" />
                   <Button
                     variant="outline"
                     size="icon"

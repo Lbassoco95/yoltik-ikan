@@ -97,7 +97,7 @@ export default function ListsPage() {
                       <p className="font-semibold">{r.nombre}</p>
                       <p className="text-muted-foreground text-xs mt-0.5">
                         {r.fuente_nombre}
-                        {r.rfc && <span className="font-mono"> · {r.rfc}</span>}
+                        {r.rfc && <span className="estela-dato"> · {r.rfc}</span>}
                         {r.situacion && <> · {labelSituacion(r.situacion)}</>}
                         {r.alta_fecha && (
                           <> · desde el {new Date(r.alta_fecha).toLocaleDateString("es-MX")}</>

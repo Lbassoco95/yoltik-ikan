@@ -166,7 +166,7 @@ export default function AltaSegundoFactorPage() {
                   autoComplete="one-time-code"
                   maxLength={6}
                   placeholder="000000"
-                  className="font-mono tracking-[0.4em] text-center text-lg"
+                  className="estela-dato tracking-[0.4em] text-center text-lg"
                   value={codigo}
                   onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
                 />

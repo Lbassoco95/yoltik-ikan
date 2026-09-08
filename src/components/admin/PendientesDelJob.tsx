@@ -88,7 +88,7 @@ export function PendientesDelJob() {
             <p className="text-xs text-muted-foreground mt-1">
               {new Date(e.iniciado_en).toLocaleString("es-MX")}
               {Object.keys(e.detalle ?? {}).length > 0 && (
-                <span className="font-mono ml-2">{JSON.stringify(e.detalle)}</span>
+                <span className="estela-dato ml-2">{JSON.stringify(e.detalle)}</span>
               )}
             </p>
             <p className="text-xs text-muted-foreground mt-1">

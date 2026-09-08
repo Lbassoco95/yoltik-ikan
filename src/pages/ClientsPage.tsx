@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { EnviarVerificacionDialog } from "@/components/verificacion/EnviarVerificacionDialog";
+import { EstadoIdentidad } from "@/components/verificacion/EstadoIdentidad";
 import {
   ETIQUETA_ESTADO,
   verificacionesVigentes,
@@ -11,6 +12,7 @@ import { Search, Plus, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
+import { TONO_ESTADO } from "@/lib/verificacion-labels";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -369,6 +371,7 @@ export default function ClientsPage() {
                       y la página cambia debajo. */}
                   <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                     <EstadoIdentidad
+                      clientId={client.id}
                       estado={verificaciones?.get(client.id)}
                       onVerificar={() =>
                         setAVerificar({
@@ -657,51 +660,3 @@ export default function ClientsPage() {
   );
 }
 
-/**
- * Estado de identidad de un compareciente.
- *
- * Sin verificación no se dice «no verificado», que suena a que falló: se
- * ofrece hacerla. Y cuando está aprobada se dice «identidad verificada», nunca
- * «identificado» a secas — identificar en el sentido del artículo 18 es
- * integrar el expediente, y eso es más que verificar quién es alguien.
- */
-function EstadoIdentidad({
-  estado,
-  onVerificar,
-}: {
-  estado: EstadoVerificacion | undefined;
-  onVerificar: () => void;
-}) {
-  if (!estado) {
-    return (
-      <Button size="sm" variant="ghost" className="gap-2" onClick={onVerificar}>
-        <ShieldCheck className="w-4 h-4" /> Verificar
-      </Button>
-    );
-  }
-
-  // El color refuerza; el texto lleva el significado.
-  const clase =
-    estado === "aprobada"
-      ? "bg-success/10 text-success"
-      : estado === "rechazada"
-        ? "bg-destructive/10 text-destructive"
-        : estado === "en_progreso" || estado === "no_iniciada" || estado === "en_revision"
-          ? "bg-accent/10 text-accent"
-          : "bg-warning/10 text-warning-ink";
-
-  return (
-    <div className="flex items-center gap-2">
-      <span className={cn("status-badge text-xs whitespace-nowrap", clase)}>
-        {ETIQUETA_ESTADO[estado]}
-      </span>
-      {/* Se puede reintentar salvo cuando ya está aprobada: volver a pedirla
-          ahí sólo gasta una verificación y confunde a la persona. */}
-      {estado !== "aprobada" && (
-        <Button size="sm" variant="ghost" onClick={onVerificar} className="h-7 px-2 text-xs">
-          Reenviar
-        </Button>
-      )}
-    </div>
-  );
-}

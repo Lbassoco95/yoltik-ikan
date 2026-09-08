@@ -84,7 +84,7 @@ export default function ConfigPage() {
                   <p className="estela-antetitulo text-muted-foreground">
                     {f.label}
                   </p>
-                  <p className={cn("mt-1 text-sm", f.mono && "font-mono", !f.value && "text-muted-foreground italic")}>
+                  <p className={cn("mt-1 text-sm", f.mono && "estela-dato", !f.value && "text-muted-foreground italic")}>
                     {f.value ?? "Sin registrar"}
                   </p>
                 </div>
@@ -111,7 +111,7 @@ export default function ConfigPage() {
                   >
                     <div className="flex items-baseline justify-between gap-2">
                       <p className={cn("text-sm font-medium", habilitada ? "text-foreground" : "text-muted-foreground")}>
-                        <span className="font-mono text-xs mr-1.5">{a.fraccion}</span>
+                        <span className="estela-dato text-xs mr-1.5">{a.fraccion}</span>
                         {a.nombre}
                       </p>
                       {habilitada && (

@@ -310,7 +310,7 @@ export default function AdminParametrosPage() {
                   value={form.codigo}
                   onChange={(e) => setForm({ ...form, codigo: e.target.value })}
                   placeholder="uma_diaria"
-                  className="font-mono"
+                  className="estela-dato"
                 />
               </div>
               <div className="space-y-1.5">

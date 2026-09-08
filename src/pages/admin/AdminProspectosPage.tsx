@@ -143,7 +143,7 @@ export default function AdminProspectosPage() {
                 <tr key={p.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3">
                     <p className="text-sm font-medium text-foreground">{p.razon_social}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{p.rfc}</p>
+                    <p className="text-xs text-muted-foreground estela-dato">{p.rfc}</p>
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-sm text-foreground">{p.contacto_nombre}</p>

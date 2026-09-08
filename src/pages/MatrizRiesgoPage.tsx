@@ -30,7 +30,7 @@ function Banda({ etiqueta, min, max, acciones, tono }: {
     <div className={cn('rounded-md border p-3', tono)}>
       <div className="flex items-baseline justify-between">
         <span className="text-sm font-semibold capitalize">{etiqueta}</span>
-        <span className="text-xs font-mono">{min}–{max}</span>
+        <span className="text-xs estela-dato">{min}–{max}</span>
       </div>
       <p className="text-xs text-muted-foreground mt-1">{acciones}</p>
     </div>
@@ -41,7 +41,7 @@ function Elemento({ el }: { el: MatrizElemento }) {
   return (
     <div className="rounded-md border border-border p-4">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-mono font-bold">{el.codigo}</span>
+        <span className="text-xs estela-dato font-bold">{el.codigo}</span>
         <span className="text-sm font-semibold">{el.nombre}</span>
         <span className="status-badge bg-muted text-muted-foreground text-xs">
           {el.variables.length} variable{el.variables.length === 1 ? '' : 's'}
@@ -55,7 +55,7 @@ function Elemento({ el }: { el: MatrizElemento }) {
       <ul className="mt-3 space-y-1.5">
         {el.variables.map((v) => (
           <li key={v.codigo} className="text-xs text-muted-foreground flex gap-2">
-            <span className="font-mono shrink-0">{v.codigo}</span>
+            <span className="estela-dato shrink-0">{v.codigo}</span>
             <span className="text-foreground">{v.pregunta}</span>
             <span className="ml-auto shrink-0">{v.opciones.length} opc.</span>
           </li>
@@ -256,7 +256,7 @@ export default function MatrizRiesgoPage() {
                 <ul className="space-y-1.5">
                   {mostrada.configuracion.triggers_alto_de_oficio.map((t) => (
                     <li key={t.codigo} className="text-xs flex gap-2">
-                      <span className="font-mono shrink-0 text-destructive">{t.codigo}</span>
+                      <span className="estela-dato shrink-0 text-destructive">{t.codigo}</span>
                       <span className="text-muted-foreground">{t.descripcion}</span>
                     </li>
                   ))}
@@ -271,7 +271,7 @@ export default function MatrizRiesgoPage() {
               <ul className="space-y-2">
                 {versiones.map((v) => (
                   <li key={v.id} className="text-xs flex items-center gap-2">
-                    <span className="font-mono">v{v.version}</span>
+                    <span className="estela-dato">v{v.version}</span>
                     <span className="text-muted-foreground">
                       {v.estado === 'borrador' ? 'borrador' : new Date(v.publicada_en ?? v.creada_en).toLocaleDateString('es-MX')}
                     </span>
