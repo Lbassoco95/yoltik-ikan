@@ -16,6 +16,13 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { TONO_ESTADO } from "@/lib/verificacion-labels";
+
+/** Los tres resultados que devuelve la validación contra bases oficiales. */
+const COINCIDENCIA_BASE: Record<string, string> = {
+  full_match: "Coincide con el registro",
+  partial_match: "Coincide en parte",
+  no_match: "No coincide con el registro",
+};
 import type { Client, CondicionPep } from "@/types/domain";
 
 /**
@@ -243,6 +250,43 @@ export function Identificacion({ client }: { client: Client }) {
                     <p className="text-xs text-muted-foreground mt-1">
                       Las imágenes y los datos biométricos se quedan en Didit.
                       Aquí sólo el resultado.
+                    </p>
+                  </Bloque>
+                )}
+                {/* La validación contra el registro nacional. Va ANTES de las
+                    listas porque contesta una pregunta más básica: no «tiene
+                    antecedentes» sino «existe». */}
+                {resumen.validacion_base && (
+                  <Bloque titulo="CURP e INE contra el registro">
+                    <Dato
+                      etiqueta="Resultado"
+                      valor={
+                        COINCIDENCIA_BASE[
+                          resumen.validacion_base.coincidencia ?? ""
+                        ] ??
+                        resumen.validacion_base.coincidencia ??
+                        "sin dato"
+                      }
+                    />
+                    {resumen.validacion_base.estado && (
+                      <Dato
+                        etiqueta="Veredicto"
+                        valor={resumen.validacion_base.estado}
+                      />
+                    )}
+                    {resumen.validacion_base.coincidencia ===
+                      "partial_match" && (
+                      <p className="mt-1.5 text-[13px] text-warning-ink">
+                        Algunos datos casan con el registro y otros no. No es un
+                        fallo del sistema: es una discrepancia entre lo que dice
+                        el documento y lo que dice el registro, y la revisa una
+                        persona.
+                      </p>
+                    )}
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      Consulta a RENAPO (CURP) y al padrón del INE. Contesta si
+                      la persona existe en el registro nacional con esos datos,
+                      no si el documento parece auténtico.
                     </p>
                   </Bloque>
                 )}

@@ -255,6 +255,7 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
   const cara = primero(d.face_matches);
   const aml = primero(d.aml_screenings);
   const canal = primero(d.ip_analyses);
+  const base = primero(d.database_validations);
 
   const resumen: Record<string, unknown> = {};
 
@@ -269,8 +270,9 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
    *   1 · documento, prueba de vida, cotejo facial, listas
    *   2 · + señales de canal (VPN, centro de datos, divergencia)
    *   3 · + qué módulos corrieron y cuáles NO, con el motivo del proveedor
+   *   4 · + resultado de la validación contra bases oficiales (CURP, INE)
    */
-  resumen.version = 3;
+  resumen.version = 4;
 
   /**
    * Qué corrió y qué no.
@@ -353,6 +355,31 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
       categorias: categoriasDeCoincidencias(aml),
     };
   }
+  /**
+   * La validación contra bases oficiales. En México: la CURP contra RENAPO y
+   * la vigencia de la credencial del INE.
+   *
+   * Es la pieza que separa «este documento parece auténtico y la cara coincide»
+   * de «esta persona existe en el registro nacional con estos datos». Un INE
+   * bien falsificado pasa lo primero; lo segundo no.
+   *
+   * Los dos campos y sus valores están comprobados contra el contrato de Didit
+   * (`database_validation.status` y `.match_type`), no supuestos: es la misma
+   * lección que dejó el AML, donde cinco nombres de campo inventados tiraban
+   * la clasificación entera.
+   */
+  if (base) {
+    resumen.validacion_base = {
+      // Approved · Declined · In Review · Not Finished
+      estado: typeof base.status === "string" ? base.status : null,
+      // full_match · partial_match · no_match. La coincidencia parcial es la
+      // que importa: algunos campos casan y otros no, y eso NO es un fallo del
+      // sistema —es una discrepancia entre lo que dice el documento y lo que
+      // dice el registro, y la mira una persona.
+      coincidencia: typeof base.match_type === "string" ? base.match_type : null,
+    };
+  }
+
   if (canal) {
     /**
      * Señales de canal, con el recorte de la Adenda 5 y la Adenda 6 §5:

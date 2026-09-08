@@ -179,7 +179,7 @@ describe("resumen de la decisión", () => {
     // distintas, y sólo una de las dos se puede sostener.
     for (const vacia of [{}, { id_verifications: [] }]) {
       const r = resumirDecision(vacia);
-      expect(r).toEqual({ version: 3, modulos_ejecutados: null });
+      expect(r).toEqual({ version: 4, modulos_ejecutados: null });
     }
   });
 
@@ -231,6 +231,45 @@ describe("resumen de la decisión", () => {
     // El mensaje del proveedor se guarda tal cual: reescribirlo con nuestras
     // palabras es arriesgarse a decir una causa que no es la suya.
     expect(r.validacion_base_no_corrio.mensaje).toContain("paid top-up");
+  });
+
+  /**
+   * La validación contra bases oficiales, con los valores del contrato de
+   * Didit: `status` (Approved/Declined/In Review/Not Finished) y `match_type`
+   * (full_match/partial_match/no_match). Comprobados contra
+   * `didit_workflow_get_branch_fields`, no supuestos: es la lección que dejó
+   * el AML, donde cinco nombres de campo inventados tiraban la clasificación.
+   */
+  it("guarda el resultado de la validación de CURP e INE", () => {
+    const r = resumirDecision({
+      ...decision,
+      database_validations: [
+        { status: "Approved", match_type: "full_match" },
+      ],
+    }) as Record<string, Record<string, unknown>>;
+
+    expect(r.validacion_base.estado).toBe("Approved");
+    expect(r.validacion_base.coincidencia).toBe("full_match");
+  });
+
+  it("la coincidencia PARCIAL se guarda tal cual, no se redondea a buena", () => {
+    // Algunos campos casan con el registro y otros no. No es lo mismo que
+    // «coincide», y colapsarlo a un sí/no pierde justo el caso que hay que
+    // mirar a mano.
+    const r = resumirDecision({
+      ...decision,
+      database_validations: [
+        { status: "In Review", match_type: "partial_match" },
+      ],
+    }) as Record<string, Record<string, unknown>>;
+
+    expect(r.validacion_base.coincidencia).toBe("partial_match");
+    expect(r.validacion_base.estado).toBe("In Review");
+  });
+
+  it("sin el módulo no hay bloque de validación de base", () => {
+    const r = resumirDecision(decision) as Record<string, unknown>;
+    expect(r.validacion_base).toBeUndefined();
   });
 
   it("sin motivo del proveedor NO se inventa que faltó algo", () => {

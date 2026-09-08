@@ -172,6 +172,20 @@ export interface ResumenLegible {
    * una visita de verificación.
    */
   modulos_ejecutados: string[] | null;
+  /**
+   * El resultado de la validación contra bases oficiales. En México: la CURP
+   * contra RENAPO y la vigencia de la credencial del INE.
+   *
+   * Es lo que separa «este documento parece auténtico y la cara coincide» de
+   * «esta persona existe en el registro nacional con estos datos». Un INE bien
+   * falsificado pasa lo primero; lo segundo no.
+   */
+  validacion_base: {
+    /** Approved · Declined · In Review · Not Finished */
+    estado: string | null;
+    /** full_match · partial_match · no_match */
+    coincidencia: string | null;
+  } | null;
   /** Por qué no corrió la validación contra bases oficiales, en palabras del
    *  proveedor. En México: CURP contra RENAPO y validez de la credencial. */
   validacion_base_no_corrio: {
@@ -236,6 +250,7 @@ export function leerResumen(
   const cara = obj("cotejo_facial");
   const listas = obj("listas");
   const canal = obj("canal");
+  const base = obj("validacion_base");
   const sinBase = obj("validacion_base_no_corrio");
   const bool = (v: unknown): boolean | null =>
     typeof v === "boolean" ? v : null;
@@ -245,6 +260,12 @@ export function leerResumen(
       ? (resumen!.modulos_ejecutados as unknown[]).filter(
           (m): m is string => typeof m === "string",
         )
+      : null,
+    validacion_base: base
+      ? {
+          estado: texto(base.estado),
+          coincidencia: texto(base.coincidencia),
+        }
       : null,
     validacion_base_no_corrio: sinBase
       ? {

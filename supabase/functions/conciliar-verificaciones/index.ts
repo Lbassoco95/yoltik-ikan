@@ -26,7 +26,7 @@ import { ESTADOS_CONOCIDOS, estadoDeDidit, resumirDecision } from '../_shared/di
 
 /** La versión que escribe hoy `resumirDecision`. Subirla ahí obliga a subirla
  *  aquí: es lo que hace que la conciliación rehaga los resúmenes atrasados. */
-const VERSION_RESUMEN = 3;
+const VERSION_RESUMEN = 4;
 import { custodiarArtefactos, modulosAplicados } from '../_shared/artefactos.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
