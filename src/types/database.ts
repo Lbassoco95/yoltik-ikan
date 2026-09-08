@@ -2592,7 +2592,13 @@ export type Database = {
           autoridad: string
           codigo: string
           creado_en: string
+          determinacion: Database["public"]["Enums"]["determinacion_fuente"]
+          determinado_en: string | null
+          determinado_por: string | null
+          efecto: Database["public"]["Enums"]["efecto_lista"] | null
+          efectos_por_situacion: Json | null
           frecuencia_objetivo: string | null
+          fundamento_determinacion: string | null
           id: string
           modo_actualizacion: Database["public"]["Enums"]["modo_actualizacion_lista"]
           naturaleza: Database["public"]["Enums"]["naturaleza_lista"]
@@ -2608,7 +2614,13 @@ export type Database = {
           autoridad: string
           codigo: string
           creado_en?: string
+          determinacion?: Database["public"]["Enums"]["determinacion_fuente"]
+          determinado_en?: string | null
+          determinado_por?: string | null
+          efecto?: Database["public"]["Enums"]["efecto_lista"] | null
+          efectos_por_situacion?: Json | null
           frecuencia_objetivo?: string | null
+          fundamento_determinacion?: string | null
           id?: string
           modo_actualizacion: Database["public"]["Enums"]["modo_actualizacion_lista"]
           naturaleza: Database["public"]["Enums"]["naturaleza_lista"]
@@ -2624,7 +2636,13 @@ export type Database = {
           autoridad?: string
           codigo?: string
           creado_en?: string
+          determinacion?: Database["public"]["Enums"]["determinacion_fuente"]
+          determinado_en?: string | null
+          determinado_por?: string | null
+          efecto?: Database["public"]["Enums"]["efecto_lista"] | null
+          efectos_por_situacion?: Json | null
           frecuencia_objetivo?: string | null
+          fundamento_determinacion?: string | null
           id?: string
           modo_actualizacion?: Database["public"]["Enums"]["modo_actualizacion_lista"]
           naturaleza?: Database["public"]["Enums"]["naturaleza_lista"]
@@ -4657,6 +4675,11 @@ export type Database = {
         }[]
       }
       orden_etapa_69b: { Args: { p_situacion: string }; Returns: number }
+      efecto_de_coincidencia: {
+        Args: { p_fuente: string; p_situacion?: string }
+        Returns: Database["public"]["Enums"]["efecto_lista"]
+      }
+      estado_de_fuente: { Args: { p_fuente: string }; Returns: string }
       diferencia_carga_borrador: {
         Args: { p_carga_id: string }
         Returns: {
@@ -5011,6 +5034,8 @@ export type Database = {
         | "efirma_sat"
         | "prestador_reconocido"
         | "constancia_conservacion"
+      determinacion_fuente: "aplica" | "no_aplica" | "pendiente"
+      efecto_lista: "impedimento" | "eleva_diligencia" | "dato"
       modo_actualizacion_lista: "snapshot" | "movimientos"
       naturaleza_allegado:
         | "conyuge"
@@ -5251,6 +5276,8 @@ export const Constants = {
         "prestador_reconocido",
         "constancia_conservacion",
       ],
+      determinacion_fuente: ["aplica", "no_aplica", "pendiente"],
+      efecto_lista: ["impedimento", "eleva_diligencia", "dato"],
       modo_actualizacion_lista: ["snapshot", "movimientos"],
       naturaleza_allegado: [
         "conyuge",

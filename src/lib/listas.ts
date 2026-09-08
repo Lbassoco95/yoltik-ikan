@@ -7,6 +7,63 @@
 
 export type ModoActualizacion = 'snapshot' | 'movimientos';
 export type NaturalezaLista = 'sancion_aml' | 'fiscal' | 'jurisdiccion' | 'pep' | 'interna';
+
+/**
+ * Qué produce una coincidencia. Es atributo de la FUENTE, no interpretación de
+ * quien lee la pantalla: la ONU vincula a México y una coincidencia confirmada
+ * es un impedimento; OFAC es derecho extranjero y su valor es indiciario. Si
+ * las dos alimentaran el mismo casillero, el sistema o bloquea de más o
+ * bloquea de menos, y los dos errores son graves.
+ */
+export type EfectoLista = 'impedimento' | 'eleva_diligencia' | 'dato';
+
+/** Si ya se resolvió que la obligación de consultar la fuente existe. */
+export type DeterminacionFuente = 'aplica' | 'no_aplica' | 'pendiente';
+
+/**
+ * `pendiente_carga` y `pendiente_determinacion` se ven igual —cero registros—
+ * y no lo son: una se resuelve bajando un archivo que existe, la otra con una
+ * determinación jurídica que nadie ha hecho.
+ */
+export type EstadoFuente = 'cargada' | 'pendiente_carga' | 'pendiente_determinacion' | 'no_aplica';
+
+export function labelEfecto(e: EfectoLista | null): string {
+  if (e === null) return 'Sin declarar';
+  return { impedimento: 'Impedimento', eleva_diligencia: 'Eleva la diligencia', dato: 'Dato del expediente' }[e];
+}
+
+/** Una línea que explica el efecto sin que haya que saberse la norma. */
+export function explicaEfecto(e: EfectoLista | null): string {
+  if (e === null) {
+    return 'La fuente todavía no ha declarado qué produce una coincidencia, así que no puede '
+         + 'producir ninguno de forma automática.';
+  }
+  return {
+    impedimento: 'Una coincidencia confirmada impide operar.',
+    eleva_diligencia: 'Una coincidencia no impide operar: exige diligencia reforzada y revisión documentada.',
+    dato: 'Una coincidencia se registra en el expediente y no tiene efecto automático.',
+  }[e];
+}
+
+export function labelEstadoFuente(e: EstadoFuente): string {
+  return {
+    cargada: 'Cargada',
+    pendiente_carga: 'Pendiente de carga',
+    pendiente_determinacion: 'Pendiente de determinación',
+    no_aplica: 'Sin obligación · informativa',
+  }[e];
+}
+
+export function explicaEstadoFuente(e: EstadoFuente): string {
+  return {
+    cargada: 'Se consulta con los registros vigentes.',
+    pendiente_carga: 'Ya se determinó que aplica; falta cargar el archivo de la autoridad.',
+    pendiente_determinacion:
+      'No es que falte un archivo: falta resolver si la obligación de consultarla existe. '
+      + 'Hasta entonces no se puede afirmar que esta fuente esté cubierta.',
+    no_aplica: 'No hay norma que obligue a consultarla. Se puede consultar y queda en el expediente.',
+  }[e];
+}
 export type AccionMovimiento = 'alta' | 'baja';
 export type EstadoCarga = 'borrador' | 'aplicada' | 'revertida';
 export type TipoEntidad = 'persona' | 'empresa' | 'embarcacion' | 'aeronave';

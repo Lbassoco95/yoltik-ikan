@@ -2,6 +2,9 @@ import { supabase } from '@/lib/supabase';
 import type { Json } from '@/types/database';
 import {
   normalizarRfc,
+  type DeterminacionFuente,
+  type EfectoLista,
+  type EstadoFuente,
   type ListaCarga,
   type ListaFuente,
   type ModoActualizacion,
@@ -434,8 +437,25 @@ export interface EstadoLista {
    *  aplicado una carga, y la pantalla debe decirlo así de claro. */
   actualizada_al: string | null;
   registros_vigentes: number;
-  /** Los que exigen acción. Un presunto del 69-B cuenta en el total pero no aquí. */
+  /**
+   * Qué produce una coincidencia en esta fuente. Null = la fuente todavía no
+   * lo ha declarado, y entonces no puede producir efecto automático. Null NO
+   * es «sin efecto»: es «no declarado», y son cosas distintas.
+   */
+  efecto: EfectoLista | null;
+  /** Para las fuentes con situaciones, el efecto de cada una. Manda sobre `efecto`. */
+  efectos_por_situacion: Record<string, EfectoLista> | null;
+  determinacion: DeterminacionFuente;
+  fundamento_determinacion: string | null;
+  /** cargada · pendiente_carga · pendiente_determinacion · no_aplica */
+  estado: EstadoFuente;
+  /** Los que IMPIDEN. Un presunto del 69-B cuenta en el total pero no aquí, y
+   *  una coincidencia de OFAC tampoco: eleva la diligencia, no impide. */
   registros_bloqueantes: number;
+  /** Los que exigen diligencia reforzada sin impedir. */
+  registros_eleva_diligencia: number;
+  /** Cargados pero cuya fuente no declaró qué producen. Un hueco visible. */
+  registros_sin_efecto_declarado: number;
 }
 
 /** Lo que ve el sujeto obligado: qué listas se consultan y desde cuándo.
