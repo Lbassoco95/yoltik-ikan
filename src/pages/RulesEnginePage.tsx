@@ -171,9 +171,10 @@ export default function RulesEnginePage() {
       <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ikan-ambar" />
         <span className="text-foreground">
-          <strong>DEMO — sin configuración real.</strong> Las dos secciones siguientes son maqueta:
-          el Motor PLD evalúa las reglas de <code className="estela-dato text-[12px]">tipologia_av</code>, y estos interruptores no las
-          modifican. Conectarlas es trabajo pendiente.
+          <strong>DEMO — sin configuración real.</strong> Las dos secciones
+          siguientes son una maqueta: el Motor PLD trabaja con las tipologías
+          configuradas por Kawiil, y estos interruptores no las modifican.
+          Conectarlas es trabajo pendiente.
         </span>
       </div>
 

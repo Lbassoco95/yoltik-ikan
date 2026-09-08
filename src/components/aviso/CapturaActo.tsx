@@ -71,14 +71,14 @@ export function CapturaActo({
   return (
     <div className="space-y-4">
       {faltan.length === 0 ? (
-        <div className="flex items-start gap-2 rounded-lg bg-success/10 p-3">
+        <div className="flex items-start gap-2 rounded-md bg-success/10 p-3">
           <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
           <p className="text-sm text-foreground">
             La rama del acto está completa para el formato del aviso.
           </p>
         </div>
       ) : (
-        <div className="rounded-lg bg-warning/10 p-3">
+        <div className="rounded-md bg-warning/10 p-3">
           <div className="flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 mt-0.5 text-warning-ink shrink-0" />
             <p className="text-sm text-foreground">

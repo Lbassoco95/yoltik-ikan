@@ -81,7 +81,7 @@ export default function ConfigPage() {
                 },
               ].map((f) => (
                 <div key={f.label} className={cn(f.ancho && "sm:col-span-2")}>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <p className="estela-antetitulo text-muted-foreground">
                     {f.label}
                   </p>
                   <p className={cn("mt-1 text-sm", f.mono && "font-mono", !f.value && "text-muted-foreground italic")}>

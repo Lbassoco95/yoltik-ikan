@@ -138,7 +138,7 @@ export default function AltaSegundoFactorPage() {
                 encima del código. Va en un <img>, sin recomponer la cadena.
                 Fondo blanco siempre: en tema oscuro, un QR con los colores
                 invertidos no lo lee la mitad de las cámaras. */}
-            <div className="rounded-lg bg-white p-4 grid place-items-center">
+            <div className="rounded-md bg-white p-4 grid place-items-center">
               <img
                 src={inscripcion.qr}
                 alt="Código QR para dar de alta el segundo factor"
@@ -149,7 +149,7 @@ export default function AltaSegundoFactorPage() {
             <details className="text-xs text-muted-foreground">
               <summary className="cursor-pointer">No puedo escanear el código</summary>
               <p className="mt-2">Escriba esta clave a mano en su app:</p>
-              <code className="block mt-1 font-mono text-[13px] break-all bg-muted/50 rounded p-2">
+              <code className="block mt-1 estela-dato text-[13px] break-all bg-muted/50 rounded p-2">
                 {inscripcion.secreto}
               </code>
             </details>
@@ -191,7 +191,7 @@ export default function AltaSegundoFactorPage() {
 
             <div className="flex items-center justify-between gap-4 pt-1">
               <p className="text-xs text-muted-foreground">
-                El secreto lo guarda Supabase Auth, no Ikán.
+                El secreto queda guardado cifrado; Ikán no lo conserva en claro.
               </p>
               {/* Sin esto, quien llega sin su teléfono no tiene ninguna salida:
                   la pantalla no deja avanzar y no había forma de retroceder. */}
@@ -201,7 +201,7 @@ export default function AltaSegundoFactorPage() {
             </div>
           </>
         ) : (
-          <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3">
+          <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-3">
             <AlertTriangle className="w-4 h-4 mt-0.5 text-destructive shrink-0" />
             <div className="text-sm text-foreground">
               <p>{error}</p>

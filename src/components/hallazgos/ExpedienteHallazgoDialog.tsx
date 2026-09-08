@@ -244,7 +244,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             <span>Expediente del hallazgo</span>
-            <span className="font-mono text-xs text-muted-foreground">
+            <span className="estela-dato text-xs text-muted-foreground">
               {folio(hallazgo)}
             </span>
             <span className={cn('status-badge text-xs', ESTADO_CLASS[hallazgo.estado])}>
@@ -272,7 +272,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
         )}
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList>
             <TabsTrigger value="detalle">Detalle</TabsTrigger>
             <TabsTrigger value="documentos">
               Documentos{documentos.data?.length ? ` (${documentos.data.length})` : ''}
@@ -285,13 +285,13 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
             {contexto && (
               <div
                 className={cn(
-                  'rounded-lg border px-4 py-3 text-sm',
+                  'rounded-md border px-4 py-3 text-sm',
                   contexto.sin_linea_base
                     ? 'border-warning/40 bg-warning/10'
                     : 'border-border bg-muted/30',
                 )}
               >
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                <p className="estela-antetitulo text-muted-foreground mb-2">
                   Trayectoria del cliente al detectarse
                 </p>
 
@@ -452,7 +452,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
           {/* -------------------------- Documentos --------------------------- */}
           <TabsContent value="documentos" className="space-y-4 pt-4">
             {puedeEscribir && (
-              <div className="rounded-lg border border-dashed border-border p-4 space-y-2">
+              <div className="rounded-md border border-dashed border-border p-4 space-y-2">
                 <input
                   ref={inputArchivo}
                   type="file"

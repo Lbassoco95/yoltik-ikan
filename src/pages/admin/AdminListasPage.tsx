@@ -142,7 +142,7 @@ export default function AdminListasPage() {
       <PendientesDelJob />
 
       <Tabs defaultValue="vigentes" className="space-y-4">
-        <TabsList className="bg-muted/50">
+        <TabsList>
           <TabsTrigger value="vigentes">Personas y entidades listadas</TabsTrigger>
           <TabsTrigger value="cargas">Cargas</TabsTrigger>
           <TabsTrigger value="fuentes">Fuentes</TabsTrigger>
@@ -389,7 +389,7 @@ export default function AdminListasPage() {
             {lineas.map((l, i) => (
               <div key={i} className="rounded-md border border-border p-4 space-y-3 bg-muted/20">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <span className="estela-antetitulo text-muted-foreground">
                     Persona {i + 1}
                   </span>
                   {lineas.length > 1 && (

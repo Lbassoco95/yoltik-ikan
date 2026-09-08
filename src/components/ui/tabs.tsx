@@ -12,7 +12,12 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
+      // ESTELA: índice de expediente, no pastillas dentro de una caja gris.
+      // Las pastillas parecen un conmutador de ajustes; un expediente tiene
+      // apartados, y un apartado se señala con una línea debajo del que estás
+      // leyendo. Además la fila se desplaza en horizontal: cinco apartados con
+      // nombres largos no caben en un teléfono y antes se estrujaban.
+      "inline-flex w-full items-center gap-1 overflow-x-auto border-b border-border text-muted-foreground",
       className,
     )}
     {...props}
@@ -27,7 +32,9 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+      // El jade marca el apartado abierto: es lo accionable de la fila. La
+      // línea va sobre el borde de la lista, de ahí el -mb-px.
+      "-mb-px inline-flex shrink-0 items-center justify-center whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-sm font-semibold transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-accent data-[state=active]:text-foreground",
       className,
     )}
     {...props}
@@ -42,7 +49,13 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      // Sin anillo de foco. Radix enfoca este panel por programa al cambiar
+      // de apartado —no porque nadie lo haya tabulado—, y Chrome lo trataba
+      // como foco visible: el resultado era un recuadro jade de 2 px
+      // alrededor de todo el contenido cada vez que se pulsaba una pestaña, y
+      // parecía un fallo. Quien tabula ve el foco en la pestaña, que es el
+      // control de verdad.
+      "mt-4 focus-visible:outline-none",
       className,
     )}
     {...props}

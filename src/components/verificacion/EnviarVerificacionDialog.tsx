@@ -205,7 +205,7 @@ export function EnviarVerificacionDialog({
                       type="button"
                       onClick={() => setCanal(c.valor)}
                       className={cn(
-                        "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors",
+                        "flex items-start gap-3 rounded-md border p-3 text-left transition-colors",
                         activo
                           ? "border-accent bg-accent/5"
                           : "border-border hover:border-accent/40",

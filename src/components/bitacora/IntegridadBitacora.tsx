@@ -206,7 +206,7 @@ export function IntegridadBitacora({
 
       {resultado && (
         <div
-          className={`rounded-lg p-3 ${integra ? "bg-success/10" : "bg-destructive/10"}`}
+          className={`rounded-md p-3 ${integra ? "bg-success/10" : "bg-destructive/10"}`}
         >
           <div className="flex items-center gap-2">
             {integra ? (
@@ -315,7 +315,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
   }
 
   return (
-    <div className="rounded-lg border">
+    <div className="rounded-md border">
       {/* El contenedor redondeado recortaba el desbordamiento: en un teléfono
           se perdían columnas sin manera de llegar a ellas. El scroll va en un
           div propio, dentro del borde. */}
@@ -434,7 +434,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
   return (
     <div
       className={cn(
-        "rounded-lg p-3",
+        "rounded-md p-3",
         confirmado
           ? "bg-success/10"
           : pendiente
@@ -509,7 +509,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
           )}
 
           {ancla.raiz_merkle && (
-            <p className="text-[13px] font-mono text-muted-foreground break-all">
+            <p className="estela-dato text-[13px] text-muted-foreground break-all">
               raíz {ancla.raiz_merkle}
             </p>
           )}
@@ -529,7 +529,7 @@ function Dato({
   mono?: boolean;
 }) {
   return (
-    <div className="rounded-lg bg-muted/40 p-3">
+    <div className="rounded-md bg-muted/40 p-3">
       <p className="text-[13px] text-muted-foreground uppercase tracking-wider">
         {etiqueta}
       </p>

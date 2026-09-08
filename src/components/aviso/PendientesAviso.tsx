@@ -73,7 +73,7 @@ export function PendientesAviso({
           justo la afirmación falsa que la gravedad nueva vino a evitar. */}
       {bloquean.length === 0 && expediente.length === 0 && (
         canal === "declaranot" ? (
-          <div className="flex items-start gap-2 rounded-lg bg-warning/10 p-3">
+          <div className="flex items-start gap-2 rounded-md bg-warning/10 p-3">
             <AlertTriangle className="w-4 h-4 mt-0.5 text-warning-ink shrink-0" />
             <p className="text-sm text-foreground">
               El expediente está completo, pero este acto{" "}
@@ -83,7 +83,7 @@ export function PendientesAviso({
             </p>
           </div>
         ) : (
-          <div className="flex items-start gap-2 rounded-lg bg-success/10 p-3">
+          <div className="flex items-start gap-2 rounded-md bg-success/10 p-3">
             <CheckCircle2 className="w-4 h-4 mt-0.5 text-success shrink-0" />
             <p className="text-sm text-foreground">
               No falta nada para que este expediente entre al aviso del mes.
@@ -152,7 +152,7 @@ function Bloque({
   mostrarReferencias?: boolean;
 }) {
   return (
-    <div className={cn("rounded-lg bg-muted/40 p-3", atenuado && "opacity-80")}>
+    <div className={cn("rounded-md bg-muted/40 p-3", atenuado && "opacity-80")}>
       <div className="flex items-center gap-2">
         {icono}
         <p className="text-sm font-semibold text-foreground">{titulo}</p>

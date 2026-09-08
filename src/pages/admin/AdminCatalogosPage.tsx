@@ -121,14 +121,14 @@ export default function AdminCatalogosPage() {
                       <p className="text-sm font-medium text-foreground">
                         {c.nombre}
                       </p>
-                      <p className="font-mono text-[13px] text-muted-foreground">
+                      <p className="estela-dato text-[13px] text-muted-foreground">
                         {c.codigo}
                       </p>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {c.etiquetas_layout.map((e) => `<${e}>`).join(", ")}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                    <td className="px-4 py-3 estela-dato text-xs text-muted-foreground">
                       {c.clave_patron ?? "—"}
                     </td>
                     <td className="px-4 py-3">
@@ -260,7 +260,7 @@ function DialogCarga({
             <div className="space-y-3">
               <div
                 className={cn(
-                  "rounded-lg p-3",
+                  "rounded-md p-3",
                   previo.fueraDePatron.length > 0
                     ? "bg-warning/10"
                     : "bg-success/10",
@@ -289,7 +289,7 @@ function DialogCarga({
               </div>
 
               {previo.descartadas.length > 0 && (
-                <div className="rounded-lg bg-muted/40 p-3">
+                <div className="rounded-md bg-muted/40 p-3">
                   <p className="text-xs font-semibold text-foreground">
                     {previo.descartadas.length} fila(s) descartadas
                   </p>
@@ -306,7 +306,7 @@ function DialogCarga({
                 </div>
               )}
 
-              <div className="rounded-lg bg-muted/40 p-3">
+              <div className="rounded-md bg-muted/40 p-3">
                 <p className="text-xs font-semibold text-foreground mb-2">
                   Previo
                 </p>

@@ -387,7 +387,7 @@ export default function ReportsPage() {
             </div>
 
             {previo && previo.errores.length > 0 && (
-              <div className="rounded-lg bg-destructive/10 p-3">
+              <div className="rounded-md bg-destructive/10 p-3">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
                   <p className="text-sm font-semibold text-foreground">
@@ -411,7 +411,7 @@ export default function ReportsPage() {
             {previo &&
               previo.errores.length === 0 &&
               previo.advertencias.length > 0 && (
-                <div className="rounded-lg bg-warning/10 p-3">
+                <div className="rounded-md bg-warning/10 p-3">
                   <div className="flex items-center gap-2">
                     <Info className="w-4 h-4 text-warning-ink shrink-0" />
                     <p className="text-sm font-semibold text-foreground">
@@ -431,7 +431,7 @@ export default function ReportsPage() {
             {previo &&
               previo.errores.length === 0 &&
               previo.advertencias.length === 0 && (
-                <div className="rounded-lg bg-success/10 p-3 flex items-center gap-2">
+                <div className="rounded-md bg-success/10 p-3 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                   <p className="text-sm text-foreground">
                     El archivo cumple lo que el formato del aviso pide. Listo
@@ -521,7 +521,7 @@ export default function ReportsPage() {
                     className="flex items-center justify-between gap-4 text-sm"
                   >
                     <span>
-                      <span className="font-mono text-xs text-muted-foreground mr-2">
+                      <span className="estela-dato text-xs text-muted-foreground mr-2">
                         {a.referencia ?? a.id.slice(0, 8)}
                       </span>
                       {a.exento

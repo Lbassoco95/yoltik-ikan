@@ -301,7 +301,7 @@ function Tarjeta({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-lg border p-3 text-left transition-colors",
+        "rounded-md border p-3 text-left transition-colors",
         activo ? "border-accent bg-accent/5" : "hover:bg-muted/40",
       )}
     >

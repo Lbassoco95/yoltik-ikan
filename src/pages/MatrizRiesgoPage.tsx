@@ -27,7 +27,7 @@ function Banda({ etiqueta, min, max, acciones, tono }: {
   etiqueta: string; min: number; max: number; acciones: string; tono: string;
 }) {
   return (
-    <div className={cn('rounded-lg border p-3', tono)}>
+    <div className={cn('rounded-md border p-3', tono)}>
       <div className="flex items-baseline justify-between">
         <span className="text-sm font-semibold capitalize">{etiqueta}</span>
         <span className="text-xs font-mono">{min}–{max}</span>
@@ -47,7 +47,7 @@ function Elemento({ el }: { el: MatrizElemento }) {
           {el.variables.length} variable{el.variables.length === 1 ? '' : 's'}
         </span>
         {el.aplica_si && (
-          <span className="status-badge bg-primary/10 text-primary text-xs" title="Predicado de aplicabilidad">
+          <span className="status-badge bg-accent/10 text-accent text-xs" title="Predicado de aplicabilidad">
             {el.aplica_si}
           </span>
         )}
@@ -169,8 +169,9 @@ export default function MatrizRiesgoPage() {
 
       {sector == null && !isLoading && (
         <div className="estela-placa p-5 text-sm text-muted-foreground">
-          La organización no tiene ninguna fracción registrada, así que no se puede saber
-          qué matriz mostrar. Revisa <span className="estela-dato text-xs">organizations.sectores</span>.
+          Tu organización no tiene ninguna fracción de actividad vulnerable
+          registrada, así que no se puede saber qué matriz corresponde.
+          La da de alta Kawiil: escríbeles para que la registren.
         </div>
       )}
 

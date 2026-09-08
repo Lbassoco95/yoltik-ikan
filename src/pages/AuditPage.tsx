@@ -257,7 +257,7 @@ export default function AuditPage() {
                 </pre>
               </Campo>
 
-              <div className="rounded-lg border p-3 space-y-2">
+              <div className="rounded-md border p-3 space-y-2">
                 <p className="text-xs font-semibold text-foreground">Encadenamiento</p>
                 <p className="text-[13px] text-muted-foreground">
                   El hash de la cadena se calcula sobre el hash del evento anterior. Cambiar
@@ -289,7 +289,7 @@ function Hash({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
       <span className="text-[13px] text-muted-foreground w-32 shrink-0">{etiqueta}</span>
-      <code className="text-[13px] font-mono break-all">{valor}</code>
+      <code className="estela-dato text-[13px] break-all">{valor}</code>
     </div>
   );
 }

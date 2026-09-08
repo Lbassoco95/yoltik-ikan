@@ -44,7 +44,12 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
   const [calidad, setCalidad] = useState<CalidadAprobacion | "">("");
   const [notas, setNotas] = useState("");
 
-  const { data: aprobacion, isLoading } = useQuery({
+  const {
+    data: aprobacion,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["aprobacion-expediente", clientId],
     queryFn: () => aprobacionDelExpediente(clientId),
   });
@@ -80,8 +85,41 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
 
   if (isLoading) {
     return (
-      <div className="estela-placa p-5 flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="w-4 h-4 animate-spin" /> Cargando la aprobación…
+      <div className="estela-placa flex items-center gap-2 p-5 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Cargando la
+        aprobación…
+      </div>
+    );
+  }
+
+  /**
+   * El fallo de la consulta, dicho.
+   *
+   * No estaba contemplado, y era el peor sitio donde no contemplarlo. Si la
+   * consulta fallaba, react-query reintentaba tres veces con espera creciente
+   * —diez segundos largos de «Cargando la aprobación…»— y al agotarlas el
+   * componente seguía adelante con `aprobacion` en undefined, es decir,
+   * pintando exactamente lo mismo que si el expediente no estuviera aprobado.
+   *
+   * En un expediente reforzado esas dos cosas son opuestas: «no está aprobado»
+   * significa que hay que aprobarlo, y «no pudimos saberlo» significa que no
+   * se puede afirmar ninguna de las dos. Un producto de cumplimiento no puede
+   * enseñar la segunda como si fuera la primera.
+   */
+  if (isError) {
+    return (
+      <div className="estela-filo estela-placa border-t-destructive p-5">
+        <p className="m-0 text-sm font-semibold text-destructive">
+          No se pudo leer la aprobación de este expediente
+        </p>
+        <p className="m-0 mt-1 text-[13px] text-muted-foreground">
+          No es que falte la aprobación: es que no se pudo consultar. Vuelve a
+          cargar la página; si sigue igual, avisa a Kawiil antes de registrar
+          ningún acto de este compareciente.
+        </p>
+        <p className="estela-dato m-0 mt-2 text-xs text-muted-foreground">
+          {(error as Error)?.message}
+        </p>
       </div>
     );
   }

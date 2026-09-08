@@ -131,7 +131,7 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
           </Button>
         )}
 
-        <div className="flex items-center gap-2 sm:px-3 py-1.5 rounded-lg shrink-0">
+        <div className="flex items-center gap-2 sm:px-3 py-1.5 rounded-md shrink-0">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
             {getInitials(profile?.nombre)}
           </div>

@@ -23,6 +23,11 @@ import {
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { EstructuraSocietaria } from "@/components/clientes/EstructuraSocietaria";
 import { Identificacion } from "@/components/clientes/Identificacion";
+import {
+  ETIQUETA_ESTADO,
+  verificacionesDeCliente,
+} from "@/lib/api/verificacion";
+import { TONO_ESTADO } from "@/lib/verificacion-labels";
 import { AprobacionReforzada } from "@/components/clientes/AprobacionReforzada";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import {
@@ -54,6 +59,15 @@ import { estaBloqueado, indicadorDeSanciones } from "@/lib/riesgo/sanciones";
 import { faltaSubdivision, paisDelDomicilio } from "@/lib/riesgo/subdivision";
 import { banderaBandaDeUmbral, umbralDelActo } from "@/lib/riesgo/tramos";
 import { cn, formatMxn } from "@/lib/utils";
+
+/** Campos que se cotejan contra un documento oficial y por eso van en ancho
+ *  fijo. El nombre no: un nombre se lee, no se coteja carácter por carácter. */
+const DATO_DE_EXPEDIENTE = new Set([
+  "RFC",
+  "CURP",
+  "País de residencia",
+  "Teléfono",
+]);
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
 import type { SectorAV, TipoPersona } from "@/types/domain";
@@ -126,6 +140,28 @@ export default function ClientDetailPage() {
 
   // La calificación vigente. Sin esto, reabrir el expediente mostraba la matriz
   // en blanco como si nadie hubiera evaluado a este compareciente.
+  /**
+   * Qué resolvió Didit sobre esta persona.
+   *
+   * Ya se consultaba —dentro de la pestaña «Identificación»—, pero la
+   * respuesta a «¿es quien dice ser?» es la pregunta más básica que tiene un
+   * expediente, y estaba a dos clics de distancia: quien abría la ficha de un
+   * compareciente verificado veía exactamente lo mismo que en la de uno sin
+   * verificar. Ahora el estado sale en la cabecera y desde ahí se entra al
+   * detalle.
+   *
+   * Misma `queryKey` que la de `Identificacion`: react-query las une y no hay
+   * una segunda consulta.
+   */
+  const { data: verificaciones = [] } = useQuery({
+    queryKey: ["verificaciones-cliente", id],
+    queryFn: () => verificacionesDeCliente(id!),
+    enabled: Boolean(id),
+  });
+  const identidad = verificaciones[0] ?? null;
+
+  const [pestana, setPestana] = useState("datos");
+
   const { data: evaluacion } = useQuery({
     queryKey: ["evaluacion", id],
     queryFn: () => ultimaEvaluacion(id!),
@@ -499,7 +535,9 @@ export default function ClientDetailPage() {
         <ArrowLeft className="w-4 h-4" /> {L.volverAClientes}
       </Link>
 
-      <div className="estela-placa p-5">
+      {/* El filo jade: esta tarjeta es la identidad del expediente, no una
+          tarjeta más de la pila. */}
+      <div className="estela-filo estela-placa border-t-accent p-5">
         <div className="flex items-start justify-between gap-4">
           <h1 className="estela-titulo text-xl font-extrabold tracking-tight text-foreground">
             {client.nombre_razon_social}
@@ -515,14 +553,43 @@ export default function ClientDetailPage() {
                 : "Sin matriz aplicada"}
             </p>
             {evaluacion?.motivo_alto_de_oficio && (
-              <p className="text-[13px] text-destructive mt-0.5 max-w-xs">
+              <p className="mt-0.5 max-w-xs text-[13px] text-destructive">
                 {evaluacion.motivo_alto_de_oficio}
               </p>
             )}
+
+            {/* La identidad, en la cabecera. Es un botón y no una insignia:
+                lleva al apartado donde está lo que Didit resolvió —documento,
+                prueba de vida, cotejo facial, listas—, que es lo que alguien
+                quiere ver justo después de leer que está verificada. */}
+            {client.tipo_persona === "fisica" && (
+              <button
+                type="button"
+                onClick={() => setPestana("identificacion")}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-sm text-[13px] transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="estela-antetitulo text-muted-foreground">
+                  Identidad
+                </span>
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-semibold",
+                    identidad
+                      ? TONO_ESTADO[identidad.estado]
+                      : "bg-warning/15 text-warning-ink",
+                  )}
+                >
+                  {identidad
+                    ? ETIQUETA_ESTADO[identidad.estado]
+                    : "Sin verificar"}
+                </span>
+              </button>
+            )}
           </div>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          {tipoLabel[client.tipo_persona]} · {client.rfc ?? "sin RFC"} ·{" "}
+        <p className="mt-2 text-sm text-muted-foreground">
+          {tipoLabel[client.tipo_persona]} ·{" "}
+          <span className="estela-dato">{client.rfc ?? "sin RFC"}</span> ·{" "}
           <span title={DETALLE_NIVEL[client.nivel_kyc]}>
             {nivelConocimiento(client.tipo_persona, client.nivel_kyc)} ·{" "}
             {ETIQUETA_NIVEL[client.nivel_kyc]}
@@ -533,19 +600,36 @@ export default function ClientDetailPage() {
             </span>
           )}
         </p>
+        {/* El cambio de nivel de diligencia.
+            El HECHO le sirve al notario —su compareciente pasó a diligencia
+            reforzada y eso cambia lo que tiene que pedirle—. El MOTIVO, no:
+            lo que hay guardado es la nota de la puesta al día de la Adenda,
+            escrita para nosotros y con nuestro vocabulario («valor por
+            omisión anterior», «instrucción 42»). Que un notario abra el
+            expediente de su cliente y se encuentre nuestras notas internas de
+            migración es enseñarle la trastienda.
+            Sigue estando, a un clic, porque es un registro de cumplimiento y
+            alguien puede tener que justificar el cambio. */}
         {cambioNivel && (
-          <p className="text-[13px] text-muted-foreground mt-1 max-w-2xl">
-            {cambioNivel.automatico ? "Subió" : "Se movió"} de{" "}
-            {cambioNivel.desde} a {cambioNivel.hacia} el{" "}
-            {new Date(cambioNivel.registrado_en).toLocaleDateString("es-MX")}:{" "}
-            {cambioNivel.motivo}
-            {!cambioNivel.automatico && " (decisión firmada)"}
-          </p>
+          <details className="group mt-1.5 max-w-2xl">
+            <summary className="cursor-pointer list-none text-[13px] text-muted-foreground marker:content-none">
+              {cambioNivel.automatico ? "Subió" : "Se movió"} de{" "}
+              {cambioNivel.desde} a {cambioNivel.hacia} el{" "}
+              {new Date(cambioNivel.registrado_en).toLocaleDateString("es-MX")}
+              {!cambioNivel.automatico && " · decisión firmada"}
+              <span className="ml-1.5 font-semibold text-accent group-open:hidden">
+                Ver motivo
+              </span>
+            </summary>
+            <p className="mt-1.5 border-l-2 border-border pl-3 text-[13px] leading-relaxed text-muted-foreground">
+              {cambioNivel.motivo}
+            </p>
+          </details>
         )}
       </div>
 
-      <Tabs defaultValue="datos" className="space-y-4">
-        <TabsList className="bg-muted/50">
+      <Tabs value={pestana} onValueChange={setPestana} className="space-y-4">
+        <TabsList>
           <TabsTrigger value="datos">Datos generales</TabsTrigger>
           {/* La pestaña existe si la organización tiene una plantilla vigente
               para su sector, no según el perfil de actividad. Así no hay que
@@ -629,7 +713,9 @@ export default function ClientDetailPage() {
             </div>
           )}
 
-          <div className="estela-placa p-6 grid grid-cols-2 gap-6">
+          {/* Dos columnas fijas: en un teléfono cada campo quedaba en 150 px
+              y un RFC no cabe. Se reparte a partir de sm. */}
+          <div className="estela-placa grid grid-cols-1 gap-x-6 gap-y-5 p-5 sm:grid-cols-2">
             {[
               {
                 label: "Nombre / Razón social",
@@ -657,11 +743,18 @@ export default function ClientDetailPage() {
                 value: (kyc.origen_recursos as string) ?? "N/A",
               },
             ].map((f) => (
+              // Los identificadores —RFC, CURP— van en ancho fijo: son lo que
+              // se coteja contra la identificación oficial, carácter por
+              // carácter, y en tipografía proporcional una O y un 0 se
+              // parecen demasiado para ese trabajo.
               <div key={f.label}>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {f.label}
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
+                <p className="estela-antetitulo text-muted-foreground">{f.label}</p>
+                <p
+                  className={cn(
+                    "mt-1 text-sm font-medium text-foreground",
+                    DATO_DE_EXPEDIENTE.has(f.label) && "estela-dato",
+                  )}
+                >
                   {f.value}
                 </p>
               </div>

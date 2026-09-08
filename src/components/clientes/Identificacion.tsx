@@ -15,6 +15,7 @@ import {
 } from "@/lib/aviso/completitud";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { TONO_ESTADO } from "@/lib/verificacion-labels";
 import type { Client, CondicionPep } from "@/types/domain";
 
 /**
@@ -26,19 +27,6 @@ import type { Client, CondicionPep } from "@/types/domain";
  * Un expediente que no enseña su propia identificación obliga a salirse de él
  * para responder la pregunta más básica que tiene.
  */
-
-/** El significado va en el texto. El color refuerza, no informa. */
-const TONO_ESTADO: Record<EstadoVerificacion, string> = {
-  aprobada: "bg-success/10 text-success",
-  rechazada: "bg-destructive/10 text-destructive",
-  error: "bg-destructive/10 text-destructive",
-  expirada: "bg-warning/10 text-warning-ink",
-  abandonada: "bg-warning/10 text-warning-ink",
-  reenviada: "bg-warning/10 text-warning-ink",
-  en_revision: "bg-muted text-foreground",
-  en_progreso: "bg-muted text-foreground",
-  no_iniciada: "bg-muted/60 text-muted-foreground",
-};
 
 const TEXTO_PEP: Record<CondicionPep, { etiqueta: string; detalle: string }> = {
   no_pep: {
@@ -450,7 +438,7 @@ function Bloque({
 }) {
   return (
     <div className="rounded-md border border-border p-4">
-      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <h4 className="estela-antetitulo text-muted-foreground">
         {titulo}
       </h4>
       <div className="mt-2 space-y-1">{children}</div>

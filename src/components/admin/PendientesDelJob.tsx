@@ -147,7 +147,7 @@ export function PendientesDelJob() {
                     <div
                       key={d.concepto}
                       className={cn(
-                        "rounded-lg border p-3",
+                        "rounded-md border p-3",
                         d.concepto === "Saldrían de la lista" && d.cantidad > 0
                           ? "border-destructive/40 bg-destructive/5"
                           : "border-border bg-muted/30",

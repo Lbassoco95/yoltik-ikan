@@ -499,7 +499,7 @@ export default function OperationsPage() {
             {SUPUESTOS_AVISO_XII.map((s) => {
               const umbral = s.codigo ? valorParam(s.codigo, "XII") : null;
               return (
-                <div key={s.concepto} className="rounded-lg bg-muted/40 p-3">
+                <div key={s.concepto} className="rounded-md bg-muted/40 p-3">
                   <p className="text-xs text-muted-foreground">{s.concepto}</p>
                   <p className="text-lg font-bold text-foreground">
                     {s.codigo === null
@@ -890,7 +890,7 @@ export default function OperationsPage() {
                 </>
               )}
 
-              <div className="flex items-start gap-2 rounded-lg border p-3">
+              <div className="flex items-start gap-2 rounded-md border p-3">
                 <input
                   id="pago-tercero"
                   type="checkbox"
@@ -979,7 +979,7 @@ export default function OperationsPage() {
           {esNotarias && (
             <div className="space-y-3">
               {canal === "declaranot" && (
-                <div className="rounded-lg bg-warning/10 p-3">
+                <div className="rounded-md bg-warning/10 p-3">
                   <p className="text-xs font-semibold text-foreground">
                     Este acto se presenta por DeclaraNOT, no por el SPPLD
                   </p>
@@ -988,7 +988,7 @@ export default function OperationsPage() {
               )}
 
               {catalogosDelActo.length > 0 && (
-                <div className="rounded-lg bg-warning/10 p-3">
+                <div className="rounded-md bg-warning/10 p-3">
                   <p className="text-[13px] text-warning-ink">
                     DEMO — sin integración real: estos catálogos de la UIF todavía no están
                     cargados en Ikán ({catalogosDelActo.join(", ")}), así que sus claves se
@@ -998,7 +998,7 @@ export default function OperationsPage() {
               )}
 
               {form.tipo_acto && canal === "sppld" && (
-                <div className="rounded-lg border p-3 space-y-3">
+                <div className="rounded-md border p-3 space-y-3">
                   <p className="text-sm font-semibold text-foreground">
                     Expediente del acto — {labelTipoActo(form.tipo_acto)}
                   </p>
@@ -1079,7 +1079,7 @@ export default function OperationsPage() {
               {/* Los actos anteriores a la 0036 nacieron sin estos dos datos, y
                   sin manera de completarlos después se quedarían para siempre
                   sin poder cerrar su matriz de riesgo. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-md border p-3">
                 <div>
                   <Label>Forma de pago</Label>
                   <Select

@@ -84,7 +84,7 @@ export default function ListsPage() {
                   <div
                     key={r.registro_id}
                     className={cn(
-                      "flex items-start gap-3 rounded-lg border px-4 py-3",
+                      "flex items-start gap-3 rounded-md border px-4 py-3",
                       r.bloqueante
                         ? "border-destructive/40 bg-destructive/10"
                         : "border-warning/40 bg-warning/10",
