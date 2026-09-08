@@ -27,17 +27,59 @@
  *
  * · Las situaciones vienen con espacios sobrantes ("Desvirtuado ") y con
  *   acentos y mayúsculas variables.
+ *
+ * · Y lo que más cuesta ver: cada fila trae MUCHO más que RFC, nombre y
+ *   situación. Trae el número y la fecha del oficio global de CADA etapa por
+ *   la que pasó el contribuyente, y la fecha en que cada una se publicó, en la
+ *   página del SAT y en el DOF. Son 20 columnas en el 69-B y 12 en el Bis.
+ *
+ *   Eso es lo que resuelve el caso de un RFC que aparece dos veces: no son dos
+ *   versiones de lo mismo, son DOS PROCEDIMIENTOS distintos contra el mismo
+ *   contribuyente, cada uno con su historia. El archivo no los ordena por
+ *   fecha, así que quedarse con «el último renglón» da la respuesta equivocada
+ *   —comprobado: en 37 de 77 casos, y 35 de ellos dejando fuera a un EFOS
+ *   definitivo—. La posición de una fila en un archivo no es un hecho
+ *   jurídico; la fecha de publicación sí.
  */
 
 export type Situacion69B = 'presunto' | 'definitivo' | 'desvirtuado' | 'sentencia_favorable';
 export type Articulo69B = '69-B' | '69-B Bis';
 
+/** Qué tan avanzada está una etapa. Desempata a igualdad de fecha. */
+export const ORDEN_ETAPA: Record<Situacion69B, number> = {
+  presunto: 1,
+  desvirtuado: 2,
+  definitivo: 3,
+  sentencia_favorable: 4,
+};
+
+export type EtapaOficio = {
+  etapa: Situacion69B;
+  /** Número y fecha del oficio global, tal como lo escribe el SAT. */
+  oficio: string | null;
+  /** Publicación en el DOF, en ISO. Es la que surte efectos. */
+  dof: string | null;
+  /** Publicación en la página del SAT, en ISO. Respaldo. */
+  sat: string | null;
+};
+
 export interface Registro69B {
   rfc: string;
   nombre: string;
   situacion: Situacion69B;
-  /** Fila del archivo, para poder señalar dónde falló algo. */
+  /** Fila del archivo. Se conserva como dato de procedencia, NO para decidir. */
   fila: number;
+  /** El historial completo que trae esta fila, etapa por etapa. */
+  etapas: EtapaOficio[];
+  /**
+   * La fecha que resuelve esta fila: la publicación de SU situación vigente.
+   * DOF primero porque es la que surte efectos; la del SAT como respaldo.
+   * Null cuando el archivo no la trae — y entonces NO se inventa un orden:
+   * el caso se escala.
+   */
+  fechaSituacion: string | null;
+  /** El oficio de esa misma etapa, para poder citarlo en el expediente. */
+  oficioSituacion: string | null;
 }
 
 export interface Resultado69B {
@@ -124,6 +166,63 @@ export function rfcValido(rfc: string): boolean {
   return /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc.trim().toUpperCase());
 }
 
+/** «14/07/2021» → 2021-07-14. Devuelve null si no es una fecha del formato del SAT. */
+export function fechaDePublicacion(texto: string): string | null {
+  const m = texto.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const [, d, mes, a] = m;
+  const dd = Number(d);
+  const mm = Number(mes);
+  if (dd < 1 || dd > 31 || mm < 1 || mm > 12) return null;
+  return `${a}-${mes.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+
+/**
+ * Localiza, por etapa, sus cuatro columnas: oficio SAT, publicación SAT,
+ * oficio DOF, publicación DOF.
+ *
+ * Se buscan POR NOMBRE y no por posición, porque los archivos no coinciden: el
+ * completo del 69-B trae 20 columnas, el de presuntos 23 y el de sentencias 25
+ * —con columnas vacías al final—, y el 69-B Bis 12 y en singular
+ * («definitivo» en vez de «definitivos»). Amarrar índices rompería con el
+ * siguiente archivo que el SAT publique con una columna de más.
+ */
+const PALABRA_ETAPA: Record<Situacion69B, RegExp> = {
+  presunto: /presun/,
+  desvirtuado: /desvirtu/,
+  definitivo: /definitiv/,
+  sentencia_favorable: /sentencia_favorable/,
+};
+
+interface ColumnasEtapa {
+  oficioSat?: number;
+  oficioDof?: number;
+  pubSat?: number;
+  pubDof?: number;
+}
+
+function ubicarEtapas(hdr: string[]): Partial<Record<Situacion69B, ColumnasEtapa>> {
+  const salida: Partial<Record<Situacion69B, ColumnasEtapa>> = {};
+  hdr.forEach((h, i) => {
+    for (const etapa of Object.keys(PALABRA_ETAPA) as Situacion69B[]) {
+      if (!PALABRA_ETAPA[etapa].test(h)) continue;
+      // «desvirtuaron» aparece dentro del texto de la columna de definitivos
+      // en ningún archivo, pero sí al revés: la de desvirtuados dice
+      // «contribuyentes que desvirtuaron». La primera coincidencia manda.
+      const c = (salida[etapa] ??= {});
+      if (h.startsWith('publicacion')) {
+        if (h.includes('dof')) c.pubDof ??= i;
+        else c.pubSat ??= i;
+      } else if (h.includes('oficio')) {
+        if (h.includes('dof')) c.oficioDof ??= i;
+        else c.oficioSat ??= i;
+      }
+      break;
+    }
+  });
+  return salida;
+}
+
 export function parsear69B(bytes: ArrayBuffer | Uint8Array): Resultado69B {
   const filas = leerCsv(decodificarSat(bytes));
 
@@ -154,6 +253,8 @@ export function parsear69B(bytes: ArrayBuffer | Uint8Array): Resultado69B {
       `El encabezado no trae RFC, nombre y situación. Encontrado: ${filas[iHdr].join(' | ')}`,
     );
   }
+
+  const columnas = ubicarEtapas(hdr);
 
   const registros: Registro69B[] = [];
   const descartadas: Resultado69B['descartadas'] = [];
@@ -188,7 +289,34 @@ export function parsear69B(bytes: ArrayBuffer | Uint8Array): Resultado69B {
       continue;
     }
 
-    registros.push({ rfc, nombre, situacion, fila: numeroFila });
+    // El historial que trae la fila. Cada etapa por la que pasó ESTE
+    // procedimiento, con su oficio y sus dos fechas de publicación.
+    const etapas: EtapaOficio[] = [];
+    for (const etapa of Object.keys(ORDEN_ETAPA) as Situacion69B[]) {
+      const c = columnas[etapa];
+      if (!c) continue;
+      const en = (j?: number) => (j === undefined ? '' : (f[j] ?? '').trim());
+      const oficio = en(c.oficioDof) || en(c.oficioSat) || null;
+      const dof = fechaDePublicacion(en(c.pubDof));
+      const sat = fechaDePublicacion(en(c.pubSat));
+      if (oficio || dof || sat) etapas.push({ etapa, oficio, dof, sat });
+    }
+
+    // La fecha que resuelve esta fila es la de SU situación vigente. El DOF
+    // manda porque es la publicación que surte efectos; la del SAT es
+    // respaldo. Si el archivo no trae ninguna, queda null y el caso se escala
+    // más adelante: nunca se cae de vuelta a la posición en el archivo.
+    const suya = etapas.find((e) => e.etapa === situacion);
+
+    registros.push({
+      rfc,
+      nombre,
+      situacion,
+      fila: numeroFila,
+      etapas,
+      fechaSituacion: suya?.dof ?? suya?.sat ?? null,
+      oficioSituacion: suya?.oficio ?? null,
+    });
   }
 
   return { articulo, fechaActualizacion, registros, descartadas };
