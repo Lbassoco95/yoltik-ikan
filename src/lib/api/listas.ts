@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { Json } from '@/types/database';
 import {
   normalizarRfc,
   type ListaCarga,
@@ -175,11 +176,17 @@ export interface RegistroParaCarga {
   tipo_entidad?: string;
   situacion?: string | null;
   pais?: string | null;
-  /** Fila del archivo de origen. Es el desempate cuando un mismo RFC viene
-   *  varias veces en la misma carga: el SAT publica primero la determinación
-   *  y después su resolución, y sin este dato quién queda bloqueado lo
-   *  decidía el orden en que cayeran los lotes. Ver migration 0064. */
+  /** Fila del archivo de origen. Dato de PROCEDENCIA, para poder señalar una
+   *  fila; ya no decide nada. Ver migration 0065. */
   orden_origen?: number | null;
+  /** Publicación de la situación (DOF, o página del SAT). Es lo que resuelve
+   *  cuando un mismo RFC viene varias veces: son procedimientos distintos y el
+   *  archivo no los ordena por fecha. */
+  fecha_situacion?: string | null;
+  /** El oficio global que respalda la situación. Va al expediente. */
+  oficio_situacion?: string | null;
+  /** El historial por etapas que trae la fila. */
+  identificadores?: Json;
 }
 
 export interface CargaArchivoInput {
@@ -279,6 +286,9 @@ export async function registrarCargaArchivo(
         situacion: r.situacion ?? null,
         pais: r.pais ?? null,
         orden_origen: r.orden_origen ?? null,
+        fecha_situacion: r.fecha_situacion ?? null,
+        oficio_situacion: r.oficio_situacion ?? null,
+        identificadores: r.identificadores ?? {},
       }));
       const { error } = await supabase.from('lista_movimiento').insert(lote);
       if (error) {
