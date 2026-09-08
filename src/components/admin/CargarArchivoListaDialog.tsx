@@ -121,7 +121,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
 
           {fuente && !soportada && (
             <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
               <span>
                 <strong>Todavía no hay lector para «{fuente.nombre}».</strong> Su formato es XML
                 y su parser es un trabajo aparte. Por ahora sólo se pueden cargar los listados

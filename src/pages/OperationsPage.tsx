@@ -204,7 +204,7 @@ export default function OperationsPage() {
         // El texto lleva la cifra vigente, no una escrita a mano: si mañana
         // cambia el catálogo, cambia la etiqueta.
         etiqueta: `Alcanza el umbral de aviso (${umbralOperacionUma?.toLocaleString("es-MX")} UMA)`,
-        clase: "bg-warning/10 text-warning-ink",
+        clase: "bg-warning/15 text-warning-ink",
       };
     return null;
   }
@@ -633,9 +633,9 @@ export default function OperationsPage() {
                         mirado" no son lo mismo, y confundirlos es lo que hacía
                         que un mes de actos sin evaluar se presentara en ceros. */}
                     {op.evaluada_en == null ? (
-                      <span className="status-badge bg-warning/10 text-warning-ink">Sin evaluar</span>
+                      <span className="status-badge bg-warning/15 text-warning-ink">Sin evaluar</span>
                     ) : op.requiere_aviso ? (
-                      <span className="status-badge bg-warning/10 text-warning-ink">Sí</span>
+                      <span className="status-badge bg-warning/15 text-warning-ink">Sí</span>
                     ) : (
                       <span className="text-sm text-muted-foreground">No</span>
                     )}
@@ -654,7 +654,7 @@ export default function OperationsPage() {
                                 naturales. El expediente puede estar completo y
                                 aun así no estar reportado. */}
                             {tipoActo && canalDeActo(tipoActo) === "declaranot" ? (
-                              <span className="status-badge bg-warning/10 text-warning-ink">
+                              <span className="status-badge bg-warning/15 text-warning-ink">
                                 Por DeclaraNOT
                               </span>
                             ) : faltan === 0 ? (
@@ -662,7 +662,7 @@ export default function OperationsPage() {
                                 Completo
                               </span>
                             ) : (
-                              <span className="status-badge bg-warning/10 text-warning-ink">
+                              <span className="status-badge bg-warning/15 text-warning-ink">
                                 Faltan {faltan}
                               </span>
                             )}

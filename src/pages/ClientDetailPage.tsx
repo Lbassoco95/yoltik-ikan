@@ -1225,7 +1225,7 @@ export default function ClientDetailPage() {
                     </td>
                     <td className="px-4 py-3">
                       {op.requiere_aviso ? (
-                        <span className="status-badge bg-warning/10 text-warning-ink">
+                        <span className="status-badge bg-warning/15 text-warning-ink">
                           Sí
                         </span>
                       ) : (

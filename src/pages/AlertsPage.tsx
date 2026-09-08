@@ -96,7 +96,7 @@ export default function AlertsPage() {
 
       {hayMock && (
         <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>DEMO — sin integración real.</strong> Algunos hallazgos usan datos simulados
             (analítica on-chain y listas OFAC/GAFI como snapshot en BD), señalados con la etiqueta

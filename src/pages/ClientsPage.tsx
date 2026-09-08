@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { EnviarVerificacionDialog } from "@/components/verificacion/EnviarVerificacionDialog";
 import { EstadoIdentidad } from "@/components/verificacion/EstadoIdentidad";
@@ -8,7 +8,7 @@ import {
   type EstadoVerificacion,
 } from "@/lib/api/verificacion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Loader2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Loader2, Plus, Search, ShieldCheck, ShieldQuestion } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
@@ -38,11 +38,58 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { LABELS, nivelConocimiento } from "@/lib/perfil-actividad";
 import { PendientesAviso } from "@/components/aviso/PendientesAviso";
-import { SIN_APELLIDO, pendientesCompareciente } from "@/lib/aviso/completitud";
+import {
+  SIN_APELLIDO,
+  pendientesCompareciente,
+  pendientesIdentificacion,
+} from "@/lib/aviso/completitud";
 import { SelectCatalogo } from "@/components/aviso/SelectCatalogo";
 import { useCatalogo } from "@/hooks/useCatalogo";
 
 const tipoLabel: Record<TipoPersona, string> = { fisica: "Persona Física", moral: "Persona Moral" };
+
+/**
+ * Lo que Didit corre, en orden.
+ *
+ * Venía de la pantalla de Identidad. Es la explicación de un botón que está en
+ * esta tabla —«Verificar»—, y la explicación de un botón pertenece a la
+ * pantalla donde está el botón.
+ */
+const PASOS_DIDIT = [
+  { paso: "Captura del documento", detalle: "INE, pasaporte o FM" },
+  { paso: "Validación del documento", detalle: "elementos de seguridad y OCR" },
+  { paso: "Prueba de vida", detalle: "que sea la persona, en vivo" },
+  { paso: "Face match", detalle: "contra la foto del documento" },
+  { paso: "Resolución", detalle: "aprobada, rechazada o a revisión" },
+];
+
+/** Una cifra del padrón. El ámbar sólo cuando hay algo que atender. */
+function Metrica({
+  etiqueta,
+  valor,
+  nota,
+  alerta,
+}: {
+  etiqueta: string;
+  valor: number | string;
+  nota?: string;
+  alerta?: boolean;
+}) {
+  return (
+    <div className={cn("estela-placa p-4", alerta && "estela-filo border-t-ikan-ambar")}>
+      <p className="estela-antetitulo text-muted-foreground">{etiqueta}</p>
+      <p
+        className={cn(
+          "mt-1 text-2xl font-extrabold tabular-nums",
+          alerta ? "text-ikan-ambar" : "text-foreground",
+        )}
+      >
+        {valor}
+      </p>
+      {nota && <p className="mt-0.5 text-xs text-muted-foreground">{nota}</p>}
+    </div>
+  );
+}
 
 /** Nombre de despliegue de una persona física: el mismo orden que arma la BD.
  *  Se calcula aquí sólo para mostrarlo y para no mandar la columna vacía. */
@@ -132,6 +179,53 @@ export default function ClientsPage() {
     },
     retry: false,
   });
+
+  /**
+   * Lo que le falta a cada expediente.
+   *
+   * Se calculaba en la pantalla de Identidad, que era una segunda lista de los
+   * mismos comparecientes: quien quería saber si el expediente de alguien
+   * estaba completo tenía que salirse de Comparecientes, buscarlo otra vez en
+   * otra tabla y volver. Dos listas del mismo padrón es una de más.
+   *
+   * Cuenta las dos cosas: los campos que el layout del aviso exige y la
+   * identificación que exige el artículo 18. Un compareciente con todos sus
+   * datos capturados y sin identificar no está completo, aunque su aviso pase
+   * la validación del portal sin una queja. El portal no pregunta; la
+   * autoridad, cuando revise, sí.
+   */
+  const completitud = useMemo(() => {
+    const mapa = new Map<
+      string,
+      { faltan: number; delLayout: number }
+    >();
+    for (const c of clientes) {
+      const estado = verificaciones?.get(c.id);
+      const delLayout = pendientesCompareciente(c).filter(
+        (x) => x.gravedad === "bloquea_aviso",
+      ).length;
+      const deIdentificacion = pendientesIdentificacion(estado, {
+        tipoPersona: c.tipo_persona,
+        cargando: verificaciones === undefined,
+      }).length;
+      mapa.set(c.id, { faltan: delLayout + deIdentificacion, delLayout });
+    }
+    return mapa;
+  }, [clientes, verificaciones]);
+
+  const resumen = useMemo(() => {
+    const estados = clientes.map((c) => verificaciones?.get(c.id));
+    return {
+      capturados: clientes.length,
+      verificados: estados.filter((e) => e === "aprobada").length,
+      enCurso: estados.filter(
+        (e) => e && e !== "aprobada" && e !== "rechazada",
+      ).length,
+      completos: clientes.filter(
+        (c) => (completitud.get(c.id)?.faltan ?? 1) === 0,
+      ).length,
+    };
+  }, [clientes, verificaciones, completitud]);
 
   const alta = useMutation({
     mutationFn: (input: NuevoClienteInput) => crearCliente(input),
@@ -322,7 +416,12 @@ export default function ClientsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                {["Nombre / Razón Social", "Tipo", "RFC", "Riesgo", "Conocimiento", "Alto de oficio", "Identidad", ""].map((h) => (
+                {/* El RFC sale de columna propia y va bajo el nombre: en una
+                    tabla de ocho columnas era la primera que se recortaba, y
+                    pertenece al nombre. El hueco lo ocupa «Expediente», que es
+                    lo que dice si con ese compareciente se puede presentar un
+                    aviso. */}
+                {["Compareciente", "Tipo", "Riesgo", "Conocimiento", "Alto de oficio", "Expediente", "Identidad", ""].map((h) => (
                   <th
                     key={h}
                     className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
@@ -619,7 +718,45 @@ export default function ClientsPage() {
             </div>
           </div>
 
-          <PendientesAviso pendientes={pendientes} compacto />
+          {/* Qué pasa cuando se manda una verificación. Vivía en la pantalla de
+          Identidad; es la explicación de un botón que está en esta tabla, así
+          que su sitio es esta pantalla. Y la segunda mitad importa tanto como
+          la primera: la conservación de la fracción XII pasó a diez años, y lo
+          que se guarde hoy se guarda una década. */}
+      <details className="estela-placa group p-5">
+        <summary className="flex cursor-pointer list-none items-center gap-2 marker:content-none">
+          <ShieldQuestion className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="text-sm font-bold text-foreground">
+            Qué corre al verificar la identidad
+          </span>
+          <span className="ml-auto text-xs font-semibold text-accent group-open:hidden">
+            Ver
+          </span>
+        </summary>
+        <p className="mt-2 text-[13px] text-muted-foreground">
+          El compareciente lo hace desde su teléfono, aquí mismo o por una liga.
+        </p>
+        <ol className="mt-4 space-y-3">
+          {PASOS_DIDIT.map((paso, i) => (
+            <li key={paso.paso} className="flex gap-3">
+              <span className="estela-dato flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[13px] font-semibold text-muted-foreground">
+                {i + 1}
+              </span>
+              <div>
+                <p className="text-sm font-medium text-foreground">{paso.paso}</p>
+                <p className="text-[13px] text-muted-foreground">{paso.detalle}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-4 border-t border-border pt-3 text-[13px] leading-relaxed text-muted-foreground">
+          Ikán conserva el resumen de la decisión —qué módulo corrió y con qué
+          resultado—. Ni el documento, ni la biometría, ni la fecha de
+          nacimiento: eso se queda en Didit.
+        </p>
+      </details>
+
+      <PendientesAviso pendientes={pendientes} compacto />
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogAbierto(false)}>

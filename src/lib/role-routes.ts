@@ -40,16 +40,13 @@ export const NAV_ENTRIES: NavEntry[] = [
   { to: '/listas',       label: 'Listas',          icon: Shield,             roles: ['admin'],                   section: 'main' },
   { to: '/reglas',       label: 'Motor de Reglas', icon: SlidersHorizontal,  roles: ['admin'],                   section: 'main' },
   { to: '/matriz',       label: 'Matriz de riesgo', icon: Grid3x3,           roles: ['oc', 'admin'],             section: 'main' },
-  // Estuvo oculta mientras fue maqueta del scaffold, con la nota de reactivarla
-  // "cuando se integre la verificación de identidad real". Ya se integró —Didit,
-  // migration 0032— y la entrada se quedó comentada: la verificación existía,
-  // funcionaba desde Comparecientes, y no había manera de llegar a su pantalla
-  // desde el menú.
-  //
-  // El nombre tampoco se queda: "ID No Presencial" es jerga del andamiaje y
-  // además describe mal lo que hace, porque en una notaría el caso más común es
-  // que el compareciente esté ahí enfrente.
-  { to: '/verificacion', label: 'Identidad',       icon: ScanLine,           roles: ['operador', 'oc'],          section: 'main' },
+  // Identidad ya NO es una entrada propia. Era una segunda lista de los mismos
+  // comparecientes —con su propia columna de identidad, su propia tabla de
+  // colores y sin poder dar de alta a nadie—, así que para saber si alguien
+  // estaba verificado había dos sitios donde mirar y ninguno de los dos era el
+  // expediente. Todo eso vive ahora en Comparecientes: las cifras del padrón,
+  // la completitud del expediente y lo que Didit resolvió de cada persona.
+  // La ruta /verificacion se conserva redirigiendo, por los enlaces guardados.
   { to: '/auditoria',    label: 'Auditoría',       icon: ClipboardCheck,     roles: ['oc', 'admin'],             section: 'secondary' },
   { to: '/configuracion',label: 'Configuración',   icon: Settings,           roles: ['admin'],                   section: 'secondary' },
 ];

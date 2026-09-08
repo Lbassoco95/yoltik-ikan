@@ -219,7 +219,7 @@ export function Identificacion({ client }: { client: Client }) {
                         {resumen.listas.categorias.map((c) => (
                           <span
                             key={c}
-                            className="status-badge bg-warning/10 text-warning-ink text-xs"
+                            className="status-badge bg-warning/15 text-warning-ink text-xs"
                           >
                             {TEXTO_CATEGORIA[c] ?? c}
                           </span>
@@ -338,8 +338,8 @@ export function Identificacion({ client }: { client: Client }) {
                   client.condicion_pep === "no_pep"
                     ? "bg-success/10 text-success"
                     : client.condicion_pep === "coincidencia_sin_resolver"
-                      ? "bg-warning/10 text-warning-ink"
-                      : "bg-warning/10 text-warning-ink",
+                      ? "bg-warning/15 text-warning-ink"
+                      : "bg-warning/15 text-warning-ink",
                 )}
               >
                 {TEXTO_PEP[client.condicion_pep].etiqueta}
@@ -384,7 +384,7 @@ export function Identificacion({ client }: { client: Client }) {
           <ul className="space-y-2">
             {faltantes.map((p) => (
               <li key={`${p.no}-${p.campo}`} className="flex gap-2 text-[13px]">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-warning-ink" />
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-ikan-ambar" />
                 <span>
                   <strong className="font-medium text-foreground">
                     {p.campo}
@@ -401,7 +401,7 @@ export function Identificacion({ client }: { client: Client }) {
       {/* Lo que no corre. Sin banner, un notario podría dar por hecha una
           comprobación que nadie hizo. */}
       <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3">
-        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
+        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
         <p className="text-[13px] text-foreground">
           <strong className="text-warning-ink">
             Verificar identidad no es integrar el expediente.

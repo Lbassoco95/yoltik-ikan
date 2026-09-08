@@ -176,7 +176,7 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
       ) : (
         <div className="rounded-md border border-warning/40 bg-warning/5 p-3 space-y-1">
           <p className="text-sm font-medium text-foreground flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-warning-ink" />
+            <AlertTriangle className="w-4 h-4 text-ikan-ambar" />
             {aprobacion?.aprobado_en
               ? "La aprobación dejó de cubrir"
               : "Sin aprobación: los actos están frenados"}

@@ -120,7 +120,7 @@ export default function ListsPage() {
       {/* Aviso cuando faltan listas por cargar */}
       {sinCargar.length > 0 && !estado.isLoading && (
         <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>
               {sinCargar.length === 1
@@ -183,7 +183,7 @@ export default function ListsPage() {
                     Actualizada al {new Date(l.actualizada_al + "T12:00:00").toLocaleDateString("es-MX")}
                   </span>
                 ) : (
-                  <span className="status-badge bg-warning/10 text-warning-ink text-xs">
+                  <span className="status-badge bg-warning/15 text-warning-ink text-xs">
                     Sin datos cargados
                   </span>
                 )}

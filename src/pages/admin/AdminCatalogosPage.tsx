@@ -65,7 +65,7 @@ export default function AdminCatalogosPage() {
 
       {sinCargar.length > 0 && (
         <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>
               {sinCargar.length} de {catalogos.length} catálogos sin cargar.
@@ -137,7 +137,7 @@ export default function AdminCatalogosPage() {
                           {c.valores_vigentes.toLocaleString("es-MX")}
                         </span>
                       ) : (
-                        <span className="status-badge bg-warning/10 text-warning-ink">
+                        <span className="status-badge bg-warning/15 text-warning-ink">
                           Sin cargar
                         </span>
                       )}
@@ -268,7 +268,7 @@ function DialogCarga({
               >
                 <div className="flex items-center gap-2">
                   {previo.fueraDePatron.length > 0 ? (
-                    <AlertTriangle className="w-4 h-4 text-warning-ink shrink-0" />
+                    <AlertTriangle className="w-4 h-4 text-ikan-ambar shrink-0" />
                   ) : (
                     <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                   )}

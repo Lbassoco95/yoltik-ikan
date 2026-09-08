@@ -448,7 +448,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
         ) : pendiente ? (
           <Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" />
         ) : (
-          <AlertTriangle className="w-4 h-4 mt-0.5 text-warning-ink shrink-0" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-ikan-ambar shrink-0" />
         )}
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">

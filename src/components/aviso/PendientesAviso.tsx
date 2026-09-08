@@ -74,7 +74,7 @@ export function PendientesAviso({
       {bloquean.length === 0 && expediente.length === 0 && (
         canal === "declaranot" ? (
           <div className="flex items-start gap-2 rounded-md bg-warning/10 p-3">
-            <AlertTriangle className="w-4 h-4 mt-0.5 text-warning-ink shrink-0" />
+            <AlertTriangle className="w-4 h-4 mt-0.5 text-ikan-ambar shrink-0" />
             <p className="text-sm text-foreground">
               El expediente está completo, pero este acto{" "}
               <strong>no entra al aviso mensual del SPPLD</strong>: se presenta por DeclaraNOT,
@@ -94,7 +94,7 @@ export function PendientesAviso({
 
       {bloquean.length > 0 && (
         <Bloque
-          icono={<AlertTriangle className="w-4 h-4 text-warning-ink shrink-0" />}
+          icono={<AlertTriangle className="w-4 h-4 text-ikan-ambar shrink-0" />}
           titulo={`Frena el aviso · ${bloquean.length}`}
           descripcion="Sin estos datos el aviso no pasa la validación del portal del SAT."
           items={bloquean}

@@ -166,7 +166,7 @@ export default function AdminParametrosPage() {
 
       {sinConfirmar > 0 && (
         <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>
               {sinConfirmar} {sinConfirmar === 1 ? "parámetro" : "parámetros"} sin validar por
@@ -249,7 +249,7 @@ export default function AdminParametrosPage() {
                             Histórico
                           </span>
                         ) : esReferenciaSinConfirmar(p) ? (
-                          <span className="status-badge bg-warning/10 text-warning-ink">
+                          <span className="status-badge bg-warning/15 text-warning-ink">
                             Sin confirmar
                           </span>
                         ) : (

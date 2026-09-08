@@ -271,7 +271,7 @@ export default function AdminListasPage() {
                           "status-badge",
                           c.estado === "aplicada" ? "bg-success/10 text-success"
                             : c.estado === "revertida" ? "bg-muted text-muted-foreground"
-                            : "bg-warning/10 text-warning-ink",
+                            : "bg-warning/15 text-warning-ink",
                         )}>
                           {ESTADO_CARGA_LABEL[c.estado]}
                         </span>
@@ -305,7 +305,7 @@ export default function AdminListasPage() {
         {/* ---------------- Fuentes ---------------- */}
         <TabsContent value="fuentes" className="space-y-4">
           <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-ink" />
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
             <span>
               <strong>Los listados del SAT ya se pueden cargar</strong> (69-B y 69-B Bis), con
               vista previa antes de aplicar. OFAC, ONU y UE todavía no: su formato es XML y su
