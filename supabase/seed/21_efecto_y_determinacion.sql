@@ -134,21 +134,41 @@ update lista_fuente set
        || 'ya, condicionado a que la obligación exista: un renglón por persona y por oficio, '
        || 'con la fecha del oficio y no la de captura. Si la determinación resulta positiva, '
        || 'se carga el histórico completo: un corte arbitrario produce un estado falso.'
+       || ' | HABILITACIÓN: esta fuente se aprovisiona por organización DESPUÉS de la '
+       || 'contratación, no viene cargada de fábrica: los oficios de la UIF se dirigen a '
+       || 'sujetos obligados determinados. Hasta entonces la organización la ve como pendiente. '
+       || 'Es también la única fuente hecha a mano que queda, tras retirar la lista interna.'
 where codigo = 'uif_bloqueadas';
 
 -- ---------------------------------------------------------------------
--- Lista interna · pendiente de habilitar
+-- Lista interna · retirada del catálogo
 -- ---------------------------------------------------------------------
--- Lo suyo no es una determinación jurídica sino una decisión de producto que
--- Kawiil no ha tomado: hoy sólo escribe Kawiil y esta fuente necesita alcance
--- por organización. Se marca pendiente para que no aparente estar operando.
+-- Decisión de producto (Polo, 08/09/2026): su mecanismo es el mismo que el de
+-- la Lista de Personas Bloqueadas —captura a mano, un movimiento por acto, con
+-- alcance por organización— y tener dos entradas para el mismo flujo
+-- confundía. Se queda una: la de la UIF.
+--
+-- Se DESACTIVA, no se borra. La regla de esta base es que una baja conserva el
+-- rastro, y aquí además conserva el contrato por si se rehabilita.
+--
+-- AVISO para quien la rehabilite, y es la razón por la que no se fusionan: el
+-- rechazo propio de una organización NO es lo mismo que un oficio de la UIF, y
+-- no debe capturarse en la fuente de la UIF. `listado_en_fecha()` es evidencia:
+-- si se mezclan, el expediente diría que la AUTORIDAD tenía bloqueada a una
+-- persona cuando lo que pasó es que la notaría la rechazó por su cuenta. Son
+-- dos afirmaciones distintas y una de ellas sería falsa.
 update lista_fuente set
+  activa = false,
   efecto = null,
-  determinacion = 'pendiente',
+  determinacion = 'no_aplica',
   fundamento_determinacion =
-    'Pendiente de habilitar por Kawiil: hoy sólo la plataforma escribe, y esta fuente '
-    || 'necesita alcance por organización antes de poder usarse. No es una determinación '
-    || 'jurídica sino una decisión de producto.'
+    'Retirada del catálogo por decisión de producto (Polo, 08/09/2026): mismo mecanismo que '
+    || 'la Lista de Personas Bloqueadas de la UIF. Se conserva la fila para no perder el '
+    || 'contrato si se rehabilita.',
+  notas =
+    'DESACTIVADA. El rechazo propio de una organización NO es un oficio de la UIF y no debe '
+    || 'capturarse en esa fuente: listado_en_fecha() es evidencia y mezclarlos haría que el '
+    || 'expediente afirmara algo falso sobre la autoridad.'
 where codigo = 'interna';
 
 -- ---------------------------------------------------------------------
