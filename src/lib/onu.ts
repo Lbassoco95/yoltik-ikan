@@ -262,3 +262,30 @@ export function leerOnu(xml: string): ResultadoOnu {
 
   return { fechaActualizacion, registros: salida, descartadas };
 }
+
+/**
+ * Traduce lo que lee este módulo a lo que espera el camino de carga.
+ *
+ * La ONU sí distingue la calidad de sus alias, así que los débiles viajan
+ * aparte y llegan a `nombres_alternos_debiles`.
+ */
+export function registrosParaCarga(registros: RegistroOnu[]) {
+  return registros.map((r) => ({
+    nombre: r.nombre,
+    rfc: null,
+    tipo_entidad: r.tipoEntidad,
+    pais: r.pais,
+    identificador_fuente: r.identificadorFuente,
+    nombres_alternos: r.nombresAlternos,
+    nombres_alternos_debiles: r.nombresAlternosDebiles,
+    identificadores: {
+      data_id: r.dataId,
+      regimen: r.regimen,
+      listado_en: r.listadoEn,
+      revisado_en: r.revisadoEn,
+      fecha_nacimiento: r.fechaNacimiento,
+      fecha_nacimiento_tipo: r.fechaNacimientoTipo,
+      designacion: r.designacion,
+    },
+  }));
+}

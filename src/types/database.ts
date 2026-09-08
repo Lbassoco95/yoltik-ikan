@@ -2726,9 +2726,12 @@ export type Database = {
           curp: string | null
           fecha_situacion: string | null
           id: string
+          identificador_fuente: string | null
           identificadores: Json
           motivo: string | null
           nombre: string
+          nombres_alternos: string[]
+          nombres_alternos_debiles: string[]
           oficio_fecha: string | null
           oficio_numero: string | null
           oficio_situacion: string | null
@@ -2746,9 +2749,12 @@ export type Database = {
           curp?: string | null
           fecha_situacion?: string | null
           id?: string
+          identificador_fuente?: string | null
           identificadores?: Json
           motivo?: string | null
           nombre: string
+          nombres_alternos?: string[]
+          nombres_alternos_debiles?: string[]
           oficio_fecha?: string | null
           oficio_numero?: string | null
           oficio_situacion?: string | null
@@ -2766,9 +2772,12 @@ export type Database = {
           curp?: string | null
           fecha_situacion?: string | null
           id?: string
+          identificador_fuente?: string | null
           identificadores?: Json
           motivo?: string | null
           nombre?: string
+          nombres_alternos?: string[]
+          nombres_alternos_debiles?: string[]
           oficio_fecha?: string | null
           oficio_numero?: string | null
           oficio_situacion?: string | null
@@ -2802,11 +2811,15 @@ export type Database = {
           fecha_situacion: string | null
           fuente_id: string
           id: string
+          identificador_fuente: string | null
           identificadores: Json
           nombre: string
           nombre_normalizado: string | null
           motivo_revision: string | null
           nombres_alternos: string[]
+          nombres_alternos_debiles: string[]
+          nombres_alternos_debiles_norm: string[] | null
+          nombres_alternos_norm: string[] | null
           oficio_situacion: string | null
           orden_origen_ultimo: number | null
           pais: string | null
@@ -2827,11 +2840,13 @@ export type Database = {
           curp?: string | null
           fuente_id: string
           id?: string
+          identificador_fuente?: string | null
           identificadores?: Json
           nombre: string
           nombre_normalizado?: string | null
           motivo_revision?: string | null
           nombres_alternos?: string[]
+          nombres_alternos_debiles?: string[]
           oficio_situacion?: string | null
           orden_origen_ultimo?: number | null
           pais?: string | null
@@ -2853,11 +2868,13 @@ export type Database = {
           fecha_situacion?: string | null
           fuente_id?: string
           id?: string
+          identificador_fuente?: string | null
           identificadores?: Json
           nombre?: string
           nombre_normalizado?: string | null
           motivo_revision?: string | null
           nombres_alternos?: string[]
+          nombres_alternos_debiles?: string[]
           oficio_situacion?: string | null
           orden_origen_ultimo?: number | null
           pais?: string | null
@@ -4675,6 +4692,24 @@ export type Database = {
         }[]
       }
       orden_etapa_69b: { Args: { p_situacion: string }; Returns: number }
+      coincidencias_en_listas: {
+        Args: { p_incluir_debiles?: boolean; p_nombre?: string; p_rfc?: string }
+        Returns: {
+          coincide_por: string
+          datos: Json
+          determinacion_fuente: string
+          efecto: Database["public"]["Enums"]["efecto_lista"]
+          fuente: string
+          fuente_nombre: string
+          identificador_fuente: string
+          nombre: string
+          pais: string
+          registro_id: string
+          situacion: string
+          tipo_entidad: string
+        }[]
+      }
+      normalizar_nombres: { Args: { p_nombres: string[] }; Returns: string[] }
       efecto_de_coincidencia: {
         Args: { p_fuente: string; p_situacion?: string }
         Returns: Database["public"]["Enums"]["efecto_lista"]

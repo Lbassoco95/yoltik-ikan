@@ -190,6 +190,20 @@ export interface RegistroParaCarga {
   oficio_situacion?: string | null;
   /** El historial por etapas que trae la fila. */
   identificadores?: Json;
+  /**
+   * El identificador estable que da la fuente: el id de la entidad en OFAC, el
+   * REFERENCE_NUMBER de la ONU. Es la llave con la que el motor resuelve a qué
+   * registro afecta el movimiento — nunca el nombre, que cambia de grafía entre
+   * publicaciones. El 69-B no lo publica y usa el RFC.
+   */
+  identificador_fuente?: string | null;
+  /** Alias que la fuente da por buenos. Son 30,309 en OFAC y 2,555 en la ONU. */
+  nombres_alternos?: string[];
+  /**
+   * Alias que la fuente misma marca de baja calidad. Van aparte porque
+   * levantan un candidato a revisar, no una coincidencia.
+   */
+  nombres_alternos_debiles?: string[];
 }
 
 export interface CargaArchivoInput {
@@ -292,6 +306,9 @@ export async function registrarCargaArchivo(
         fecha_situacion: r.fecha_situacion ?? null,
         oficio_situacion: r.oficio_situacion ?? null,
         identificadores: r.identificadores ?? {},
+        identificador_fuente: r.identificador_fuente ?? null,
+        nombres_alternos: r.nombres_alternos ?? [],
+        nombres_alternos_debiles: r.nombres_alternos_debiles ?? [],
       }));
       const { error } = await supabase.from('lista_movimiento').insert(lote);
       if (error) {

@@ -185,3 +185,30 @@ describe('la fecha de la fuente', () => {
     expect(r.fechaActualizacion).toBe('2026-09-07');
   });
 });
+
+describe('la traducción al camino de carga', () => {
+  it('lleva el PRN como identificador y separa los alias por calidad', async () => {
+    const { registrosParaCarga } = await import('../lib/onu');
+    const mixto =
+      ABRE +
+      '  <INDIVIDUALS><INDIVIDUAL>\n' +
+      '    <REFERENCE_NUMBER>QDi.999</REFERENCE_NUMBER><FIRST_NAME>ALPHA</FIRST_NAME>\n' +
+      '    <UN_LIST_TYPE>Al-Qaida</UN_LIST_TYPE><LISTED_ON>2001-10-06</LISTED_ON>\n' +
+      '    <INDIVIDUAL_ALIAS><QUALITY>Good</QUALITY><ALIAS_NAME>Alfa Bueno</ALIAS_NAME></INDIVIDUAL_ALIAS>\n' +
+      '    <INDIVIDUAL_ALIAS><QUALITY>Low</QUALITY><ALIAS_NAME>Alfaa Debil</ALIAS_NAME></INDIVIDUAL_ALIAS>\n' +
+      '  </INDIVIDUAL></INDIVIDUALS>\n' +
+      CIERRA;
+    const [fila] = registrosParaCarga(leerOnu(mixto).registros);
+    expect(fila).toMatchObject({
+      nombre: 'ALPHA',
+      rfc: null,
+      tipo_entidad: 'persona',
+      identificador_fuente: 'QDi.999',
+      nombres_alternos: ['Alfa Bueno'],
+      nombres_alternos_debiles: ['Alfaa Debil'],
+    });
+    // El régimen y la fecha de listado no tienen columna: van como dato del
+    // expediente, no se pierden.
+    expect(fila.identificadores).toMatchObject({ regimen: 'Al-Qaida', listado_en: '2001-10-06' });
+  });
+});

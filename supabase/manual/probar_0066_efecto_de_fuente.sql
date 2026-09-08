@@ -105,19 +105,49 @@ begin
   -- -------------------------------------------------------------------
   -- Es donde vivía el defecto: `situaciones_bloqueantes is null` hacía que
   -- todo lo de una fuente sin situaciones contara como bloqueante.
-  select registros_bloqueantes into v_n from v_listas_estado where codigo = 'sat_69b';
-  if v_n <> 1 then
-    raise exception
-      'PRUEBA 6 FALLA: sólo el definitivo impide, así que esperaba 1 bloqueante y hubo %.', v_n;
-  end if;
-  select registros_eleva_diligencia into v_n from v_listas_estado where codigo = 'sat_69b';
-  if v_n <> 1 then
-    raise exception 'PRUEBA 6 FALLA: el presunto debe contar como elevación, y hubo %.', v_n;
-  end if;
-  select registros_vigentes into v_n from v_listas_estado where codigo = 'sat_69b';
-  if v_n <> 3 then
-    raise exception 'PRUEBA 6 FALLA: el total sigue siendo 3, y dijo %.', v_n;
-  end if;
+  -- Se comprueba el INVARIANTE, no un número fijo: los bloqueantes de la vista
+  -- son exactamente los definitivos vigentes, y los que elevan son exactamente
+  -- los presuntos. Con un número fijo, esta prueba dependía de ser la primera
+  -- en tocar el 69-B y fallaba al correr después de las de la 0064 y la 0065 —
+  -- que es aislamiento de pruebas, no un defecto del código, pero una aserción
+  -- que sólo pasa en cierto orden no comprueba lo que dice comprobar.
+  declare
+    v_definitivos int;
+    v_presuntos int;
+    v_vigentes int;
+  begin
+    select count(*) filter (where r.situacion = 'definitivo'),
+           count(*) filter (where r.situacion = 'presunto'),
+           count(*)
+      into v_definitivos, v_presuntos, v_vigentes
+      from lista_registro r
+     where r.fuente_id = v_fuente and r.activo;
+
+    select registros_bloqueantes into v_n from v_listas_estado where codigo = 'sat_69b';
+    if v_n <> v_definitivos then
+      raise exception
+        'PRUEBA 6 FALLA: los bloqueantes deben ser exactamente los definitivos (%), y son %.',
+        v_definitivos, v_n;
+    end if;
+
+    select registros_eleva_diligencia into v_n from v_listas_estado where codigo = 'sat_69b';
+    if v_n <> v_presuntos then
+      raise exception
+        'PRUEBA 6 FALLA: los que elevan deben ser exactamente los presuntos (%), y son %.',
+        v_presuntos, v_n;
+    end if;
+
+    select registros_vigentes into v_n from v_listas_estado where codigo = 'sat_69b';
+    if v_n <> v_vigentes then
+      raise exception 'PRUEBA 6 FALLA: el total debe ser %, y dijo %.', v_vigentes, v_n;
+    end if;
+
+    -- Y que la separación no sea trivial: tiene que haber de los dos tipos.
+    if v_definitivos = 0 or v_presuntos = 0 then
+      raise exception
+        'PRUEBA 6 FALLA: sin definitivos y presuntos a la vez, la prueba no comprueba nada.';
+    end if;
+  end;
   raise notice 'PRUEBA  6 OK · la vista separa lo que impide de lo que eleva la diligencia';
 
   -- -------------------------------------------------------------------

@@ -236,3 +236,23 @@ describe('lo que el esquema NO garantiza', () => {
     expect(r.registros[0]).toMatchObject({ pais: null, fechaNacimiento: null, publicadoEn: null });
   });
 });
+
+describe('la traducción al camino de carga', () => {
+  it('lleva el id como identificador y el resto como dato del expediente', async () => {
+    const { registrosParaCarga } = await import('../lib/ofac');
+    const [fila] = registrosParaCarga(leerOfac(CABECERA + ABU_TEIR + CIERRE).registros);
+    expect(fila).toMatchObject({
+      nombre: 'ABU TEIR, Mohammed',
+      // OFAC no publica RFC: es un registro de sanciones, no fiscal.
+      rfc: null,
+      tipo_entidad: 'persona',
+      identificador_fuente: '9640',
+      nombres_alternos: ['ABU TAIR, Mohammed Mahmud'],
+    });
+    expect(fila.identificadores).toMatchObject({
+      programas: ['NS-PLC'],
+      publicado_en: '2014-10-10',
+      fecha_nacimiento: '1951',
+    });
+  });
+});

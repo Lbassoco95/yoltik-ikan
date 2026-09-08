@@ -323,3 +323,34 @@ export function leerOfac(xml: string): ResultadoOfac {
 
   return { fechaActualizacion, listasDelArchivo, registros, descartadas };
 }
+
+/**
+ * Traduce lo que lee este módulo a lo que espera el camino de carga.
+ *
+ * Va aquí y no en la capa de API porque es conocimiento de OFAC: qué campo de
+ * la fuente es la llave estable, qué es alias, y qué se guarda como dato
+ * adicional en vez de como columna.
+ */
+export function registrosParaCarga(registros: RegistroOfac[]) {
+  return registros.map((r) => ({
+    nombre: r.nombre,
+    // OFAC no publica RFC: es un registro de sanciones, no fiscal.
+    rfc: null,
+    tipo_entidad: r.tipoEntidad,
+    pais: r.pais,
+    identificador_fuente: r.identificadorFuente,
+    nombres_alternos: r.nombresAlternos,
+    // OFAC marca `isLowQuality` por nombre, pero este lector todavía no lo
+    // separa: hasta que lo haga, ninguno viaja como débil. Declararlo vacío es
+    // más honesto que meter los buenos y los dudosos en el mismo saco.
+    nombres_alternos_debiles: [] as string[],
+    // Lo que no tiene columna y sí tiene valor para el expediente.
+    identificadores: {
+      programas: r.programas,
+      listas: r.listas,
+      tipos_sancion: r.tiposSancion,
+      publicado_en: r.publicadoEn,
+      fecha_nacimiento: r.fechaNacimiento,
+    },
+  }));
+}
