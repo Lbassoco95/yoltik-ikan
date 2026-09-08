@@ -13,7 +13,13 @@ import {
 } from "@/components/ui/select";
 import { registrarCargaArchivo } from "@/lib/api/listas";
 import { labelSituacion, type ListaFuente } from "@/lib/listas";
-import { parsear69B, type Resultado69B } from "@/lib/sat69b";
+import {
+  analizarArchivo,
+  avisoDeControl,
+  FORMATO_ESPERADO,
+  FUENTES_CON_LECTOR,
+  type AnalisisLista,
+} from "@/lib/lectores-lista";
 
 interface Props {
   abierto: boolean;
@@ -21,39 +27,49 @@ interface Props {
   fuentes: ListaFuente[];
 }
 
-/** Sólo el 69-B y el 69-B Bis tienen lector. OFAC, ONU y UE comparten el
- *  contrato pero su formato es XML y su parser es otro trabajo. */
-const CON_PARSER = new Set(["sat_69b", "sat_69b_bis"]);
+/** Las situaciones tienen etiqueta propia; los tipos de entidad y los alias no. */
+function etiquetaCifra(clave: string): string {
+  const situaciones = ["presunto", "definitivo", "desvirtuado", "sentencia_favorable"];
+  if (situaciones.includes(clave)) return labelSituacion(clave);
+  const otras: Record<string, string> = {
+    persona: "personas",
+    empresa: "empresas",
+    embarcacion: "embarcaciones",
+    aeronave: "aeronaves",
+  };
+  return otras[clave] ?? clave;
+}
 
 export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Props) {
   const queryClient = useQueryClient();
   const [fuenteId, setFuenteId] = useState("");
   const [archivo, setArchivo] = useState<File | null>(null);
   const [alcance, setAlcance] = useState<"completa" | "parcial">("parcial");
-  const [analisis, setAnalisis] = useState<Resultado69B | null>(null);
+  const [analisis, setAnalisis] = useState<AnalisisLista | null>(null);
   const [errorAnalisis, setErrorAnalisis] = useState<string | null>(null);
+  const [leyendo, setLeyendo] = useState(false);
   const [progreso, setProgreso] = useState<{ hechos: number; total: number } | null>(null);
 
   const fuente = fuentes.find((f) => f.id === fuenteId);
-  const soportada = fuente ? CON_PARSER.has(fuente.codigo) : false;
+  const soportada = fuente ? FUENTES_CON_LECTOR.has(fuente.codigo) : false;
 
   function limpiar() {
     setFuenteId(""); setArchivo(null); setAlcance("parcial");
-    setAnalisis(null); setErrorAnalisis(null); setProgreso(null);
+    setAnalisis(null); setErrorAnalisis(null); setProgreso(null); setLeyendo(false);
   }
 
   async function analizar(f: File) {
-    setArchivo(f); setAnalisis(null); setErrorAnalisis(null);
+    if (!fuente) return;
+    setArchivo(f); setAnalisis(null); setErrorAnalisis(null); setLeyendo(true);
     try {
-      const r = parsear69B(await f.arrayBuffer());
+      const r = await analizarArchivo(fuente.codigo, f);
       setAnalisis(r);
-      // El listado completo trae varias situaciones; los archivos por
-      // situación traen una sola. Es la señal más fiable del alcance, y se
-      // propone — no se impone: quien carga confirma.
-      const situaciones = new Set(r.registros.map((x) => x.situacion));
-      setAlcance(situaciones.size > 1 ? "completa" : "parcial");
+      // Lo que el lector propone; quien carga confirma.
+      setAlcance(r.alcanceSugerido);
     } catch (e) {
       setErrorAnalisis((e as Error).message);
+    } finally {
+      setLeyendo(false);
     }
   }
 
@@ -64,19 +80,8 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
         archivo: archivo!,
         alcance,
         fecha_publicacion_fuente: analisis?.fechaActualizacion ?? null,
-        notas: `${archivo!.name} · ${analisis!.articulo}`,
-        registros: analisis!.registros.map((r) => ({
-          nombre: r.nombre,
-          rfc: r.rfc,
-          tipo_entidad: "empresa",
-          situacion: r.situacion,
-          // La fila queda como procedencia; lo que DECIDE es la fecha de
-          // publicación de la situación. Ver migration 0065.
-          orden_origen: r.fila,
-          fecha_situacion: r.fechaSituacion,
-          oficio_situacion: r.oficioSituacion,
-          identificadores: { etapas: r.etapas },
-        })),
+        notas: `${archivo!.name} · ${analisis!.etiqueta}`,
+        registros: analisis!.registros,
         onProgreso: (hechos, total) => setProgreso({ hechos, total }),
       }),
     onSuccess: (r) => {
@@ -92,38 +97,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
     onError: (e: Error) => { setProgreso(null); toast.error(e.message, { duration: 15000 }); },
   });
 
-  // RFC que vienen más de una vez CON SITUACIONES DISTINTAS. No son dos
-  // versiones del mismo expediente: son procedimientos distintos contra el
-  // mismo contribuyente, y el archivo NO los ordena por fecha. Se resuelven
-  // por la publicación de cada situación (migration 0065); los que no traen
-  // fecha se marcan para que los vea una persona.
-  const conflictos = analisis
-    ? (() => {
-        const porRfc = new Map<string, typeof analisis.registros>();
-        for (const r of analisis.registros) {
-          if (!porRfc.has(r.rfc)) porRfc.set(r.rfc, []);
-          porRfc.get(r.rfc)!.push(r);
-        }
-        let distintas = 0;
-        let sinFecha = 0;
-        for (const filas of porRfc.values()) {
-          if (filas.length < 2) continue;
-          if (new Set(filas.map((x) => x.situacion)).size < 2) continue;
-          distintas++;
-          if (filas.some((x) => !x.fechaSituacion)) sinFecha++;
-        }
-        return { distintas, sinFecha };
-      })()
-    : { distintas: 0, sinFecha: 0 };
-
-  const porSituacion = analisis
-    ? Object.entries(
-        analisis.registros.reduce<Record<string, number>>((acc, r) => {
-          acc[r.situacion] = (acc[r.situacion] ?? 0) + 1;
-          return acc;
-        }, {}),
-      ).sort((a, b) => b[1] - a[1])
-    : [];
+  const control = analisis && fuente ? avisoDeControl(fuente.codigo, analisis.registros.length) : null;
 
   return (
     <Dialog open={abierto} onOpenChange={(o) => { onOpenChange(o); if (!o) limpiar(); }}>
@@ -139,7 +113,12 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
         <div className="space-y-4 py-2">
           <div>
             <Label>Fuente</Label>
-            <Select value={fuenteId} onValueChange={(v) => { setFuenteId(v); setAnalisis(null); }}>
+            <Select
+              value={fuenteId}
+              onValueChange={(v) => {
+                setFuenteId(v); setAnalisis(null); setArchivo(null); setErrorAnalisis(null);
+              }}
+            >
               <SelectTrigger><SelectValue placeholder="Seleccione…" /></SelectTrigger>
               <SelectContent>
                 {fuentes.filter((f) => f.modo_actualizacion === "snapshot").map((f) => (
@@ -153,26 +132,34 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
             <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
               <span>
-                <strong>Todavía no hay lector para «{fuente.nombre}».</strong> Su formato es XML
-                y su parser es un trabajo aparte. Por ahora sólo se pueden cargar los listados
-                del SAT.
+                <strong>Todavía no hay lector para «{fuente.nombre}».</strong> Hay lector para los
+                dos listados del SAT, para OFAC y para la ONU.
               </span>
             </div>
           )}
 
-          {soportada && (
+          {soportada && fuente && (
             <div>
               <Label>Archivo</Label>
               <Input
                 type="file"
-                accept=".csv,.xls,.txt"
+                accept=".csv,.xls,.txt,.xml"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) void analizar(f); }}
               />
-              <p className="text-[13px] text-muted-foreground mt-1">
-                Los listados del SAT vienen con extensión <span className="font-mono">.xls</span>{" "}
-                pero son CSV. Súbelos tal cual los descargaste, sin abrirlos ni reguardarlos en
-                Excel: al hacerlo cambia la codificación y se pierden los acentos.
+              <p className="text-[13px] text-muted-foreground mt-1 leading-relaxed">
+                {FORMATO_ESPERADO[fuente.codigo]}
               </p>
+              <p className="text-[13px] text-muted-foreground mt-1 leading-relaxed">
+                Súbelo tal cual lo descargaste, <strong>sin abrirlo ni reguardarlo</strong>: al
+                hacerlo cambia la codificación y se pierden los acentos y los caracteres no
+                latinos.
+              </p>
+            </div>
+          )}
+
+          {leyendo && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" /> Leyendo el archivo…
             </div>
           )}
 
@@ -185,7 +172,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           {analisis && (
             <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
-                <span className="font-semibold">{analisis.articulo}</span>
+                <span className="font-semibold">{analisis.etiqueta}</span>
                 <span className="text-muted-foreground">
                   publicado el{" "}
                   {analisis.fechaActualizacion
@@ -198,47 +185,40 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {porSituacion.map(([sit, n]) => (
-                  <span key={sit} className="status-badge bg-card text-foreground border border-border">
-                    {labelSituacion(sit)}: {n.toLocaleString("es-MX")}
+                {analisis.cifras.map((c) => (
+                  <span
+                    key={c.etiqueta}
+                    className="status-badge bg-card text-foreground border border-border"
+                  >
+                    {etiquetaCifra(c.etiqueta)}: {c.valor.toLocaleString("es-MX")}
                   </span>
                 ))}
               </div>
 
-              {conflictos.distintas > 0 && (
-                <div className="text-xs border-t border-border pt-2 space-y-1">
-                  <p className="font-medium">
-                    {conflictos.distintas.toLocaleString("es-MX")} RFC vienen más de una vez
-                    con situaciones distintas.
-                  </p>
-                  <p className="text-muted-foreground leading-relaxed">
-                    No son dos versiones del mismo expediente: son{" "}
-                    <strong>procedimientos distintos</strong> contra el mismo contribuyente, y
-                    el archivo no los ordena por fecha. Se resuelve por la{" "}
-                    <strong>publicación en el DOF</strong> de cada situación, y a igualdad de
-                    fecha por la etapa más avanzada.
-                  </p>
-                  {conflictos.sinFecha > 0 && (
-                    <p className="text-warning font-medium">
-                      De ésos, {conflictos.sinFecha.toLocaleString("es-MX")} no traen fecha de
-                      publicación y quedarán marcados para revisión: no se resuelven por su
-                      posición en el archivo.
-                    </p>
-                  )}
+              {control && (
+                <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+                  <strong>Cifra de control.</strong> {control}
                 </div>
               )}
+
+              {analisis.avisos.map((a) => (
+                <p key={a} className="text-xs text-muted-foreground leading-relaxed border-t border-border pt-2">
+                  {a}
+                </p>
+              ))}
 
               {analisis.descartadas.length > 0 && (
                 <div className="text-xs space-y-1 border-t border-border pt-2">
                   <p className="text-warning font-medium">
-                    {analisis.descartadas.length} filas no se pudieron interpretar y no se cargarán:
+                    {analisis.descartadas.length.toLocaleString("es-MX")} registros no se pudieron
+                    interpretar y no se cargarán:
                   </p>
                   <ul className="text-muted-foreground space-y-0.5 max-h-28 overflow-y-auto">
                     {analisis.descartadas.slice(0, 8).map((d) => (
-                      <li key={d.fila}>· fila {d.fila}: {d.motivo}</li>
+                      <li key={`${d.referencia}-${d.motivo}`}>· {d.referencia}: {d.motivo}</li>
                     ))}
                     {analisis.descartadas.length > 8 && (
-                      <li>· y {analisis.descartadas.length - 8} más</li>
+                      <li>· y {(analisis.descartadas.length - 8).toLocaleString("es-MX")} más</li>
                     )}
                   </ul>
                 </div>
@@ -261,9 +241,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
                   {alcance === "completa" ? (
                     <>
                       Se dará de baja a quien esté activo en esta fuente y no venga en el
-                      archivo. Úsalo <strong>sólo con el listado completo</strong>: con un
-                      archivo por situación daría de baja a todos los demás, que no están ahí
-                      porque van en otro archivo, no porque hayan salido.
+                      archivo. Úsalo <strong>sólo con el listado completo</strong> de la fuente.
                     </>
                   ) : (
                     <>Nadie se da de baja. Es la opción segura cuando no estés seguro.</>

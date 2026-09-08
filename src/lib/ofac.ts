@@ -24,7 +24,7 @@
  * ---------------------------------------------------------------------
  * Por qué se recorre a mano y no con DOMParser
  * ---------------------------------------------------------------------
- * `SDN_ENHANCED.XML` pesa 109 MB. Un DOM de ese tamaño no cabe en el
+ * `SDN_ENHANCED.XML` pesa 104 MB (109 millones de bytes). Un DOM de ese tamaño no cabe en el
  * navegador, y en Deno no hay DOMParser. Así que se recorre por trozos: se
  * localiza cada `<entity …>…</entity>` y se extrae de ese trozo, que son unos
  * cientos de bytes. El consumo es lineal y no depende del tamaño del archivo.
