@@ -188,3 +188,51 @@ describe('el recorrido por trozos', () => {
     expect(r.registros[0].nombre).toBe('SMITH & SONS "LTD"');
   });
 });
+
+describe('la naturaleza de la medida', () => {
+  it('se conserva: dice qué hacer, y ni el programa ni la lista lo dicen', () => {
+    // El esquema la marca obligatoria, así que siempre viene. «Block» es
+    // bloqueo de bienes; «Reject» es rechazar la operación. Es información
+    // distinta del programa (el por qué) y de la lista (dónde aparece).
+    const conTipo =
+      '    <entity id="4238"><generalInfo><entityType>Vessel</entityType></generalInfo>\n' +
+      '      <sanctionsLists><sanctionsList refId="1550" id="35031" datePublished="1989-01-05">SDN List</sanctionsList></sanctionsLists>\n' +
+      '      <sanctionsPrograms><sanctionsProgram refId="202" id="1435">CUBA</sanctionsProgram></sanctionsPrograms>\n' +
+      '      <sanctionsTypes><sanctionsType refId="1705" id="5039">Block</sanctionsType></sanctionsTypes>\n' +
+      '      <names><name id="1"><isPrimary>true</isPrimary><translations><translation>' +
+      '<isPrimary>true</isPrimary><formattedFullName>MAR AZUL</formattedFullName>' +
+      '</translation></translations></name></names></entity>\n';
+    const r = leerOfac(CABECERA + conTipo + CIERRE);
+    expect(r.registros[0].tiposSancion).toEqual(['Block']);
+    expect(r.registros[0].tipoEntidad).toBe('embarcacion');
+    expect(r.registros[0].programas).toEqual(['CUBA']);
+  });
+});
+
+describe('lo que el esquema NO garantiza', () => {
+  it('sin nombre primario se descarta con motivo, no se queda sin nombre', () => {
+    // El esquema permite varios primarios o ninguno. En los archivos del 4 de
+    // septiembre las 19,846 entidades traen uno, pero el lector no se apoya en
+    // esa observación.
+    const soloAlias =
+      '    <entity id="700"><generalInfo><entityType>Entity</entityType></generalInfo>\n' +
+      '      <names><name id="1"><isPrimary>false</isPrimary><translations><translation>' +
+      '<isPrimary>true</isPrimary><formattedFullName>SOLO ALIAS</formattedFullName>' +
+      '</translation></translations></name></names></entity>\n';
+    const r = leerOfac(CABECERA + soloAlias + CIERRE);
+    expect(r.registros).toHaveLength(0);
+    expect(r.descartadas[0]).toMatchObject({ identificador: '700' });
+    expect(r.descartadas[0].motivo).toMatch(/nombre primario/);
+  });
+
+  it('sin país ni fecha de nacimiento se lee igual: son opcionales', () => {
+    // 3,264 entidades de la SDN no traen país. No es un defecto del archivo.
+    const pelado =
+      '    <entity id="701"><generalInfo><entityType>Entity</entityType></generalInfo>\n' +
+      '      <names><name id="1"><isPrimary>true</isPrimary><translations><translation>' +
+      '<isPrimary>true</isPrimary><formattedFullName>PELADA SA</formattedFullName>' +
+      '</translation></translations></name></names></entity>\n';
+    const r = leerOfac(CABECERA + pelado + CIERRE);
+    expect(r.registros[0]).toMatchObject({ pais: null, fechaNacimiento: null, publicadoEn: null });
+  });
+});

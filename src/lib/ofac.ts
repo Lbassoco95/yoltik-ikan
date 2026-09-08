@@ -36,15 +36,38 @@
  * ---------------------------------------------------------------------
  * Lo que se conserva, y lo que no
  * ---------------------------------------------------------------------
- * Se conservan los ALIAS —24,583 en la SDN, 1,186 en la Consolidada— porque
- * un designado opera bajo cualquiera de ellos y cotejar sólo el nombre
- * primario dejaría pasar la mayoría. Se conservan también las
- * transliteraciones no latinas (4,365 entidades las traen): un mismo nombre
- * árabe o cirílico se translitera de varias formas y la que traiga el
- * documento del compareciente puede no ser la del listado.
+ * Se conservan los ALIAS —30,309 en la SDN y 1,298 en la Consolidada, contados
+ * a la salida de este lector— porque un designado opera bajo cualquiera de
+ * ellos y cotejar sólo el nombre primario dejaría pasar la mayoría.
+ *
+ * Esa cuenta es mayor que la de los `<name>` no primarios (24,583 en la SDN) a
+ * propósito: también entran las traducciones NO PRIMARIAS del nombre primario,
+ * que son transliteraciones. Las traen 4,803 entidades, y hacen falta porque un
+ * mismo nombre árabe o cirílico se translitera de varias formas y la que venga
+ * en el documento del compareciente puede no ser la del listado.
  *
  * Se conserva la fecha de nacimiento cuando viene, que es lo único que
  * permite descartar un homónimo sin llamar a nadie.
+ *
+ * ---------------------------------------------------------------------
+ * Qué garantiza el esquema y qué es sólo observación
+ * ---------------------------------------------------------------------
+ * Comprobado contra `enhanced_xml.xsd`, porque la diferencia decide dónde hace
+ * falta defenderse y dónde sería ruido:
+ *
+ *   OBLIGATORIOS  `formattedFullName`, `entityType`, el `value` de un rasgo,
+ *                 `sanctionsTypes`, y al menos una `sanctionsList` con su
+ *                 atributo `datePublished`. De estos no hay que dudar.
+ *
+ *   OPCIONALES    `addresses`, `country` y `features`. Por eso el país y la
+ *                 fecha de nacimiento pueden ser null, y eso NO es un defecto
+ *                 del archivo: 3,264 entidades de la SDN no traen país.
+ *
+ *   NO GARANTIZADO  que exista exactamente un nombre primario. El esquema
+ *                 permite varios o ninguno. En los archivos del 4 de
+ *                 septiembre las 19,846 entidades traen uno, pero el lector no
+ *                 se apoya en eso: si falta, la entidad se descarta con su
+ *                 motivo en vez de quedarse sin nombre.
  *
  * NO se conservan direcciones completas ni documentos de identidad: no hacen
  * falta para cotejar y ampliarían a diez años lo que guardamos de una persona
@@ -78,6 +101,13 @@ export interface RegistroOfac {
   programas: string[];
   /** En qué listas aparece: SDN List, Consolidated List, y las no-SDN. */
   listas: string[];
+  /**
+   * La naturaleza de la medida: «Block» (bloqueo de bienes) o «Reject»
+   * (rechazo de la operación), entre otras. El esquema la marca obligatoria,
+   * así que siempre viene, y dice algo que ni el programa ni la lista dicen:
+   * qué se supone que hace quien encuentra la coincidencia. Va al expediente.
+   */
+  tiposSancion: string[];
   /** La publicación más reciente entre sus listas, en ISO. */
   publicadoEn: string | null;
   /**
@@ -221,6 +251,7 @@ export function leerEntidad(trozo: string): RegistroOfac | { error: string; id: 
   // --- Listas y programas --------------------------------------------
   const listas = textos(bloque(trozo, 'sanctionsLists'), 'sanctionsList');
   const programas = textos(bloque(trozo, 'sanctionsPrograms'), 'sanctionsProgram');
+  const tiposSancion = textos(bloque(trozo, 'sanctionsTypes'), 'sanctionsType');
 
   // La publicación más reciente entre sus listas. Es el dato de la FUENTE.
   const fechas = [...bloque(trozo, 'sanctionsLists').matchAll(/datePublished="([^"]+)"/g)]
@@ -256,6 +287,7 @@ export function leerEntidad(trozo: string): RegistroOfac | { error: string; id: 
     pais,
     programas,
     listas,
+    tiposSancion,
     publicadoEn,
     fechaNacimiento,
   };
