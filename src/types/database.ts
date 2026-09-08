@@ -2592,7 +2592,13 @@ export type Database = {
           autoridad: string
           codigo: string
           creado_en: string
+          determinacion: Database["public"]["Enums"]["determinacion_fuente"]
+          determinado_en: string | null
+          determinado_por: string | null
+          efecto: Database["public"]["Enums"]["efecto_lista"] | null
+          efectos_por_situacion: Json | null
           frecuencia_objetivo: string | null
+          fundamento_determinacion: string | null
           id: string
           modo_actualizacion: Database["public"]["Enums"]["modo_actualizacion_lista"]
           naturaleza: Database["public"]["Enums"]["naturaleza_lista"]
@@ -2608,7 +2614,13 @@ export type Database = {
           autoridad: string
           codigo: string
           creado_en?: string
+          determinacion?: Database["public"]["Enums"]["determinacion_fuente"]
+          determinado_en?: string | null
+          determinado_por?: string | null
+          efecto?: Database["public"]["Enums"]["efecto_lista"] | null
+          efectos_por_situacion?: Json | null
           frecuencia_objetivo?: string | null
+          fundamento_determinacion?: string | null
           id?: string
           modo_actualizacion: Database["public"]["Enums"]["modo_actualizacion_lista"]
           naturaleza: Database["public"]["Enums"]["naturaleza_lista"]
@@ -2624,7 +2636,13 @@ export type Database = {
           autoridad?: string
           codigo?: string
           creado_en?: string
+          determinacion?: Database["public"]["Enums"]["determinacion_fuente"]
+          determinado_en?: string | null
+          determinado_por?: string | null
+          efecto?: Database["public"]["Enums"]["efecto_lista"] | null
+          efectos_por_situacion?: Json | null
           frecuencia_objetivo?: string | null
+          fundamento_determinacion?: string | null
           id?: string
           modo_actualizacion?: Database["public"]["Enums"]["modo_actualizacion_lista"]
           naturaleza?: Database["public"]["Enums"]["naturaleza_lista"]
@@ -2706,12 +2724,14 @@ export type Database = {
           aplicado_en: string
           carga_id: string
           curp: string | null
+          fecha_situacion: string | null
           id: string
           identificadores: Json
           motivo: string | null
           nombre: string
           oficio_fecha: string | null
           oficio_numero: string | null
+          oficio_situacion: string | null
           orden_origen: number | null
           pais: string | null
           registro_id: string | null
@@ -2724,12 +2744,14 @@ export type Database = {
           aplicado_en?: string
           carga_id: string
           curp?: string | null
+          fecha_situacion?: string | null
           id?: string
           identificadores?: Json
           motivo?: string | null
           nombre: string
           oficio_fecha?: string | null
           oficio_numero?: string | null
+          oficio_situacion?: string | null
           orden_origen?: number | null
           pais?: string | null
           registro_id?: string | null
@@ -2742,12 +2764,14 @@ export type Database = {
           aplicado_en?: string
           carga_id?: string
           curp?: string | null
+          fecha_situacion?: string | null
           id?: string
           identificadores?: Json
           motivo?: string | null
           nombre?: string
           oficio_fecha?: string | null
           oficio_numero?: string | null
+          oficio_situacion?: string | null
           orden_origen?: number | null
           pais?: string | null
           registro_id?: string | null
@@ -2775,15 +2799,19 @@ export type Database = {
           baja_oficio: string | null
           carga_ultima: string | null
           curp: string | null
+          fecha_situacion: string | null
           fuente_id: string
           id: string
           identificadores: Json
           nombre: string
           nombre_normalizado: string | null
+          motivo_revision: string | null
           nombres_alternos: string[]
+          oficio_situacion: string | null
           orden_origen_ultimo: number | null
           pais: string | null
           raw_payload: Json | null
+          requiere_revision: boolean
           rfc: string | null
           situacion: string | null
           tipo_entidad: string
@@ -2802,10 +2830,13 @@ export type Database = {
           identificadores?: Json
           nombre: string
           nombre_normalizado?: string | null
+          motivo_revision?: string | null
           nombres_alternos?: string[]
+          oficio_situacion?: string | null
           orden_origen_ultimo?: number | null
           pais?: string | null
           raw_payload?: Json | null
+          requiere_revision?: boolean
           rfc?: string | null
           situacion?: string | null
           tipo_entidad?: string
@@ -2819,15 +2850,19 @@ export type Database = {
           baja_oficio?: string | null
           carga_ultima?: string | null
           curp?: string | null
+          fecha_situacion?: string | null
           fuente_id?: string
           id?: string
           identificadores?: Json
           nombre?: string
           nombre_normalizado?: string | null
+          motivo_revision?: string | null
           nombres_alternos?: string[]
+          oficio_situacion?: string | null
           orden_origen_ultimo?: number | null
           pais?: string | null
           raw_payload?: Json | null
+          requiere_revision?: boolean
           rfc?: string | null
           situacion?: string | null
           tipo_entidad?: string
@@ -4630,13 +4665,21 @@ export type Database = {
       conflictos_de_carga: {
         Args: { p_carga_id: string }
         Returns: {
-          filas: number[]
+          fecha_vigente: string
+          fechas: string[]
           nombre: string
+          requiere_revision: boolean
           rfc: string
           situacion_vigente: string
           situaciones: string[]
         }[]
       }
+      orden_etapa_69b: { Args: { p_situacion: string }; Returns: number }
+      efecto_de_coincidencia: {
+        Args: { p_fuente: string; p_situacion?: string }
+        Returns: Database["public"]["Enums"]["efecto_lista"]
+      }
+      estado_de_fuente: { Args: { p_fuente: string }; Returns: string }
       diferencia_carga_borrador: {
         Args: { p_carga_id: string }
         Returns: {
@@ -4991,6 +5034,8 @@ export type Database = {
         | "efirma_sat"
         | "prestador_reconocido"
         | "constancia_conservacion"
+      determinacion_fuente: "aplica" | "no_aplica" | "pendiente"
+      efecto_lista: "impedimento" | "eleva_diligencia" | "dato"
       modo_actualizacion_lista: "snapshot" | "movimientos"
       naturaleza_allegado:
         | "conyuge"
@@ -5231,6 +5276,8 @@ export const Constants = {
         "prestador_reconocido",
         "constancia_conservacion",
       ],
+      determinacion_fuente: ["aplica", "no_aplica", "pendiente"],
+      efecto_lista: ["impedimento", "eleva_diligencia", "dato"],
       modo_actualizacion_lista: ["snapshot", "movimientos"],
       naturaleza_allegado: [
         "conyuge",

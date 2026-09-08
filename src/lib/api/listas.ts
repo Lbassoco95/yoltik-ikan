@@ -1,6 +1,10 @@
 import { supabase } from '@/lib/supabase';
+import type { Json } from '@/types/database';
 import {
   normalizarRfc,
+  type DeterminacionFuente,
+  type EfectoLista,
+  type EstadoFuente,
   type ListaCarga,
   type ListaFuente,
   type ModoActualizacion,
@@ -175,11 +179,17 @@ export interface RegistroParaCarga {
   tipo_entidad?: string;
   situacion?: string | null;
   pais?: string | null;
-  /** Fila del archivo de origen. Es el desempate cuando un mismo RFC viene
-   *  varias veces en la misma carga: el SAT publica primero la determinación
-   *  y después su resolución, y sin este dato quién queda bloqueado lo
-   *  decidía el orden en que cayeran los lotes. Ver migration 0064. */
+  /** Fila del archivo de origen. Dato de PROCEDENCIA, para poder señalar una
+   *  fila; ya no decide nada. Ver migration 0065. */
   orden_origen?: number | null;
+  /** Publicación de la situación (DOF, o página del SAT). Es lo que resuelve
+   *  cuando un mismo RFC viene varias veces: son procedimientos distintos y el
+   *  archivo no los ordena por fecha. */
+  fecha_situacion?: string | null;
+  /** El oficio global que respalda la situación. Va al expediente. */
+  oficio_situacion?: string | null;
+  /** El historial por etapas que trae la fila. */
+  identificadores?: Json;
 }
 
 export interface CargaArchivoInput {
@@ -279,6 +289,9 @@ export async function registrarCargaArchivo(
         situacion: r.situacion ?? null,
         pais: r.pais ?? null,
         orden_origen: r.orden_origen ?? null,
+        fecha_situacion: r.fecha_situacion ?? null,
+        oficio_situacion: r.oficio_situacion ?? null,
+        identificadores: r.identificadores ?? {},
       }));
       const { error } = await supabase.from('lista_movimiento').insert(lote);
       if (error) {
@@ -424,8 +437,25 @@ export interface EstadoLista {
    *  aplicado una carga, y la pantalla debe decirlo así de claro. */
   actualizada_al: string | null;
   registros_vigentes: number;
-  /** Los que exigen acción. Un presunto del 69-B cuenta en el total pero no aquí. */
+  /**
+   * Qué produce una coincidencia en esta fuente. Null = la fuente todavía no
+   * lo ha declarado, y entonces no puede producir efecto automático. Null NO
+   * es «sin efecto»: es «no declarado», y son cosas distintas.
+   */
+  efecto: EfectoLista | null;
+  /** Para las fuentes con situaciones, el efecto de cada una. Manda sobre `efecto`. */
+  efectos_por_situacion: Record<string, EfectoLista> | null;
+  determinacion: DeterminacionFuente;
+  fundamento_determinacion: string | null;
+  /** cargada · pendiente_carga · pendiente_determinacion · no_aplica */
+  estado: EstadoFuente;
+  /** Los que IMPIDEN. Un presunto del 69-B cuenta en el total pero no aquí, y
+   *  una coincidencia de OFAC tampoco: eleva la diligencia, no impide. */
   registros_bloqueantes: number;
+  /** Los que exigen diligencia reforzada sin impedir. */
+  registros_eleva_diligencia: number;
+  /** Cargados pero cuya fuente no declaró qué producen. Un hueco visible. */
+  registros_sin_efecto_declarado: number;
 }
 
 /** Lo que ve el sujeto obligado: qué listas se consultan y desde cuándo.

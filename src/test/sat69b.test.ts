@@ -172,3 +172,91 @@ describe('la fila es el orden de origen que usa la migration 0064', () => {
     expect(bbb[1].fila).toBeGreaterThan(bbb[0].fila);
   });
 });
+
+describe('el historial por etapas, que es lo que resuelve un RFC repetido', () => {
+  // Cada fila del 69-B trae 20 columnas, no cuatro: el oficio global y las dos
+  // fechas de publicación —SAT y DOF— de CADA etapa por la que pasó ese
+  // procedimiento. Es el dato que la migration 0065 usa para decidir, y el que
+  // el lector tiraba antes de leerlo.
+  const conHistorial =
+    'Información actualizada al 31 de julio de 2026\n' +
+    'Listado completo de contribuyentes (Artículo 69-B del CFF)\n' +
+    'No,RFC,Nombre del Contribuyente,Situación del contribuyente,' +
+    'Número y fecha de oficio global de presunción SAT,Publicación página SAT presuntos,' +
+    'Número y fecha de oficio global de presunción DOF,Publicación DOF presuntos,' +
+    'Número y fecha de oficio global de contribuyentes que desvirtuaron SAT,Publicación página SAT desvirtuados,' +
+    'Número y fecha de oficio global de contribuyentes que desvirtuaron DOF,Publicación DOF desvirtuados,' +
+    'Número y fecha de oficio global de definitivos SAT,Publicación página SAT definitivos,' +
+    'Número y fecha de oficio global de definitivos DOF,Publicación DOF definitivos,' +
+    'Número y fecha de oficio global de sentencia favorable SAT,Publicación página SAT sentencia favorable,' +
+    'Número y fecha de oficio global de sentencia favorable DOF,Publicación DOF sentencia favorable\n' +
+    // El caso real: la fila POSTERIOR trae una sentencia ANTERIOR en el tiempo.
+    '164,AAS110331G59,ABIRA & SAFFI,Definitivo,' +
+    'of-2020-7866,10/03/2020,of-2020-7866,31/03/2020,,,,,' +
+    'of-2020-13691,19/06/2020,of-2020-13691,07/07/2020,,,,\n' +
+    '165,AAS110331G59,ABIRA & SAFFI // sentencia,Sentencia Favorable,' +
+    'of-2017-16140,01/06/2017,of-2017-16140,12/06/2017,,,,,' +
+    'of-2017-38731,27/11/2017,of-2017-38731,14/12/2017,' +
+    'of-2019-40235,20/12/2019,of-2019-40235,27/01/2020\n';
+
+  it('extrae la fecha de publicación de la situación vigente, prefiriendo el DOF', () => {
+    const r = parsear69B(latin1(conHistorial));
+    expect(r.registros[0].fechaSituacion).toBe('2020-07-07'); // DOF definitivos
+    expect(r.registros[1].fechaSituacion).toBe('2020-01-27'); // DOF sentencia
+  });
+
+  it('la fila posterior del archivo puede traer la resolución MÁS VIEJA', () => {
+    // Es el hecho que tumbó el criterio de «gana la última fila»: no son dos
+    // versiones del mismo expediente, son procedimientos distintos.
+    const r = parsear69B(latin1(conHistorial));
+    expect(r.registros[1].fila).toBeGreaterThan(r.registros[0].fila);
+    expect(r.registros[1].fechaSituacion! < r.registros[0].fechaSituacion!).toBe(true);
+  });
+
+  it('conserva el oficio que respalda la situación, para poder citarlo', () => {
+    const r = parsear69B(latin1(conHistorial));
+    expect(r.registros[0].oficioSituacion).toBe('of-2020-13691');
+    expect(r.registros[1].oficioSituacion).toBe('of-2019-40235');
+  });
+
+  it('guarda todas las etapas por las que pasó, no sólo la vigente', () => {
+    const r = parsear69B(latin1(conHistorial));
+    expect(r.registros[1].etapas.map((e) => e.etapa)).toEqual([
+      'presunto',
+      'definitivo',
+      'sentencia_favorable',
+    ]);
+    expect(r.registros[1].etapas[0].dof).toBe('2017-06-12');
+  });
+
+  it('sin fecha de publicación devuelve null, nunca un sustituto', () => {
+    // Null obliga a escalar el caso. Cualquier relleno —la fecha del archivo,
+    // la posición— sería inventar un hecho jurídico.
+    const sinFecha =
+      'Información actualizada al 31 de julio de 2026\n' +
+      'Listado completo de contribuyentes (Artículo 69-B del CFF)\n' +
+      'No,RFC,Nombre del Contribuyente,Situación del contribuyente,' +
+      'Número y fecha de oficio global de definitivos SAT,Publicación página SAT definitivos,' +
+      'Número y fecha de oficio global de definitivos DOF,Publicación DOF definitivos\n' +
+      '1,AAA120730823,SIN FECHA,Definitivo,,,,\n';
+    const r = parsear69B(latin1(sinFecha));
+    expect(r.registros[0].fechaSituacion).toBeNull();
+  });
+
+  it('el 69-B Bis usa los encabezados en singular y también se lee', () => {
+    const bis =
+      'Información actualizada al 05 de junio de 2026\n' +
+      'Listado completo de contribuyentes (Artículo 69-B Bis del CFF)\n' +
+      'No.,RFC,Nombre del Contribuyente,Situación del contribuyente,' +
+      'Número y fecha de oficio global definitivo SAT,Publicación página SAT definitivo,' +
+      'Número y fecha de oficio global definitivo DOF,Publicación DOF definitivo,' +
+      'Número y fecha de oficio global de sentencia favorable SAT,Publicación página SAT sentencia favorable,' +
+      'Número y fecha de oficio global de sentencia favorable DOF,Publicación DOF sentencia favorable\n' +
+      '1,OAN151230HWA,OPERADORA,Sentencia Favorable,' +
+      'of-2024-80,25/01/2024,of-2024-80,05/07/2024,' +
+      'of-2026-254,12/03/2026,of-2026-254,05/06/2026\n';
+    const r = parsear69B(latin1(bis));
+    expect(r.articulo).toBe('69-B Bis');
+    expect(r.registros[0].fechaSituacion).toBe('2026-06-05');
+  });
+});

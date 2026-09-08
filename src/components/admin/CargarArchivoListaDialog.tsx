@@ -70,9 +70,12 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           rfc: r.rfc,
           tipo_entidad: "empresa",
           situacion: r.situacion,
-          // La fila del archivo. Es lo que desempata cuando un RFC viene dos
-          // veces: sin ella, quién queda bloqueado dependía del tamaño de lote.
+          // La fila queda como procedencia; lo que DECIDE es la fecha de
+          // publicación de la situación. Ver migration 0065.
           orden_origen: r.fila,
+          fecha_situacion: r.fechaSituacion,
+          oficio_situacion: r.oficioSituacion,
+          identificadores: { etapas: r.etapas },
         })),
         onProgreso: (hechos, total) => setProgreso({ hechos, total }),
       }),
@@ -89,22 +92,29 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
     onError: (e: Error) => { setProgreso(null); toast.error(e.message, { duration: 15000 }); },
   });
 
-  // RFC que vienen más de una vez CON SITUACIONES DISTINTAS. En el listado
-  // completo del 69-B son ~50 y es normal: el SAT concatena sus listados por
-  // situación, así que un contribuyente declarado definitivo que después gana
-  // un juicio aparece en dos. Se toma la última fila, que es la resolución.
-  // Se muestra porque 50 y 3,000 no son el mismo archivo, y sólo se nota si
-  // alguien lo mira.
+  // RFC que vienen más de una vez CON SITUACIONES DISTINTAS. No son dos
+  // versiones del mismo expediente: son procedimientos distintos contra el
+  // mismo contribuyente, y el archivo NO los ordena por fecha. Se resuelven
+  // por la publicación de cada situación (migration 0065); los que no traen
+  // fecha se marcan para que los vea una persona.
   const conflictos = analisis
     ? (() => {
-        const porRfc = new Map<string, Set<string>>();
+        const porRfc = new Map<string, typeof analisis.registros>();
         for (const r of analisis.registros) {
-          if (!porRfc.has(r.rfc)) porRfc.set(r.rfc, new Set());
-          porRfc.get(r.rfc)!.add(r.situacion);
+          if (!porRfc.has(r.rfc)) porRfc.set(r.rfc, []);
+          porRfc.get(r.rfc)!.push(r);
         }
-        return [...porRfc.values()].filter((s) => s.size > 1).length;
+        let distintas = 0;
+        let sinFecha = 0;
+        for (const filas of porRfc.values()) {
+          if (filas.length < 2) continue;
+          if (new Set(filas.map((x) => x.situacion)).size < 2) continue;
+          distintas++;
+          if (filas.some((x) => !x.fechaSituacion)) sinFecha++;
+        }
+        return { distintas, sinFecha };
       })()
-    : 0;
+    : { distintas: 0, sinFecha: 0 };
 
   const porSituacion = analisis
     ? Object.entries(
@@ -195,19 +205,26 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
                 ))}
               </div>
 
-              {conflictos > 0 && (
+              {conflictos.distintas > 0 && (
                 <div className="text-xs border-t border-border pt-2 space-y-1">
                   <p className="font-medium">
-                    {conflictos.toLocaleString("es-MX")} RFC vienen más de una vez con
-                    situaciones distintas.
+                    {conflictos.distintas.toLocaleString("es-MX")} RFC vienen más de una vez
+                    con situaciones distintas.
                   </p>
                   <p className="text-muted-foreground leading-relaxed">
-                    Es lo normal en el listado completo: el SAT concatena sus listados por
-                    situación, así que un contribuyente declarado definitivo que después
-                    obtuvo sentencia favorable aparece en los dos. Se toma{" "}
-                    <strong>la última fila del archivo</strong>, que es la resolución más
-                    reciente que publica el SAT.
+                    No son dos versiones del mismo expediente: son{" "}
+                    <strong>procedimientos distintos</strong> contra el mismo contribuyente, y
+                    el archivo no los ordena por fecha. Se resuelve por la{" "}
+                    <strong>publicación en el DOF</strong> de cada situación, y a igualdad de
+                    fecha por la etapa más avanzada.
                   </p>
+                  {conflictos.sinFecha > 0 && (
+                    <p className="text-warning font-medium">
+                      De ésos, {conflictos.sinFecha.toLocaleString("es-MX")} no traen fecha de
+                      publicación y quedarán marcados para revisión: no se resuelven por su
+                      posición en el archivo.
+                    </p>
+                  )}
                 </div>
               )}
 

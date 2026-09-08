@@ -3,7 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Search, Shield, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { estadoDeListas, listarVigentes } from "@/lib/api/listas";
-import { labelSituacion, NATURALEZA_LABEL } from "@/lib/listas";
+import {
+  explicaEfecto,
+  explicaEstadoFuente,
+  labelEfecto,
+  labelEstadoFuente,
+  labelSituacion,
+  NATURALEZA_LABEL,
+} from "@/lib/listas";
 import { cn } from "@/lib/utils";
 
 /**
@@ -28,7 +35,15 @@ export default function ListsPage() {
     enabled: busqueda.trim().length >= 3,
   });
 
-  const sinCargar = (estado.data ?? []).filter((l) => l.actualizada_al == null);
+  // Dos huecos que se veían iguales y no lo son. Uno se resuelve bajando un
+  // archivo que existe; el otro con una determinación jurídica que nadie ha
+  // hecho, y mientras no se haga no se puede afirmar que la fuente esté
+  // cubierta. Mostrarlos juntos le diría al sujeto obligado que se resuelven
+  // igual.
+  const pendienteCarga = (estado.data ?? []).filter((l) => l.estado === "pendiente_carga");
+  const pendienteDeterminacion = (estado.data ?? []).filter(
+    (l) => l.estado === "pendiente_determinacion",
+  );
   const totalVigentes = (estado.data ?? []).reduce((n, l) => n + l.registros_vigentes, 0);
 
   return (
@@ -118,18 +133,35 @@ export default function ListsPage() {
       </div>
 
       {/* Aviso cuando faltan listas por cargar */}
-      {sinCargar.length > 0 && !estado.isLoading && (
+      {pendienteCarga.length > 0 && !estado.isLoading && (
         <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>
-              {sinCargar.length === 1
+              {pendienteCarga.length === 1
                 ? "Una lista todavía no tiene datos cargados"
-                : `${sinCargar.length} listas todavía no tienen datos cargados`}
+                : `${pendienteCarga.length} listas todavía no tienen datos cargados`}
               :
             </strong>{" "}
-            {sinCargar.map((l) => l.nombre).join(", ")}. Un barrido sin coincidencias contra una
-            lista vacía no acredita nada.
+            {pendienteCarga.map((l) => l.nombre).join(", ")}. Un barrido sin coincidencias contra
+            una lista vacía no acredita nada.
+          </span>
+        </div>
+      )}
+
+      {pendienteDeterminacion.length > 0 && (
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
+          <span>
+            <strong>
+              {pendienteDeterminacion.length === 1
+                ? "Una fuente está pendiente de determinación"
+                : `${pendienteDeterminacion.length} fuentes están pendientes de determinación`}
+              :
+            </strong>{" "}
+            {pendienteDeterminacion.map((l) => l.nombre).join(", ")}. No es que falte un archivo:
+            falta resolver si la obligación de consultarlas existe. Hasta entonces no se puede
+            afirmar que estén cubiertas.
           </span>
         </div>
       )}
@@ -160,7 +192,7 @@ export default function ListsPage() {
                     <p className="text-xs text-muted-foreground mt-0.5">{l.autoridad}</p>
                   </div>
                 </div>
-                {l.obligatoria && (
+                {l.obligatoria && l.determinacion === "aplica" && (
                   <span className="status-badge bg-accent/10 text-accent text-xs shrink-0">
                     Obligatoria
                   </span>
@@ -178,16 +210,51 @@ export default function ListsPage() {
                 >
                   {NATURALEZA_LABEL[l.naturaleza]}
                 </span>
-                {l.actualizada_al ? (
+                {l.estado === "cargada" && l.actualizada_al ? (
                   <span className="status-badge bg-success/10 text-success text-xs">
                     Actualizada al {new Date(l.actualizada_al + "T12:00:00").toLocaleDateString("es-MX")}
                   </span>
                 ) : (
-                  <span className="status-badge bg-warning/15 text-warning-ink text-xs">
-                    Sin datos cargados
+                  <span
+                    className={cn(
+                      "status-badge text-xs",
+                      l.estado === "no_aplica"
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-warning/15 text-warning-ink",
+                    )}
+                  >
+                    {labelEstadoFuente(l.estado)}
                   </span>
                 )}
+
+                {/* Qué produce una coincidencia. Es atributo de la fuente: la ONU
+                    vincula a México y una coincidencia impide; OFAC es derecho
+                    extranjero y eleva la diligencia. Tratarlas igual sería
+                    bloquear de más o de menos, y las dos cosas son graves. */}
+                <span
+                  className={cn(
+                    "status-badge text-xs",
+                    l.efecto === "impedimento"
+                      ? "bg-destructive/10 text-destructive"
+                      : l.efecto === "eleva_diligencia"
+                        ? "bg-warning/15 text-warning-ink"
+                        : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {l.efectos_por_situacion
+                    ? "Efecto según la situación"
+                    : labelEfecto(l.efecto)}
+                </span>
               </div>
+
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                {l.estado === "pendiente_determinacion" || l.estado === "no_aplica"
+                  ? explicaEstadoFuente(l.estado)
+                  : l.efectos_por_situacion
+                    ? "El definitivo impide operar; el presunto exige diligencia reforzada sin ser " +
+                      "hallazgo confirmado; desvirtuado y sentencia favorable quedan como dato."
+                    : explicaEfecto(l.efecto)}
+              </p>
 
               <div className="flex items-baseline gap-4 pt-1 border-t border-border">
                 <div>
@@ -196,12 +263,28 @@ export default function ListsPage() {
                   </span>
                   <span className="text-[13px] text-muted-foreground">registros vigentes</span>
                 </div>
-                {l.registros_bloqueantes !== l.registros_vigentes && (
+                {l.registros_bloqueantes > 0 && (
                   <div>
                     <span className="block text-xl font-bold tabular-nums text-destructive">
                       {l.registros_bloqueantes.toLocaleString("es-MX")}
                     </span>
-                    <span className="text-[13px] text-muted-foreground">exigen acción</span>
+                    <span className="text-[13px] text-muted-foreground">impiden operar</span>
+                  </div>
+                )}
+                {l.registros_eleva_diligencia > 0 && (
+                  <div>
+                    <span className="block text-xl font-bold tabular-nums text-warning-ink">
+                      {l.registros_eleva_diligencia.toLocaleString("es-MX")}
+                    </span>
+                    <span className="text-[13px] text-muted-foreground">elevan la diligencia</span>
+                  </div>
+                )}
+                {l.registros_sin_efecto_declarado > 0 && (
+                  <div>
+                    <span className="block text-xl font-bold tabular-nums text-warning-ink">
+                      {l.registros_sin_efecto_declarado.toLocaleString("es-MX")}
+                    </span>
+                    <span className="text-[13px] text-muted-foreground">sin efecto declarado</span>
                   </div>
                 )}
               </div>
