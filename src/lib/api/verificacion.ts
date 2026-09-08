@@ -191,6 +191,9 @@ export interface ResumenLegible {
   listas: {
     estado: string | null;
     coincidencias: number;
+    /** Puntaje de riesgo del barrido. Es una cifra sobre nuestro cliente
+     *  —cuánto se parece a lo que hay en los acervos—, no sobre el tercero. */
+    puntaje: number | null;
     categorias: string[];
   } | null;
   /**
@@ -273,6 +276,7 @@ export function leerResumen(
       ? {
           estado: texto(listas.estado),
           coincidencias: num(listas.coincidencias) ?? 0,
+          puntaje: num(listas.puntaje),
           categorias: Array.isArray(listas.categorias)
             ? listas.categorias.filter(
                 (c): c is string => typeof c === "string",

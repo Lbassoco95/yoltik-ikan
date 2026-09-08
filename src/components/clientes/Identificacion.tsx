@@ -252,6 +252,15 @@ export function Identificacion({ client }: { client: Client }) {
                       etiqueta="Coincidencias"
                       valor={String(resumen.listas.coincidencias)}
                     />
+                    {/* Sin el puntaje, «56 coincidencias» se lee igual con un
+                        parecido del 40 % que del 92 %, y son cosas muy
+                        distintas para quien tiene que decidir. */}
+                    {resumen.listas.puntaje !== null && (
+                      <Dato
+                        etiqueta="Parecido"
+                        valor={`${resumen.listas.puntaje} de 100`}
+                      />
+                    )}
                     {resumen.listas.categorias.length > 0 && (
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         {resumen.listas.categorias.map((c) => (

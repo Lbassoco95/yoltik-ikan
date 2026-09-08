@@ -334,6 +334,11 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
     resumen.listas = {
       estado: aml.status ?? null,
       coincidencias: aml.total_hits ?? 0,
+      // El puntaje de riesgo del barrido. Es una cifra sobre NUESTRO cliente
+      // —cuánto se parece a lo que hay en los acervos—, no sobre el tercero
+      // con el que coincidió, así que sí se guarda. Sin él, «56 coincidencias»
+      // se lee igual con un parecido del 40 % que del 92 %.
+      puntaje: typeof aml.score === "number" ? aml.score : null,
       // QUÉ TIPO de coincidencia, no con quién.
       //
       // La distinción es la que separa un dato del expediente de un dato de un
@@ -434,8 +439,43 @@ export function categoriasDeCoincidencias(
   const fuera = new Set<string>();
   for (const hit of lista) {
     if (!hit || typeof hit !== "object") continue;
-    // Otra vez a la defensiva: el nombre del campo varía entre versiones.
+    /**
+     * De dónde sale la categoría, comprobado contra un barrido real.
+     *
+     * Los cinco campos que se miraban antes —`category`, `type`, `list_type`,
+     * `match_type`, `categories`— NO existen en la respuesta de Didit. Se
+     * escribieron a la defensiva, sin una carga real delante, y el resultado
+     * era que TODA coincidencia caía en «sin clasificar»: en el barrido de
+     * prueba, las 56. Falla del lado seguro —lo sin clasificar escala a la
+     * célula— pero tira la clasificación que sí venía, y un expediente que
+     * dice «56 coincidencias sin clasificar» donde había 26 de sanciones y 28
+     * de PPE obliga a repetir a mano un trabajo ya hecho.
+     *
+     * Los dos sitios donde Didit sí la pone:
+     *   · `datasets` — los acervos que casaron: «Sanctions», «PEP»,
+     *     «PEP Level 1..4», «Warnings and Regulatory Enforcement», SIE, SIP.
+     *   · la PRESENCIA de `sanction_matches`, `pep_matches`,
+     *     `adverse_media_matches` y `warning_matches`, cada uno con su
+     *     detalle. Del detalle no se toma nada —es información del tercero con
+     *     el que se coincidió— pero que el arreglo venga con algo dentro ya
+     *     dice de qué tipo fue la coincidencia, y eso es de nuestro cliente.
+     *
+     * Se dejan los cinco nombres viejos: no cuestan nada y cubren que Didit
+     * cambie de forma otra vez.
+     */
+    const porArreglo: string[] = [];
+    for (const [llave, categoria] of [
+      ["sanction_matches", "sancion"],
+      ["pep_matches", "pep"],
+      ["adverse_media_matches", "nota_adversa"],
+      ["warning_matches", "lista_de_atencion"],
+    ] as const) {
+      const v = hit[llave];
+      if (Array.isArray(v) && v.length > 0) porArreglo.push(categoria);
+    }
+
     const crudo = [
+      hit.datasets,
       hit.category,
       hit.type,
       hit.list_type,
@@ -443,13 +483,18 @@ export function categoriasDeCoincidencias(
       hit.categories,
     ]
       .flat()
-      .filter((x): x is string => typeof x === "string");
+      .filter((x): x is string => typeof x === "string")
+      .map(normalizarCategoria)
+      .concat(porArreglo);
 
     if (crudo.length === 0) {
       fuera.add("sin_clasificar");
       continue;
     }
-    for (const c of crudo) fuera.add(normalizarCategoria(c));
+    // Un acervo que no reconocemos —SIE, SIP— cae en «sin clasificar», y eso
+    // se queda al lado de las categorías que sí: que 26 coincidencias sean de
+    // sanciones no vuelve benignas las que no supimos leer.
+    for (const c of crudo) fuera.add(c);
   }
   return fuera.size > 0 ? [...fuera].sort() : ["sin_clasificar"];
 }

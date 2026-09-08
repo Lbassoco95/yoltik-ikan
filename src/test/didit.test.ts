@@ -239,6 +239,86 @@ describe("resumen de la decisión", () => {
   });
 });
 
+/**
+ * La forma REAL de un barrido de Didit.
+ *
+ * Estas pruebas se escribieron contra una respuesta de verdad —un barrido
+ * ejecutado el 08/09/2026 contra los acervos de producción— y no contra lo que
+ * suponíamos que devolvía. La versión anterior del lector buscaba la categoría
+ * en `category`, `type`, `list_type`, `match_type` y `categories`: cinco
+ * campos que NO existen. El resultado era que toda coincidencia caía en «sin
+ * clasificar» —las 56 del barrido de prueba— y el expediente perdía que 26
+ * eran de sanciones y 28 de PPE.
+ */
+describe('el screening lee la forma real de Didit', () => {
+  // Un hallazgo tal y como viene, recortado a los campos que leemos.
+  const hallazgoReal = {
+    caption: 'Vladimir Putin',
+    match: false,
+    match_score: 100,
+    risk_score: 92,
+    review_status: 'Unreviewed',
+    datasets: [
+      'Warnings and Regulatory Enforcement',
+      'SIE',
+      'Sanctions',
+      'SIP',
+      'PEP',
+      'PEP Level 1',
+    ],
+    sanction_matches: [{ list_name: ['EU Early Detection and Exclusion System (EDES)'] }],
+    pep_matches: [{ list_name: 'Diario de Centro América' }],
+    adverse_media_matches: [],
+    warning_matches: [{ countries: ['Russia'] }],
+  };
+
+  it('saca la categoría de `datasets`, que es donde está', () => {
+    const cats = categoriasDeCoincidencias({ total_hits: 1, hits: [hallazgoReal] });
+    expect(cats).toContain('sancion');
+    expect(cats).toContain('pep');
+    expect(cats).toContain('lista_de_atencion');
+  });
+
+  it('un acervo que no reconocemos NO se da por benigno', () => {
+    // SIE y SIP no están en nuestro mapa. Que 26 coincidencias sean de
+    // sanciones no vuelve inocuas las que no supimos leer.
+    const cats = categoriasDeCoincidencias({ total_hits: 1, hits: [hallazgoReal] });
+    expect(cats).toContain('sin_clasificar');
+  });
+
+  it('la PRESENCIA del arreglo de coincidencias también clasifica', () => {
+    // Sin `datasets`, el tipo sigue estando: en qué arreglo vino el detalle.
+    const cats = categoriasDeCoincidencias({
+      total_hits: 1,
+      hits: [{ sanction_matches: [{ list_name: ['OFAC SDN'] }], pep_matches: [] }],
+    });
+    expect(cats).toEqual(['sancion']);
+  });
+
+  it('un arreglo VACÍO no clasifica: no hubo coincidencia de ese tipo', () => {
+    const cats = categoriasDeCoincidencias({
+      total_hits: 1,
+      hits: [{ adverse_media_matches: [], warning_matches: [] }],
+    });
+    expect(cats).toEqual(['sin_clasificar']);
+  });
+
+  it('el resumen guarda el puntaje del barrido, que es de nuestro cliente', () => {
+    const r = resumirDecision({
+      aml_screenings: [{ status: 'In Review', total_hits: 56, score: 92, hits: [hallazgoReal] }],
+    }) as Record<string, Record<string, unknown>>;
+
+    expect(r.listas.coincidencias).toBe(56);
+    expect(r.listas.puntaje).toBe(92);
+    expect(r.listas.estado).toBe('In Review');
+    // Y nada del tercero: ni el nombre con el que coincidió, ni la lista, ni
+    // el enlace a la fuente.
+    const serializado = JSON.stringify(r);
+    expect(serializado).not.toContain('Vladimir');
+    expect(serializado).not.toContain('EDES');
+  });
+});
+
 describe('el screening distingue qué tipo de coincidencia hubo', () => {
   // «Hubo una coincidencia de tipo PPE» dice algo sobre NUESTRO cliente y el
   // expediente lo necesita. «Coincidió con Fulano de Tal» es información de
