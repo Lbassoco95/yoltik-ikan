@@ -10,6 +10,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
+import { FirmaCelula } from "@/components/estela/FirmaCelula";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -161,37 +163,96 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Aviso mensual</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Se presenta a más tardar el día 17 del mes siguiente al periodo
-            reportado.
+      <EncabezadoSeccion
+        titulo="Aviso mensual"
+        descripcion="Se presenta a más tardar el día 17 del mes siguiente al periodo reportado."
+        acciones={
+          <Select value={periodo} onValueChange={setPeriodo}>
+            <SelectTrigger className="w-52 shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {periodosOfrecidos(periodos).map((p) => (
+                <SelectItem key={p} value={p}>
+                  {nombreMes(p)}
+                  {situacionDelPeriodo(p, false).estado === "en_curso"
+                    ? " · en curso"
+                    : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
+
+      {/* La cuenta atrás al día 17.
+          El plazo estaba dicho —en la línea de debajo del título, en pasiva y
+          en abstracto— pero no contado: para saber si quedaban tres días o
+          quince había que mirar el calendario. `diasParaElLimite` y `limite`
+          ya venían calculados en situacionDelPeriodo desde el principio; lo
+          que faltaba era enseñarlos.
+
+          El ámbar aparece sólo cuando falta una semana o menos, y el barro
+          cuando el plazo ya venció —que es el caso irreversible del sistema:
+          un aviso fuera de plazo no se arregla presentándolo—. */}
+      {situacion.limite != null && situacion.diasParaElLimite != null && (
+        <div
+          className={cn(
+            "estela-filo flex flex-wrap items-center justify-between gap-4 rounded-md border bg-card p-5",
+            situacion.estado === "fuera_de_plazo"
+              ? "border-ikan-barro/40 border-t-ikan-barro"
+              : situacion.estado === "presentado"
+                ? "border-success/40 border-t-success"
+                : situacion.diasParaElLimite <= 7
+                  ? "border-ikan-ambar/40 border-t-ikan-ambar"
+                  : "border-border border-t-accent",
+          )}
+        >
+          <div className="min-w-0">
+            <p
+              className={cn(
+                "estela-antetitulo text-muted-foreground m-0",
+                situacion.estado === "fuera_de_plazo"
+                  ? "text-ikan-barro"
+                  : situacion.estado === "presentado"
+                    ? "text-success"
+                    : situacion.diasParaElLimite <= 7
+                      ? "text-ikan-ambar"
+                      : undefined,
+              )}
+            >
+              {situacion.estado === "presentado"
+                ? "Presentado"
+                : situacion.estado === "fuera_de_plazo"
+                  ? "Fuera de plazo"
+                  : "Plazo de presentación"}
+            </p>
+            <p className="m-0 mt-1 text-lg font-bold text-foreground">
+              {situacion.estado === "presentado"
+                ? `${nombreMes(periodo)} ya se presentó`
+                : situacion.diasParaElLimite < 0
+                  ? `Venció hace ${Math.abs(situacion.diasParaElLimite)} ${Math.abs(situacion.diasParaElLimite) === 1 ? "día" : "días"}`
+                  : situacion.diasParaElLimite === 0
+                    ? "Vence hoy"
+                    : `Faltan ${situacion.diasParaElLimite} ${situacion.diasParaElLimite === 1 ? "día" : "días"}`}
+            </p>
+            <p className="estela-dato m-0 mt-1.5 text-xs text-muted-foreground">
+              Fecha límite{" "}
+              {situacion.limite.toLocaleDateString("es-MX", { dateStyle: "long" })}
+            </p>
+          </div>
+          <p className="max-w-md text-[13px] leading-relaxed text-muted-foreground">
+            {situacion.leyenda}
           </p>
         </div>
-        <Select value={periodo} onValueChange={setPeriodo}>
-          <SelectTrigger className="w-52 shrink-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {periodosOfrecidos(periodos).map((p) => (
-              <SelectItem key={p} value={p}>
-                {nombreMes(p)}
-                {situacionDelPeriodo(p, false).estado === "en_curso"
-                  ? " · en curso"
-                  : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      )}
 
       {isLoading ? (
-        <div className="glass-card p-8 flex items-center justify-center gap-2 text-muted-foreground">
+        <div className="estela-placa flex items-center justify-center gap-2 p-8 text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" /> Cargando el periodo…
         </div>
       ) : isError ? (
-        <div className="glass-card p-6 text-sm text-destructive">
+        <div className="rounded-md border border-destructive/30 bg-card p-5 text-sm text-destructive">
           No se pudo cargar el periodo: {(error as Error)?.message}
         </div>
       ) : (
@@ -280,7 +341,7 @@ export default function ReportsPage() {
           ))}
 
           {/* Generación */}
-          <div className="glass-card p-5 space-y-4">
+          <div className="estela-placa p-5 space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <FileCode className="w-5 h-5 mt-0.5 text-primary shrink-0" />
@@ -307,7 +368,7 @@ export default function ReportsPage() {
                     </Button>
                   )}
                 <Button
-                  className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+                  className="gap-2"
                   onClick={() => generar.mutate(false)}
                   disabled={
                     generar.isPending ||
@@ -326,7 +387,7 @@ export default function ReportsPage() {
             </div>
 
             {previo && previo.errores.length > 0 && (
-              <div className="rounded-lg bg-destructive/10 p-3">
+              <div className="rounded-md bg-destructive/10 p-3">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
                   <p className="text-sm font-semibold text-foreground">
@@ -350,16 +411,16 @@ export default function ReportsPage() {
             {previo &&
               previo.errores.length === 0 &&
               previo.advertencias.length > 0 && (
-                <div className="rounded-lg bg-warning/10 p-3">
+                <div className="rounded-md bg-warning/10 p-3">
                   <div className="flex items-center gap-2">
-                    <Info className="w-4 h-4 text-warning shrink-0" />
+                    <Info className="w-4 h-4 text-warning-ink shrink-0" />
                     <p className="text-sm font-semibold text-foreground">
                       El archivo se genera, pero sale incompleto
                     </p>
                   </div>
                   <ul className="mt-2 ml-6 space-y-1">
                     {previo.advertencias.slice(0, 8).map((a, i) => (
-                      <li key={i} className="text-xs text-warning">
+                      <li key={i} className="text-xs text-warning-ink">
                         {a}
                       </li>
                     ))}
@@ -370,7 +431,7 @@ export default function ReportsPage() {
             {previo &&
               previo.errores.length === 0 &&
               previo.advertencias.length === 0 && (
-                <div className="rounded-lg bg-success/10 p-3 flex items-center gap-2">
+                <div className="rounded-md bg-success/10 p-3 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                   <p className="text-sm text-foreground">
                     El archivo cumple lo que el formato del aviso pide. Listo
@@ -381,10 +442,10 @@ export default function ReportsPage() {
           </div>
 
           {/* Actos del periodo */}
-          <div className="glass-card overflow-hidden">
+          <div className="estela-placa overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted/50">
                   {[
                     "Fecha",
                     "Tipo de acto",
@@ -394,7 +455,7 @@ export default function ReportsPage() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                      className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                     >
                       {h}
                     </th>
@@ -421,7 +482,7 @@ export default function ReportsPage() {
                         className={cn(
                           "status-badge",
                           o.canal === "declaranot"
-                            ? "bg-warning/15 text-warning"
+                            ? "bg-warning/15 text-warning-ink"
                             : "bg-muted text-muted-foreground",
                         )}
                       >
@@ -449,7 +510,7 @@ export default function ReportsPage() {
 
           {/* Avisos ya generados */}
           {avisos.length > 0 && (
-            <div className="glass-card p-5">
+            <div className="estela-placa p-5">
               <p className="text-sm font-semibold text-foreground mb-3">
                 Avisos generados de {nombreMes(periodo)}
               </p>
@@ -460,7 +521,7 @@ export default function ReportsPage() {
                     className="flex items-center justify-between gap-4 text-sm"
                   >
                     <span>
-                      <span className="font-mono text-xs text-muted-foreground mr-2">
+                      <span className="estela-dato text-xs text-muted-foreground mr-2">
                         {a.referencia ?? a.id.slice(0, 8)}
                       </span>
                       {a.exento
@@ -493,6 +554,13 @@ export default function ReportsPage() {
           )}
         </>
       )}
+
+      {/* Quién firma por esto. El aviso mensual es la pantalla donde el sujeto
+          obligado asume una responsabilidad frente al SAT, y es exactamente
+          donde tiene que saber a quién llamar si algo no le cuadra. No se
+          dibuja mientras no haya una célula configurada de verdad —los
+          nombres no se inventan, ver src/lib/celula.ts—. */}
+      <FirmaCelula variante="bloque" />
     </div>
   );
 }
@@ -510,12 +578,13 @@ function Tarjeta({
 }) {
   return (
     <div
-      className={cn("glass-card p-4", alerta && "border-l-4 border-l-warning")}
+      className={cn(
+        "estela-placa p-4",
+        alerta && "border-l-[3px] border-l-ikan-ambar",
+      )}
     >
-      <p className="text-xs text-muted-foreground uppercase tracking-wider">
-        {titulo}
-      </p>
-      <p className="text-2xl font-bold text-foreground mt-1">{valor}</p>
+      <p className="estela-antetitulo text-muted-foreground">{titulo}</p>
+      <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">{valor}</p>
       <p className="text-[13px] text-muted-foreground mt-1">{nota}</p>
     </div>
   );
@@ -538,8 +607,10 @@ function Aviso({
   return (
     <div
       className={cn(
-        "rounded-lg p-4 flex items-start gap-3",
-        bloqueo ? "bg-destructive/10" : "bg-muted/50",
+        "flex items-start gap-3 rounded-md border p-4",
+        bloqueo
+          ? "border-destructive/30 bg-destructive/5"
+          : "border-border bg-muted/50",
       )}
     >
       {bloqueo ? (

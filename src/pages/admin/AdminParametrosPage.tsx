@@ -153,7 +153,7 @@ export default function AdminParametrosPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-start gap-4">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-foreground">Parámetros regulatorios</h1>
+          <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Parámetros regulatorios</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Valores fijados por una autoridad, con su vigencia y su fuente. El motor y el front
             los leen de aquí; ninguno declara cifras propias.
@@ -165,8 +165,8 @@ export default function AdminParametrosPage() {
       </div>
 
       {sinConfirmar > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>
               {sinConfirmar} {sinConfirmar === 1 ? "parámetro" : "parámetros"} sin validar por
@@ -178,7 +178,7 @@ export default function AdminParametrosPage() {
         </div>
       )}
 
-      <div className="glass-card overflow-hidden">
+      <div className="estela-placa overflow-hidden">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
@@ -189,11 +189,11 @@ export default function AdminParametrosPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[56rem]">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted/50">
                   {["Parámetro", "Alcance", "Valor", "Vigencia", "Fuente", "Estado", ""].map((h) => (
                     <th
                       key={h}
-                      className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3"
+                      className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                     >
                       {h}
                     </th>
@@ -214,7 +214,7 @@ export default function AdminParametrosPage() {
                     >
                       <td className="px-4 py-3">
                         <span className="text-sm font-medium text-foreground">{p.nombre}</span>
-                        <span className="block text-[13px] font-mono text-muted-foreground mt-0.5">
+                        <span className="block estela-dato text-[13px] text-muted-foreground mt-0.5">
                           {p.codigo}
                         </span>
                       </td>
@@ -249,7 +249,7 @@ export default function AdminParametrosPage() {
                             Histórico
                           </span>
                         ) : esReferenciaSinConfirmar(p) ? (
-                          <span className="status-badge bg-warning/10 text-warning">
+                          <span className="status-badge bg-warning/15 text-warning-ink">
                             Sin confirmar
                           </span>
                         ) : (
@@ -310,7 +310,7 @@ export default function AdminParametrosPage() {
                   value={form.codigo}
                   onChange={(e) => setForm({ ...form, codigo: e.target.value })}
                   placeholder="uma_diaria"
-                  className="font-mono"
+                  className="estela-dato"
                 />
               </div>
               <div className="space-y-1.5">

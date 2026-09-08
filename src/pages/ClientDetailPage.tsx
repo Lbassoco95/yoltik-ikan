@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Shield, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -23,6 +23,11 @@ import {
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import { EstructuraSocietaria } from "@/components/clientes/EstructuraSocietaria";
 import { Identificacion } from "@/components/clientes/Identificacion";
+import {
+  ETIQUETA_ESTADO,
+  verificacionesDeCliente,
+} from "@/lib/api/verificacion";
+import { TONO_ESTADO } from "@/lib/verificacion-labels";
 import { AprobacionReforzada } from "@/components/clientes/AprobacionReforzada";
 import { listarOperacionesDeCliente } from "@/lib/api/operaciones";
 import {
@@ -54,6 +59,15 @@ import { estaBloqueado, indicadorDeSanciones } from "@/lib/riesgo/sanciones";
 import { faltaSubdivision, paisDelDomicilio } from "@/lib/riesgo/subdivision";
 import { banderaBandaDeUmbral, umbralDelActo } from "@/lib/riesgo/tramos";
 import { cn, formatMxn } from "@/lib/utils";
+
+/** Campos que se cotejan contra un documento oficial y por eso van en ancho
+ *  fijo. El nombre no: un nombre se lee, no se coteja carácter por carácter. */
+const DATO_DE_EXPEDIENTE = new Set([
+  "RFC",
+  "CURP",
+  "País de residencia",
+  "Teléfono",
+]);
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM } from "@/lib/parametros";
 import type { SectorAV, TipoPersona } from "@/types/domain";
@@ -71,8 +85,8 @@ const tipoLabel: Record<TipoPersona, string> = {
 };
 
 const riesgoClase: Record<"bajo" | "medio" | "alto", string> = {
-  bajo: "text-jade",
-  medio: "text-warning",
+  bajo: "text-success",
+  medio: "text-warning-ink",
   alto: "text-destructive",
 };
 
@@ -126,6 +140,52 @@ export default function ClientDetailPage() {
 
   // La calificación vigente. Sin esto, reabrir el expediente mostraba la matriz
   // en blanco como si nadie hubiera evaluado a este compareciente.
+  /**
+   * Qué resolvió Didit sobre esta persona.
+   *
+   * Ya se consultaba —dentro de la pestaña «Identificación»—, pero la
+   * respuesta a «¿es quien dice ser?» es la pregunta más básica que tiene un
+   * expediente, y estaba a dos clics de distancia: quien abría la ficha de un
+   * compareciente verificado veía exactamente lo mismo que en la de uno sin
+   * verificar. Ahora el estado sale en la cabecera y desde ahí se entra al
+   * detalle.
+   *
+   * Misma `queryKey` que la de `Identificacion`: react-query las une y no hay
+   * una segunda consulta.
+   */
+  const { data: verificaciones = [] } = useQuery({
+    queryKey: ["verificaciones-cliente", id],
+    queryFn: () => verificacionesDeCliente(id!),
+    enabled: Boolean(id),
+  });
+  const identidad = verificaciones[0] ?? null;
+
+  /**
+   * El apartado abierto, y en la URL.
+   *
+   * Sin esto no había forma de mandar a alguien directo a la identificación de
+   * un compareciente: cualquier enlace al expediente caía siempre en «Datos
+   * generales» y había que decirle «y ahora haz clic en Identificación». Con
+   * el apartado en la URL, la lista de comparecientes y el módulo de identidad
+   * llevan al sitio exacto, y la dirección se puede pegar en un correo.
+   */
+  const [parametrosUrl, setParametrosUrl] = useSearchParams();
+  const pestana = parametrosUrl.get("apartado") ?? "datos";
+  const setPestana = (valor: string) => {
+    setParametrosUrl(
+      (previos) => {
+        const siguientes = new URLSearchParams(previos);
+        if (valor === "datos") siguientes.delete("apartado");
+        else siguientes.set("apartado", valor);
+        return siguientes;
+      },
+      // Cambiar de apartado no es navegar: si empujara al historial, el botón
+      // de volver del navegador recorrería las pestañas una a una en vez de
+      // salir del expediente.
+      { replace: true },
+    );
+  };
+
   const { data: evaluacion } = useQuery({
     queryKey: ["evaluacion", id],
     queryFn: () => ultimaEvaluacion(id!),
@@ -499,9 +559,11 @@ export default function ClientDetailPage() {
         <ArrowLeft className="w-4 h-4" /> {L.volverAClientes}
       </Link>
 
-      <div className="glass-card p-6">
+      {/* El filo jade: esta tarjeta es la identidad del expediente, no una
+          tarjeta más de la pila. */}
+      <div className="estela-filo estela-placa border-t-accent p-5">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="estela-titulo text-xl font-extrabold tracking-tight text-foreground">
             {client.nombre_razon_social}
           </h1>
           <div className="text-right shrink-0">
@@ -515,14 +577,43 @@ export default function ClientDetailPage() {
                 : "Sin matriz aplicada"}
             </p>
             {evaluacion?.motivo_alto_de_oficio && (
-              <p className="text-[13px] text-destructive mt-0.5 max-w-xs">
+              <p className="mt-0.5 max-w-xs text-[13px] text-destructive">
                 {evaluacion.motivo_alto_de_oficio}
               </p>
             )}
+
+            {/* La identidad, en la cabecera. Es un botón y no una insignia:
+                lleva al apartado donde está lo que Didit resolvió —documento,
+                prueba de vida, cotejo facial, listas—, que es lo que alguien
+                quiere ver justo después de leer que está verificada. */}
+            {client.tipo_persona === "fisica" && (
+              <button
+                type="button"
+                onClick={() => setPestana("identificacion")}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-sm text-[13px] transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="estela-antetitulo text-muted-foreground">
+                  Identidad
+                </span>
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-semibold",
+                    identidad
+                      ? TONO_ESTADO[identidad.estado]
+                      : "bg-warning/15 text-warning-ink",
+                  )}
+                >
+                  {identidad
+                    ? ETIQUETA_ESTADO[identidad.estado]
+                    : "Sin verificar"}
+                </span>
+              </button>
+            )}
           </div>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          {tipoLabel[client.tipo_persona]} · {client.rfc ?? "sin RFC"} ·{" "}
+        <p className="mt-2 text-sm text-muted-foreground">
+          {tipoLabel[client.tipo_persona]} ·{" "}
+          <span className="estela-dato">{client.rfc ?? "sin RFC"}</span> ·{" "}
           <span title={DETALLE_NIVEL[client.nivel_kyc]}>
             {nivelConocimiento(client.tipo_persona, client.nivel_kyc)} ·{" "}
             {ETIQUETA_NIVEL[client.nivel_kyc]}
@@ -533,19 +624,36 @@ export default function ClientDetailPage() {
             </span>
           )}
         </p>
+        {/* El cambio de nivel de diligencia.
+            El HECHO le sirve al notario —su compareciente pasó a diligencia
+            reforzada y eso cambia lo que tiene que pedirle—. El MOTIVO, no:
+            lo que hay guardado es la nota de la puesta al día de la Adenda,
+            escrita para nosotros y con nuestro vocabulario («valor por
+            omisión anterior», «instrucción 42»). Que un notario abra el
+            expediente de su cliente y se encuentre nuestras notas internas de
+            migración es enseñarle la trastienda.
+            Sigue estando, a un clic, porque es un registro de cumplimiento y
+            alguien puede tener que justificar el cambio. */}
         {cambioNivel && (
-          <p className="text-[13px] text-muted-foreground mt-1 max-w-2xl">
-            {cambioNivel.automatico ? "Subió" : "Se movió"} de{" "}
-            {cambioNivel.desde} a {cambioNivel.hacia} el{" "}
-            {new Date(cambioNivel.registrado_en).toLocaleDateString("es-MX")}:{" "}
-            {cambioNivel.motivo}
-            {!cambioNivel.automatico && " (decisión firmada)"}
-          </p>
+          <details className="group mt-1.5 max-w-2xl">
+            <summary className="cursor-pointer list-none text-[13px] text-muted-foreground marker:content-none">
+              {cambioNivel.automatico ? "Subió" : "Se movió"} de{" "}
+              {cambioNivel.desde} a {cambioNivel.hacia} el{" "}
+              {new Date(cambioNivel.registrado_en).toLocaleDateString("es-MX")}
+              {!cambioNivel.automatico && " · decisión firmada"}
+              <span className="ml-1.5 font-semibold text-accent group-open:hidden">
+                Ver motivo
+              </span>
+            </summary>
+            <p className="mt-1.5 border-l-2 border-border pl-3 text-[13px] leading-relaxed text-muted-foreground">
+              {cambioNivel.motivo}
+            </p>
+          </details>
         )}
       </div>
 
-      <Tabs defaultValue="datos" className="space-y-4">
-        <TabsList className="bg-muted/50">
+      <Tabs value={pestana} onValueChange={setPestana} className="space-y-4">
+        <TabsList>
           <TabsTrigger value="datos">Datos generales</TabsTrigger>
           {/* La pestaña existe si la organización tiene una plantilla vigente
               para su sector, no según el perfil de actividad. Así no hay que
@@ -584,7 +692,7 @@ export default function ClientDetailPage() {
               siempre sería un campo libre que nadie sabe rellenar; ofrecer sólo
               las que tienen nivel la convierte en una pregunta contestable. */}
           {paisDomicilio && exigenSubdivision?.has(paisDomicilio) && (
-            <div className="glass-card p-6 space-y-3">
+            <div className="estela-placa p-6 space-y-3">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">
                   Subdivisión del domicilio
@@ -629,7 +737,9 @@ export default function ClientDetailPage() {
             </div>
           )}
 
-          <div className="glass-card p-6 grid grid-cols-2 gap-6">
+          {/* Dos columnas fijas: en un teléfono cada campo quedaba en 150 px
+              y un RFC no cabe. Se reparte a partir de sm. */}
+          <div className="estela-placa grid grid-cols-1 gap-x-6 gap-y-5 p-5 sm:grid-cols-2">
             {[
               {
                 label: "Nombre / Razón social",
@@ -657,11 +767,18 @@ export default function ClientDetailPage() {
                 value: (kyc.origen_recursos as string) ?? "N/A",
               },
             ].map((f) => (
+              // Los identificadores —RFC, CURP— van en ancho fijo: son lo que
+              // se coteja contra la identificación oficial, carácter por
+              // carácter, y en tipografía proporcional una O y un 0 se
+              // parecen demasiado para ese trabajo.
               <div key={f.label}>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {f.label}
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
+                <p className="estela-antetitulo text-muted-foreground">{f.label}</p>
+                <p
+                  className={cn(
+                    "mt-1 text-sm font-medium text-foreground",
+                    DATO_DE_EXPEDIENTE.has(f.label) && "estela-dato",
+                  )}
+                >
                   {f.value}
                 </p>
               </div>
@@ -672,13 +789,13 @@ export default function ClientDetailPage() {
         {plantilla && (
           <TabsContent value="matriz">
             {!plantilla ? (
-              <div className="glass-card p-6 text-sm text-muted-foreground">
+              <div className="estela-placa p-6 text-sm text-muted-foreground">
                 Esta organización no tiene una matriz de riesgo vigente.
               </div>
             ) : (
               <div className="space-y-4">
                 {elementos.map((el) => (
-                  <div key={el.codigo} className="glass-card p-5">
+                  <div key={el.codigo} className="estela-placa p-5">
                     <p className="text-sm font-semibold text-foreground mb-3">
                       {el.nombre}
                     </p>
@@ -715,7 +832,7 @@ export default function ClientDetailPage() {
                                 {v.pregunta}
                               </span>
                               {sinCatalogo && (
-                                <p className="text-[13px] mt-0.5 text-warning">
+                                <p className="text-[13px] mt-0.5 text-warning-ink">
                                   No califica todavía: la lista interna «
                                   {v.requiere_catalogo}» está vacía. La variable
                                   queda fuera del puntaje hasta que Cumplimiento
@@ -735,7 +852,7 @@ export default function ClientDetailPage() {
                                   className={cn(
                                     "text-[13px] mt-0.5",
                                     sugerida!.por_defecto
-                                      ? "text-warning"
+                                      ? "text-warning-ink"
                                       : "text-accent",
                                   )}
                                 >
@@ -813,7 +930,7 @@ export default function ClientDetailPage() {
                   responde y la matriz no se puede cerrar. Decirlo evita que
                   alguien lo lea como un campo que se le olvidó contestar. */}
                 {!listasCargadas && (
-                  <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <div className="estela-placa p-4 border-l-4 border-l-warning">
                     <p className="text-sm text-muted-foreground">
                       Cargando el snapshot de listas del GAFI. El riesgo país no
                       se responde hasta que llegue: sin las listas, cualquier
@@ -824,7 +941,7 @@ export default function ClientDetailPage() {
 
                 {/* Los puntos que suman FUERA de la escala de magnitud. */}
                 {bandera && (
-                  <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <div className="estela-placa p-4 border-l-4 border-l-warning">
                     <p className="text-sm font-semibold text-foreground">
                       Operación en banda de umbral · +{bandera.puntos} puntos
                     </p>
@@ -839,7 +956,7 @@ export default function ClientDetailPage() {
                   y sin la subdivisión el expediente se está calificando con la
                   mitad del dato. */}
                 {subdivisionFalta && paisDomicilio && (
-                  <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <div className="estela-placa p-4 border-l-4 border-l-warning">
                     <p className="text-sm font-semibold text-foreground">
                       Falta la subdivisión del domicilio
                     </p>
@@ -854,7 +971,7 @@ export default function ClientDetailPage() {
                 {subdivisionDelCliente && (
                   <div
                     className={cn(
-                      "glass-card p-4 border-l-4",
+                      "estela-placa p-4 border-l-4",
                       subdivisionDelCliente.nivel_territorial === "prohibicion"
                         ? "border-l-destructive"
                         : "border-l-warning",
@@ -876,7 +993,7 @@ export default function ClientDetailPage() {
                   procede es detenerse y escalar. Por eso va antes que todo lo
                   demás y no se mezcla con el puntaje. */}
                 {bloqueado && riesgoSanciones && (
-                  <div className="glass-card p-4 border-l-4 border-l-destructive">
+                  <div className="estela-placa p-4 border-l-4 border-l-destructive">
                     <p className="text-sm font-semibold text-destructive">
                       Jurisdicción bajo embargo — no continuar sin escalar
                     </p>
@@ -892,7 +1009,7 @@ export default function ClientDetailPage() {
 
                 {/* El nivel 2: piso de banda alta, sin bloqueo. */}
                 {!bloqueado && levantaPiso && riesgoSanciones && (
-                  <div className="glass-card p-4 border-l-4 border-l-warning">
+                  <div className="estela-placa p-4 border-l-4 border-l-warning">
                     <p className="text-sm font-semibold text-foreground">
                       País bajo régimen de sanciones
                     </p>
@@ -913,7 +1030,7 @@ export default function ClientDetailPage() {
                   está fijado —la variable de país no tiene clave para él— y
                   poner un número inventado sería peor que no puntuarlo. */}
                 {!bloqueado && !levantaPiso && riesgoSanciones && (
-                  <div className="glass-card p-4 border-l-4 border-l-muted">
+                  <div className="estela-placa p-4 border-l-4 border-l-muted">
                     <p className="text-sm font-semibold text-foreground">
                       Jurisdicción en atención
                     </p>
@@ -934,7 +1051,7 @@ export default function ClientDetailPage() {
                   reforzada: la escala lo agrupa con la lista gris y aquí se
                   separa, porque el flujo no puede agruparlos. */}
                 {indicadores.GAFI_LLAMADO_ACCION && (
-                  <div className="glass-card p-4 border-l-4 border-l-destructive">
+                  <div className="estela-placa p-4 border-l-4 border-l-destructive">
                     <p className="text-sm font-semibold text-foreground">
                       País bajo llamado a la acción del GAFI
                     </p>
@@ -947,7 +1064,7 @@ export default function ClientDetailPage() {
                   </div>
                 )}
 
-                <div className="glass-card p-4 flex items-center justify-between gap-4">
+                <div className="estela-placa p-4 flex items-center justify-between gap-4">
                   <p className="text-sm text-muted-foreground">
                     {completa ? (
                       <>
@@ -984,14 +1101,14 @@ export default function ClientDetailPage() {
                           muestra real. Presentarlos como definitivos es justo
                           lo que la Adenda pide no hacer. */}
                         {preview!.provisional && (
-                          <span className="block text-warning mt-1">
+                          <span className="block text-warning-ink mt-1">
                             Clasificación provisional: los cortes de la escala
                             todavía no se han calibrado contra una muestra real
                             de expedientes.
                           </span>
                         )}
                         {preview!.variables_sin_catalogo.length > 0 && (
-                          <span className="block text-warning mt-1">
+                          <span className="block text-warning-ink mt-1">
                             {preview!.variables_sin_catalogo.length} variable(s)
                             quedaron fuera del puntaje por falta de su lista
                             interna.
@@ -1022,7 +1139,7 @@ export default function ClientDetailPage() {
                                 : `Faltan ${lista.length}`}
                             </strong>{" "}
                             — {lista.map((f) => f.pregunta).join(" · ")}.{" "}
-                            <span className="text-warning">
+                            <span className="text-warning-ink">
                               {ACCION_POR_MOTIVO[motivo]}
                             </span>
                           </span>
@@ -1059,10 +1176,10 @@ export default function ClientDetailPage() {
         </TabsContent>
 
         <TabsContent value="operaciones">
-          <div className="glass-card overflow-hidden">
+          <div className="estela-placa overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted/50">
                   {[
                     "Fecha",
                     esNotarias ? "Tipo de acto" : "Tipo",
@@ -1072,7 +1189,7 @@ export default function ClientDetailPage() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                      className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                     >
                       {h}
                     </th>
@@ -1108,7 +1225,7 @@ export default function ClientDetailPage() {
                     </td>
                     <td className="px-4 py-3">
                       {op.requiere_aviso ? (
-                        <span className="status-badge bg-warning/10 text-warning">
+                        <span className="status-badge bg-warning/15 text-warning-ink">
                           Sí
                         </span>
                       ) : (

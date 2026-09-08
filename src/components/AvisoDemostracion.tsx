@@ -19,16 +19,31 @@ export function AvisoDemostracion() {
   return (
     <div
       role="status"
-      className="bg-warning/15 border-b border-warning/40 px-4 sm:px-6 py-2 flex items-start gap-2.5 text-sm"
+      // ESTELA: la barra va sobre el navy de la cabecera con el ámbar como
+      // filo inferior, no como fondo. Un ámbar a página completa compite con
+      // el ámbar de «lo que le toca atender» que hay dentro de la pantalla, y
+      // entonces ninguno de los dos señala nada. El distintivo DEMO concentra
+      // el color en 40 px y la barra se lee sin gritar.
+      className="flex items-start gap-2.5 border-b-2 border-ikan-ambar bg-gradient-to-r from-ikan-navy-claro to-ikan-navy px-4 py-2 text-sm sm:px-6"
     >
-      <FlaskConical className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
-      <p className="text-foreground min-w-0">
-        <strong className="font-semibold">Entorno de demostración.</strong>{" "}
-        <span className="text-muted-foreground">
-          Todo funciona igual que en producción, pero los datos son de prueba y los avisos que
-          se generen aquí <strong className="text-foreground font-medium">no pueden firmarse
-          ni presentarse al SAT</strong>. Al contratar, esta información se retira y la
-          bitácora se conserva.
+      <span className="mt-px shrink-0 rounded-sm bg-ikan-ambar px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-ikan-navy">
+        Demo
+      </span>
+      <FlaskConical
+        className="mt-0.5 h-4 w-4 shrink-0 text-ikan-ambar"
+        aria-hidden
+      />
+      <p className="min-w-0 text-ikan-hielo">
+        <strong className="font-semibold text-white">
+          Entorno de demostración.
+        </strong>{" "}
+        <span className="text-ikan-hielo/75">
+          Todo funciona igual que en producción, pero los datos son de prueba y
+          los avisos que se generen aquí{" "}
+          <strong className="font-semibold text-white">
+            no pueden firmarse ni presentarse al SAT
+          </strong>
+          . Al contratar, esta información se retira y la bitácora se conserva.
         </span>
       </p>
     </div>

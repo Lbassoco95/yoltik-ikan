@@ -15,7 +15,11 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", "system-ui", "sans-serif"],
+        sans: ["'Sora'", "system-ui", "sans-serif"],
+        // El dato de expediente —RFC, folio, hash, importe, sello de tiempo—
+        // va en ancho fijo: es lo que deja cotejarlo carácter por carácter
+        // contra el documento oficial.
+        mono: ["'JetBrains Mono'", "ui-monospace", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -46,6 +50,9 @@ export default {
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+          /* `text-warning-ink` para texto; `bg-warning` para relleno. Son
+             colores distintos a propósito: ver la nota en index.css. */
+          ink: "hsl(var(--warning-ink))",
         },
         success: {
           DEFAULT: "hsl(var(--success))",
@@ -70,11 +77,24 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
           muted: "hsl(var(--sidebar-muted))",
         },
+        /* Paleta ESTELA en hex literal. Los tokens HSL de arriba son el
+           sistema semántico (lo accionable, lo que urge, lo roto); éstos son
+           la marca cuando hace falta nombrarla directa —la cenefa, el sello,
+           el cartucho—. No mezclar: si existe el token semántico, gana él. */
         ikan: {
-          navy: "hsl(var(--navy, 218 60% 12%))",
-          jade: "hsl(var(--jade, 165 80% 32%))",
-          mint: "hsl(160 60% 88%)",
-          ambar: "hsl(38 92% 50%)",
+          navy: "#0C2340",
+          "navy-base": "#071525",   // fondo del modo oscuro
+          "navy-claro": "#0F2A4D",  // arranque del degradado de la barra
+          jade: "#00917C",          // lo que se puede hacer
+          "jade-oscuro": "#006B5B", // sellos, cantos tallados, firma de célula
+          verde: "#2A7F62",         // lo que está en orden
+          mint: "#1DDBA8",          // realce puntual: nunca un relleno ni un fondo
+          ambar: "#F0A500",         // lo que le toca atender: uno por pantalla
+          hielo: "#F0F5F4",         // papel
+          gris: "#6B8C87",          // metadato, cita legal, texto secundario
+          barro: "#8C3B2E",         // vencido / irreversible: uno por vista
+          borde: "#DCE7E4",
+          "borde-oscuro": "#1B3A5C",
         },
       },
       borderRadius: {

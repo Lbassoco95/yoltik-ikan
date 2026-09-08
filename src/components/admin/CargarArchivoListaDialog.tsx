@@ -150,8 +150,8 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           </div>
 
           {fuente && !soportada && (
-            <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+            <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
               <span>
                 <strong>Todavía no hay lector para «{fuente.nombre}».</strong> Su formato es XML
                 y su parser es un trabajo aparte. Por ahora sólo se pueden cargar los listados
@@ -169,7 +169,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) void analizar(f); }}
               />
               <p className="text-[13px] text-muted-foreground mt-1">
-                Los listados del SAT vienen con extensión <span className="font-mono">.xls</span>{" "}
+                Los listados del SAT vienen con extensión <span className="estela-dato">.xls</span>{" "}
                 pero son CSV. Súbelos tal cual los descargaste, sin abrirlos ni reguardarlos en
                 Excel: al hacerlo cambia la codificación y se pierden los acentos.
               </p>
@@ -177,13 +177,13 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           )}
 
           {errorAnalisis && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               <strong>No se pudo leer el archivo.</strong> {errorAnalisis}
             </div>
           )}
 
           {analisis && (
-            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+            <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4">
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
                 <span className="font-semibold">{analisis.articulo}</span>
                 <span className="text-muted-foreground">
@@ -230,7 +230,7 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
 
               {analisis.descartadas.length > 0 && (
                 <div className="text-xs space-y-1 border-t border-border pt-2">
-                  <p className="text-warning font-medium">
+                  <p className="text-warning-ink font-medium">
                     {analisis.descartadas.length} filas no se pudieron interpretar y no se cargarán:
                   </p>
                   <ul className="text-muted-foreground space-y-0.5 max-h-28 overflow-y-auto">

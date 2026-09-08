@@ -109,7 +109,7 @@ export function SelectCatalogo({
                       <span className="flex-1">{v.descripcion}</span>
                       {/* Al margen y en pequeño: sirve para depurar un aviso
                           rechazado, no para elegir. */}
-                      <span className="ml-2 font-mono text-[11px] text-muted-foreground shrink-0">
+                      <span className="ml-2 estela-dato text-[11px] text-muted-foreground shrink-0">
                         {v.clave}
                       </span>
                     </CommandItem>
@@ -127,7 +127,7 @@ export function SelectCatalogo({
             onChange={(e) => onChange(e.target.value.trim().toUpperCase())}
           />
           {!cargando && (
-            <p className="text-[13px] text-warning mt-1">
+            <p className="text-[13px] text-warning-ink mt-1">
               DEMO — sin integración real: el catálogo de la UIF todavía no está cargado en Ikán,
               así que la clave se captura a mano. La carga Kawiil desde la consola de plataforma.
             </p>

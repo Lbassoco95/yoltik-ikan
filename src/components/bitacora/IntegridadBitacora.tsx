@@ -125,7 +125,7 @@ export function IntegridadBitacora({
   const integra = resultado?.integra === true && roturasBase?.length === 0;
 
   return (
-    <div className="glass-card p-5 space-y-4">
+    <div className="estela-placa p-5 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 mt-0.5 text-primary shrink-0" />
@@ -206,7 +206,7 @@ export function IntegridadBitacora({
 
       {resultado && (
         <div
-          className={`rounded-lg p-3 ${integra ? "bg-success/10" : "bg-destructive/10"}`}
+          className={`rounded-md p-3 ${integra ? "bg-success/10" : "bg-destructive/10"}`}
         >
           <div className="flex items-center gap-2">
             {integra ? (
@@ -251,7 +251,7 @@ export function IntegridadBitacora({
                   "text-[13px] mt-2 ml-6",
                   resultado.cubiertoHasta >= resultado.eventosVerificados
                     ? "text-success"
-                    : "text-warning",
+                    : "text-warning-ink",
                 )}
               >
                 {advertenciaDeAlcance(resultado)}
@@ -315,7 +315,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
   }
 
   return (
-    <div className="rounded-lg border">
+    <div className="rounded-md border">
       {/* El contenedor redondeado recortaba el desbordamiento: en un teléfono
           se perdían columnas sin manera de llegar a ellas. El scroll va en un
           div propio, dentro del borde. */}
@@ -336,7 +336,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
           <tbody>
             {anclajes.map((a) => (
               <tr key={a.id} className="border-t border-border">
-                <td className="px-3 py-2 text-xs font-mono">
+                <td className="px-3 py-2 text-xs estela-dato">
                   {a.desde_secuencia}–{a.hasta_secuencia}
                 </td>
                 <td className="px-3 py-2 text-xs">{MOTIVO_LABEL[a.motivo]}</td>
@@ -360,7 +360,7 @@ function Anclajes({ anclajes }: { anclajes: AnclajeListado[] }) {
                   </span>
                 </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">
-                  <span className="font-mono">
+                  <span className="estela-dato">
                     {a.bloque_btc?.toLocaleString("es-MX") ?? "—"}
                   </span>
                   {a.fecha_bloque && (
@@ -434,7 +434,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
   return (
     <div
       className={cn(
-        "rounded-lg p-3",
+        "rounded-md p-3",
         confirmado
           ? "bg-success/10"
           : pendiente
@@ -448,7 +448,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
         ) : pendiente ? (
           <Clock className="w-4 h-4 mt-0.5 text-primary shrink-0" />
         ) : (
-          <AlertTriangle className="w-4 h-4 mt-0.5 text-warning shrink-0" />
+          <AlertTriangle className="w-4 h-4 mt-0.5 text-ikan-ambar shrink-0" />
         )}
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">
@@ -500,7 +500,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
           </p>
 
           {ancla.eventos_sin_anclar > 0 && (
-            <p className="text-[13px] text-warning">
+            <p className="text-[13px] text-warning-ink">
               {ancla.eventos_sin_anclar.toLocaleString("es-MX")} evento
               {ancla.eventos_sin_anclar === 1 ? "" : "s"} sin cobertura externa:
               son los posteriores al último anclaje. El anclaje corre a diario y
@@ -509,7 +509,7 @@ function EstadoDelAncla({ ancla }: { ancla: EstadoAnclaje | null }) {
           )}
 
           {ancla.raiz_merkle && (
-            <p className="text-[13px] font-mono text-muted-foreground break-all">
+            <p className="estela-dato text-[13px] text-muted-foreground break-all">
               raíz {ancla.raiz_merkle}
             </p>
           )}
@@ -529,12 +529,12 @@ function Dato({
   mono?: boolean;
 }) {
   return (
-    <div className="rounded-lg bg-muted/40 p-3">
+    <div className="rounded-md bg-muted/40 p-3">
       <p className="text-[13px] text-muted-foreground uppercase tracking-wider">
         {etiqueta}
       </p>
       <p
-        className={`text-sm font-semibold text-foreground mt-0.5 ${mono ? "font-mono" : ""}`}
+        className={`text-sm font-semibold text-foreground mt-0.5 ${mono ? "estela-dato" : ""}`}
       >
         {valor}
       </p>

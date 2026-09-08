@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,7 +18,6 @@ import AlertsPage from "@/pages/AlertsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import ListsPage from "@/pages/ListsPage";
 import RulesEnginePage from "@/pages/RulesEnginePage";
-import VerificationPage from "@/pages/VerificationPage";
 import AuditPage from "@/pages/AuditPage";
 import ConfigPage from "@/pages/ConfigPage";
 import MatrizRiesgoPage from '@/pages/MatrizRiesgoPage';
@@ -88,13 +87,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              {/* Identidad se fundió con Comparecientes: era una segunda lista
+                  del mismo padrón, y quien quería saber si alguien estaba
+                  verificado tenía dos sitios donde mirar. La ruta se conserva
+                  redirigiendo porque hay enlaces guardados y correos con ella;
+                  un 404 en su lugar haría pensar que la función desapareció. */}
               <Route
                 path="/verificacion"
-                element={
-                  <ProtectedRoute requireAnyRole={['operador', 'oc']}>
-                    <VerificationPage />
-                  </ProtectedRoute>
-                }
+                element={<Navigate to="/clientes" replace />}
               />
               <Route
                 path="/alertas"

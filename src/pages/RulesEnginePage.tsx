@@ -1,9 +1,13 @@
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, BadgeCheck, CircleDashed, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 import { cn, formatMxn } from "@/lib/utils";
 import { useParametros } from "@/hooks/useParametros";
 import { PARAM, esReferenciaSinConfirmar } from "@/lib/parametros";
+import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
+import { CartuchoParametro } from "@/components/estela/CartuchoParametro";
+import { EstadoVacio } from "@/components/estela/EstadoVacio";
 
 // Estas dos secciones siguen siendo maqueta del scaffold: el Motor PLD real
 // evalúa `tipologia_av.regla_dsl`, no estos interruptores. Conectarlas a las
@@ -51,127 +55,142 @@ export default function RulesEnginePage() {
   })).filter((f) => f.param != null);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Motor de Reglas</h1>
+    <div className="space-y-5 animate-fade-in">
+      {/* ESTELA pide aquí un <SelloVigencia> con el número de versión del
+          juego de umbrales. No lo lleva: `parametro_regulatorio` versiona cada
+          parámetro por su vigencia, uno a uno, y no hay una versión del
+          conjunto que estampar. Poner un «VERSIÓN 4» inventado en la pantalla
+          que precisamente sirve para comprobar cifras sería la peor de las
+          licencias. El sello sí va en Matriz de riesgo, que sí versiona.
+          TODO[Sprint D-2]: si Dirección quiere versionar el juego completo,
+          nace en la base y el sello aparece solo. */}
+      <EncabezadoSeccion
+        titulo="Motor de reglas"
+        descripcion="Los umbrales con los que el motor decide, cada uno con la fuente que lo sostiene."
+      />
 
-      {/* UMA vigente — dato real con su fuente */}
-      <div className="glass-card p-4">
-        {isLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" /> Cargando parámetros regulatorios…
-          </div>
-        ) : isError ? (
-          <p className="text-sm text-destructive">
-            No se pudieron leer los parámetros regulatorios: {(error as Error)?.message}
-          </p>
-        ) : uma ? (
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-sm font-semibold text-foreground">UMA vigente:</span>
-            <span className="text-sm font-mono font-semibold text-accent">
-              {formatMxn(uma.valor_numerico, true)}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              desde el {new Date(uma.vigente_desde).toLocaleDateString("es-MX")} · {uma.fuente}
-              {uma.publicacion_dof ? ` · ${uma.publicacion_dof}` : ""}
-            </span>
-            {esReferenciaSinConfirmar(uma) && (
-              <span className="status-badge bg-warning/10 text-warning text-xs">
-                Pendiente de validación de Cumplimiento
-              </span>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-warning">
-            No hay una UMA vigente registrada. Cárgala en parámetros regulatorios antes de
-            operar: sin ella el motor no puede calcular umbrales.
-          </p>
-        )}
-      </div>
+      {/* La UMA. Ya salía con su fuente, pero desperdigada en una línea de
+          etiquetas sueltas; el cartucho es la forma que ESTELA le da a esto
+          mismo. */}
+      {isLoading ? (
+        <div className="estela-placa flex items-center gap-2 p-4 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Cargando parámetros regulatorios…
+        </div>
+      ) : isError ? (
+        <p className="rounded-md border border-destructive/30 bg-card p-4 text-sm text-destructive">
+          No se pudieron leer los parámetros regulatorios: {(error as Error)?.message}
+        </p>
+      ) : uma ? (
+        <div className="flex flex-wrap items-start gap-3">
+          <CartuchoParametro parametro={uma} titulo="UMA vigente" className="min-w-[280px] flex-1" />
+          {esReferenciaSinConfirmar(uma) && (
+            <Badge variant="warning" className="mt-1">
+              Pendiente de validación de Cumplimiento
+            </Badge>
+          )}
+        </div>
+      ) : (
+        <p className="rounded-md border border-warning/40 bg-warning/10 p-4 text-sm text-warning-ink">
+          No hay una UMA vigente registrada. Cárgala en parámetros regulatorios antes de
+          operar: sin ella el motor no puede calcular umbrales.
+        </p>
+      )}
 
-      {/* Umbrales — reales, desde parametro_regulatorio */}
-      <div className="glass-card p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-1">Umbrales vigentes</h2>
-        <p className="text-xs text-muted-foreground mb-4">
+      {/* Los umbrales. Antes eran una tabla de cinco columnas donde la fuente
+          era la última y quedaba recortada: la columna que justifica la cifra
+          era la primera en desaparecer al estrechar la ventana. En ESTELA cada
+          umbral es una fila con su cartucho, y la fuente va debajo de la cifra
+          —donde se lee— en vez de a su derecha. */}
+      <section className="estela-placa p-5">
+        <h2 className="m-0 text-base font-bold text-foreground">Umbrales vigentes</h2>
+        <p className="mb-4 mt-1 text-xs text-muted-foreground">
           Valores versionados con su fuente. Los edita un administrador de Kawiil; ninguna
           organización puede cambiarlos desde su propia consola.
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                {["Umbral", "Alcance", "En UMA", "Equivalente MXN", "Fuente"].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filas.map(({ param }) => (
-                <tr key={`${param!.codigo}-${param!.sector}`} className="border-b border-border last:border-0">
-                  <td className="px-4 py-4 text-sm font-medium text-foreground">
-                    {param!.nombre}
-                    {esReferenciaSinConfirmar(param) && (
-                      <span className="ml-2 status-badge bg-warning/10 text-warning text-xs">
-                        Sin confirmar
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-muted-foreground">
-                    {param!.sector === "*" ? "Todas las actividades" : `Fracción ${param!.sector}`}
-                  </td>
-                  <td className="px-4 py-4 text-sm font-mono">
-                    {param!.valor_numerico.toLocaleString("es-MX")} UMA
-                  </td>
-                  <td className="px-4 py-4 text-sm font-semibold">
-                    {umaMxn != null ? formatMxn(param!.valor_numerico * umaMxn) : "—"}
-                  </td>
-                  <td className="px-4 py-4 text-xs text-muted-foreground">{param!.fuente}</td>
-                </tr>
-              ))}
-              {filas.length === 0 && !isLoading && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                    No hay umbrales registrados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+
+        {filas.length === 0 && !isLoading ? (
+          <EstadoVacio
+            titulo="No hay umbrales registrados"
+            descripcion="Sin umbrales el motor no puede clasificar ninguna operación. Se cargan desde la consola de plataforma."
+          />
+        ) : (
+          <div className="space-y-2.5">
+            {filas.map(({ param }) => {
+              const sinConfirmar = esReferenciaSinConfirmar(param);
+              return (
+                <div
+                  key={`${param!.codigo}-${param!.sector}`}
+                  className="grid gap-4 rounded-md border border-border p-4 sm:grid-cols-[1.1fr_1.5fr_auto] sm:items-center"
+                >
+                  <div className="min-w-0">
+                    <p className="m-0 text-sm font-semibold text-foreground">{param!.nombre}</p>
+                    <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                      {param!.sector === "*"
+                        ? "Todas las actividades"
+                        : `Fracción ${param!.sector}`}
+                    </p>
+                  </div>
+
+                  <CartuchoParametro
+                    parametro={param!}
+                    titulo="Umbral"
+                    compacto
+                    equivalencia={
+                      umaMxn != null && param!.unidad === "uma"
+                        ? formatMxn(param!.valor_numerico * umaMxn)
+                        : undefined
+                    }
+                  />
+
+                  {/* El estado va en texto, no sólo en color: es la regla de la
+                      marca y aquí importa el doble, porque «sin confirmar»
+                      significa que esa cifra todavía no la coteja nadie. */}
+                  {sinConfirmar ? (
+                    <Badge variant="warning" className="h-fit gap-1 justify-self-start sm:justify-self-end">
+                      <CircleDashed className="h-3 w-3" aria-hidden /> Sin confirmar
+                    </Badge>
+                  ) : (
+                    <Badge variant="success" className="h-fit gap-1 justify-self-start sm:justify-self-end">
+                      <BadgeCheck className="h-3 w-3" aria-hidden /> Validado
+                    </Badge>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {parametros.some(esReferenciaSinConfirmar) && (
-          <p className="mt-3 text-[13px] text-warning">
+          <p className="mt-3 text-[13px] text-warning-ink">
             Los umbrales marcados «Sin confirmar» provienen de fuentes secundarias y todavía no
             los valida Kawiil-Cumplimiento contra el texto legal vigente.
           </p>
         )}
-      </div>
+      </section>
 
-      <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-        <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
-        <span>
-          <strong>DEMO — sin configuración real.</strong> Las dos secciones siguientes son maqueta:
-          el Motor PLD evalúa las reglas de <code>tipologia_av</code>, y estos interruptores no las
-          modifican. Conectarlas es trabajo pendiente.
+      <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ikan-ambar" />
+        <span className="text-foreground">
+          <strong>DEMO — sin configuración real.</strong> Las dos secciones
+          siguientes son una maqueta: el Motor PLD trabaja con las tipologías
+          configuradas por Kawiil, y estos interruptores no las modifican.
+          Conectarlas es trabajo pendiente.
         </span>
       </div>
 
       {/* Behavior Rules — maqueta */}
-      <div className="glass-card p-6 opacity-80">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Reglas de Comportamiento</h2>
-        <div className="space-y-4">
+      <div className="estela-placa p-5 opacity-80">
+        <h2 className="mb-4 text-base font-bold text-foreground">Reglas de comportamiento</h2>
+        <div className="space-y-3">
           {behaviorRules.map((rule) => (
-            <div key={rule.name} className="flex items-center gap-4 p-4 rounded-lg bg-muted/30">
+            <div key={rule.name} className="flex items-center gap-4 rounded-md bg-muted/40 p-4">
               <Switch checked={rule.active} disabled />
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">{rule.name}</p>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-xs text-muted-foreground w-24">Sensibilidad</span>
-                  <Slider defaultValue={[rule.sensitivity]} max={100} step={5} disabled className="flex-1 max-w-xs" />
-                  <span className="text-xs font-mono text-muted-foreground w-10">{rule.sensitivity}%</span>
+                <div className="mt-2 flex items-center gap-4">
+                  <span className="w-24 text-xs text-muted-foreground">Sensibilidad</span>
+                  <Slider defaultValue={[rule.sensitivity]} max={100} step={5} disabled className="max-w-xs flex-1" />
+                  <span className="estela-dato w-10 text-xs text-muted-foreground">{rule.sensitivity}%</span>
                 </div>
               </div>
             </div>
@@ -180,11 +199,11 @@ export default function RulesEnginePage() {
       </div>
 
       {/* Correlation Rules — maqueta */}
-      <div className="glass-card p-6 opacity-80">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Reglas de Correlación</h2>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="estela-placa p-5 opacity-80">
+        <h2 className="mb-4 text-base font-bold text-foreground">Reglas de correlación</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
           {correlationRules.map((rule) => (
-            <div key={rule.name} className="flex items-center gap-3 p-4 rounded-lg bg-muted/30">
+            <div key={rule.name} className="flex items-center gap-3 rounded-md bg-muted/40 p-4">
               <Switch checked={rule.active} disabled />
               <span className={cn("text-sm font-medium", rule.active ? "text-foreground" : "text-muted-foreground")}>
                 {rule.name}

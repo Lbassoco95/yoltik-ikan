@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -203,7 +204,7 @@ export default function OperationsPage() {
         // El texto lleva la cifra vigente, no una escrita a mano: si mañana
         // cambia el catálogo, cambia la etiqueta.
         etiqueta: `Alcanza el umbral de aviso (${umbralOperacionUma?.toLocaleString("es-MX")} UMA)`,
-        clase: "bg-warning/10 text-warning",
+        clase: "bg-warning/15 text-warning-ink",
       };
     return null;
   }
@@ -464,17 +465,16 @@ export default function OperationsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{L.operaciones}</h1>
-        <Button
-          className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
-          onClick={() => setDialogAbierto(true)}
-        >
-          <Plus className="w-4 h-4" /> {L.operacionNuevaBtn}
-        </Button>
-      </div>
+      <EncabezadoSeccion
+        titulo={L.operaciones}
+        acciones={
+          <Button className="gap-2" onClick={() => setDialogAbierto(true)}>
+            <Plus className="h-4 w-4" /> {L.operacionNuevaBtn}
+          </Button>
+        }
+      />
 
-      <div className="glass-card p-4">
+      <div className="estela-placa p-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -487,7 +487,7 @@ export default function OperationsPage() {
       </div>
 
       {esNotarias ? (
-        <div className="glass-card p-4">
+        <div className="estela-placa p-4">
           <p className="text-sm font-semibold text-foreground">
             Cuándo hay que avisar — fe pública
           </p>
@@ -499,7 +499,7 @@ export default function OperationsPage() {
             {SUPUESTOS_AVISO_XII.map((s) => {
               const umbral = s.codigo ? valorParam(s.codigo, "XII") : null;
               return (
-                <div key={s.concepto} className="rounded-lg bg-muted/40 p-3">
+                <div key={s.concepto} className="rounded-md bg-muted/40 p-3">
                   <p className="text-xs text-muted-foreground">{s.concepto}</p>
                   <p className="text-lg font-bold text-foreground">
                     {s.codigo === null
@@ -534,7 +534,7 @@ export default function OperationsPage() {
         </div>
       )}
 
-      <div className="glass-card overflow-x-auto">
+      <div className="estela-placa overflow-x-auto">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando operaciones…
@@ -546,7 +546,7 @@ export default function OperationsPage() {
         ) : (
           <table className="w-full min-w-[48rem]">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-border bg-muted/50">
                 {[
                   "Fecha",
                   esNotarias ? "Compareciente" : "Cliente",
@@ -565,7 +565,7 @@ export default function OperationsPage() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                    className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                   >
                     {h}
                   </th>
@@ -583,7 +583,7 @@ export default function OperationsPage() {
                     // —la columna "Requiere aviso" lleva el texto—: refuerza.
                     op.requiere_aviso || op.evaluada_en == null
                       ? "bg-warning/5"
-                      : "hover:bg-muted/30",
+                      : "hover:bg-muted/50",
                   )}
                 >
                   <td className="px-4 py-3 text-sm">
@@ -633,9 +633,9 @@ export default function OperationsPage() {
                         mirado" no son lo mismo, y confundirlos es lo que hacía
                         que un mes de actos sin evaluar se presentara en ceros. */}
                     {op.evaluada_en == null ? (
-                      <span className="status-badge bg-warning/10 text-warning">Sin evaluar</span>
+                      <span className="status-badge bg-warning/15 text-warning-ink">Sin evaluar</span>
                     ) : op.requiere_aviso ? (
-                      <span className="status-badge bg-warning/10 text-warning">Sí</span>
+                      <span className="status-badge bg-warning/15 text-warning-ink">Sí</span>
                     ) : (
                       <span className="text-sm text-muted-foreground">No</span>
                     )}
@@ -654,7 +654,7 @@ export default function OperationsPage() {
                                 naturales. El expediente puede estar completo y
                                 aun así no estar reportado. */}
                             {tipoActo && canalDeActo(tipoActo) === "declaranot" ? (
-                              <span className="status-badge bg-warning/10 text-warning">
+                              <span className="status-badge bg-warning/15 text-warning-ink">
                                 Por DeclaraNOT
                               </span>
                             ) : faltan === 0 ? (
@@ -662,7 +662,7 @@ export default function OperationsPage() {
                                 Completo
                               </span>
                             ) : (
-                              <span className="status-badge bg-warning/10 text-warning">
+                              <span className="status-badge bg-warning/15 text-warning-ink">
                                 Faltan {faltan}
                               </span>
                             )}
@@ -890,7 +890,7 @@ export default function OperationsPage() {
                 </>
               )}
 
-              <div className="flex items-start gap-2 rounded-lg border p-3">
+              <div className="flex items-start gap-2 rounded-md border p-3">
                 <input
                   id="pago-tercero"
                   type="checkbox"
@@ -979,17 +979,17 @@ export default function OperationsPage() {
           {esNotarias && (
             <div className="space-y-3">
               {canal === "declaranot" && (
-                <div className="rounded-lg bg-warning/10 p-3">
+                <div className="rounded-md bg-warning/10 p-3">
                   <p className="text-xs font-semibold text-foreground">
                     Este acto se presenta por DeclaraNOT, no por el SPPLD
                   </p>
-                  <p className="text-[13px] text-warning mt-1">{NOTA_CANALES}</p>
+                  <p className="text-[13px] text-warning-ink mt-1">{NOTA_CANALES}</p>
                 </div>
               )}
 
               {catalogosDelActo.length > 0 && (
-                <div className="rounded-lg bg-warning/10 p-3">
-                  <p className="text-[13px] text-warning">
+                <div className="rounded-md bg-warning/10 p-3">
+                  <p className="text-[13px] text-warning-ink">
                     DEMO — sin integración real: estos catálogos de la UIF todavía no están
                     cargados en Ikán ({catalogosDelActo.join(", ")}), así que sus claves se
                     capturan a mano. Los carga Kawiil desde la consola de plataforma.
@@ -998,7 +998,7 @@ export default function OperationsPage() {
               )}
 
               {form.tipo_acto && canal === "sppld" && (
-                <div className="rounded-lg border p-3 space-y-3">
+                <div className="rounded-md border p-3 space-y-3">
                   <p className="text-sm font-semibold text-foreground">
                     Expediente del acto — {labelTipoActo(form.tipo_acto)}
                   </p>
@@ -1046,7 +1046,7 @@ export default function OperationsPage() {
                 </Button>
               )}
               <Button
-                className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+                className="gap-2"
                 onClick={() => enviar()}
                 disabled={alta.isPending}
               >
@@ -1079,7 +1079,7 @@ export default function OperationsPage() {
               {/* Los actos anteriores a la 0036 nacieron sin estos dos datos, y
                   sin manera de completarlos después se quedarían para siempre
                   sin poder cerrar su matriz de riesgo. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border p-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-md border p-3">
                 <div>
                   <Label>Forma de pago</Label>
                   <Select
@@ -1146,7 +1146,7 @@ export default function OperationsPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+              className="gap-2"
               onClick={() => guardarExpediente.mutate()}
               disabled={guardarExpediente.isPending}
             >

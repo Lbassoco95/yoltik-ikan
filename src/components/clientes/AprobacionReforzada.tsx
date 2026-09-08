@@ -44,7 +44,12 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
   const [calidad, setCalidad] = useState<CalidadAprobacion | "">("");
   const [notas, setNotas] = useState("");
 
-  const { data: aprobacion, isLoading } = useQuery({
+  const {
+    data: aprobacion,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["aprobacion-expediente", clientId],
     queryFn: () => aprobacionDelExpediente(clientId),
   });
@@ -80,14 +85,47 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
 
   if (isLoading) {
     return (
-      <div className="glass-card p-5 flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="w-4 h-4 animate-spin" /> Cargando la aprobación…
+      <div className="estela-placa flex items-center gap-2 p-5 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Cargando la
+        aprobación…
+      </div>
+    );
+  }
+
+  /**
+   * El fallo de la consulta, dicho.
+   *
+   * No estaba contemplado, y era el peor sitio donde no contemplarlo. Si la
+   * consulta fallaba, react-query reintentaba tres veces con espera creciente
+   * —diez segundos largos de «Cargando la aprobación…»— y al agotarlas el
+   * componente seguía adelante con `aprobacion` en undefined, es decir,
+   * pintando exactamente lo mismo que si el expediente no estuviera aprobado.
+   *
+   * En un expediente reforzado esas dos cosas son opuestas: «no está aprobado»
+   * significa que hay que aprobarlo, y «no pudimos saberlo» significa que no
+   * se puede afirmar ninguna de las dos. Un producto de cumplimiento no puede
+   * enseñar la segunda como si fuera la primera.
+   */
+  if (isError) {
+    return (
+      <div className="estela-filo estela-placa border-t-destructive p-5">
+        <p className="m-0 text-sm font-semibold text-destructive">
+          No se pudo leer la aprobación de este expediente
+        </p>
+        <p className="m-0 mt-1 text-[13px] text-muted-foreground">
+          No es que falte la aprobación: es que no se pudo consultar. Vuelve a
+          cargar la página; si sigue igual, avisa a Kawiil antes de registrar
+          ningún acto de este compareciente.
+        </p>
+        <p className="estela-dato m-0 mt-2 text-xs text-muted-foreground">
+          {(error as Error)?.message}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="glass-card p-5 space-y-4">
+    <div className="estela-placa p-5 space-y-4">
       <div className="flex items-start gap-3">
         <ShieldCheck className="w-5 h-5 mt-0.5 text-primary shrink-0" />
         <div className="space-y-1">
@@ -106,9 +144,9 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
       </div>
 
       {vigente ? (
-        <div className="rounded-md border border-jade/30 bg-jade/5 p-3 space-y-1">
+        <div className="space-y-1 rounded-md border border-success/30 bg-success/5 p-3">
           <p className="text-sm font-medium text-foreground flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-jade" />
+            <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
             Aprobado y vigente
           </p>
           <p className="text-xs text-muted-foreground">
@@ -125,7 +163,7 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
             </p>
           )}
           {aprobacion?.autoaprobacion && (
-            <p className="text-xs text-warning">
+            <p className="text-xs text-warning-ink">
               Autoaprobación: quien aprobó es el Oficial de Cumplimiento
               designado o quien capturó el expediente. Fija responsabilidad y
               fecha, pero no es un segundo par de ojos, y por eso este
@@ -138,7 +176,7 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
       ) : (
         <div className="rounded-md border border-warning/40 bg-warning/5 p-3 space-y-1">
           <p className="text-sm font-medium text-foreground flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-warning" />
+            <AlertTriangle className="w-4 h-4 text-ikan-ambar" />
             {aprobacion?.aprobado_en
               ? "La aprobación dejó de cubrir"
               : "Sin aprobación: los actos están frenados"}
@@ -201,7 +239,7 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
           <Button
             onClick={() => aprobar.mutate()}
             disabled={!calidad || aprobar.isPending}
-            className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="gap-2"
           >
             {aprobar.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             {vigente ? "Volver a aprobar" : "Aprobar el expediente"}

@@ -244,7 +244,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             <span>Expediente del hallazgo</span>
-            <span className="font-mono text-xs text-muted-foreground">
+            <span className="estela-dato text-xs text-muted-foreground">
               {folio(hallazgo)}
             </span>
             <span className={cn('status-badge text-xs', ESTADO_CLASS[hallazgo.estado])}>
@@ -262,7 +262,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
         </DialogHeader>
 
         {!puedeEscribir && (
-          <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          <div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
             <span>
               Expediente en solo lectura. Cargar documentos, capturar notas y cambiar el estado
@@ -272,7 +272,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
         )}
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList>
             <TabsTrigger value="detalle">Detalle</TabsTrigger>
             <TabsTrigger value="documentos">
               Documentos{documentos.data?.length ? ` (${documentos.data.length})` : ''}
@@ -285,13 +285,13 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
             {contexto && (
               <div
                 className={cn(
-                  'rounded-lg border px-4 py-3 text-sm',
+                  'rounded-md border px-4 py-3 text-sm',
                   contexto.sin_linea_base
                     ? 'border-warning/40 bg-warning/10'
                     : 'border-border bg-muted/30',
                 )}
               >
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                <p className="estela-antetitulo text-muted-foreground mb-2">
                   Trayectoria del cliente al detectarse
                 </p>
 
@@ -315,7 +315,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                       'status-badge text-xs',
                       contexto.matriz_evaluada
                         ? 'bg-success/10 text-success'
-                        : 'bg-warning/10 text-warning',
+                        : 'bg-warning/15 text-warning-ink',
                     )}
                   >
                     {contexto.matriz_evaluada
@@ -327,7 +327,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                       'status-badge text-xs',
                       contexto.perfil_declarado
                         ? 'bg-muted text-muted-foreground'
-                        : 'bg-warning/10 text-warning',
+                        : 'bg-warning/15 text-warning-ink',
                     )}
                   >
                     {contexto.perfil_declarado
@@ -337,7 +337,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                 </div>
 
                 {!contexto.matriz_evaluada && (
-                  <p className="text-xs text-warning mt-2">
+                  <p className="text-xs text-warning-ink mt-2">
                     La debida diligencia está incompleta: evalúa su matriz antes de resolver.
                   </p>
                 )}
@@ -346,10 +346,10 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
 
             <div className="grid grid-cols-2 gap-4">
               <Campo label="Folio">
-                <span className="font-mono">{folio(hallazgo)}</span>
+                <span className="estela-dato">{folio(hallazgo)}</span>
               </Campo>
               <Campo label="Tipología">
-                <span className="font-mono">{hallazgo.tipologia_codigo}</span> ·{' '}
+                <span className="estela-dato">{hallazgo.tipologia_codigo}</span> ·{' '}
                 {hallazgo.tipologia_nombre}
               </Campo>
               <Campo label="Compareciente">
@@ -380,14 +380,14 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
             </div>
 
             {notaReferencia && (
-              <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+              <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
                 <strong>Nota de la regla:</strong> {notaReferencia}
               </div>
             )}
 
             {esMock && (
-              <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-warning" />
+              <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-ikan-ambar" />
                 <span>
                   <strong>DEMO — sin integración real.</strong> Este hallazgo usa datos simulados
                   (listas de riesgo o analítica on-chain como snapshot en BD).
@@ -452,7 +452,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
           {/* -------------------------- Documentos --------------------------- */}
           <TabsContent value="documentos" className="space-y-4 pt-4">
             {puedeEscribir && (
-              <div className="rounded-lg border border-dashed border-border p-4 space-y-2">
+              <div className="rounded-md border border-dashed border-border p-4 space-y-2">
                 <input
                   ref={inputArchivo}
                   type="file"
@@ -491,7 +491,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
                 {documentos.data.map((d) => (
                   <li
                     key={d.id}
-                    className="flex items-center gap-3 rounded-lg border border-border p-3"
+                    className="flex items-center gap-3 rounded-md border border-border p-3"
                   >
                     <FileText className="w-4 h-4 shrink-0 text-muted-foreground" />
                     <div className="min-w-0 flex-1">

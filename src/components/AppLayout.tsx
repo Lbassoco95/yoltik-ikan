@@ -25,37 +25,47 @@ export default function AppLayout() {
   useEffect(() => setMenuMovil(false), [pathname]);
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      {menuMovil && (
-        <button
-          type="button"
-          aria-label="Cerrar el menú"
-          className="fixed inset-0 z-40 bg-foreground/40 md:hidden"
-          onClick={() => setMenuMovil(false)}
-        />
-      )}
+    <div className="flex min-h-screen w-full flex-col bg-background">
+      {/* ESTELA: la cenefa. Primero de los tres usos de la greca —12 px de
+          navy con la línea en jade y los puntos mint en los picos— cruzando
+          el alto de la aplicación. Es la tapa de la estela: lo que hace que
+          la pantalla se lea como una pieza tallada y no como un panel más. */}
+      <div className="estela-cenefa shrink-0" aria-hidden />
 
-      <AppSidebar
-        collapsed={colapsada}
-        onToggle={() => setColapsada(!colapsada)}
-        className={
-          menuMovil ? "fixed inset-y-0 left-0 z-50 md:static" : "hidden md:flex"
-        }
-      />
+      <div className="flex min-h-0 w-full flex-1">
+        {menuMovil && (
+          <button
+            type="button"
+            aria-label="Cerrar el menú"
+            className="fixed inset-0 z-40 bg-foreground/40 md:hidden"
+            onClick={() => setMenuMovil(false)}
+          />
+        )}
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <AvisoDemostracion />
-        <AppHeader
-          onToggleSidebar={() => {
-            setMenuMovil((v) => !v);
-            setColapsada((v) => (window.innerWidth >= 768 ? !v : v));
-          }}
+        <AppSidebar
+          collapsed={colapsada}
+          onToggle={() => setColapsada(!colapsada)}
+          className={
+            menuMovil
+              ? "fixed inset-y-0 left-0 z-50 md:static"
+              : "hidden md:flex"
+          }
         />
-        <main className="flex-1 min-w-0 p-4 sm:p-6 overflow-auto">
-          <ErrorBoundary key={pathname}>
-            <Outlet />
-          </ErrorBoundary>
-        </main>
+
+        <div className="flex-1 flex flex-col min-w-0">
+          <AvisoDemostracion />
+          <AppHeader
+            onToggleSidebar={() => {
+              setMenuMovil((v) => !v);
+              setColapsada((v) => (window.innerWidth >= 768 ? !v : v));
+            }}
+          />
+          <main className="flex-1 min-w-0 p-4 sm:p-6 overflow-auto">
+            <ErrorBoundary key={pathname}>
+              <Outlet />
+            </ErrorBoundary>
+          </main>
+        </div>
       </div>
     </div>
   );
