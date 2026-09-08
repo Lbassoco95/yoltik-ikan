@@ -23,6 +23,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { ESTADOS_CONOCIDOS, estadoDeDidit, resumirDecision } from '../_shared/didit.ts';
+
+/** La versión que escribe hoy `resumirDecision`. Subirla ahí obliga a subirla
+ *  aquí: es lo que hace que la conciliación rehaga los resúmenes atrasados. */
+const VERSION_RESUMEN = 3;
 import { custodiarArtefactos, modulosAplicados } from '../_shared/artefactos.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -44,6 +48,7 @@ interface Fila {
   didit_session_id: string;
   estado: string;
   solicitada_en: string;
+  resumen: Record<string, unknown> | null;
 }
 
 Deno.serve(async (req) => {
@@ -69,7 +74,7 @@ Deno.serve(async (req) => {
   //     haberse bajado, y ahí el expediente se ve completo sin serlo.
   const { data: filas, error } = await supabase
     .from('verificacion_identidad')
-    .select('id, organization_id, client_id, didit_session_id, estado, solicitada_en')
+    .select('id, organization_id, client_id, didit_session_id, estado, solicitada_en, resumen')
     .or(`estado.eq.aprobada,and(estado.neq.aprobada,solicitada_en.lt.${corte})`)
     .order('solicitada_en', { ascending: false })
     .limit(TOPE);
@@ -96,7 +101,27 @@ Deno.serve(async (req) => {
       p_verificacion: fila.id,
     });
     const faltanArtefactos = Array.isArray(faltantes) && faltantes.length > 0;
-    if (fila.estado === 'aprobada' && !faltanArtefactos) continue;
+
+    /**
+     * ¿El resumen lo escribió una versión anterior de `resumirDecision`?
+     *
+     * Éste era el punto ciego de la conciliación. Se saltaba toda verificación
+     * aprobada con sus artefactos completos —razonable para no gastar cuota—,
+     * pero eso significaba que un resumen escrito antes de que entrara un
+     * módulo se quedaba sin él PARA SIEMPRE. Las dos verificaciones de la
+     * notaría de demostración se resolvieron el 31 de agosto y el 1 de
+     * septiembre; las señales de canal entraron el 3. Nunca las iban a tener.
+     *
+     * Ahora se vuelve a preguntar cuando el resumen está atrasado, que es una
+     * consulta por verificación y una sola vez: al guardarlo con la versión al
+     * día, la siguiente corrida la vuelve a saltar.
+     */
+    const version = Number(
+      (fila.resumen as Record<string, unknown> | null)?.version ?? 0,
+    );
+    const resumenAtrasado = version < VERSION_RESUMEN;
+
+    if (fila.estado === 'aprobada' && !faltanArtefactos && !resumenAtrasado) continue;
 
     let decision: Record<string, unknown> | null = null;
     try {

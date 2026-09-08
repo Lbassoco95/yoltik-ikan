@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,44 @@ export function Identificacion({ client }: { client: Client }) {
   const vigente = verificaciones[0] ?? null;
   const resumen = leerResumen(vigente?.resumen);
   const kyc = (client.datos_kyc ?? {}) as Record<string, unknown>;
+
+  /**
+   * Qué se quedó sin revisar en esta verificación, y por qué.
+   *
+   * Se arma cruzando dos cosas que Didit sí dice y no estábamos leyendo: los
+   * módulos que realmente corrieron (`modulos_ejecutados`, que sale de
+   * `features` en la decisión) y el motivo con el que el proveedor explica el
+   * que no corrió. Nada de esto se deduce ni se supone: si el proveedor no lo
+   * dice, aquí no aparece.
+   */
+  const faltaRevisar = useMemo(() => {
+    const salida: { que: string; porque: string }[] = [];
+    const corrieron = resumen.modulos_ejecutados;
+
+    // Las listas: PPE, sanciones, adversos. Sólo se afirma que no corrieron
+    // cuando Didit enumeró los módulos y AML no estaba entre ellos; si no
+    // enumeró nada, no se sabe y no se dice.
+    if (corrieron && !corrieron.some((m) => m.toUpperCase().includes("AML"))) {
+      salida.push({
+        que: "Listas restrictivas y antecedentes",
+        porque:
+          "el módulo AML no se ejecutó en esta sesión (PPE, sanciones y medios adversos)",
+      });
+    }
+
+    if (resumen.validacion_base_no_corrio) {
+      const b = resumen.validacion_base_no_corrio;
+      const servicios = b.servicios?.length
+        ? b.servicios.join(" · ")
+        : "validación contra bases oficiales";
+      salida.push({
+        que: servicios,
+        porque: b.mensaje ?? "el proveedor no ejecutó la consulta",
+      });
+    }
+
+    return salida;
+  }, [resumen]);
 
   const faltantes = [
     ...pendientesCompareciente(client),
@@ -232,6 +270,40 @@ export function Identificacion({ client }: { client: Client }) {
                     </p>
                   </Bloque>
                 )}
+                {/* Lo que NO se revisó. Va con los demás bloques y no en una
+                    nota al pie, porque para el Oficial de Cumplimiento vale
+                    tanto como los que sí: un expediente donde no consta que se
+                    consultaron las listas no es un expediente donde no hubo
+                    coincidencias.
+
+                    Antes esto no se decía en ningún sitio. La regla del
+                    resumen —«lo que no venga, no se pinta»— protege de
+                    inventarse resultados, pero deja un silencio que se lee
+                    como un «todo en orden». Aquí el silencio es la afirmación
+                    peligrosa. */}
+                {faltaRevisar.length > 0 && (
+                  <Bloque titulo="Lo que NO se revisó">
+                    <ul className="m-0 list-none space-y-1.5 p-0">
+                      {faltaRevisar.map((f) => (
+                        <li key={f.que} className="text-[13px]">
+                          <span className="font-semibold text-warning-ink">
+                            {f.que}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            — {f.porque}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      No se consultó: no es que no hubiera coincidencias. Para
+                      integrar el expediente del artículo 18, esto sigue
+                      pendiente.
+                    </p>
+                  </Bloque>
+                )}
+
                 {resumen.canal && (
                   /* «Ubicación de la sesión», NO del cliente. La
                      geolocalización por red no es el domicilio del

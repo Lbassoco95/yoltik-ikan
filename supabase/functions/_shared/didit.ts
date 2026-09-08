@@ -258,6 +258,56 @@ export function resumirDecision(decision: unknown): Record<string, unknown> {
 
   const resumen: Record<string, unknown> = {};
 
+  /**
+   * Versión del resumen.
+   *
+   * Existe para que la conciliación sepa cuándo lo que tiene guardado lo
+   * escribió una versión anterior de este código y hay que rehacerlo. Sin
+   * marca, una verificación resuelta antes de que entrara un módulo se queda
+   * sin él para siempre: la conciliación la ve aprobada, con sus artefactos
+   * completos, y se la salta.
+   *   1 · documento, prueba de vida, cotejo facial, listas
+   *   2 · + señales de canal (VPN, centro de datos, divergencia)
+   *   3 · + qué módulos corrieron y cuáles NO, con el motivo del proveedor
+   */
+  resumen.version = 3;
+
+  /**
+   * Qué corrió y qué no.
+   *
+   * Esto es lo que faltaba, y no es un detalle de presentación. El resumen se
+   * escribía con la regla «lo que no venga, no se pinta» —correcta contra
+   * inventarse resultados— pero tenía un punto ciego: cuando un módulo NO
+   * corre, la pantalla se queda callada, y el Oficial de Cumplimiento no puede
+   * distinguir «se consultaron las listas y no hubo coincidencias» de «las
+   * listas no se consultaron». En cumplimiento esas dos cosas son opuestas, y
+   * la segunda disfrazada de la primera es exactamente la afirmación que no se
+   * puede sostener frente a una visita de verificación.
+   *
+   * Didit dice las dos cosas y no las estábamos leyendo: `features` trae los
+   * módulos que realmente se ejecutaron en la sesión, y los campos
+   * `*_not_performed_reason` traen el porqué del que no —con código, mensaje y
+   * qué servicios estaban configurados—.
+   */
+  resumen.modulos_ejecutados = Array.isArray(d.features)
+    ? d.features.filter((f): f is string => typeof f === "string")
+    : null;
+
+  const motivoBase = d.database_validation_not_performed_reason;
+  if (motivoBase && typeof motivoBase === "object") {
+    const m = motivoBase as Record<string, unknown>;
+    resumen.validacion_base_no_corrio = {
+      codigo: typeof m.code === "string" ? m.code : null,
+      mensaje: typeof m.message === "string" ? m.message : null,
+      // Qué habría consultado: en México, CURP contra RENAPO y validez de la
+      // credencial del INE. Enseñarlo convierte «no corrió» en «no corrió
+      // ESTO», que es lo que alguien necesita para decidir si le importa.
+      servicios: Array.isArray(m.configured_services)
+        ? m.configured_services.filter((x): x is string => typeof x === "string")
+        : null,
+    };
+  }
+
   if (id) {
     resumen.documento = {
       tipo: id.document_type ?? null,

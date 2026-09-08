@@ -169,9 +169,73 @@ describe("resumen de la decisión", () => {
   });
 
   it("no revienta con una decisión vacía o ausente", () => {
+    // Sin decisión no hay nada que resumir, ni siquiera versión: no llegó nada
+    // del proveedor y no hay forma con la que sellar el resumen.
     expect(resumirDecision(null)).toEqual({});
-    expect(resumirDecision({})).toEqual({});
-    expect(resumirDecision({ id_verifications: [] })).toEqual({});
+
+    // Con una decisión que existe pero viene vacía sí hay algo que decir: que
+    // llegó, con qué versión de este código se leyó, y que NO consta qué
+    // módulos corrieron. `null` y no `[]`: «no sabemos» y «ninguno» son cosas
+    // distintas, y sólo una de las dos se puede sostener.
+    for (const vacia of [{}, { id_verifications: [] }]) {
+      const r = resumirDecision(vacia);
+      expect(r).toEqual({ version: 3, modulos_ejecutados: null });
+    }
+  });
+
+  /**
+   * Lo que NO corrió importa tanto como lo que sí.
+   *
+   * El resumen se escribía con la regla «lo que no venga, no se pinta», que
+   * protege de inventarse resultados pero deja un silencio: una verificación
+   * sin bloque de listas se lee igual que una sin coincidencias. En
+   * cumplimiento son afirmaciones opuestas, y confundirlas es exactamente lo
+   * que no se sostiene ante una visita de verificación.
+   */
+  it("guarda qué módulos corrieron de verdad, no los que el flujo declara", () => {
+    const r = resumirDecision({
+      ...decision,
+      features: ["ID_VERIFICATION", "LIVENESS", "FACE_MATCH", "IP_ANALYSIS"],
+    }) as Record<string, unknown>;
+
+    expect(r.modulos_ejecutados).toEqual([
+      "ID_VERIFICATION",
+      "LIVENESS",
+      "FACE_MATCH",
+      "IP_ANALYSIS",
+    ]);
+    // AML no está en la lista: el flujo puede tenerlo configurado y aun así no
+    // haberse ejecutado en ESTA sesión, que es justo el caso que hay que poder
+    // detectar.
+    expect(r.modulos_ejecutados).not.toContain("AML");
+  });
+
+  it("guarda por qué el proveedor no consultó las bases oficiales", () => {
+    const r = resumirDecision({
+      ...decision,
+      database_validation_not_performed_reason: {
+        code: "feature_not_unlocked",
+        message: "Database validation did not run: it is locked until the organization's first paid top-up.",
+        issuing_state: "MEX",
+        configured_services: [
+          "Mexico - CURP verification",
+          "Mexico - INE credential validity verification",
+        ],
+      },
+    }) as Record<string, Record<string, unknown>>;
+
+    expect(r.validacion_base_no_corrio.codigo).toBe("feature_not_unlocked");
+    expect(r.validacion_base_no_corrio.servicios).toContain(
+      "Mexico - CURP verification",
+    );
+    // El mensaje del proveedor se guarda tal cual: reescribirlo con nuestras
+    // palabras es arriesgarse a decir una causa que no es la suya.
+    expect(r.validacion_base_no_corrio.mensaje).toContain("paid top-up");
+  });
+
+  it("sin motivo del proveedor NO se inventa que faltó algo", () => {
+    const r = resumirDecision(decision) as Record<string, unknown>;
+    expect(r.validacion_base_no_corrio).toBeUndefined();
   });
 });
 

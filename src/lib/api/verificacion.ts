@@ -160,6 +160,25 @@ export async function verificacionesDeCliente(
  * exactamente la afirmación que no se puede sostener.
  */
 export interface ResumenLegible {
+  /**
+   * Qué módulos ejecutó Didit de verdad en esta sesión, y cuáles no.
+   *
+   * `modulos_ejecutados` viene de `features` en la decisión: son los que
+   * corrieron, no los que el flujo tiene configurados. La diferencia entre las
+   * dos listas es lo que NO se revisó, y decirlo importa tanto como decir el
+   * resultado de lo que sí: «se consultaron las listas y no hubo
+   * coincidencias» y «las listas no se consultaron» son afirmaciones opuestas,
+   * y la segunda disfrazada de la primera es justo la que no se sostiene ante
+   * una visita de verificación.
+   */
+  modulos_ejecutados: string[] | null;
+  /** Por qué no corrió la validación contra bases oficiales, en palabras del
+   *  proveedor. En México: CURP contra RENAPO y validez de la credencial. */
+  validacion_base_no_corrio: {
+    codigo: string | null;
+    mensaje: string | null;
+    servicios: string[] | null;
+  } | null;
   documento: {
     tipo: string | null;
     pais: string | null;
@@ -214,10 +233,27 @@ export function leerResumen(
   const cara = obj("cotejo_facial");
   const listas = obj("listas");
   const canal = obj("canal");
+  const sinBase = obj("validacion_base_no_corrio");
   const bool = (v: unknown): boolean | null =>
     typeof v === "boolean" ? v : null;
 
   return {
+    modulos_ejecutados: Array.isArray(resumen?.modulos_ejecutados)
+      ? (resumen!.modulos_ejecutados as unknown[]).filter(
+          (m): m is string => typeof m === "string",
+        )
+      : null,
+    validacion_base_no_corrio: sinBase
+      ? {
+          codigo: texto(sinBase.codigo),
+          mensaje: texto(sinBase.mensaje),
+          servicios: Array.isArray(sinBase.servicios)
+            ? (sinBase.servicios as unknown[]).filter(
+                (x): x is string => typeof x === "string",
+              )
+            : null,
+        }
+      : null,
     documento: doc
       ? {
           tipo: texto(doc.tipo),
