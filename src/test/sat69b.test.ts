@@ -138,3 +138,37 @@ describe('cuando el formato no es el esperado', () => {
     expect(r.descartadas[1].motivo).toMatch(/Situación desconocida/);
   });
 });
+
+describe('la fila es el orden de origen que usa la migration 0064', () => {
+  // El listado completo trae 77 RFC repetidos, 50 de ellos con situaciones
+  // distintas: el SAT concatena sus listados por situación, así que quien fue
+  // declarado definitivo y después ganó un juicio aparece dos veces, y la
+  // segunda fila es la que vale. `orden_origen` en la base sale de aquí; si el
+  // parser dejara de numerar en orden, el desempate se rompería en silencio y
+  // volvería a decidirlo el tamaño de lote.
+  const repetido =
+    'Información actualizada al 31 de julio de 2026\n' +
+    'Listado completo de contribuyentes (Artículo 69-B del CFF)\n' +
+    'No.,RFC,Nombre del Contribuyente,Situación del contribuyente\n' +
+    '1,AAA120730823,PRIMERO S.A. DE C.V.,Definitivo\n' +
+    '2,BBB120730824,ABIRA S. DE R.L.,Definitivo\n' +
+    '3,BBB120730824,ABIRA S. DE R.L. // En cumplimiento a la sentencia,Sentencia Favorable\n';
+
+  it('numera estrictamente creciente y en el orden del archivo', () => {
+    const r = parsear69B(latin1(repetido));
+    const filas = r.registros.map((x) => x.fila);
+    expect(filas).toEqual([...filas].sort((a, b) => a - b));
+    expect(new Set(filas).size).toBe(filas.length);
+  });
+
+  it('conserva las dos filas del RFC repetido, en orden', () => {
+    // El parser NO resuelve el conflicto: entrega las dos y deja que la base
+    // decida por orden_origen. Colapsarlas aquí escondería el dato.
+    const r = parsear69B(latin1(repetido));
+    const bbb = r.registros.filter((x) => x.rfc === 'BBB120730824');
+    expect(bbb).toHaveLength(2);
+    expect(bbb[0].situacion).toBe('definitivo');
+    expect(bbb[1].situacion).toBe('sentencia_favorable');
+    expect(bbb[1].fila).toBeGreaterThan(bbb[0].fila);
+  });
+});

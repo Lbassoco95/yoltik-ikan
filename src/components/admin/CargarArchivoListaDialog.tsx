@@ -70,6 +70,9 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           rfc: r.rfc,
           tipo_entidad: "empresa",
           situacion: r.situacion,
+          // La fila del archivo. Es lo que desempata cuando un RFC viene dos
+          // veces: sin ella, quién queda bloqueado dependía del tamaño de lote.
+          orden_origen: r.fila,
         })),
         onProgreso: (hechos, total) => setProgreso({ hechos, total }),
       }),
@@ -85,6 +88,23 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
     },
     onError: (e: Error) => { setProgreso(null); toast.error(e.message, { duration: 15000 }); },
   });
+
+  // RFC que vienen más de una vez CON SITUACIONES DISTINTAS. En el listado
+  // completo del 69-B son ~50 y es normal: el SAT concatena sus listados por
+  // situación, así que un contribuyente declarado definitivo que después gana
+  // un juicio aparece en dos. Se toma la última fila, que es la resolución.
+  // Se muestra porque 50 y 3,000 no son el mismo archivo, y sólo se nota si
+  // alguien lo mira.
+  const conflictos = analisis
+    ? (() => {
+        const porRfc = new Map<string, Set<string>>();
+        for (const r of analisis.registros) {
+          if (!porRfc.has(r.rfc)) porRfc.set(r.rfc, new Set());
+          porRfc.get(r.rfc)!.add(r.situacion);
+        }
+        return [...porRfc.values()].filter((s) => s.size > 1).length;
+      })()
+    : 0;
 
   const porSituacion = analisis
     ? Object.entries(
@@ -174,6 +194,22 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
                   </span>
                 ))}
               </div>
+
+              {conflictos > 0 && (
+                <div className="text-xs border-t border-border pt-2 space-y-1">
+                  <p className="font-medium">
+                    {conflictos.toLocaleString("es-MX")} RFC vienen más de una vez con
+                    situaciones distintas.
+                  </p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Es lo normal en el listado completo: el SAT concatena sus listados por
+                    situación, así que un contribuyente declarado definitivo que después
+                    obtuvo sentencia favorable aparece en los dos. Se toma{" "}
+                    <strong>la última fila del archivo</strong>, que es la resolución más
+                    reciente que publica el SAT.
+                  </p>
+                </div>
+              )}
 
               {analisis.descartadas.length > 0 && (
                 <div className="text-xs space-y-1 border-t border-border pt-2">
