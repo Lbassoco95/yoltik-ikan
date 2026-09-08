@@ -120,7 +120,7 @@ export default function AdminListasPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Listas restrictivas</h1>
+          <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Listas restrictivas</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Catálogo de plataforma. Sólo Kawiil actualiza estas listas; las organizaciones
             cliente las consumen y no pueden escribirlas. Lo que se apruebe aquí queda vigente
@@ -142,7 +142,7 @@ export default function AdminListasPage() {
       <PendientesDelJob />
 
       <Tabs defaultValue="vigentes" className="space-y-4">
-        <TabsList className="bg-muted/50">
+        <TabsList>
           <TabsTrigger value="vigentes">Personas y entidades listadas</TabsTrigger>
           <TabsTrigger value="cargas">Cargas</TabsTrigger>
           <TabsTrigger value="fuentes">Fuentes</TabsTrigger>
@@ -171,7 +171,7 @@ export default function AdminListasPage() {
             </Select>
           </div>
 
-          <div className="glass-card overflow-hidden">
+          <div className="estela-placa overflow-hidden">
             {vigentes.isLoading ? (
               <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
@@ -182,9 +182,9 @@ export default function AdminListasPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border bg-muted/30">
+                    <tr className="border-b border-border bg-muted/50">
                       {["Nombre", "RFC", "Fuente", "Situación", "Oficio de alta", "Desde"].map((h) => (
-                        <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">
+                        <th key={h} className="estela-antetitulo text-muted-foreground px-4 py-3 text-left">
                           {h}
                         </th>
                       ))}
@@ -194,7 +194,7 @@ export default function AdminListasPage() {
                     {(vigentes.data ?? []).map((r) => (
                       <tr key={r.registro_id} className="border-b border-border last:border-0">
                         <td className="px-4 py-3 text-sm font-medium text-foreground">{r.nombre}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-muted-foreground">{r.rfc ?? "—"}</td>
+                        <td className="px-4 py-3 estela-dato text-sm text-muted-foreground">{r.rfc ?? "—"}</td>
                         <td className="px-4 py-3">
                           <span className={cn(
                             "status-badge",
@@ -220,7 +220,7 @@ export default function AdminListasPage() {
                             <span className="text-sm text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm font-mono">{r.alta_oficio ?? "—"}</td>
+                        <td className="px-4 py-3 estela-dato text-sm">{r.alta_oficio ?? "—"}</td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">
                           {r.alta_fecha ? new Date(r.alta_fecha).toLocaleDateString("es-MX") : "—"}
                         </td>
@@ -243,13 +243,13 @@ export default function AdminListasPage() {
 
         {/* ---------------- Cargas ---------------- */}
         <TabsContent value="cargas">
-          <div className="glass-card overflow-hidden">
+          <div className="estela-placa overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border bg-muted/30">
+                  <tr className="border-b border-border bg-muted/50">
                     {["Fecha", "Fuente", "Tipo", "Movimientos", "Estado", "Notas", ""].map((h) => (
-                      <th key={h} className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">
+                      <th key={h} className="estela-antetitulo text-muted-foreground px-4 py-3 text-left">
                         {h}
                       </th>
                     ))}
@@ -261,7 +261,7 @@ export default function AdminListasPage() {
                       <td className="px-4 py-3 text-sm">
                         {new Date(c.cargada_en).toLocaleDateString("es-MX")}
                       </td>
-                      <td className="px-4 py-3 text-sm font-mono">{c.fuente_codigo ?? "—"}</td>
+                      <td className="px-4 py-3 estela-dato text-sm">{c.fuente_codigo ?? "—"}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {c.tipo === "captura_manual" ? "Captura manual" : c.tipo === "archivo" ? "Archivo" : "API"}
                       </td>
@@ -271,7 +271,7 @@ export default function AdminListasPage() {
                           "status-badge",
                           c.estado === "aplicada" ? "bg-success/10 text-success"
                             : c.estado === "revertida" ? "bg-muted text-muted-foreground"
-                            : "bg-warning/10 text-warning",
+                            : "bg-warning/15 text-warning-ink",
                         )}>
                           {ESTADO_CARGA_LABEL[c.estado]}
                         </span>
@@ -304,8 +304,8 @@ export default function AdminListasPage() {
 
         {/* ---------------- Fuentes ---------------- */}
         <TabsContent value="fuentes" className="space-y-4">
-          <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+          <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
             <span>
               <strong>Los listados del SAT ya se pueden cargar</strong> (69-B y 69-B Bis), con
               vista previa antes de aplicar. OFAC, ONU y UE todavía no: su formato es XML y su
@@ -315,7 +315,7 @@ export default function AdminListasPage() {
 
           <div className="grid gap-3 md:grid-cols-2">
             {(fuentes.data ?? []).map((f) => (
-              <div key={f.id} className="glass-card p-5 space-y-2">
+              <div key={f.id} className="estela-placa p-5 space-y-2">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-semibold text-foreground">{f.nombre}</h3>
@@ -387,9 +387,9 @@ export default function AdminListasPage() {
 
           <div className="space-y-3">
             {lineas.map((l, i) => (
-              <div key={i} className="rounded-lg border border-border p-4 space-y-3 bg-muted/20">
+              <div key={i} className="rounded-md border border-border p-4 space-y-3 bg-muted/20">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <span className="estela-antetitulo text-muted-foreground">
                     Persona {i + 1}
                   </span>
                   {lineas.length > 1 && (
@@ -426,7 +426,7 @@ export default function AdminListasPage() {
                       value={l.rfc}
                       onChange={(e) => actualizarLinea(i, "rfc", e.target.value)}
                       placeholder="Opcional"
-                      className="font-mono"
+                      className="estela-dato"
                     />
                   </div>
                   <div>
@@ -434,7 +434,7 @@ export default function AdminListasPage() {
                     <Input
                       value={l.oficio_numero}
                       onChange={(e) => actualizarLinea(i, "oficio_numero", e.target.value)}
-                      className="font-mono"
+                      className="estela-dato"
                     />
                   </div>
                   <div>

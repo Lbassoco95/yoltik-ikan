@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { MarcaIkan } from "@/components/estela/MarcaIkan";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -193,8 +194,16 @@ const RegistroPage = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="min-h-screen bg-background">
+      {/* La cenefa y la marca. Esta pantalla la abre alguien que llega desde
+          el sitio y todavía no es cliente: si no lleva la marca, lo que ve es
+          un formulario cualquiera y no el alta de Ikán. */}
+      <div className="estela-cenefa" aria-hidden />
+
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-8 flex justify-center">
+          <MarcaIkan size={44} />
+        </div>
         <div className="mb-8">
           <Button 
             variant="ghost" 
@@ -206,8 +215,14 @@ const RegistroPage = ({
           </Button>
           
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">{titulo}</h1>
-            <p className="text-lg text-slate-600">{subtitulo}</p>
+            <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+              {titulo}
+            </h1>
+            <p className="text-base text-muted-foreground">{subtitulo}</p>
+            {/* La regla de greca centrada: es la única de la aplicación que no
+                va a la izquierda, porque aquí la cabecera está centrada y una
+                regla descolgada al margen se leería como un descuadre. */}
+            <div className="estela-regla mx-auto mt-3" aria-hidden />
           </div>
 
           <div className="flex justify-center mb-8">
@@ -217,8 +232,8 @@ const RegistroPage = ({
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       step <= currentStep
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-200 text-slate-400"
+                        ? "bg-accent text-white"
+                        : "bg-border text-muted-foreground"
                     }`}
                   >
                     {step < currentStep ? (
@@ -230,7 +245,7 @@ const RegistroPage = ({
                   {step < 2 && (
                     <div
                       className={`w-16 h-1 mx-2 ${
-                        step < currentStep ? "bg-blue-600" : "bg-slate-200"
+                        step < currentStep ? "bg-accent" : "bg-border"
                       }`}
                     />
                   )}
@@ -373,7 +388,7 @@ const RegistroPage = ({
                                   return (
                                     <FormItem
                                       key={actividad.value}
-                                      className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-lg hover:bg-slate-50"
+                                      className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted"
                                     >
                                       <FormControl>
                                         <Checkbox
@@ -431,8 +446,8 @@ const RegistroPage = ({
                     />
 
                     {showFedatarioForm && (
-                      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <h3 className="font-semibold text-blue-900 mb-4">Información de Fedatario</h3>
+                      <div className="mt-6 p-4 bg-accent/5 border border-accent/25 rounded-md">
+                        <h3 className="font-semibold text-foreground mb-4">Información de Fedatario</h3>
                         <div className="space-y-4">
                           <FormField
                             control={form.control}
@@ -759,7 +774,7 @@ const RegistroPage = ({
                                   href="https://www.yoltik.mx/aviso-de-privacidad" 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline"
+                                  className="text-accent hover:underline"
                                 >
                                   aviso de privacidad
                                 </a> *
@@ -821,14 +836,14 @@ const RegistroPage = ({
           </form>
         </Form>
 
-        <div className="mt-8 text-center text-sm text-slate-500">
+        <div className="mt-8 text-center text-sm text-muted-foreground">
           <p>
             Al continuar, aceptas nuestros{" "}
-            <a href="https://www.yoltik.mx/terminos-y-condiciones" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            <a href="https://www.yoltik.mx/terminos-y-condiciones" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
               términos y condiciones
             </a>{" "}
             y{" "}
-            <a href="https://www.yoltik.mx/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            <a href="https://www.yoltik.mx/aviso-de-privacidad" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
               política de privacidad
             </a>
           </p>

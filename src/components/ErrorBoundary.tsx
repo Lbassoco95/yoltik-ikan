@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return (
       <div className="p-6">
-        <div className="glass-card p-6 space-y-4 max-w-3xl">
+        <div className="estela-placa p-6 space-y-4 max-w-3xl">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 mt-0.5 text-destructive shrink-0" />
             <div className="space-y-1">

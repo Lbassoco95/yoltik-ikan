@@ -157,8 +157,17 @@ begin
     '2', v_n::text, v_n = 2);
 
   -- Y queda en la bitácora, porque la extracción también se audita.
+  --
+  -- Se cuentan sólo los eventos de ESTA corrida y de ESTA sesión. La bitácora
+  -- es append-only a propósito —la limpieza del final borra las alertas, no
+  -- los eventos—, así que contar todos los de la organización daba 2 en una
+  -- base virgen y 5 en la segunda corrida: la prueba pasaba por estar primera
+  -- en la fila, no por ser cierta. `registrado_en` es `now()`, constante en la
+  -- transacción, y este bloque es una sola: filtra la corrida con exactitud.
   select count(*) into v_n from evento_auditoria
-   where organization_id = v_org and tipo = 'conciliacion_hallazgo';
+   where organization_id = v_org and tipo = 'conciliacion_hallazgo'
+     and payload->>'sesion' = 'sess-perdida-1'
+     and registrado_en = now();
   insert into resultado values (11, 'Los hallazgos de conciliación quedan en la bitácora',
     '2', v_n::text, v_n = 2);
 
@@ -187,9 +196,12 @@ begin
   -- ------------------------------------------------------------------
   -- No los que el workflow tiene hoy: la primera verificación de producción
   -- corrió sin barrido de listas porque el módulo se encendió después.
+  --
+  -- Ya no se monta `workflow_version`: la 0068 la retiró porque Didit no la
+  -- da, y la pregunta de esta prueba —qué se le corrió a ESTA sesión— es
+  -- justo la que `features_aplicadas` contesta sola.
   update verificacion_identidad
-     set features_aplicadas = array['ID_VERIFICATION','LIVENESS','FACE_MATCH','IP_ANALYSIS'],
-         workflow_version = 1
+     set features_aplicadas = array['ID_VERIFICATION','LIVENESS','FACE_MATCH','IP_ANALYSIS']
    where id = v_ver;
   select 'AML' = any(features_aplicadas) into v_bool
     from verificacion_identidad where id = v_ver;

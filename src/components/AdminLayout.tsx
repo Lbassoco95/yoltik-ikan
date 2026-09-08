@@ -1,7 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   LogOut,
-  ShieldCheck,
   Database,
   SlidersHorizontal,
   ListOrdered,
@@ -10,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { IconoIkan } from "@/components/estela/MarcaIkan";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -37,17 +37,21 @@ export function AdminLayout() {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* La consola lleva la misma cenefa que la aplicación de clientes: es el
+          mismo producto. Lo que la distingue es que aquí el navy ocupa la
+          cabecera entera en vez de una barra lateral —quien entra tiene que
+          notar en el primer vistazo que está tocando configuración que afecta
+          a todas las organizaciones—. */}
+      <div className="estela-cenefa shrink-0" aria-hidden />
+      <header className="border-b border-sidebar-border bg-ikan-navy bg-gradient-to-r from-ikan-navy-claro to-ikan-navy text-sidebar-foreground">
         {/* La navegación no colapsaba ni se desplazaba: cuatro secciones con
             nombres largos daban 759 px de documento en una pantalla de 390.
             Ahora la fila entera se desplaza en horizontal y el rótulo cede
             sitio en vez de empujar. */}
         <div className="flex items-center gap-4 px-4 sm:px-6 h-16 min-w-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-4 h-4 text-accent-foreground" />
-            </div>
+            <IconoIkan size={32} />
             <div className="leading-tight hidden sm:block">
               <span className="block text-sm font-bold tracking-tight text-sidebar-accent-foreground">
                 Ikán · Plataforma
@@ -66,10 +70,10 @@ export function AdminLayout() {
                   key={s.to}
                   to={s.to}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors",
                     activo
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                      ? "bg-white/[0.09] text-white"
+                      : "text-ikan-hielo/70 hover:bg-white/[0.05] hover:text-white",
                   )}
                 >
                   <s.icon className="w-4 h-4 shrink-0" />

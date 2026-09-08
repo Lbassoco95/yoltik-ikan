@@ -129,8 +129,8 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           </div>
 
           {fuente && !soportada && (
-            <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+            <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
               <span>
                 <strong>Todavía no hay lector para «{fuente.nombre}».</strong> Hay lector para los
                 dos listados del SAT, para OFAC y para la ONU.
@@ -164,13 +164,13 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
           )}
 
           {errorAnalisis && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               <strong>No se pudo leer el archivo.</strong> {errorAnalisis}
             </div>
           )}
 
           {analisis && (
-            <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+            <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4">
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
                 <span className="font-semibold">{analisis.etiqueta}</span>
                 <span className="text-muted-foreground">
@@ -209,7 +209,9 @@ export function CargarArchivoListaDialog({ abierto, onOpenChange, fuentes }: Pro
 
               {analisis.descartadas.length > 0 && (
                 <div className="text-xs space-y-1 border-t border-border pt-2">
-                  <p className="text-warning font-medium">
+                  {/* «registros» y no «filas»: con OFAC y la ONU lo que se
+                      descarta es una entidad, no un renglón de CSV. */}
+                  <p className="text-warning-ink font-medium">
                     {analisis.descartadas.length.toLocaleString("es-MX")} registros no se pudieron
                     interpretar y no se cargarán:
                   </p>

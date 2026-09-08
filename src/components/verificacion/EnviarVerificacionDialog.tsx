@@ -155,7 +155,7 @@ export function EnviarVerificacionDialog({
                   comparece en su representación, y quienes resulten sus beneficiarios
                   controladores.
                 </p>
-                <p className="text-xs text-warning">
+                <p className="text-xs text-warning-ink">
                   Capturar esa estructura —socios, porcentajes y las personas morales
                   intermedias— todavía no está en Ikán. Por ahora, da de alta a cada persona
                   física por separado y verifícala desde su propio expediente.
@@ -205,7 +205,7 @@ export function EnviarVerificacionDialog({
                       type="button"
                       onClick={() => setCanal(c.valor)}
                       className={cn(
-                        "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors",
+                        "flex items-start gap-3 rounded-md border p-3 text-left transition-colors",
                         activo
                           ? "border-accent bg-accent/5"
                           : "border-border hover:border-accent/40",
@@ -265,7 +265,7 @@ export function EnviarVerificacionDialog({
               <div className="space-y-1.5">
                 <Label htmlFor="liga-verif">Liga de la verificación</Label>
                 <div className="flex gap-2">
-                  <Input id="liga-verif" readOnly value={url} className="font-mono text-xs" />
+                  <Input id="liga-verif" readOnly value={url} className="estela-dato text-xs" />
                   <Button
                     variant="outline"
                     size="icon"

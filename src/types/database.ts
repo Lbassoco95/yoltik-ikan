@@ -4048,7 +4048,6 @@ export type Database = {
           solicitada_por: string | null
           ultimo_evento_id: string | null
           url: string
-          workflow_version: number | null
         }
         Insert: {
           canal: string
@@ -4066,7 +4065,6 @@ export type Database = {
           solicitada_por?: string | null
           ultimo_evento_id?: string | null
           url: string
-          workflow_version?: number | null
         }
         Update: {
           canal?: string
@@ -4084,7 +4082,6 @@ export type Database = {
           solicitada_por?: string | null
           ultimo_evento_id?: string | null
           url?: string
-          workflow_version?: number | null
         }
         Relationships: [
           {

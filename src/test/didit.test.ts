@@ -169,9 +169,192 @@ describe("resumen de la decisión", () => {
   });
 
   it("no revienta con una decisión vacía o ausente", () => {
+    // Sin decisión no hay nada que resumir, ni siquiera versión: no llegó nada
+    // del proveedor y no hay forma con la que sellar el resumen.
     expect(resumirDecision(null)).toEqual({});
-    expect(resumirDecision({})).toEqual({});
-    expect(resumirDecision({ id_verifications: [] })).toEqual({});
+
+    // Con una decisión que existe pero viene vacía sí hay algo que decir: que
+    // llegó, con qué versión de este código se leyó, y que NO consta qué
+    // módulos corrieron. `null` y no `[]`: «no sabemos» y «ninguno» son cosas
+    // distintas, y sólo una de las dos se puede sostener.
+    for (const vacia of [{}, { id_verifications: [] }]) {
+      const r = resumirDecision(vacia);
+      expect(r).toEqual({ version: 4, modulos_ejecutados: null });
+    }
+  });
+
+  /**
+   * Lo que NO corrió importa tanto como lo que sí.
+   *
+   * El resumen se escribía con la regla «lo que no venga, no se pinta», que
+   * protege de inventarse resultados pero deja un silencio: una verificación
+   * sin bloque de listas se lee igual que una sin coincidencias. En
+   * cumplimiento son afirmaciones opuestas, y confundirlas es exactamente lo
+   * que no se sostiene ante una visita de verificación.
+   */
+  it("guarda qué módulos corrieron de verdad, no los que el flujo declara", () => {
+    const r = resumirDecision({
+      ...decision,
+      features: ["ID_VERIFICATION", "LIVENESS", "FACE_MATCH", "IP_ANALYSIS"],
+    }) as Record<string, unknown>;
+
+    expect(r.modulos_ejecutados).toEqual([
+      "ID_VERIFICATION",
+      "LIVENESS",
+      "FACE_MATCH",
+      "IP_ANALYSIS",
+    ]);
+    // AML no está en la lista: el flujo puede tenerlo configurado y aun así no
+    // haberse ejecutado en ESTA sesión, que es justo el caso que hay que poder
+    // detectar.
+    expect(r.modulos_ejecutados).not.toContain("AML");
+  });
+
+  it("guarda por qué el proveedor no consultó las bases oficiales", () => {
+    const r = resumirDecision({
+      ...decision,
+      database_validation_not_performed_reason: {
+        code: "feature_not_unlocked",
+        message: "Database validation did not run: it is locked until the organization's first paid top-up.",
+        issuing_state: "MEX",
+        configured_services: [
+          "Mexico - CURP verification",
+          "Mexico - INE credential validity verification",
+        ],
+      },
+    }) as Record<string, Record<string, unknown>>;
+
+    expect(r.validacion_base_no_corrio.codigo).toBe("feature_not_unlocked");
+    expect(r.validacion_base_no_corrio.servicios).toContain(
+      "Mexico - CURP verification",
+    );
+    // El mensaje del proveedor se guarda tal cual: reescribirlo con nuestras
+    // palabras es arriesgarse a decir una causa que no es la suya.
+    expect(r.validacion_base_no_corrio.mensaje).toContain("paid top-up");
+  });
+
+  /**
+   * La validación contra bases oficiales, con los valores del contrato de
+   * Didit: `status` (Approved/Declined/In Review/Not Finished) y `match_type`
+   * (full_match/partial_match/no_match). Comprobados contra
+   * `didit_workflow_get_branch_fields`, no supuestos: es la lección que dejó
+   * el AML, donde cinco nombres de campo inventados tiraban la clasificación.
+   */
+  it("guarda el resultado de la validación de CURP e INE", () => {
+    const r = resumirDecision({
+      ...decision,
+      database_validations: [
+        { status: "Approved", match_type: "full_match" },
+      ],
+    }) as Record<string, Record<string, unknown>>;
+
+    expect(r.validacion_base.estado).toBe("Approved");
+    expect(r.validacion_base.coincidencia).toBe("full_match");
+  });
+
+  it("la coincidencia PARCIAL se guarda tal cual, no se redondea a buena", () => {
+    // Algunos campos casan con el registro y otros no. No es lo mismo que
+    // «coincide», y colapsarlo a un sí/no pierde justo el caso que hay que
+    // mirar a mano.
+    const r = resumirDecision({
+      ...decision,
+      database_validations: [
+        { status: "In Review", match_type: "partial_match" },
+      ],
+    }) as Record<string, Record<string, unknown>>;
+
+    expect(r.validacion_base.coincidencia).toBe("partial_match");
+    expect(r.validacion_base.estado).toBe("In Review");
+  });
+
+  it("sin el módulo no hay bloque de validación de base", () => {
+    const r = resumirDecision(decision) as Record<string, unknown>;
+    expect(r.validacion_base).toBeUndefined();
+  });
+
+  it("sin motivo del proveedor NO se inventa que faltó algo", () => {
+    const r = resumirDecision(decision) as Record<string, unknown>;
+    expect(r.validacion_base_no_corrio).toBeUndefined();
+  });
+});
+
+/**
+ * La forma REAL de un barrido de Didit.
+ *
+ * Estas pruebas se escribieron contra una respuesta de verdad —un barrido
+ * ejecutado el 08/09/2026 contra los acervos de producción— y no contra lo que
+ * suponíamos que devolvía. La versión anterior del lector buscaba la categoría
+ * en `category`, `type`, `list_type`, `match_type` y `categories`: cinco
+ * campos que NO existen. El resultado era que toda coincidencia caía en «sin
+ * clasificar» —las 56 del barrido de prueba— y el expediente perdía que 26
+ * eran de sanciones y 28 de PPE.
+ */
+describe('el screening lee la forma real de Didit', () => {
+  // Un hallazgo tal y como viene, recortado a los campos que leemos.
+  const hallazgoReal = {
+    caption: 'Vladimir Putin',
+    match: false,
+    match_score: 100,
+    risk_score: 92,
+    review_status: 'Unreviewed',
+    datasets: [
+      'Warnings and Regulatory Enforcement',
+      'SIE',
+      'Sanctions',
+      'SIP',
+      'PEP',
+      'PEP Level 1',
+    ],
+    sanction_matches: [{ list_name: ['EU Early Detection and Exclusion System (EDES)'] }],
+    pep_matches: [{ list_name: 'Diario de Centro América' }],
+    adverse_media_matches: [],
+    warning_matches: [{ countries: ['Russia'] }],
+  };
+
+  it('saca la categoría de `datasets`, que es donde está', () => {
+    const cats = categoriasDeCoincidencias({ total_hits: 1, hits: [hallazgoReal] });
+    expect(cats).toContain('sancion');
+    expect(cats).toContain('pep');
+    expect(cats).toContain('lista_de_atencion');
+  });
+
+  it('un acervo que no reconocemos NO se da por benigno', () => {
+    // SIE y SIP no están en nuestro mapa. Que 26 coincidencias sean de
+    // sanciones no vuelve inocuas las que no supimos leer.
+    const cats = categoriasDeCoincidencias({ total_hits: 1, hits: [hallazgoReal] });
+    expect(cats).toContain('sin_clasificar');
+  });
+
+  it('la PRESENCIA del arreglo de coincidencias también clasifica', () => {
+    // Sin `datasets`, el tipo sigue estando: en qué arreglo vino el detalle.
+    const cats = categoriasDeCoincidencias({
+      total_hits: 1,
+      hits: [{ sanction_matches: [{ list_name: ['OFAC SDN'] }], pep_matches: [] }],
+    });
+    expect(cats).toEqual(['sancion']);
+  });
+
+  it('un arreglo VACÍO no clasifica: no hubo coincidencia de ese tipo', () => {
+    const cats = categoriasDeCoincidencias({
+      total_hits: 1,
+      hits: [{ adverse_media_matches: [], warning_matches: [] }],
+    });
+    expect(cats).toEqual(['sin_clasificar']);
+  });
+
+  it('el resumen guarda el puntaje del barrido, que es de nuestro cliente', () => {
+    const r = resumirDecision({
+      aml_screenings: [{ status: 'In Review', total_hits: 56, score: 92, hits: [hallazgoReal] }],
+    }) as Record<string, Record<string, unknown>>;
+
+    expect(r.listas.coincidencias).toBe(56);
+    expect(r.listas.puntaje).toBe(92);
+    expect(r.listas.estado).toBe('In Review');
+    // Y nada del tercero: ni el nombre con el que coincidió, ni la lista, ni
+    // el enlace a la fuente.
+    const serializado = JSON.stringify(r);
+    expect(serializado).not.toContain('Vladimir');
+    expect(serializado).not.toContain('EDES');
   });
 });
 

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { PlacaAcceso } from '@/components/estela/PlacaAcceso';
 
 /**
  * Paso 2 del flujo de recuperación: Supabase redirige aquí desde el correo con
@@ -149,12 +150,7 @@ export function RestablecerPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen grid place-items-center bg-background p-6">
-      <div className="ikan-card w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <div className="text-3xl font-bold text-foreground">Ikán</div>
-          <div className="text-sm text-muted-foreground">Nueva contraseña</div>
-        </div>
+    <PlacaAcceso subtitulo="Nueva contraseña">
 
         {estado === 'verificando' && (
           <p className="text-sm text-muted-foreground text-center">Validando el enlace…</p>
@@ -257,7 +253,6 @@ export function RestablecerPasswordPage() {
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </PlacaAcceso>
   );
 }

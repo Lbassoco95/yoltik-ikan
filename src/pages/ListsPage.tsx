@@ -49,7 +49,7 @@ export default function ListsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Listas restrictivas</h1>
+        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Listas restrictivas</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Las mantiene Kawiil y se actualizan para todas las organizaciones a la vez. Tu
           organización las consulta; no las edita.
@@ -57,7 +57,7 @@ export default function ListsPage() {
       </div>
 
       {/* Buscador */}
-      <div className="glass-card p-4">
+      <div className="estela-placa p-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -81,12 +81,12 @@ export default function ListsPage() {
             ) : resultados.isError ? (
               <p className="text-sm text-destructive">{(resultados.error as Error).message}</p>
             ) : (resultados.data ?? []).length === 0 ? (
-              <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
+              <div className="flex items-start gap-3 rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
                 <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
                 <span>
                   Sin coincidencias para «{busqueda.trim()}» en las listas cargadas.
                   {totalVigentes === 0 && (
-                    <strong className="block mt-1 text-warning">
+                    <strong className="block mt-1 text-warning-ink">
                       Cuidado: todavía no hay ninguna lista cargada, así que este resultado no
                       significa que la persona esté limpia.
                     </strong>
@@ -99,26 +99,26 @@ export default function ListsPage() {
                   <div
                     key={r.registro_id}
                     className={cn(
-                      "flex items-start gap-3 rounded-lg border px-4 py-3",
+                      "flex items-start gap-3 rounded-md border px-4 py-3",
                       r.bloqueante
                         ? "border-destructive/40 bg-destructive/10"
                         : "border-warning/40 bg-warning/10",
                     )}
                   >
                     <AlertTriangle
-                      className={cn("w-4 h-4 mt-0.5 shrink-0", r.bloqueante ? "text-destructive" : "text-warning")}
+                      className={cn("w-4 h-4 mt-0.5 shrink-0", r.bloqueante ? "text-destructive" : "text-warning-ink")}
                     />
                     <div className="text-sm flex-1">
                       <p className="font-semibold">{r.nombre}</p>
                       <p className="text-muted-foreground text-xs mt-0.5">
                         {r.fuente_nombre}
-                        {r.rfc && <span className="font-mono"> · {r.rfc}</span>}
+                        {r.rfc && <span className="estela-dato"> · {r.rfc}</span>}
                         {r.situacion && <> · {labelSituacion(r.situacion)}</>}
                         {r.alta_fecha && (
                           <> · desde el {new Date(r.alta_fecha).toLocaleDateString("es-MX")}</>
                         )}
                       </p>
-                      <p className={cn("text-xs mt-1 font-medium", r.bloqueante ? "text-destructive" : "text-warning")}>
+                      <p className={cn("text-xs mt-1 font-medium", r.bloqueante ? "text-destructive" : "text-warning-ink")}>
                         {r.bloqueante
                           ? "Coincidencia que exige acción antes de continuar con la operación."
                           : "Señal informativa: no confirma nada por sí sola, pero justifica debida diligencia reforzada."}
@@ -134,8 +134,8 @@ export default function ListsPage() {
 
       {/* Aviso cuando faltan listas por cargar */}
       {pendienteCarga.length > 0 && !estado.isLoading && (
-        <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>
               {pendienteCarga.length === 1
@@ -150,8 +150,8 @@ export default function ListsPage() {
       )}
 
       {pendienteDeterminacion.length > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>
               {pendienteDeterminacion.length === 1
@@ -169,16 +169,16 @@ export default function ListsPage() {
       {/* Estado por lista */}
       <div className="grid gap-3 md:grid-cols-2">
         {estado.isLoading ? (
-          <div className="glass-card p-8 flex items-center justify-center gap-2 text-muted-foreground md:col-span-2">
+          <div className="estela-placa p-8 flex items-center justify-center gap-2 text-muted-foreground md:col-span-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
           </div>
         ) : estado.isError ? (
-          <p className="glass-card p-6 text-sm text-destructive md:col-span-2">
+          <p className="estela-placa p-6 text-sm text-destructive md:col-span-2">
             {(estado.error as Error).message}
           </p>
         ) : (
           (estado.data ?? []).map((l) => (
-            <div key={l.codigo} className="glass-card p-5 space-y-3">
+            <div key={l.codigo} className="estela-placa p-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <Shield
@@ -220,7 +220,7 @@ export default function ListsPage() {
                       "status-badge text-xs",
                       l.estado === "no_aplica"
                         ? "bg-muted text-muted-foreground"
-                        : "bg-warning/10 text-warning",
+                        : "bg-warning/15 text-warning-ink",
                     )}
                   >
                     {labelEstadoFuente(l.estado)}
@@ -237,7 +237,7 @@ export default function ListsPage() {
                     l.efecto === "impedimento"
                       ? "bg-destructive/10 text-destructive"
                       : l.efecto === "eleva_diligencia"
-                        ? "bg-warning/10 text-warning"
+                        ? "bg-warning/15 text-warning-ink"
                         : "bg-muted text-muted-foreground",
                   )}
                 >
@@ -273,7 +273,7 @@ export default function ListsPage() {
                 )}
                 {l.registros_eleva_diligencia > 0 && (
                   <div>
-                    <span className="block text-xl font-bold tabular-nums text-warning">
+                    <span className="block text-xl font-bold tabular-nums text-warning-ink">
                       {l.registros_eleva_diligencia.toLocaleString("es-MX")}
                     </span>
                     <span className="text-[13px] text-muted-foreground">elevan la diligencia</span>
@@ -281,7 +281,7 @@ export default function ListsPage() {
                 )}
                 {l.registros_sin_efecto_declarado > 0 && (
                   <div>
-                    <span className="block text-xl font-bold tabular-nums text-warning">
+                    <span className="block text-xl font-bold tabular-nums text-warning-ink">
                       {l.registros_sin_efecto_declarado.toLocaleString("es-MX")}
                     </span>
                     <span className="text-[13px] text-muted-foreground">sin efecto declarado</span>

@@ -29,11 +29,26 @@ export const ESTADOS_HALLAZGO: EstadoHallazgo[] = [
   'falso_positivo',
 ];
 
+/**
+ * El estado de un hallazgo, en los cuatro significados de la paleta.
+ *
+ * `abierto` deja de ser rojo: un hallazgo recién levantado no es algo roto, es
+ * algo que le toca atender al Oficial de Cumplimiento —que es exactamente lo
+ * que significa el ámbar—. El rojo se reserva para lo que sí está roto: una
+ * cadena de bitácora que no cuadra, un aviso rechazado.
+ *
+ * `confirmado_preocupante` es el único barro del sistema, y es el sitio para
+ * el que se pensó: una confirmación de riesgo alto no se deshace.
+ *
+ * `confirmado_inusual` iba en `bg-vulnerable/10 text-vulnerable`, un color que
+ * no existe en el tema —nunca lo hubo—, así que la insignia llevaba desde
+ * siempre saliendo sin color ninguno.
+ */
 export const ESTADO_CLASS: Record<EstadoHallazgo, string> = {
-  abierto: 'bg-destructive/10 text-destructive',
-  en_revision: 'bg-warning/10 text-warning',
-  confirmado_inusual: 'bg-vulnerable/10 text-vulnerable',
-  confirmado_preocupante: 'bg-destructive/10 text-destructive',
+  abierto: 'bg-warning/15 text-warning-ink',
+  en_revision: 'bg-accent/10 text-accent',
+  confirmado_inusual: 'bg-primary/10 text-primary',
+  confirmado_preocupante: 'bg-ikan-barro/10 text-ikan-barro dark:text-[#D08672]',
   descartado: 'bg-muted text-muted-foreground',
   falso_positivo: 'bg-muted text-muted-foreground',
 };
@@ -41,7 +56,7 @@ export const ESTADO_CLASS: Record<EstadoHallazgo, string> = {
 export const SEVERIDAD_CLASS: Record<SeveridadTipologia, string> = {
   critica: 'bg-destructive/10 text-destructive',
   alta: 'bg-destructive/10 text-destructive',
-  media: 'bg-warning/10 text-warning',
+  media: 'bg-warning/10 text-warning-ink',
   baja: 'bg-muted text-muted-foreground',
 };
 
@@ -54,8 +69,9 @@ export const URGENCIA_LABEL: Record<ClasificacionUrgencia, string> = {
 };
 
 export const URGENCIA_CLASS: Record<ClasificacionUrgencia, string> = {
-  '24_horas': 'bg-destructive/10 text-destructive',
-  por_umbral: 'bg-primary/10 text-primary',
+  // Ámbar: es prioridad operativa, no una avería.
+  '24_horas': 'bg-warning/15 text-warning-ink',
+  por_umbral: 'bg-muted text-muted-foreground',
 };
 
 export const URGENCIA_DESCRIPCION: Record<ClasificacionUrgencia, string> = {

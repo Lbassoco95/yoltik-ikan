@@ -15,15 +15,34 @@ import {
 } from "@/lib/hallazgos-labels";
 import type { EstadoHallazgo, Hallazgo } from "@/types/domain";
 import { formatMxn } from "@/lib/utils";
+import { EncabezadoSeccion } from "@/components/estela/EncabezadoSeccion";
 import { cn } from "@/lib/utils";
 
-// Bandeja del OC alimentada por el Motor PLD (tabla `hallazgo`).
+/**
+ * Bandeja del OC alimentada por el Motor PLD (tabla `hallazgo`).
+ *
+ * El filo superior de cada columna dice, en los significados de la paleta, en
+ * qué punto del trabajo está lo que hay debajo:
+ *
+ *   Abiertos      ámbar   lo que le toca atender. Era rojo, que dice «roto»:
+ *                         un hallazgo recién levantado no es una avería, es
+ *                         trabajo pendiente. Confundir las dos cosas hace que
+ *                         la avería de verdad se pierda entre ellas.
+ *   En revisión   jade    alguien lo tiene en la mano.
+ *   Inusual       navy    clasificado, no urgente.
+ *   Preocupante   barro   confirmado de riesgo alto, y no se deshace. Es el
+ *                         único barro de la pantalla, que es como se usa.
+ *   Descartados   verde   resuelto.
+ *
+ * `border-t-vulnerable` no existía en el tema: esa columna llevaba desde
+ * siempre saliendo sin filo.
+ */
 const columns: { title: string; estados: EstadoHallazgo[]; color: string }[] = [
-  { title: "Abiertos", estados: ["abierto"], color: "border-t-destructive" },
-  { title: "En revisión", estados: ["en_revision"], color: "border-t-warning" },
-  { title: "Inusual", estados: ["confirmado_inusual"], color: "border-t-vulnerable" },
-  { title: "Preocupante", estados: ["confirmado_preocupante"], color: "border-t-destructive" },
-  { title: "Descartados", estados: ["descartado", "falso_positivo"], color: "border-t-muted-foreground" },
+  { title: "Abiertos", estados: ["abierto"], color: "border-t-ikan-ambar" },
+  { title: "En revisión", estados: ["en_revision"], color: "border-t-accent" },
+  { title: "Inusual", estados: ["confirmado_inusual"], color: "border-t-primary" },
+  { title: "Preocupante", estados: ["confirmado_preocupante"], color: "border-t-ikan-barro" },
+  { title: "Descartados", estados: ["descartado", "falso_positivo"], color: "border-t-success" },
 ];
 
 function esMock(h: Hallazgo): boolean {
@@ -54,36 +73,34 @@ export default function AlertsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Bandeja de hallazgos</h1>
-          <p className="text-sm text-muted-foreground">
-            Hallazgos generados por el Motor PLD. El OC confirma, marca inusual/preocupante o descarta.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          className="gap-2"
-          onClick={() => recorrer.mutate()}
-          disabled={recorrer.isPending}
-          title="Ejecuta el Motor PLD sobre todas las operaciones de la organización"
-        >
-          {recorrer.isPending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4" />
-          )}
-          Recorrer motor
-        </Button>
-      </div>
+      <EncabezadoSeccion
+        titulo="Bandeja de hallazgos"
+        descripcion="Hallazgos generados por el Motor PLD. El OC confirma, marca inusual o preocupante, o descarta."
+        acciones={
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => recorrer.mutate()}
+            disabled={recorrer.isPending}
+            title="Ejecuta el Motor PLD sobre todas las operaciones de la organización"
+          >
+            {recorrer.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Recorrer motor
+          </Button>
+        }
+      />
 
       {hayMock && (
-        <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>DEMO — sin integración real.</strong> Algunos hallazgos usan datos simulados
             (analítica on-chain y listas OFAC/GAFI como snapshot en BD), señalados con la etiqueta
-            <span className="mx-1 status-badge bg-warning/20 text-warning text-xs">DEMO</span>
+            <span className="mx-1 rounded-sm bg-warning/20 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-warning-ink">DEMO</span>
             en la tarjeta.
           </span>
         </div>
@@ -98,14 +115,16 @@ export default function AlertsPage() {
           No se pudieron cargar los hallazgos: {(error as Error)?.message}
         </div>
       ) : (
-        <div className="grid grid-cols-5 gap-4 h-[calc(100vh-220px)]">
+        <div className="-mx-1 grid auto-cols-[minmax(230px,1fr)] grid-flow-col gap-3 overflow-x-auto px-1 pb-2 lg:h-[calc(100vh-260px)] lg:auto-cols-fr">
           {columns.map((col) => {
             const items = hallazgos.filter((h) => col.estados.includes(h.estado));
             return (
-              <div key={col.title} className={cn("glass-card border-t-4 p-4 flex flex-col", col.color)}>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold text-foreground">{col.title}</h2>
-                  <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded-full">{items.length}</span>
+              <div key={col.title} className={cn("flex flex-col rounded-md border border-border border-t-[3px] bg-card p-3.5", col.color)}>
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h2 className="estela-antetitulo text-foreground">{col.title}</h2>
+                  <span className="estela-dato rounded-sm bg-muted px-1.5 py-0.5 text-xs font-bold text-foreground">
+                    {items.length}
+                  </span>
                 </div>
                 <div className="flex-1 space-y-3 overflow-y-auto">
                   {items.map((h) => {
@@ -116,10 +135,10 @@ export default function AlertsPage() {
                       type="button"
                       onClick={() => setExpedienteId(h.id)}
                       aria-label={`Abrir expediente del hallazgo ${h.tipologia_codigo} — ${h.tipologia_nombre}`}
-                      className="w-full text-left bg-muted/40 rounded-lg p-4 cursor-pointer hover:bg-muted transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="w-full cursor-pointer rounded-md border border-border bg-muted/40 p-3.5 text-left transition-colors hover:border-accent/50 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-foreground">
+                        <span className="estela-dato text-xs font-bold text-accent">
                           {h.tipologia_codigo}
                         </span>
                         {urgencia && (
@@ -131,15 +150,15 @@ export default function AlertsPage() {
                           </span>
                         )}
                         {esMock(h) && (
-                          <span className="status-badge bg-warning/20 text-warning text-xs">DEMO</span>
+                          <span className="rounded-sm bg-warning/20 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-warning-ink">DEMO</span>
                         )}
                       </div>
-                      <p className="text-sm font-semibold text-foreground mt-1">{h.tipologia_nombre}</p>
+                      <p className="mt-1.5 text-[13px] font-semibold leading-snug text-foreground">{h.tipologia_nombre}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {h.client?.nombre_razon_social ?? "Cliente —"}
                       </p>
                       {h.operation && (
-                        <p className="text-sm font-bold text-foreground mt-2">
+                        <p className="estela-dato mt-2 text-sm font-bold text-foreground">
                           {formatMxn(h.operation.monto_mxn)}
                           {h.operation.activo_virtual ? ` · ${h.operation.activo_virtual}` : ""}
                         </p>
@@ -156,7 +175,7 @@ export default function AlertsPage() {
                     );
                   })}
                   {items.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-8">Sin hallazgos</p>
+                    <p className="py-8 text-center text-xs text-muted-foreground">Sin hallazgos</p>
                   )}
                 </div>
               </div>

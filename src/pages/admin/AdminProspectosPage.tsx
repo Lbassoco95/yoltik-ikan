@@ -49,7 +49,7 @@ const ETIQUETA: Record<string, string> = Object.fromEntries(
 
 /** El color refuerza; el texto es el que lleva el significado. */
 const CLASE_ESTADO: Record<string, string> = {
-  nuevo: "bg-warning/10 text-warning",
+  nuevo: "bg-warning/15 text-warning-ink",
   contactado: "bg-accent/10 text-accent",
   en_diagnostico: "bg-accent/10 text-accent",
   cliente: "bg-success/10 text-success",
@@ -95,7 +95,7 @@ export default function AdminProspectosPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Prospectos</h1>
+        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">Prospectos</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Quien llena el formulario del sitio llega aquí. Sólo lo ve Kawiil; ninguna organización
           cliente tiene acceso a estos datos.
@@ -115,7 +115,7 @@ export default function AdminProspectosPage() {
         ))}
       </div>
 
-      <div className="glass-card overflow-x-auto">
+      <div className="estela-placa overflow-x-auto">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando prospectos…
@@ -127,11 +127,11 @@ export default function AdminProspectosPage() {
         ) : (
           <table className="w-full min-w-[52rem]">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
+              <tr className="border-b border-border bg-muted/50">
                 {["Quién", "Contacto", "Actividad", "Cumplimiento", "Llegó", "Estado", ""].map((h) => (
                   <th
                     key={h}
-                    className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                    className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                   >
                     {h}
                   </th>
@@ -143,7 +143,7 @@ export default function AdminProspectosPage() {
                 <tr key={p.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3">
                     <p className="text-sm font-medium text-foreground">{p.razon_social}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{p.rfc}</p>
+                    <p className="text-xs text-muted-foreground estela-dato">{p.rfc}</p>
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-sm text-foreground">{p.contacto_nombre}</p>
@@ -271,7 +271,7 @@ export default function AdminProspectosPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+              className="gap-2"
               onClick={() => mover.mutate()}
               disabled={mover.isPending}
             >
@@ -301,7 +301,7 @@ function Tarjeta({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-lg border p-3 text-left transition-colors",
+        "rounded-md border p-3 text-left transition-colors",
         activo ? "border-accent bg-accent/5" : "hover:bg-muted/40",
       )}
     >

@@ -52,7 +52,7 @@ export default function AdminCatalogosPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
+        <h1 className="estela-titulo text-2xl font-extrabold tracking-tight text-foreground">
           Catálogos del formato del aviso
         </h1>
         <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
@@ -64,8 +64,8 @@ export default function AdminCatalogosPage() {
       </div>
 
       {sinCargar.length > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning" />
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>
               {sinCargar.length} de {catalogos.length} catálogos sin cargar.
@@ -78,7 +78,7 @@ export default function AdminCatalogosPage() {
         </div>
       )}
 
-      <div className="glass-card overflow-hidden">
+      <div className="estela-placa overflow-hidden">
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
@@ -93,7 +93,7 @@ export default function AdminCatalogosPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[40rem]">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
+                <tr className="border-b border-border bg-muted/50">
                   {[
                     "Catálogo",
                     "Campos del formato",
@@ -104,7 +104,7 @@ export default function AdminCatalogosPage() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="text-left text-xs font-semibold text-muted-foreground uppercase px-4 py-3"
+                      className="estela-antetitulo text-muted-foreground px-4 py-3 text-left"
                     >
                       {h}
                     </th>
@@ -121,14 +121,14 @@ export default function AdminCatalogosPage() {
                       <p className="text-sm font-medium text-foreground">
                         {c.nombre}
                       </p>
-                      <p className="font-mono text-[13px] text-muted-foreground">
+                      <p className="estela-dato text-[13px] text-muted-foreground">
                         {c.codigo}
                       </p>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {c.etiquetas_layout.map((e) => `<${e}>`).join(", ")}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                    <td className="px-4 py-3 estela-dato text-xs text-muted-foreground">
                       {c.clave_patron ?? "—"}
                     </td>
                     <td className="px-4 py-3">
@@ -137,7 +137,7 @@ export default function AdminCatalogosPage() {
                           {c.valores_vigentes.toLocaleString("es-MX")}
                         </span>
                       ) : (
-                        <span className="status-badge bg-warning/10 text-warning">
+                        <span className="status-badge bg-warning/15 text-warning-ink">
                           Sin cargar
                         </span>
                       )}
@@ -260,7 +260,7 @@ function DialogCarga({
             <div className="space-y-3">
               <div
                 className={cn(
-                  "rounded-lg p-3",
+                  "rounded-md p-3",
                   previo.fueraDePatron.length > 0
                     ? "bg-warning/10"
                     : "bg-success/10",
@@ -268,7 +268,7 @@ function DialogCarga({
               >
                 <div className="flex items-center gap-2">
                   {previo.fueraDePatron.length > 0 ? (
-                    <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+                    <AlertTriangle className="w-4 h-4 text-ikan-ambar shrink-0" />
                   ) : (
                     <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                   )}
@@ -278,7 +278,7 @@ function DialogCarga({
                   </p>
                 </div>
                 {previo.fueraDePatron.length > 0 && (
-                  <p className="text-[13px] text-warning mt-1 ml-6">
+                  <p className="text-[13px] text-warning-ink mt-1 ml-6">
                     {previo.fueraDePatron.length} clave(s) no cumplen{" "}
                     <code>{catalogo.clave_patron}</code> — por ejemplo{" "}
                     <code>{previo.fueraDePatron[0].clave}</code>. La carga no
@@ -289,7 +289,7 @@ function DialogCarga({
               </div>
 
               {previo.descartadas.length > 0 && (
-                <div className="rounded-lg bg-muted/40 p-3">
+                <div className="rounded-md bg-muted/40 p-3">
                   <p className="text-xs font-semibold text-foreground">
                     {previo.descartadas.length} fila(s) descartadas
                   </p>
@@ -306,14 +306,14 @@ function DialogCarga({
                 </div>
               )}
 
-              <div className="rounded-lg bg-muted/40 p-3">
+              <div className="rounded-md bg-muted/40 p-3">
                 <p className="text-xs font-semibold text-foreground mb-2">
                   Previo
                 </p>
                 <ul className="space-y-0.5">
                   {previo.valores.slice(0, 8).map((v) => (
                     <li key={v.clave} className="text-xs">
-                      <span className="font-mono text-muted-foreground mr-2">
+                      <span className="estela-dato text-muted-foreground mr-2">
                         {v.clave}
                       </span>
                       {v.descripcion}
@@ -328,7 +328,7 @@ function DialogCarga({
               </div>
 
               {catalogo.valores_vigentes > 0 && (
-                <p className="text-[13px] text-warning">
+                <p className="text-[13px] text-warning-ink">
                   Este catálogo ya tiene {catalogo.valores_vigentes} valores.
                   Los actuales no se borran: se cierra su vigencia con la fecha
                   de hoy, para que un aviso presentado antes se pueda auditar
@@ -353,7 +353,7 @@ function DialogCarga({
             Cancelar
           </Button>
           <Button
-            className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+            className="gap-2"
             disabled={bloqueado}
             onClick={() => carga.mutate()}
           >

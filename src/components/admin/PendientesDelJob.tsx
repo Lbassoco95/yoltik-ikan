@@ -77,7 +77,7 @@ export function PendientesDelJob() {
       {(errores.data ?? []).map((e) => (
         <div
           key={e.id}
-          className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3"
+          className="flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3"
         >
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-destructive" />
           <div className="flex-1 text-sm">
@@ -88,7 +88,7 @@ export function PendientesDelJob() {
             <p className="text-xs text-muted-foreground mt-1">
               {new Date(e.iniciado_en).toLocaleString("es-MX")}
               {Object.keys(e.detalle ?? {}).length > 0 && (
-                <span className="font-mono ml-2">{JSON.stringify(e.detalle)}</span>
+                <span className="estela-dato ml-2">{JSON.stringify(e.detalle)}</span>
               )}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -106,7 +106,7 @@ export function PendientesDelJob() {
 
       {/* Propuestas esperando decisión */}
       {(pendientes.data ?? []).map((c) => (
-        <div key={c.id} className="glass-card p-5 border-warning/40">
+        <div key={c.id} className="estela-placa p-5 border-warning/40">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h3 className="font-semibold text-foreground">
@@ -147,7 +147,7 @@ export function PendientesDelJob() {
                     <div
                       key={d.concepto}
                       className={cn(
-                        "rounded-lg border p-3",
+                        "rounded-md border p-3",
                         d.concepto === "Saldrían de la lista" && d.cantidad > 0
                           ? "border-destructive/40 bg-destructive/5"
                           : "border-border bg-muted/30",

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { PlacaAcceso } from '@/components/estela/PlacaAcceso';
 import { passwordResetRedirectUrl } from '@/lib/app-url';
 
 /**
@@ -37,12 +38,7 @@ export function RecuperarPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen grid place-items-center bg-background p-6">
-      <div className="ikan-card w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <div className="text-3xl font-bold text-foreground">Ikán</div>
-          <div className="text-sm text-muted-foreground">Recuperar contraseña</div>
-        </div>
+    <PlacaAcceso subtitulo="Recuperar contraseña">
 
         {enviado ? (
           <div className="space-y-4">
@@ -104,7 +100,6 @@ export function RecuperarPasswordPage() {
             </Link>
           </form>
         )}
-      </div>
-    </div>
+    </PlacaAcceso>
   );
 }

@@ -11,7 +11,7 @@ import type { ClasificacionRiesgo } from "@/types/domain";
 const ESTILO: Record<ClasificacionRiesgo, { clase: string; label: string }> = {
   bajo: { clase: "bg-success/10 text-success", label: "Bajo" },
   medio: { clase: "bg-muted text-foreground", label: "Medio" },
-  alto: { clase: "bg-warning/15 text-warning", label: "Alto" },
+  alto: { clase: "bg-warning/15 text-warning-ink", label: "Alto" },
   alto_oficio: { clase: "bg-destructive/10 text-destructive", label: "Alto de oficio" },
 };
 
