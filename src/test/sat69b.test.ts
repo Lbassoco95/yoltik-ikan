@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  parsear69B, leerCsv, fechaDeAviso, rfcValido, decodificarSat,
+  parsear69B, leerCsv, fechaDeAviso, rfcValido, decodificarSat, esSuprimida,
 } from '@/lib/sat69b';
 
 /** Fixtures recortadas de los archivos REALES del SAT, conservando su
@@ -258,5 +258,54 @@ describe('el historial por etapas, que es lo que resuelve un RFC repetido', () =
     const r = parsear69B(latin1(bis));
     expect(r.articulo).toBe('69-B Bis');
     expect(r.registros[0].fechaSituacion).toBe('2026-06-05');
+  });
+});
+
+describe('las filas que el SAT suprimió por orden judicial', () => {
+  const encabezado =
+    'Información actualizada al 31 de julio de 2026\n' +
+    'Listado completo de contribuyentes (Artículo 69-B del CFF)\n' +
+    'No.,RFC,Nombre del Contribuyente,Situación del contribuyente,' +
+    'Número y fecha de oficio global de presunción SAT,Publicación página SAT presuntos,' +
+    'Número y fecha de oficio global de presunción DOF,Publicación DOF presuntos\n';
+
+  /** La fila real: RFC en equis y la razón en el lugar del nombre. */
+  const suprimida =
+    '1,XXXXXXXXXXXX,Información suprimida en cumplimiento a la declaratoria de nulidad ' +
+    'emitida por la Segunda Sala Regional Hidalgo México.,Presunto,' +
+    'of-2014-3798,10/01/2014,of-2014-3997,23/01/2014\n';
+
+  it('se descartan diciendo que fue el SAT, no que el archivo esté mal', () => {
+    const r = parsear69B(latin1(encabezado + suprimida));
+    expect(r.registros).toEqual([]);
+    expect(r.descartadas).toHaveLength(1);
+    expect(r.descartadas[0].motivo).toMatch(/declaratoria de nulidad/);
+    expect(r.descartadas[0].motivo).not.toMatch(/forma inválida/);
+  });
+
+  it('pide las DOS señales: un RFC malo con nombre de verdad no es supresión', () => {
+    expect(esSuprimida('XXXXXXXXXXXX', 'Información suprimida en cumplimiento…')).toBe(true);
+    // Con nombre real, es un RFC inválido y tiene que verse como tal.
+    expect(esSuprimida('XXXXXXXXXXXX', 'COMERCIALIZADORA DEL BAJÍO')).toBe(false);
+    // Con RFC bueno, el dato sirve y no se puede enterrar aquí.
+    expect(esSuprimida('AAA120730823', 'Información suprimida en cumplimiento…')).toBe(false);
+  });
+
+  it('un RFC inválido que no es supresión sigue cayendo por su motivo', () => {
+    const mala =
+      '2,NO-ES-RFC,COMERCIALIZADORA DEL BAJÍO,Presunto,' +
+      'of-2014-3798,10/01/2014,of-2014-3997,23/01/2014\n';
+    const r = parsear69B(latin1(encabezado + mala));
+    expect(r.descartadas[0].motivo).toMatch(/forma inválida/);
+  });
+
+  it('no se lleva por delante las filas buenas del mismo archivo', () => {
+    const buena =
+      '2,OAN151230HWA,OPERADORA DEL NORTE,Presunto,' +
+      'of-2014-3798,10/01/2014,of-2014-3997,23/01/2014\n';
+    const r = parsear69B(latin1(encabezado + suprimida + buena));
+    expect(r.registros).toHaveLength(1);
+    expect(r.registros[0].rfc).toBe('OAN151230HWA');
+    expect(r.descartadas).toHaveLength(1);
   });
 });

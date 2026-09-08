@@ -166,6 +166,22 @@ export function rfcValido(rfc: string): boolean {
   return /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(rfc.trim().toUpperCase());
 }
 
+/**
+ * Una fila cuyos datos suprimió el SAT por orden judicial.
+ *
+ * Se piden las DOS señales —el RFC en equis y la razón donde va el nombre— y
+ * no cualquiera de las dos: si algún día llega una fila con RFC enmascarado y
+ * nombre de verdad, o con nombre suprimido y RFC bueno, tiene que seguir
+ * cayendo por el camino normal y verse como lo que es. Reconocer de más aquí
+ * es enterrar un dato que sí sirve.
+ */
+export function esSuprimida(rfc: string, nombre: string): boolean {
+  return (
+    /^X{6,}$/.test(rfc.trim().toUpperCase()) &&
+    /informaci[oó]n\s+suprimida/i.test(nombre)
+  );
+}
+
 /** «14/07/2021» → 2021-07-14. Devuelve null si no es una fecha del formato del SAT. */
 export function fechaDePublicacion(texto: string): string | null {
   const m = texto.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -271,6 +287,22 @@ export function parsear69B(bytes: ArrayBuffer | Uint8Array): Resultado69B {
 
     const resumen = f.slice(0, 4).join(', ');
 
+    // El SAT suprime RFC y nombre cuando un tribunal anula la publicación, y
+    // deja la fila con el RFC en equis y la razón en el lugar del nombre. Son
+    // 238 filas del listado completo de julio de 2026. Se descartan igual
+    // —sin RFC ni nombre no hay nada contra lo que cotejar— pero se dice por
+    // qué: llamarle «RFC con forma inválida» 238 veces parece un archivo roto
+    // o un lector roto, y lo primero que hace quien carga es abrirlo en Excel
+    // para «arreglarlo», que es justo lo que rompe la codificación.
+    if (esSuprimida(rfc, nombre)) {
+      descartadas.push({
+        fila: numeroFila,
+        motivo: 'El SAT suprimió los datos por una declaratoria de nulidad; la fila no trae ' +
+          'identidad contra la que cotejar.',
+        contenido: resumen,
+      });
+      continue;
+    }
     if (!rfcValido(rfc)) {
       descartadas.push({ fila: numeroFila, motivo: `RFC con forma inválida: "${rfc}"`, contenido: resumen });
       continue;
