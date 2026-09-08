@@ -21,3 +21,4 @@ export { EncabezadoSeccion } from "./EncabezadoSeccion";
 export { EstadoVacio } from "./EstadoVacio";
 export { MarcaIkan, IconoIkan } from "./MarcaIkan";
 export { EndosoYoltik } from "./EndosoYoltik";
+export { PlacaAcceso } from "./PlacaAcceso";
