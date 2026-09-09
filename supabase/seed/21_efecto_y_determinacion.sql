@@ -304,6 +304,54 @@ on conflict (codigo) do update set
   determinado_por = excluded.determinado_por;
 
 -- ---------------------------------------------------------------------
+-- El fundamento de cada fuente · de dónde nace la exigencia
+-- ---------------------------------------------------------------------
+-- La migration 0072 trae el razonamiento completo y lo aplica a la base que ya
+-- existe. Aquí va otra vez porque los seeds corren DESPUÉS de las migrations y
+-- estas fuentes las inserta el seed 11: en un proyecto nuevo, los `update` de
+-- la 0072 no encuentran ninguna fila y el fundamento quedaría nulo — que es
+-- justo lo que su guarda prohíbe.
+--
+-- En corto: la insignia «Obligatoria» afirmaba que la ley manda consultar
+-- estas listas, y el art. 18 no lo manda en ninguna de sus once fracciones
+-- (Nota 2). Se sustituye por dos etiquetas independientes: el EFECTO —qué pasa
+-- si hay coincidencia, que ya estaba— y el FUNDAMENTO, que es esto.
+update lista_fuente set
+  fundamento = 'obligacion_ley',
+  fundamento_norma =
+    'Art. 18 fracciones VIII y X LFPIORPI: obligan expresamente a identificar y dar '
+    || 'seguimiento intensificado a Personas Políticamente Expuestas. El catálogo de cargos '
+    || 'es el medio para cumplirlo. Nota 5 de la Célula de Cumplimiento, 9/09/2026.'
+where codigo = 'ppe_cargos_68a';
+
+-- `sat_69b_bis` no viene nombrada en la tabla de la Nota 5, que dice «SAT
+-- 69-B». Se le pone el mismo fundamento porque el razonamiento es idéntico
+-- —la ley tampoco ordena consultar el 69-B Bis, y es el artículo vecino del
+-- mismo Código Fiscal—, pero queda dicho que es inferencia y no texto de la
+-- nota, para que Cumplimiento lo confirme o lo corrija.
+update lista_fuente set
+  fundamento = 'metodologia_manual',
+  fundamento_norma =
+    'La ley NO ordena consultar esta lista: el art. 18 LFPIORPI, en sus once fracciones, no '
+    || 'obliga a consultar listas de sanciones de ningún tipo (verificado sobre el texto con '
+    || 'reforma DOF 16/07/2025, Nota 2). La organización la adoptó como medida para mitigar '
+    || 'el riesgo que el art. 18 fr. VII la obliga a mitigar, y lo asentó en su Manual '
+    || 'conforme a la fr. VIII — que es la que la obliga a observarlo. Nota 5, 9/09/2026.'
+where codigo in ('onu_consolidada', 'ofac_sdn', 'ofac_consolidada', 'sat_69b', 'sat_69b_bis');
+
+update lista_fuente set
+  fundamento = 'informativa',
+  fundamento_norma =
+    'No prevista en el Manual. Es una lista de sanciones real y cargable que esta célula '
+    || 'determinó no elevar a obligatoria: existe y se decidió no exigirla. Se consulta por '
+    || 'decisión de la organización y sin efecto automático.'
+where codigo = 'ue_sanciones';
+
+-- `ppe_oficial` se queda SIN fundamento a propósito: no es que no se sepa de
+-- dónde nace la exigencia, es que la fuente no se puede consultar. Una
+-- etiqueta ahí insinuaría que hay algo que consultar.
+
+-- ---------------------------------------------------------------------
 -- Comprobación: ninguna fuente activa puede quedar sin declarar
 -- ---------------------------------------------------------------------
 -- Una fuente que ni declara efecto ni está en determinación es un hueco
@@ -322,6 +370,19 @@ begin
     raise exception
       'Estas fuentes aplican pero no declaran qué produce una coincidencia: %. '
       'Declara su efecto o márcalas como pendientes de determinación.', v_malas;
+  end if;
+
+  -- Y de dónde nace la exigencia de consultarlas. Una fuente que se muestra
+  -- sin poder decir por qué se consulta es la insignia «Obligatoria» con otro
+  -- nombre: afirma algo que en una visita de verificación no se sostiene.
+  select string_agg(codigo, ', ') into v_malas
+  from lista_fuente
+  where activa and determinacion = 'aplica' and fundamento is null;
+
+  if v_malas is not null then
+    raise exception
+      'Estas fuentes aplican pero no declaran su fundamento: %. Di si es obligación de '
+      'ley, metodología del Manual o informativa.', v_malas;
   end if;
 end
 $comprobar$;

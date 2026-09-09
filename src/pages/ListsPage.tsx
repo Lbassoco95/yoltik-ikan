@@ -6,8 +6,10 @@ import { estadoDeListas, listarVigentes } from "@/lib/api/listas";
 import {
   explicaEfecto,
   explicaEstadoFuente,
+  explicaFundamento,
   labelEfecto,
   labelEstadoFuente,
+  labelFundamento,
   labelSituacion,
   NATURALEZA_LABEL,
 } from "@/lib/listas";
@@ -208,9 +210,26 @@ export default function ListsPage() {
                     <p className="text-xs text-muted-foreground mt-0.5">{l.autoridad}</p>
                   </div>
                 </div>
-                {l.obligatoria && l.determinacion === "aplica" && (
-                  <span className="status-badge bg-accent/10 text-accent text-xs shrink-0">
-                    Obligatoria
+                {/* Aquí decía «Obligatoria». Afirmaba que la ley manda
+                    consultar la fuente, y el art. 18 no lo manda en ninguna de
+                    sus once fracciones: era poner en pantalla, frente al
+                    usuario, el argumento que en una visita de verificación se
+                    cae. Lo sustituyen las dos etiquetas de abajo —efecto y
+                    fundamento—, que responden preguntas distintas e
+                    independientes. Instrucciones 334 a 337. */}
+                {l.fundamento_efectivo && (
+                  <span
+                    className={cn(
+                      "status-badge text-xs shrink-0",
+                      l.fundamento_efectivo === "obligacion_ley"
+                        ? "bg-accent/10 text-accent"
+                        : l.fundamento_efectivo === "pendiente_manual"
+                          ? "bg-warning/15 text-warning-ink"
+                          : "bg-muted text-muted-foreground",
+                    )}
+                    title={explicaFundamento(l.fundamento_efectivo)}
+                  >
+                    {labelFundamento(l.fundamento_efectivo)}
                   </span>
                 )}
               </div>

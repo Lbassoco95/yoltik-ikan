@@ -5,6 +5,7 @@ import {
   type DeterminacionFuente,
   type EfectoLista,
   type EstadoFuente,
+  type FundamentoConsulta,
   type ListaCarga,
   type ListaFuente,
   type ModoActualizacion,
@@ -35,7 +36,10 @@ export async function listarFuentes(): Promise<ListaFuente[]> {
   const { data, error } = await supabase
     .from('lista_fuente')
     .select('*')
-    .order('obligatoria', { ascending: false })
+      // Se ordena por el fundamento y no por `obligatoria`: esa columna sigue en
+    // la tabla pero ya no es lo que la pantalla afirma, y ordenar por ella
+    // pondría arriba fuentes por una razón que dejamos de sostener.
+    .order('fundamento', { ascending: true })
     .order('codigo');
   if (error) throw new Error(`No se pudieron leer las fuentes: ${error.message}`);
   return (data ?? []) as unknown as ListaFuente[];
@@ -464,6 +468,20 @@ export interface EstadoLista {
   efectos_por_situacion: Record<string, EfectoLista> | null;
   determinacion: DeterminacionFuente;
   fundamento_determinacion: string | null;
+  /**
+   * De dónde nace la exigencia de consultar la fuente. Independiente de
+   * `efecto`, que dice qué pasa si hay coincidencia. Null en la fuente que no
+   * se puede consultar: ahí una etiqueta insinuaría que hay algo que mirar.
+   */
+  fundamento: Exclude<FundamentoConsulta, 'pendiente_manual'> | null;
+  /** La cita que sostiene el fundamento, para poder defenderla en una visita. */
+  fundamento_norma: string | null;
+  /**
+   * La etiqueta que se pinta. La resuelve la vista y no este front: vale
+   * `pendiente_manual` cuando la organización no tiene Manual asentado, y esa
+   * regla es demasiado fácil de olvidar en un componente.
+   */
+  fundamento_efectivo: FundamentoConsulta | null;
   /** cargada · pendiente_carga · pendiente_determinacion · no_aplica */
   estado: EstadoFuente;
   /** Los que IMPIDEN. Un presunto del 69-B cuenta en el total pero no aquí, y
@@ -481,7 +499,10 @@ export async function estadoDeListas(): Promise<EstadoLista[]> {
   const { data, error } = await supabase
     .from('v_listas_estado')
     .select('*')
-    .order('obligatoria', { ascending: false })
+      // Se ordena por el fundamento y no por `obligatoria`: esa columna sigue en
+    // la tabla pero ya no es lo que la pantalla afirma, y ordenar por ella
+    // pondría arriba fuentes por una razón que dejamos de sostener.
+    .order('fundamento', { ascending: true })
     .order('nombre');
   if (error) throw new Error(`No se pudo leer el estado de las listas: ${error.message}`);
   return (data ?? []) as unknown as EstadoLista[];

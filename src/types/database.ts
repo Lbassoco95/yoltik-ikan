@@ -2598,7 +2598,9 @@ export type Database = {
           efecto: Database["public"]["Enums"]["efecto_lista"] | null
           efectos_por_situacion: Json | null
           frecuencia_objetivo: string | null
+          fundamento: Database["public"]["Enums"]["fundamento_consulta"] | null
           fundamento_determinacion: string | null
+          fundamento_norma: string | null
           id: string
           modo_actualizacion: Database["public"]["Enums"]["modo_actualizacion_lista"]
           naturaleza: Database["public"]["Enums"]["naturaleza_lista"]
@@ -2620,7 +2622,11 @@ export type Database = {
           efecto?: Database["public"]["Enums"]["efecto_lista"] | null
           efectos_por_situacion?: Json | null
           frecuencia_objetivo?: string | null
+          fundamento?:
+            | Database["public"]["Enums"]["fundamento_consulta"]
+            | null
           fundamento_determinacion?: string | null
+          fundamento_norma?: string | null
           id?: string
           modo_actualizacion: Database["public"]["Enums"]["modo_actualizacion_lista"]
           naturaleza: Database["public"]["Enums"]["naturaleza_lista"]
@@ -2642,7 +2648,11 @@ export type Database = {
           efecto?: Database["public"]["Enums"]["efecto_lista"] | null
           efectos_por_situacion?: Json | null
           frecuencia_objetivo?: string | null
+          fundamento?:
+            | Database["public"]["Enums"]["fundamento_consulta"]
+            | null
           fundamento_determinacion?: string | null
+          fundamento_norma?: string | null
           id?: string
           modo_actualizacion?: Database["public"]["Enums"]["modo_actualizacion_lista"]
           naturaleza?: Database["public"]["Enums"]["naturaleza_lista"]
@@ -3109,6 +3119,7 @@ export type Database = {
           es_demostracion: boolean
           es_referencia: boolean
           fecha_alta_sat: string | null
+          manual_pld_asentado_en: string | null
           id: string
           oc_designado_en: string | null
           oc_encargado_user_id: string | null
@@ -3130,6 +3141,7 @@ export type Database = {
           es_demostracion?: boolean
           es_referencia?: boolean
           fecha_alta_sat?: string | null
+          manual_pld_asentado_en?: string | null
           id?: string
           oc_designado_en?: string | null
           oc_encargado_user_id?: string | null
@@ -3151,6 +3163,7 @@ export type Database = {
           es_demostracion?: boolean
           es_referencia?: boolean
           fecha_alta_sat?: string | null
+          manual_pld_asentado_en?: string | null
           id?: string
           oc_designado_en?: string | null
           oc_encargado_user_id?: string | null
@@ -4256,6 +4269,11 @@ export type Database = {
           actualizada_al: string | null
           autoridad: string | null
           codigo: string | null
+          fundamento:
+            | Database["public"]["Enums"]["fundamento_consulta"]
+            | null
+          fundamento_efectivo: string | null
+          fundamento_norma: string | null
           modo_actualizacion:
             | Database["public"]["Enums"]["modo_actualizacion_lista"]
             | null
@@ -4272,6 +4290,11 @@ export type Database = {
           actualizada_al?: never
           autoridad?: string | null
           codigo?: string | null
+          fundamento?:
+            | Database["public"]["Enums"]["fundamento_consulta"]
+            | null
+          fundamento_efectivo?: never
+          fundamento_norma?: string | null
           modo_actualizacion?:
             | Database["public"]["Enums"]["modo_actualizacion_lista"]
             | null
@@ -4288,6 +4311,11 @@ export type Database = {
           actualizada_al?: never
           autoridad?: string | null
           codigo?: string | null
+          fundamento?:
+            | Database["public"]["Enums"]["fundamento_consulta"]
+            | null
+          fundamento_efectivo?: never
+          fundamento_norma?: string | null
           modo_actualizacion?:
             | Database["public"]["Enums"]["modo_actualizacion_lista"]
             | null
@@ -5072,6 +5100,10 @@ export type Database = {
         | "pendiente"
         | "no_disponible"
       efecto_lista: "impedimento" | "eleva_diligencia" | "dato"
+      fundamento_consulta:
+        | "obligacion_ley"
+        | "metodologia_manual"
+        | "informativa"
       modo_actualizacion_lista: "snapshot" | "movimientos"
       naturaleza_allegado:
         | "conyuge"
@@ -5314,6 +5346,11 @@ export const Constants = {
       ],
       determinacion_fuente: ["aplica", "no_aplica", "pendiente"],
       efecto_lista: ["impedimento", "eleva_diligencia", "dato"],
+      fundamento_consulta: [
+        "obligacion_ley",
+        "metodologia_manual",
+        "informativa",
+      ],
       modo_actualizacion_lista: ["snapshot", "movimientos"],
       naturaleza_allegado: [
         "conyuge",

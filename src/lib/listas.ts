@@ -37,7 +37,8 @@ export type EstadoFuente =
 
 export function labelEfecto(e: EfectoLista | null): string {
   if (e === null) return 'Sin declarar';
-  return { impedimento: 'Impedimento', eleva_diligencia: 'Eleva la diligencia', dato: 'Dato del expediente' }[e];
+  // El texto sale de la tabla del apartado 3.1 de la Nota 5, tal cual.
+  return { impedimento: 'Impedimento', eleva_diligencia: 'Eleva diligencia', dato: 'Dato del expediente' }[e];
 }
 
 /** Una línea que explica el efecto sin que haya que saberse la norma. */
@@ -81,6 +82,66 @@ export function explicaEstadoFuente(e: EstadoFuente): string {
       + 'fundamento está en la ficha de la fuente.',
   }[e];
 }
+/**
+ * De dónde nace la exigencia de consultar una fuente.
+ *
+ * Sustituye a la insignia «Obligatoria», que afirmaba que la ley manda
+ * consultar estas listas. El art. 18 LFPIORPI, en sus once fracciones, no lo
+ * manda (verificado por Cumplimiento sobre el texto con reforma del
+ * 16/07/2025). Poner esa palabra en pantalla era poner por escrito, frente al
+ * usuario, el argumento que en una visita de verificación se cae.
+ *
+ * `pendiente_manual` no es una clase distinta de fundamento: es
+ * `metodologia_manual` cuando la organización todavía no tiene Manual
+ * asentado. Lo resuelve la vista `v_listas_estado`, no este front, para que no
+ * haya forma de pintar «previsto en el Manual» sin que exista el Manual.
+ */
+export type FundamentoConsulta =
+  | 'obligacion_ley'
+  | 'metodologia_manual'
+  | 'informativa'
+  | 'pendiente_manual';
+
+export function labelFundamento(f: FundamentoConsulta | null): string {
+  if (f === null) return '';
+  return {
+    obligacion_ley: 'Obligación de ley',
+    metodologia_manual: 'Metodología del Manual',
+    informativa: 'Informativa',
+    pendiente_manual: 'Pendiente en el Manual',
+  }[f];
+}
+
+/**
+ * El texto de ayuda de cada fundamento.
+ *
+ * Va literal del apartado 3.4 de la Nota 5 de la Célula de Cumplimiento, y la
+ * instrucción 338 pide adoptarlo SIN modificarlo: son afirmaciones jurídicas
+ * dirigidas al usuario final, no copy. Si hace falta acortarlas por espacio,
+ * se consulta a Cumplimiento antes — no se recortan aquí.
+ *
+ * `pendiente_manual` es el único que no viene de la nota, porque la nota da la
+ * etiqueta (instrucción 337) y no su explicación. Se redactó para decir
+ * exactamente lo que la etiqueta significa y nada más.
+ */
+export function explicaFundamento(f: FundamentoConsulta | null): string {
+  if (f === null) return '';
+  return {
+    obligacion_ley:
+      'La ley obliga a identificar y dar seguimiento a Personas Políticamente Expuestas. '
+      + 'Esta fuente es el medio para cumplirlo.',
+    metodologia_manual:
+      'La ley no ordena consultar esta lista. Su despacho la adoptó en su Manual como '
+      + 'medida para evaluar y mitigar riesgos.',
+    informativa:
+      'No prevista en su Manual. Se consulta por decisión propia y no produce efecto '
+      + 'automático.',
+    pendiente_manual:
+      'La ley no ordena consultar esta lista, y su Manual todavía no consta en el sistema. '
+      + 'Mientras no conste, no se puede afirmar que su despacho la haya adoptado.',
+  }[f];
+}
+
 export type AccionMovimiento = 'alta' | 'baja';
 export type EstadoCarga = 'borrador' | 'aplicada' | 'revertida';
 export type TipoEntidad = 'persona' | 'empresa' | 'embarcacion' | 'aeronave';
