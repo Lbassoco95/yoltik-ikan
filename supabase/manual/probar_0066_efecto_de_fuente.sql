@@ -96,7 +96,7 @@ begin
   raise notice 'PRUEBA  4 OK · pendiente de carga y pendiente de determinación se distinguen';
 
   -- -------------------------------------------------------------------
-  -- 5. Con registros pasa a «cargada»
+  -- 5. Con registros deja de estar «pendiente de carga»
   -- -------------------------------------------------------------------
   select id into v_fuente from lista_fuente where codigo = 'sat_69b';
   insert into lista_carga (fuente_id, tipo, estado, alcance, fecha_publicacion_fuente)
@@ -110,10 +110,20 @@ begin
     (v_carga, 'alta', 'empresa', 'PRESUNTO, S.A.', 'PRE110101BB2', 'presunto', '2024-01-01'),
     (v_carga, 'alta', 'empresa', 'DESVIRTUADO, S.A.', 'DES110101CC3', 'desvirtuado', '2024-01-01');
 
-  if public.estado_de_fuente('sat_69b') <> 'cargada' then
-    raise exception 'PRUEBA 5 FALLA: con registros vigentes la fuente está cargada.';
+  -- Ya no se afirma «cargada» a secas. Desde la 0073 hay dos estados con
+  -- datos y son distintos: `en_validacion` cuando el barrido todavía no la
+  -- consulta, y `cargada` cuando sí. Lo que esta prueba comprueba —y lo que
+  -- pedía la instrucción 237— es que deje de verse como un hueco de carga en
+  -- cuanto hay registros. Cuál de los dos sea depende del modo de operación y
+  -- eso lo prueba la 0073.
+  if public.estado_de_fuente('sat_69b') not in ('cargada', 'en_validacion') then
+    raise exception 'PRUEBA 5 FALLA: con registros vigentes la fuente ya no está pendiente '
+      'de carga, y dijo "%".', public.estado_de_fuente('sat_69b');
   end if;
-  raise notice 'PRUEBA  5 OK · con registros la fuente pasa a cargada';
+  if public.estado_de_fuente('sat_69b') = 'pendiente_carga' then
+    raise exception 'PRUEBA 5 FALLA: sigue diciendo pendiente_carga con registros vigentes.';
+  end if;
+  raise notice 'PRUEBA  5 OK · con registros deja de verse como un hueco de carga';
 
   -- -------------------------------------------------------------------
   -- 6. La vista cuenta por efecto, no todo junto

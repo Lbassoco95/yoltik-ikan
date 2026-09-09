@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Search, Shield, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { estadoDeListas, listarVigentes } from "@/lib/api/listas";
+import { coberturaDelBarrido, estadoDeListas, listarVigentes } from "@/lib/api/listas";
 import {
   explicaEfecto,
   explicaEstadoFuente,
@@ -31,6 +31,13 @@ export default function ListsPage() {
   const [busqueda, setBusqueda] = useState("");
 
   const estado = useQuery({ queryKey: ["listas", "estado"], queryFn: estadoDeListas });
+  // Contra qué se barrió y contra qué no. Se pide siempre, no sólo cuando hay
+  // búsqueda: la respuesta no depende del término y así ya está cuando el
+  // resultado llega vacío, que es justo el momento en que hace falta.
+  const cobertura = useQuery({
+    queryKey: ["listas", "cobertura"],
+    queryFn: coberturaDelBarrido,
+  });
   const resultados = useQuery({
     queryKey: ["listas", "busqueda", busqueda],
     queryFn: () => listarVigentes(undefined, busqueda),
@@ -56,6 +63,12 @@ export default function ListsPage() {
   // cargos se contrasta contra el cargo declarado, no contra el nombre—, así
   // que un resultado vacío aquí no dice nada sobre eso.
   const viaNoDisponible = (estado.data ?? []).filter((l) => l.estado === "via_no_disponible");
+
+  // Instrucción 297: el barrido no consulta las fuentes en validación, y «la
+  // pantalla lo declara». Sin esta línea, excluirlas sería esconderlas — y un
+  // «sin coincidencias» contra listas que nadie miró es la mentira más cara
+  // que este producto puede decir.
+  const noBarridas = (cobertura.data ?? []).filter((c) => !c.se_barrio);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -101,6 +114,23 @@ export default function ListsPage() {
                       Cuidado: todavía no hay ninguna lista cargada, así que este resultado no
                       significa que la persona esté limpia.
                     </strong>
+                  )}
+                  {noBarridas.length > 0 && (
+                    <span className="block mt-2">
+                      <strong className="text-warning-ink">
+                        {noBarridas.length === 1
+                          ? "Esta búsqueda NO incluyó una fuente"
+                          : `Esta búsqueda NO incluyó ${noBarridas.length} fuentes`}
+                        :
+                      </strong>
+                      <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                        {noBarridas.map((c) => (
+                          <li key={c.fuente}>
+                            · <span className="font-medium">{c.fuente_nombre}</span> — {c.motivo}
+                          </li>
+                        ))}
+                      </ul>
+                    </span>
                   )}
                   {viaNoDisponible.length > 0 && (
                     <span className="block mt-1 text-muted-foreground">
@@ -248,6 +278,16 @@ export default function ListsPage() {
                 {l.estado === "cargada" && l.actualizada_al ? (
                   <span className="status-badge bg-success/10 text-success text-xs">
                     Actualizada al {new Date(l.actualizada_al + "T12:00:00").toLocaleDateString("es-MX")}
+                  </span>
+                ) : l.estado === "en_validacion" ? (
+                  /* Tiene datos y fecha, pero no barre. Va en ámbar porque sí
+                     hay algo que atender: falta revisarla y ponerla a operar.
+                     Y la fecha se muestra igual, que es de lo que se trata
+                     validar. */
+                  <span className="status-badge bg-warning/15 text-warning-ink text-xs">
+                    En validación
+                    {l.actualizada_al &&
+                      ` · datos al ${new Date(l.actualizada_al + "T12:00:00").toLocaleDateString("es-MX")}`}
                   </span>
                 ) : (
                   <span

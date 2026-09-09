@@ -24,6 +24,23 @@ begin
   select id into v_onu  from lista_fuente where codigo = 'onu_consolidada';
   select id into v_sat  from lista_fuente where codigo = 'sat_69b';
 
+  -- -------------------------------------------------------------------
+  -- Poner operativas las fuentes de esta prueba, a propósito y a la vista
+  -- -------------------------------------------------------------------
+  -- Desde la 0073 el barrido sólo consulta fuentes OPERATIVAS, y hoy ninguna
+  -- lo es: la compuerta del corroborante (instrucciones 327 a 330) no existe
+  -- todavía y la 298 lo impide. Sin esto, `coincidencias_en_listas` devuelve
+  -- cero siempre y estas catorce pruebas pasarían a no comprobar nada — que es
+  -- peor que fallar, porque no se nota.
+  --
+  -- Se desactiva el candado con el trigger nombrado, y se restaura al final.
+  -- No es un atajo que la aplicación pueda tomar: `disable trigger` exige ser
+  -- dueño de la tabla y el rol con que corre la app no lo es. Si alguien copia
+  -- estas dos líneas a código de producto, no van a funcionar, y así debe ser.
+  alter table lista_fuente disable trigger fuente_operativa_exige_cotejo;
+  update lista_fuente set modo_operacion = 'operativa'
+   where codigo in ('ofac_sdn', 'onu_consolidada', 'sat_69b');
+
   insert into lista_carga (fuente_id, tipo, estado, alcance, fecha_publicacion_fuente)
   values (v_ofac, 'archivo', 'aplicada', 'completa', '2026-07-27')
   returning id into v_carga;
@@ -292,6 +309,16 @@ begin
     end if;
   end;
   raise notice 'PRUEBA 14 OK · un alta y una baja en la misma carga cotejan (regresión de la 0065)';
+
+  -- -------------------------------------------------------------------
+  -- Restaurar: las fuentes vuelven a validación y el candado se rearma
+  -- -------------------------------------------------------------------
+  -- Si esta prueba falla antes de llegar aquí, el rollback de la transacción
+  -- deshace las dos cosas igual. Se restaura explícitamente para el caso en
+  -- que pase, que es el que no tiene rollback.
+  update lista_fuente set modo_operacion = 'validacion'
+   where codigo in ('ofac_sdn', 'onu_consolidada', 'sat_69b');
+  alter table lista_fuente enable trigger fuente_operativa_exige_cotejo;
 
   raise notice '--- 0067: 14 de 14 ---';
 end

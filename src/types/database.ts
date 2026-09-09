@@ -2603,6 +2603,7 @@ export type Database = {
           fundamento_norma: string | null
           id: string
           modo_actualizacion: Database["public"]["Enums"]["modo_actualizacion_lista"]
+          modo_operacion: Database["public"]["Enums"]["modo_operacion_fuente"]
           naturaleza: Database["public"]["Enums"]["naturaleza_lista"]
           nombre: string
           notas: string | null
@@ -2655,6 +2656,7 @@ export type Database = {
           fundamento_norma?: string | null
           id?: string
           modo_actualizacion?: Database["public"]["Enums"]["modo_actualizacion_lista"]
+          modo_operacion?: Database["public"]["Enums"]["modo_operacion_fuente"]
           naturaleza?: Database["public"]["Enums"]["naturaleza_lista"]
           nombre?: string
           notas?: string | null
@@ -4273,6 +4275,9 @@ export type Database = {
             | Database["public"]["Enums"]["fundamento_consulta"]
             | null
           fundamento_efectivo: string | null
+          modo_operacion:
+            | Database["public"]["Enums"]["modo_operacion_fuente"]
+            | null
           fundamento_norma: string | null
           modo_actualizacion:
             | Database["public"]["Enums"]["modo_actualizacion_lista"]
@@ -4294,6 +4299,9 @@ export type Database = {
             | Database["public"]["Enums"]["fundamento_consulta"]
             | null
           fundamento_efectivo?: never
+          modo_operacion?:
+            | Database["public"]["Enums"]["modo_operacion_fuente"]
+            | null
           fundamento_norma?: string | null
           modo_actualizacion?:
             | Database["public"]["Enums"]["modo_actualizacion_lista"]
@@ -4315,6 +4323,9 @@ export type Database = {
             | Database["public"]["Enums"]["fundamento_consulta"]
             | null
           fundamento_efectivo?: never
+          modo_operacion?:
+            | Database["public"]["Enums"]["modo_operacion_fuente"]
+            | null
           fundamento_norma?: string | null
           modo_actualizacion?:
             | Database["public"]["Enums"]["modo_actualizacion_lista"]
@@ -4734,6 +4745,20 @@ export type Database = {
           tipo_entidad: string
         }[]
       }
+      cobertura_del_barrido: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          fuente: string
+          fuente_nombre: string
+          motivo: string | null
+          registros_vigentes: number
+          se_barrio: boolean
+        }[]
+      }
+      cotejo_con_calidad_de_alias: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       normalizar_nombres: { Args: { p_nombres: string[] }; Returns: string[] }
       efecto_de_coincidencia: {
         Args: { p_fuente: string; p_situacion?: string }
@@ -5100,6 +5125,7 @@ export type Database = {
         | "pendiente"
         | "no_disponible"
       efecto_lista: "impedimento" | "eleva_diligencia" | "dato"
+      modo_operacion_fuente: "validacion" | "operativa"
       fundamento_consulta:
         | "obligacion_ley"
         | "metodologia_manual"
@@ -5346,6 +5372,7 @@ export const Constants = {
       ],
       determinacion_fuente: ["aplica", "no_aplica", "pendiente"],
       efecto_lista: ["impedimento", "eleva_diligencia", "dato"],
+      modo_operacion_fuente: ["validacion", "operativa"],
       fundamento_consulta: [
         "obligacion_ley",
         "metodologia_manual",

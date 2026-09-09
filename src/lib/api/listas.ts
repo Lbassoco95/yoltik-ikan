@@ -6,6 +6,7 @@ import {
   type EfectoLista,
   type EstadoFuente,
   type FundamentoConsulta,
+  type ModoOperacion,
   type ListaCarga,
   type ListaFuente,
   type ModoActualizacion,
@@ -482,6 +483,8 @@ export interface EstadoLista {
    * regla es demasiado fácil de olvidar en un componente.
    */
   fundamento_efectivo: FundamentoConsulta | null;
+  /** Si el barrido la consulta, o si está cargada para revisarse. */
+  modo_operacion: ModoOperacion;
   /** cargada · pendiente_carga · pendiente_determinacion · no_aplica */
   estado: EstadoFuente;
   /** Los que IMPIDEN. Un presunto del 69-B cuenta en el total pero no aquí, y
@@ -506,4 +509,25 @@ export async function estadoDeListas(): Promise<EstadoLista[]> {
     .order('nombre');
   if (error) throw new Error(`No se pudo leer el estado de las listas: ${error.message}`);
   return (data ?? []) as unknown as EstadoLista[];
+}
+
+/**
+ * Contra qué se barrió y contra qué no, con el motivo.
+ *
+ * Acompaña a `listarVigentes`. Sin esto, un resultado vacío se leería como «la
+ * persona está limpia» cuando puede significar «no se miró nada»: es el falso
+ * negativo que la instrucción 297 existe para evitar, y el material de la 246.
+ */
+export interface CoberturaBarrido {
+  fuente: string;
+  fuente_nombre: string;
+  se_barrio: boolean;
+  registros_vigentes: number;
+  motivo: string | null;
+}
+
+export async function coberturaDelBarrido(): Promise<CoberturaBarrido[]> {
+  const { data, error } = await supabase.rpc('cobertura_del_barrido');
+  if (error) throw new Error(`No se pudo leer la cobertura del barrido: ${error.message}`);
+  return (data ?? []) as CoberturaBarrido[];
 }

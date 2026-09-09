@@ -30,10 +30,21 @@ export type DeterminacionFuente = 'aplica' | 'no_aplica' | 'pendiente' | 'no_dis
  */
 export type EstadoFuente =
   | 'cargada'
+  | 'en_validacion'
   | 'pendiente_carga'
   | 'pendiente_determinacion'
   | 'no_aplica'
   | 'via_no_disponible';
+
+/**
+ * Si el barrido consulta la fuente o si todavía se está revisando.
+ *
+ * Va aparte de `activa` porque una fuente en validación tiene que VERSE —de
+ * eso se trata validarla, mirar sus cifras y su fecha— y no tiene que
+ * barrerse. Con una sola bandera había que elegir entre esconder lo que se
+ * valida o barrer lo que no está listo.
+ */
+export type ModoOperacion = 'validacion' | 'operativa';
 
 export function labelEfecto(e: EfectoLista | null): string {
   if (e === null) return 'Sin declarar';
@@ -57,6 +68,7 @@ export function explicaEfecto(e: EfectoLista | null): string {
 export function labelEstadoFuente(e: EstadoFuente): string {
   return {
     cargada: 'Cargada',
+    en_validacion: 'En validación',
     pendiente_carga: 'Pendiente de carga',
     pendiente_determinacion: 'Pendiente de determinación',
     no_aplica: 'Sin obligación · informativa',
@@ -67,6 +79,13 @@ export function labelEstadoFuente(e: EstadoFuente): string {
 export function explicaEstadoFuente(e: EstadoFuente): string {
   return {
     cargada: 'Se consulta con los registros vigentes.',
+    // Instrucción 297. Los datos están y el camino de carga se probó; lo que
+    // falta es la compuerta que decide qué se hace con un alias de baja
+    // calidad. Hasta entonces el barrido no la consulta, y decirlo es la
+    // diferencia entre validar y aparentar que se opera.
+    en_validacion:
+      'Cargada para revisarse: el barrido todavía no la consulta, así que un resultado '
+      + 'sin coincidencias no la incluye.',
     pendiente_carga: 'Ya se determinó que aplica; falta cargar el archivo de la autoridad.',
     pendiente_determinacion:
       'No es que falte un archivo: falta resolver si la obligación de consultarla existe. '
