@@ -108,19 +108,32 @@ begin
   raise notice 'PRUEBA  4 OK · una fuente vacía también se declara, con su propio motivo';
 
   -- ------------------------------------------------------------------
-  -- 5. La compuerta de la 298 está cerrada
+  -- 5. La compuerta de la 298 ya está abierta
   -- ------------------------------------------------------------------
-  if public.cotejo_con_calidad_de_alias() then
-    raise exception 'PRUEBA 5: la compuerta del corroborante no está construida (327 a 330), '
-      'así que no puede declararse abierta';
+  -- Esta prueba nació afirmando lo contrario, y tenía razón ese día: la 0073
+  -- cerró la compuerta porque la del corroborante no existía. La 0074 la
+  -- construyó y la abrió. Se afirma el estado de hoy.
+  if not public.cotejo_con_calidad_de_alias() then
+    raise exception 'PRUEBA 5: la compuerta debería estar abierta desde la 0074';
   end if;
   v_ok := v_ok + 1;
-  raise notice 'PRUEBA  5 OK · la compuerta del corroborante está cerrada, como debe';
+  raise notice 'PRUEBA  5 OK · la compuerta del corroborante está abierta';
 
   -- ------------------------------------------------------------------
-  -- 6. Y por eso NO se puede pasar una fuente a operativa
+  -- 6. Y el candado sigue funcionando si se cierra
   -- ------------------------------------------------------------------
-  -- El candado. Sin esto, la 298 sería una intención escrita en un documento.
+  -- El candado es lo que hace que la 298 sea un control y no una intención, y
+  -- con la compuerta abierta no se puede observar. Se cierra a propósito para
+  -- verlo, y se restaura.
+  --
+  -- Reemplazar la función dentro de la prueba es deliberado y ruidoso. No es
+  -- un atajo para la aplicación: `create or replace function` exige ser dueño
+  -- de la función y el rol con que corre la app no lo es. Si esta prueba
+  -- fallara antes de restaurar, el rollback de la transacción lo deshace.
+  create or replace function public.cotejo_con_calidad_de_alias()
+  returns boolean language sql immutable set search_path = public
+  as $cerrada$ select false $cerrada$;
+
   begin
     update lista_fuente set modo_operacion = 'operativa' where codigo = 'prueba_validacion';
     raise exception 'PRUEBA 6 FALLA: se pudo pasar a operativa con la compuerta cerrada';
@@ -130,19 +143,20 @@ begin
       raise exception 'PRUEBA 6: se rechazó por el motivo equivocado: %', sqlerrm;
     end if;
   end;
+
   select modo_operacion::text into v_txt from lista_fuente where codigo = 'prueba_validacion';
   if v_txt is distinct from 'validacion' then
     raise exception 'PRUEBA 6: quedó en % después del intento', v_txt;
   end if;
   v_ok := v_ok + 1;
-  raise notice 'PRUEBA  6 OK · el candado impide pasar a operativa, y no deja rastro';
+  raise notice 'PRUEBA  6 OK · con la compuerta cerrada el candado impide operar';
 
   -- ------------------------------------------------------------------
   -- 7. Tampoco naciendo operativa
   -- ------------------------------------------------------------------
   -- El candado tiene que cubrir el INSERT y no sólo el UPDATE: si no, basta
   -- crear la fuente ya operativa para esquivarlo, que es la primera cosa que
-  -- alguien hace sin querer.
+  -- alguien hace sin querer. Sigue con la compuerta cerrada de la prueba 6.
   begin
     insert into lista_fuente
       (codigo, nombre, autoridad, naturaleza, modo_actualizacion,
@@ -160,6 +174,11 @@ begin
   end;
   v_ok := v_ok + 1;
   raise notice 'PRUEBA  7 OK · tampoco se puede crear una fuente naciendo operativa';
+
+  -- Se restaura la compuerta al estado que dejó la 0074.
+  create or replace function public.cotejo_con_calidad_de_alias()
+  returns boolean language sql immutable set search_path = public
+  as $abierta$ select true $abierta$;
 
   -- ------------------------------------------------------------------
   -- 8. Hoy NINGUNA fuente del catálogo es operativa

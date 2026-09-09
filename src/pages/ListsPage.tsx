@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Search, Shield, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { coberturaDelBarrido, estadoDeListas, listarVigentes } from "@/lib/api/listas";
+import { barrerEnListas, coberturaDelBarrido, estadoDeListas } from "@/lib/api/listas";
 import {
   explicaEfecto,
   explicaEstadoFuente,
@@ -38,11 +38,18 @@ export default function ListsPage() {
     queryKey: ["listas", "cobertura"],
     queryFn: coberturaDelBarrido,
   });
+  // El BARRIDO, no un `ilike`. Antes esta pantalla buscaba por subcadena sobre
+  // `v_listas_vigentes`, que es otra cosa: no mira alias —el 75% de la
+  // superficie de cotejo de la ONU— no respeta el modo de operación, así que
+  // habría mostrado coincidencias de una lista en validación, y no pasa por la
+  // compuerta del corroborante. El control vivía en la base y la pantalla no
+  // lo llamaba.
   const resultados = useQuery({
-    queryKey: ["listas", "busqueda", busqueda],
-    queryFn: () => listarVigentes(undefined, busqueda),
+    queryKey: ["listas", "barrido", busqueda],
+    queryFn: () => barrerEnListas({ nombre: busqueda }),
     enabled: busqueda.trim().length >= 3,
   });
+  const barrido = resultados.data;
 
   // Dos huecos que se veían iguales y no lo son. Uno se resuelve bajando un
   // archivo que existe; el otro con una determinación jurídica que nadie ha
@@ -104,7 +111,7 @@ export default function ListsPage() {
               </div>
             ) : resultados.isError ? (
               <p className="text-sm text-destructive">{(resultados.error as Error).message}</p>
-            ) : (resultados.data ?? []).length === 0 ? (
+            ) : (barrido?.coincidencias.length ?? 0) === 0 ? (
               <div className="flex items-start gap-3 rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
                 <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
                 <span>
@@ -132,6 +139,14 @@ export default function ListsPage() {
                       </ul>
                     </span>
                   )}
+                  {(barrido?.suprimidas.no_corroborables ?? 0) > 0 && (
+                    <span className="block mt-2 text-muted-foreground">
+                      {barrido!.suprimidas.no_corroborables.toLocaleString("es-MX")} coincidencias
+                      por alias de baja calidad no se muestran porque no se pudieron corroborar:
+                      ni la lista ni el expediente traen fecha de nacimiento con la que
+                      confirmarlas.
+                    </span>
+                  )}
                   {viaNoDisponible.length > 0 && (
                     <span className="block mt-1 text-muted-foreground">
                       Esta búsqueda tampoco resuelve si la persona es Políticamente Expuesta: eso
@@ -143,18 +158,25 @@ export default function ListsPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {(resultados.data ?? []).map((r) => (
+                {(barrido?.coincidencias ?? []).map((r) => (
                   <div
                     key={r.registro_id}
                     className={cn(
                       "flex items-start gap-3 rounded-md border px-4 py-3",
-                      r.bloqueante
+                      // El color sale del EFECTO declarado por la fuente, no de
+                      // una noción propia de «bloqueante»: la ONU impide y OFAC
+                      // eleva la diligencia, y pintarlas igual sería bloquear de
+                      // más o de menos.
+                      r.efecto === "impedimento"
                         ? "border-destructive/40 bg-destructive/10"
                         : "border-warning/40 bg-warning/10",
                     )}
                   >
                     <AlertTriangle
-                      className={cn("w-4 h-4 mt-0.5 shrink-0", r.bloqueante ? "text-destructive" : "text-warning-ink")}
+                      className={cn(
+                        "w-4 h-4 mt-0.5 shrink-0",
+                        r.efecto === "impedimento" ? "text-destructive" : "text-warning-ink",
+                      )}
                     />
                     <div className="text-sm flex-1">
                       <p className="font-semibold">{r.nombre}</p>
@@ -166,14 +188,58 @@ export default function ListsPage() {
                           <> · desde el {new Date(r.alta_fecha).toLocaleDateString("es-MX")}</>
                         )}
                       </p>
-                      <p className={cn("text-xs mt-1 font-medium", r.bloqueante ? "text-destructive" : "text-warning-ink")}>
-                        {r.bloqueante
-                          ? "Coincidencia que exige acción antes de continuar con la operación."
-                          : "Señal informativa: no confirma nada por sí sola, pero justifica debida diligencia reforzada."}
+                      {/* CÓMO cotejó. Una coincidencia contra un alias de baja
+                          calidad corroborada por fecha de nacimiento no se
+                          explica igual que una contra el nombre primario, y
+                          quien revisa necesita la diferencia para decidir. */}
+                      <p className="text-muted-foreground text-xs mt-0.5">
+                        {r.coincide_por === "rfc"
+                          ? "Coteja por RFC."
+                          : r.coincide_por === "nombre"
+                            ? "Coteja por el nombre principal de la lista."
+                            : r.coincide_por === "alias"
+                              ? "Coteja por un alias de la lista."
+                              : "Coteja por un alias de baja calidad declarada por la fuente."}
+                        {r.corroboracion_detalle && ` ${r.corroboracion_detalle}`}
+                      </p>
+                      <p
+                        className={cn(
+                          "text-xs mt-1 font-medium",
+                          r.efecto === "impedimento" ? "text-destructive" : "text-warning-ink",
+                        )}
+                      >
+                        {explicaEfecto(r.efecto)}
                       </p>
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Las contradichas. No son un descarte silencioso: una
+                coincidencia de nombre con fecha de nacimiento distinta es una
+                NO-COINCIDENCIA DEMOSTRADA, y asentarla es mejor prueba de que
+                el control corrió que no haberla producido nunca. */}
+            {(barrido?.descartadas.length ?? 0) > 0 && (
+              <div className="mt-3 rounded-md border border-border bg-muted/30 px-4 py-3 text-xs">
+                <p className="font-medium text-foreground">
+                  {barrido!.descartadas.length === 1
+                    ? "Una coincidencia quedó descartada por contradicción"
+                    : `${barrido!.descartadas.length} coincidencias quedaron descartadas por contradicción`}
+                  :
+                </p>
+                <ul className="mt-1 space-y-1 text-muted-foreground">
+                  {barrido!.descartadas.map((d) => (
+                    <li key={d.registro_id}>
+                      · <span className="font-medium">{d.nombre}</span> ({d.fuente_nombre}) —{" "}
+                      {d.detalle}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 text-muted-foreground">
+                  Se registran a propósito: quedan como constancia de que el barrido corrió y de
+                  por qué esa persona no es la de la lista.
+                </p>
               </div>
             )}
           </div>

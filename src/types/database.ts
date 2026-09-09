@@ -4729,9 +4729,22 @@ export type Database = {
       }
       orden_etapa_69b: { Args: { p_situacion: string }; Returns: number }
       coincidencias_en_listas: {
-        Args: { p_incluir_debiles?: boolean; p_nombre?: string; p_rfc?: string }
+        Args: {
+          p_documento?: string
+          p_fecha_nacimiento?: string
+          p_incluir_debiles?: boolean
+          p_nacionalidad?: string
+          p_nombre?: string
+          p_rfc?: string
+        }
         Returns: {
+          alta_fecha: string | null
           coincide_por: string
+          corroboracion:
+            | Database["public"]["Enums"]["desenlace_corroboracion"]
+            | null
+          corroboracion_detalle: string | null
+          corroborado_por: string | null
           datos: Json
           determinacion_fuente: string
           efecto: Database["public"]["Enums"]["efecto_lista"]
@@ -4741,8 +4754,50 @@ export type Database = {
           nombre: string
           pais: string
           registro_id: string
+          rfc: string | null
           situacion: string
           tipo_entidad: string
+        }[]
+      }
+      coincidencias_suprimidas: {
+        Args: {
+          p_documento?: string
+          p_fecha_nacimiento?: string
+          p_nacionalidad?: string
+          p_nombre?: string
+          p_rfc?: string
+        }
+        Returns: { contradichas: number; no_corroborables: number }[]
+      }
+      coincidencias_descartadas: {
+        Args: {
+          p_documento?: string
+          p_fecha_nacimiento?: string
+          p_nacionalidad?: string
+          p_nombre?: string
+          p_rfc?: string
+        }
+        Returns: {
+          campo: string | null
+          detalle: string | null
+          fuente: string
+          fuente_nombre: string
+          identificador_fuente: string | null
+          nombre: string
+          registro_id: string
+        }[]
+      }
+      corroborar_coincidencia: {
+        Args: {
+          p_documento?: string
+          p_fecha_nacimiento?: string
+          p_nacionalidad?: string
+          p_registro_id: string
+        }
+        Returns: {
+          campo: string | null
+          desenlace: Database["public"]["Enums"]["desenlace_corroboracion"]
+          detalle: string | null
         }[]
       }
       cobertura_del_barrido: {
@@ -5124,6 +5179,10 @@ export type Database = {
         | "no_aplica"
         | "pendiente"
         | "no_disponible"
+      desenlace_corroboracion:
+        | "corroborada"
+        | "no_corroborable"
+        | "contradicha"
       efecto_lista: "impedimento" | "eleva_diligencia" | "dato"
       modo_operacion_fuente: "validacion" | "operativa"
       fundamento_consulta:
@@ -5371,6 +5430,11 @@ export const Constants = {
         "constancia_conservacion",
       ],
       determinacion_fuente: ["aplica", "no_aplica", "pendiente"],
+      desenlace_corroboracion: [
+        "corroborada",
+        "no_corroborable",
+        "contradicha",
+      ],
       efecto_lista: ["impedimento", "eleva_diligencia", "dato"],
       modo_operacion_fuente: ["validacion", "operativa"],
       fundamento_consulta: [

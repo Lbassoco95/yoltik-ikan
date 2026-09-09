@@ -65,6 +65,26 @@ export interface RegistroOnu {
   fechaNacimiento: string | null;
   /** El calificador de esa fecha: EXACT, APPROXIMATELY, BETWEEN. */
   fechaNacimientoTipo: string | null;
+  /**
+   * Las fechas de nacimiento EXACTAS, como lista y en formato ISO.
+   *
+   * Va aparte de `fechaNacimiento` —que es para mostrar— porque cotejar exige
+   * comparar valor por valor: la ONU publica varias fechas candidatas para la
+   * misma persona y unirlas en una cadena hace que ninguna iguale. Quedan
+   * fuera los años sueltos, los aproximados y los rangos: no son el mismo dato
+   * que una fecha de nacimiento.
+   */
+  fechasNacimientoExactas: string[];
+  /**
+   * La nacionalidad declarada por la fuente, SIN caer al país del domicilio.
+   *
+   * `pais` sí cae, porque así se muestra. Para corroborar hace falta la
+   * distinción: contradecir una coincidencia porque el designado tiene
+   * domicilio en otro país no es una no-coincidencia demostrada.
+   */
+  nacionalidad: string | null;
+  /** El país del domicilio, cuando la fuente lo trae. */
+  paisDomicilio: string | null;
   /** El cargo o calidad con que se le lista. */
   designacion: string | null;
   /**
@@ -277,14 +297,46 @@ export function leerEntidadOnu(
   debiles.delete(nombre);
   for (const b of buenos) debiles.delete(b);
 
-  // --- País: nacionalidad primero, luego domicilio -------------------
-  const pais =
-    texto(bloques(trozo, 'NATIONALITY')[0] ?? '', 'VALUE') ??
-    texto(bloques(trozo, `${tipoEntidad === 'persona' ? 'INDIVIDUAL' : 'ENTITY'}_ADDRESS`)[0] ?? '', 'COUNTRY');
+  // --- País: se separan, y ahora sí importa la diferencia ------------
+  //
+  // `pais` sigue siendo el de siempre —nacionalidad si la hay, si no el del
+  // domicilio— porque así se muestra y así lo lee todo lo construido. Pero la
+  // nacionalidad va aparte, y no es un lujo: la compuerta del corroborante
+  // (instrucciones 327 a 330) contrasta la NACIONALIDAD que declara el
+  // compareciente, y contrastarla contra un país de domicilio sería corroborar
+  // o contradecir con el dato equivocado. Peor todavía en el sentido de la
+  // contradicción, que descarta una coincidencia: descartarla porque el
+  // designado tiene domicilio en otro país no es una no-coincidencia
+  // demostrada, es un error.
+  const nacionalidad = texto(bloques(trozo, 'NATIONALITY')[0] ?? '', 'VALUE');
+  const paisDomicilio = texto(
+    bloques(trozo, `${tipoEntidad === 'persona' ? 'INDIVIDUAL' : 'ENTITY'}_ADDRESS`)[0] ?? '',
+    'COUNTRY',
+  );
+  const pais = nacionalidad ?? paisDomicilio;
 
   // --- Fechas de nacimiento: puede haber más de una ------------------
   const nacimientos = bloques(trozo, 'INDIVIDUAL_DATE_OF_BIRTH').map(fechaDeNacimiento);
   const conValor = nacimientos.filter((x) => x.valor !== null);
+  // Las fechas EXACTAS aparte y como lista, no como cadena.
+  //
+  // `fechaNacimiento` une varias con ' · ' para mostrarlas, y eso está bien
+  // para leerlas y mal para cotejar: «1965-12-28 · 1965-12-29» son DOS fechas
+  // candidatas que la ONU publica, no una fecha imprecisa, y contra una cadena
+  // así ninguna igualdad acierta. De los 231 registros con alias de baja
+  // calidad, 68 tienen más de una o alguna aproximada.
+  //
+  // Sólo las exactas: un año suelto o un «1966 (aproximada)» no son el mismo
+  // dato que una fecha de nacimiento, y tratarlos como tal sería corroborar
+  // con una coincidencia de 1 en 365 o contradecir sobre un dato que la propia
+  // ONU marca como incierto.
+  const fechasExactas = [
+    ...new Set(
+      conValor
+        .filter((x) => x.tipo === 'EXACT' && /^\d{4}-\d{2}-\d{2}$/.test(x.valor!))
+        .map((x) => x.valor!),
+    ),
+  ];
 
   return {
     identificadorFuente,
@@ -300,6 +352,9 @@ export function leerEntidadOnu(
       texto(bloques(trozo, 'LAST_DAY_UPDATED')[0] ?? '', 'VALUE') ?? texto(trozo, 'LAST_REVIEWED_ON'),
     fechaNacimiento: conValor.map((x) => x.valor).join(' · ') || null,
     fechaNacimientoTipo: conValor[0]?.tipo ?? nacimientos[0]?.tipo ?? null,
+    fechasNacimientoExactas: fechasExactas,
+    nacionalidad,
+    paisDomicilio,
     designacion: texto(bloques(trozo, 'DESIGNATION')[0] ?? '', 'VALUE'),
     aliasVacios,
   };
@@ -352,6 +407,10 @@ export function registrosParaCarga(registros: RegistroOnu[]) {
       revisado_en: r.revisadoEn,
       fecha_nacimiento: r.fechaNacimiento,
       fecha_nacimiento_tipo: r.fechaNacimientoTipo,
+      // Lo que usa la compuerta del corroborante. Aparte de lo de mostrar.
+      fechas_nacimiento_exactas: r.fechasNacimientoExactas,
+      nacionalidad: r.nacionalidad,
+      pais_domicilio: r.paisDomicilio,
       designacion: r.designacion,
       // Instrucción 295: la cuenta viaja con el registro, no sólo en el total.
       alias_vacios: r.aliasVacios,

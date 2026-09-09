@@ -531,3 +531,97 @@ export async function coberturaDelBarrido(): Promise<CoberturaBarrido[]> {
   if (error) throw new Error(`No se pudo leer la cobertura del barrido: ${error.message}`);
   return (data ?? []) as CoberturaBarrido[];
 }
+
+/** Los tres desenlaces de la compuerta del corroborante (instrucción 327). */
+export type DesenlaceCorroboracion = 'corroborada' | 'no_corroborable' | 'contradicha';
+
+export interface Coincidencia {
+  fuente: string;
+  fuente_nombre: string;
+  registro_id: string;
+  nombre: string;
+  rfc: string | null;
+  tipo_entidad: string | null;
+  situacion: string | null;
+  identificador_fuente: string | null;
+  pais: string | null;
+  alta_fecha: string | null;
+  /** rfc · nombre · alias · alias_debil. Cómo cotejó, que no es lo mismo que si cotejó. */
+  coincide_por: string;
+  efecto: EfectoLista | null;
+  determinacion_fuente: string;
+  datos: Json;
+  /** Nulo cuando la coincidencia NO pasó por la compuerta: sólo lo hacen las de alias débil. */
+  corroboracion: DesenlaceCorroboracion | null;
+  corroborado_por: string | null;
+  corroboracion_detalle: string | null;
+}
+
+export interface Barrido {
+  coincidencias: Coincidencia[];
+  /** Cuántas se suprimieron y por qué (instrucción 330). */
+  suprimidas: { no_corroborables: number; contradichas: number };
+  /** Las contradichas, con el campo que las descartó (instrucción 329). */
+  descartadas: {
+    fuente: string;
+    fuente_nombre: string;
+    registro_id: string;
+    nombre: string;
+    identificador_fuente: string | null;
+    campo: string | null;
+    detalle: string | null;
+  }[];
+}
+
+/**
+ * El barrido de verdad.
+ *
+ * La pantalla del sujeto obligado hacía un `ilike` sobre `v_listas_vigentes`,
+ * que es otra cosa: no mira alias, no respeta el modo de operación —así que
+ * mostraría coincidencias de una lista en validación, justo lo que la
+ * instrucción 297 prohíbe— y no pasa por la compuerta del corroborante. El
+ * control existía en la base y la pantalla no lo llamaba.
+ *
+ * Devuelve las tres cosas juntas a propósito: las coincidencias no significan
+ * nada sin saber cuántas se suprimieron y cuáles se descartaron por
+ * contradicción. Pedirlas por separado invita a mostrar sólo la primera.
+ */
+export async function barrerEnListas(input: {
+  nombre?: string;
+  rfc?: string;
+  fechaNacimiento?: string | null;
+  nacionalidad?: string | null;
+  documento?: string | null;
+  incluirDebiles?: boolean;
+}): Promise<Barrido> {
+  const comunes = {
+    p_nombre: input.nombre ?? null,
+    p_rfc: input.rfc ?? null,
+    p_fecha_nacimiento: input.fechaNacimiento ?? null,
+    p_nacionalidad: input.nacionalidad ?? null,
+    p_documento: input.documento ?? null,
+  };
+
+  const [coin, sup, desc] = await Promise.all([
+    supabase.rpc('coincidencias_en_listas', {
+      ...comunes,
+      p_incluir_debiles: input.incluirDebiles ?? true,
+    }),
+    supabase.rpc('coincidencias_suprimidas', comunes),
+    supabase.rpc('coincidencias_descartadas', comunes),
+  ]);
+
+  for (const r of [coin, sup, desc]) {
+    if (r.error) throw new Error(`No se pudo barrer contra las listas: ${r.error.message}`);
+  }
+
+  const fila = (sup.data ?? [])[0] as { no_corroborables: number; contradichas: number } | undefined;
+  return {
+    coincidencias: (coin.data ?? []) as unknown as Coincidencia[],
+    suprimidas: {
+      no_corroborables: Number(fila?.no_corroborables ?? 0),
+      contradichas: Number(fila?.contradichas ?? 0),
+    },
+    descartadas: (desc.data ?? []) as unknown as Barrido['descartadas'],
+  };
+}

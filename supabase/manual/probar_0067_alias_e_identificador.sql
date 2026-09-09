@@ -142,19 +142,26 @@ begin
   -- -------------------------------------------------------------------
   -- 6. Un alias débil se marca como débil, y se puede excluir
   -- -------------------------------------------------------------------
+  -- El registro trae fecha de nacimiento porque desde la 0074 una coincidencia
+  -- por alias débil sólo se muestra si un campo corroborante la confirma. Sin
+  -- la fecha, el barrido la suprimiría —correctamente— y esta prueba dejaría de
+  -- comprobar lo que dice comprobar. Los tres desenlaces de la compuerta se
+  -- prueban en la 0074; aquí sólo hace falta que la coincidencia sobreviva.
   insert into lista_movimiento
     (carga_id, accion, tipo_entidad, nombre, identificador_fuente,
-     nombres_alternos, nombres_alternos_debiles)
+     nombres_alternos, nombres_alternos_debiles, identificadores)
   values (v_carga2, 'alta', 'persona', 'IVANOV, Ivan', '1004',
-          array['IVANOV Ivan Petrovich'], array['IVANOFF Ivan']);
+          array['IVANOV Ivan Petrovich'], array['IVANOFF Ivan'],
+          '{"fechas_nacimiento_exactas": ["1970-05-04"]}'::jsonb);
 
-  select coincide_por into v_txt from public.coincidencias_en_listas('IVANOFF Ivan');
+  select coincide_por into v_txt
+    from public.coincidencias_en_listas('IVANOFF Ivan', null, true, date '1970-05-04');
   if v_txt is distinct from 'alias_debil' then
     raise exception 'PRUEBA 6 FALLA: un cotejo por alias débil debe decirlo. Dijo "%".', v_txt;
   end if;
 
   select count(*) into v_n
-    from public.coincidencias_en_listas('IVANOFF Ivan', null, false);
+    from public.coincidencias_en_listas('IVANOFF Ivan', null, false, date '1970-05-04');
   if v_n <> 0 then
     raise exception 'PRUEBA 6 FALLA: con los débiles excluidos no debía encontrar nada, y hubo %.', v_n;
   end if;
