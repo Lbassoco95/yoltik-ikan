@@ -5066,7 +5066,11 @@ export type Database = {
         | "efirma_sat"
         | "prestador_reconocido"
         | "constancia_conservacion"
-      determinacion_fuente: "aplica" | "no_aplica" | "pendiente"
+      determinacion_fuente:
+        | "aplica"
+        | "no_aplica"
+        | "pendiente"
+        | "no_disponible"
       efecto_lista: "impedimento" | "eleva_diligencia" | "dato"
       modo_actualizacion_lista: "snapshot" | "movimientos"
       naturaleza_allegado:

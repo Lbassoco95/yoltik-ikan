@@ -828,6 +828,56 @@ describe("umbral sobre la contraprestación", () => {
   });
 });
 
+describe("los dos incisos de la fracción XVI son alternativos, no acumulativos", () => {
+  // Instrucción 301 y 302 de la Célula de Cumplimiento (Nota 3, 8/09/2026):
+  // «El inciso b) es un supuesto propio: basta con que la contraprestación
+  // alcance las cuatro UMA para que haya Aviso, con independencia de cuánto
+  // haya sido la operación. No se suman ni se condicionan entre sí.»
+  //
+  // El riesgo que nombran es el caro: si el motor exigiera las dos, o mirara
+  // sólo el monto, dejaría de presentar Avisos que sí proceden —un control
+  // que corre y no encuentra—. Se prueba con `correrMotor` y no con
+  // `evaluarTipologia`, porque lo que hay que demostrar es cómo se combinan
+  // las DOS reglas, no lo que hace cada una por su lado.
+  const UMA = 117.31; // 2026
+  const INCISO_A = tip("XVI-01", {
+    tipo: "agregado", ventana: "6M", agrupar_por: "client_id",
+    condicion: { count: { op: ">=", valor: 1 }, suma_monto_uma: { op: ">=", valor: 210 } },
+  }, { version: 2 });
+  const INCISO_B = tip("XVI-09", {
+    tipo: "agregado", ventana: "6M", agrupar_por: "client_id",
+    condicion: { contraprestacion_uma: { op: ">=", valor: 4 } },
+  });
+
+  function codigos(ops: OperacionEval[]): string[] {
+    const r = correrMotor([INCISO_A, INCISO_B], ops, ctx({ umaMxn: UMA }));
+    return [...new Set(r.candidatos.map((c) => c.tipologia_codigo))].sort();
+  }
+
+  it("el caso de la nota: 100 UMA de operación con 5 UMA de comisión SÍ genera aviso", () => {
+    // 100 UMA son $11,731: muy por debajo de las 210 del inciso a).
+    // 5 UMA son $586.55: por encima de las 4 del inciso b).
+    const ops = [op({ id: "a", fecha: "2026-08-18T10:00:00Z", monto_mxn: 11_731, contraprestacion_mxn: 586.55 })];
+    expect(codigos(ops)).toEqual(["XVI-09"]);
+  });
+
+  it("y al revés: operación grande con comisión chica también genera aviso", () => {
+    // 300 UMA de operación, comisión de $100 que no llega a 4 UMA.
+    const ops = [op({ id: "b", fecha: "2026-08-18T10:00:00Z", monto_mxn: 35_193, contraprestacion_mxn: 100 })];
+    expect(codigos(ops)).toEqual(["XVI-01"]);
+  });
+
+  it("cuando los dos supuestos se cumplen, los dos se levantan", () => {
+    const ops = [op({ id: "c", fecha: "2026-08-18T10:00:00Z", monto_mxn: 35_193, contraprestacion_mxn: 586.55 })];
+    expect(codigos(ops)).toEqual(["XVI-01", "XVI-09"]);
+  });
+
+  it("por debajo de los dos umbrales no se levanta nada", () => {
+    const ops = [op({ id: "d", fecha: "2026-08-18T10:00:00Z", monto_mxn: 11_731, contraprestacion_mxn: 100 })];
+    expect(codigos(ops)).toEqual([]);
+  });
+});
+
 describe('una regla agregada nombra TODAS las operaciones de su ventana', () => {
   // El motor marca `requiere_aviso` desde los candidatos, y un recorrido
   // completo además DESMARCA lo que no salga marcado. Si el candidato sólo

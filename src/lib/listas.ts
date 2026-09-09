@@ -18,14 +18,22 @@ export type NaturalezaLista = 'sancion_aml' | 'fiscal' | 'jurisdiccion' | 'pep' 
 export type EfectoLista = 'impedimento' | 'eleva_diligencia' | 'dato';
 
 /** Si ya se resolvió que la obligación de consultar la fuente existe. */
-export type DeterminacionFuente = 'aplica' | 'no_aplica' | 'pendiente';
+export type DeterminacionFuente = 'aplica' | 'no_aplica' | 'pendiente' | 'no_disponible';
 
 /**
- * `pendiente_carga` y `pendiente_determinacion` se ven igual —cero registros—
- * y no lo son: una se resuelve bajando un archivo que existe, la otra con una
- * determinación jurídica que nadie ha hecho.
+ * Cuatro estados que en pantalla se verían iguales —cero registros— y que se
+ * resuelven de maneras distintas. Distinguirlos es el punto: `pendiente_carga`
+ * se arregla bajando un archivo que existe; `pendiente_determinacion` con una
+ * determinación jurídica que nadie ha hecho; `via_no_disponible` no se arregla,
+ * porque la ley prohíbe entregar la fuente y el cumplimiento va por otro
+ * camino.
  */
-export type EstadoFuente = 'cargada' | 'pendiente_carga' | 'pendiente_determinacion' | 'no_aplica';
+export type EstadoFuente =
+  | 'cargada'
+  | 'pendiente_carga'
+  | 'pendiente_determinacion'
+  | 'no_aplica'
+  | 'via_no_disponible';
 
 export function labelEfecto(e: EfectoLista | null): string {
   if (e === null) return 'Sin declarar';
@@ -51,6 +59,7 @@ export function labelEstadoFuente(e: EstadoFuente): string {
     pendiente_carga: 'Pendiente de carga',
     pendiente_determinacion: 'Pendiente de determinación',
     no_aplica: 'Sin obligación · informativa',
+    via_no_disponible: 'Vía de consulta no disponible',
   }[e];
 }
 
@@ -62,6 +71,14 @@ export function explicaEstadoFuente(e: EstadoFuente): string {
       'No es que falte un archivo: falta resolver si la obligación de consultarla existe. '
       + 'Hasta entonces no se puede afirmar que esta fuente esté cubierta.',
     no_aplica: 'No hay norma que obligue a consultarla. Se puede consultar y queda en el expediente.',
+    // Instrucción 307: se dice como lo que es. Un «sin coincidencias» o un
+    // «pendiente» aquí serían las dos formas de mentir: la primera afirma que
+    // se consultó, la segunda manda a alguien a buscar un trámite que no
+    // existe.
+    via_no_disponible:
+      'La ley prohíbe entregar esta fuente, así que no hay archivo que cargar ni trámite '
+      + 'que pedir. La obligación que cubría sigue viva y se cumple por otra vía; el '
+      + 'fundamento está en la ficha de la fuente.',
   }[e];
 }
 export type AccionMovimiento = 'alta' | 'baja';

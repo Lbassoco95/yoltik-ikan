@@ -1,0 +1,16 @@
+-- =====================================================================
+-- 0069 · Un cuarto valor de determinación: `no_disponible`
+-- =====================================================================
+-- Va SOLO en su propia migration, y no por gusto de granularidad.
+--
+-- Postgres no permite usar un valor de enum recién agregado en la misma
+-- transacción en que se agregó: «unsafe use of new value ... New enum values
+-- must be committed before they can be used» (SQLSTATE 55P04). Se comprobó
+-- de la forma cara: el archivo original hacía las dos cosas juntas, pasó
+-- aplicado con `--single-transaction` contra el PG 16 de pruebas, y lo
+-- rechazó el PG 17.6 del proyecto en cuanto se aplicó de verdad. La prueba
+-- local no valía para donde importaba.
+--
+-- Así que el valor entra aquí y todo lo que lo usa vive en la 0070. Para qué
+-- sirve y por qué hacían falta cuatro valores está documentado ahí.
+alter type determinacion_fuente add value if not exists 'no_disponible';

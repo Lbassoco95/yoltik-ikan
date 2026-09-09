@@ -46,6 +46,15 @@ export default function ListsPage() {
   );
   const totalVigentes = (estado.data ?? []).reduce((n, l) => n + l.registros_vigentes, 0);
 
+  // Instrucción 307 de Cumplimiento: la vía de consulta no disponible «se dice
+  // como lo que es, no "sin coincidencias"». Este buscador es justo donde
+  // alguien concluye que la persona está limpia, y hay una pregunta que NO
+  // contesta: si es Persona Políticamente Expuesta. Esa no se resuelve
+  // cotejando nombres —la lista de la UIF no se puede obtener y el catálogo de
+  // cargos se contrasta contra el cargo declarado, no contra el nombre—, así
+  // que un resultado vacío aquí no dice nada sobre eso.
+  const viaNoDisponible = (estado.data ?? []).filter((l) => l.estado === "via_no_disponible");
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -90,6 +99,13 @@ export default function ListsPage() {
                       Cuidado: todavía no hay ninguna lista cargada, así que este resultado no
                       significa que la persona esté limpia.
                     </strong>
+                  )}
+                  {viaNoDisponible.length > 0 && (
+                    <span className="block mt-1 text-muted-foreground">
+                      Esta búsqueda tampoco resuelve si la persona es Políticamente Expuesta: eso
+                      no se coteja por nombre. Se determina contra el cargo que declare, y la
+                      lista de la UIF no se puede obtener por ley.
+                    </span>
                   )}
                 </span>
               </div>
@@ -218,7 +234,12 @@ export default function ListsPage() {
                   <span
                     className={cn(
                       "status-badge text-xs",
-                      l.estado === "no_aplica"
+                      // Ámbar es «lo que le toca atender». Ni `no_aplica` ni
+                      // `via_no_disponible` le toca a nadie: la primera no
+                      // obliga y la segunda no se puede resolver. Pintarlas de
+                      // ámbar pondría dos pendientes falsos en la pantalla y
+                      // le quitaría peso a los que sí lo son.
+                      l.estado === "no_aplica" || l.estado === "via_no_disponible"
                         ? "bg-muted text-muted-foreground"
                         : "bg-warning/15 text-warning-ink",
                     )}
@@ -248,7 +269,9 @@ export default function ListsPage() {
               </div>
 
               <p className="text-[13px] text-muted-foreground leading-relaxed">
-                {l.estado === "pendiente_determinacion" || l.estado === "no_aplica"
+                {l.estado === "pendiente_determinacion" ||
+                l.estado === "no_aplica" ||
+                l.estado === "via_no_disponible"
                   ? explicaEstadoFuente(l.estado)
                   : l.efectos_por_situacion
                     ? "El definitivo impide operar; el presunto exige diligencia reforzada sin ser " +
