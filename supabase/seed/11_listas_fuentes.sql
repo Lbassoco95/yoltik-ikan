@@ -20,13 +20,32 @@ values
    'UIF · Secretaría de Hacienda y Crédito Público',
    'sancion_aml', 'movimientos',
    null, 'Por oficio, sin periodicidad fija', true, true,
-   'No publica un archivo que se reemplace: emite oficios de alta y de baja. Se captura en la consola de Kawiil, un movimiento por oficio. Es la lista que el Art. 18 fr. V LFPIORPI obliga a consultar y la que NINGÚN proveedor internacional cubre.'),
+   -- OJO con lo que decía este renglón: afirmaba que «el Art. 18 fr. V LFPIORPI obliga
+   -- a consultar» esta lista. No es cierto —esa fracción es sobre brindar facilidades
+   -- para las visitas de verificación— y la Célula de Cumplimiento lo cazó (Nota 4).
+   -- La fuente entra aquí para conservar el histórico del catálogo y la 0071 la retira
+   -- con su determinación; no se corrige el hecho de que existió, se corrige la
+   -- afirmación de derecho.
+   'No publica un archivo que se reemplace: emite oficios de alta y de baja. RETIRADA del '
+   'catálogo por la migration 0071: no obliga a Actividades Vulnerables, obliga a '
+   'Entidades Financieras. Ver el fundamento en esa migration.'),
 
-  ('ofac_sdn', 'OFAC · Specially Designated Nationals',
+  -- OFAC son DOS listas y hasta la 0071 eran una sola fuente. Se declaran las dos
+  -- aquí para que un proyecto nuevo nazca ya partido: con una sola fuente ninguna
+  -- carga podía declararse completa sin dar de baja los registros de la otra.
+  ('ofac_sdn', 'OFAC · Lista SDN (Specially Designated Nationals)',
    'Departamento del Tesoro de Estados Unidos',
    'sancion_aml', 'snapshot',
-   'https://sanctionslistservice.ofac.treas.gov/', 'PENDIENTE_CONFIRMAR (propuesta: diaria)', true, true,
-   'Archivo completo y gratuito, sin autenticación. La carga nueva reemplaza el estado: lo que ya no viene se desactiva.'),
+   'https://sanctionslist.ofac.treas.gov/Home/SdnList',
+   'Al cambio que publique el Tesoro. Archivo SDN_ENHANCED.XML.', true, true,
+   'Archivo completo y gratuito, sin autenticación. La carga nueva reemplaza el estado: lo que ya no viene se desactiva. El SDN_ENHANCED.XML pesa 104 MB y no cabe por el navegador.'),
+
+  ('ofac_consolidada', 'OFAC · Lista Consolidada (programas no-SDN)',
+   'Departamento del Tesoro de Estados Unidos',
+   'sancion_aml', 'snapshot',
+   'https://sanctionslist.ofac.treas.gov/Home/ConsolidatedList',
+   'Al cambio que publique el Tesoro. Archivo CONS_ENHANCED.XML.', true, true,
+   'La segunda publicación de OFAC: los programas de sanciones que NO son SDN. 481 registros contra 19,365 de la SDN, así que sirve para probar el camino completo de carga antes de meter la grande. Instrucción 292.'),
 
   ('onu_consolidada', 'ONU · Lista consolidada',
    'Consejo de Seguridad de las Naciones Unidas',

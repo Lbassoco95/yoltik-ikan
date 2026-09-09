@@ -131,16 +131,33 @@ begin
   raise notice 'PRUEBA  9 OK · eleva la diligencia y no impide operar';
 
   -- ------------------------------------------------------------------
-  -- 10. La Lista de Personas Bloqueadas NO se tocó
+  -- 10. Las dos listas de la UIF siguen siendo dos cosas distintas
   -- ------------------------------------------------------------------
-  -- Son dos listas distintas y la Nota 3 sólo resuelve la de PPE. Confundirlas
-  -- daría por determinada una fuente que sigue esperando a Cumplimiento.
+  -- Esta prueba nació el 8/09 afirmando que la Lista de Personas Bloqueadas
+  -- seguía en `pendiente`, para que resolver la de PPE no diera por cerrada la
+  -- otra de rebote. Al día siguiente la Nota 4 la resolvió por su cuenta —no
+  -- obliga a Actividades Vulnerables— y la 0071 la retiró.
+  --
+  -- Lo que se afirma ahora es lo que sigue importando: que cada una tenga su
+  -- propia determinación y su propio fundamento. Son listas distintas, se
+  -- resolvieron por razones distintas y en notas distintas, y tratarlas como
+  -- una sola fue justo lo que se quiso impedir.
   select determinacion::text into v_txt from lista_fuente where codigo = 'uif_bloqueadas';
-  if v_txt is distinct from 'pendiente' then
-    raise exception 'PRUEBA 10: la Lista de Personas Bloqueadas debe seguir pendiente y está en %', v_txt;
+  if v_txt is distinct from 'no_aplica' then
+    raise exception 'PRUEBA 10: la Lista de Personas Bloqueadas quedó determinada como no_aplica '
+      'en la 0071, y dice %', coalesce(v_txt, '(no existe)');
+  end if;
+  select fundamento_determinacion into v_txt from lista_fuente where codigo = 'uif_bloqueadas';
+  if v_txt is null or v_txt !~ 'Entidades Financieras' then
+    raise exception 'PRUEBA 10: su fundamento no dice a quién obliga en realidad';
+  end if;
+  -- Y que no se le pegó el fundamento de la de PPE, que es el error que esta
+  -- prueba lleva vigilando desde que nació.
+  if v_txt ~ '45 Bis' then
+    raise exception 'PRUEBA 10: se le pegó el fundamento de la Lista de PPE, son otra cosa';
   end if;
   v_ok := v_ok + 1;
-  raise notice 'PRUEBA 10 OK · la Lista de Personas Bloqueadas sigue pendiente, es otra lista';
+  raise notice 'PRUEBA 10 OK · cada lista de la UIF con su determinación y su fundamento';
 
   -- ------------------------------------------------------------------
   -- 11. Ninguna fuente activa que aplique se quedó sin efecto

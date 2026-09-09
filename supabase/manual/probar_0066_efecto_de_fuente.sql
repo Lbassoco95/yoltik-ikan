@@ -58,9 +58,24 @@ begin
   -- NULL dice «no declarado»; 'dato' diría «declarado sin efecto». Caer a
   -- 'dato' convertiría una omisión en una decisión, que es la familia de
   -- fallas que este criterio lleva doce documentos persiguiendo.
-  if public.efecto_de_coincidencia('uif_bloqueadas') is not null then
+  -- Se prueba contra una fuente propia y no contra una del catálogo. Hasta la
+  -- 0071 esto usaba `uif_bloqueadas`, que estaba en determinación; cuando
+  -- Cumplimiento resolvió que esa lista no obliga, la prueba se puso roja sin
+  -- que el mecanismo hubiera cambiado. Lo que se prueba aquí es la función,
+  -- no qué opina hoy un abogado de una lista.
+  insert into lista_fuente
+    (codigo, nombre, autoridad, naturaleza, modo_actualizacion,
+     obligatoria, activa, determinacion, efecto, notas)
+  values
+    ('prueba_sin_declarar', 'FUENTE DE PRUEBA · sin efecto declarado',
+     'Ninguna: es una fixture', 'sancion_aml', 'snapshot',
+     false, true, 'pendiente', null,
+     'La crea y la borra probar_0066_efecto_de_fuente.sql.')
+  on conflict (codigo) do update set determinacion = 'pendiente', efecto = null, activa = true;
+
+  if public.efecto_de_coincidencia('prueba_sin_declarar') is not null then
     raise exception
-      'PRUEBA 3 FALLA: la UIF está en determinación y no puede declarar efecto todavía.';
+      'PRUEBA 3 FALLA: una fuente en determinación no puede declarar efecto todavía.';
   end if;
   raise notice 'PRUEBA  3 OK · sin declarar devuelve NULL, no un efecto inventado';
 
@@ -69,9 +84,9 @@ begin
   -- -------------------------------------------------------------------
   -- Instrucción 237. «Cero registros» y «no se sabe si aplica» no son lo
   -- mismo, y hasta ahora se veían igual.
-  if public.estado_de_fuente('uif_bloqueadas') <> 'pendiente_determinacion' then
-    raise exception 'PRUEBA 4 FALLA: la UIF tiene que decir pendiente_determinacion, y dijo "%".',
-      public.estado_de_fuente('uif_bloqueadas');
+  if public.estado_de_fuente('prueba_sin_declarar') <> 'pendiente_determinacion' then
+    raise exception 'PRUEBA 4 FALLA: sin determinar tiene que decir pendiente_determinacion, '
+      'y dijo "%".', public.estado_de_fuente('prueba_sin_declarar');
   end if;
   if public.estado_de_fuente('ofac_sdn') <> 'pendiente_carga' then
     raise exception
@@ -151,21 +166,29 @@ begin
   raise notice 'PRUEBA  6 OK · la vista separa lo que impide de lo que eleva la diligencia';
 
   -- -------------------------------------------------------------------
-  -- 7. La sexta fuente existe y está en determinación
+  -- 7. Las fuentes de PPE existen, cada una en su estado
   -- -------------------------------------------------------------------
-  -- Instrucción 240.
-  if not exists (select 1 from lista_fuente where codigo = 'ppe_oficial') then
-    raise exception
-      'PRUEBA 7 FALLA: falta el listado oficial de PPE, la única fuente cuya obligación '
-      'nació con la reforma que se está implementando.';
+  -- Esta prueba nació con la instrucción 240, afirmando que el listado de PPE
+  -- estaba «en determinación». Lo estuvo un día. Las Notas 3 y 4 lo
+  -- resolvieron: la Lista de PPE de la UIF no se puede pedir (art. 45 Bis) y
+  -- el catálogo de cargos que sí sirve vive en la disposición 68ª.
+  --
+  -- Lo que se afirma ahora es la distinción que costó dos notas conseguir: son
+  -- DOS fuentes y no una, con estados distintos, y la que no se puede obtener
+  -- no puede quedar confundida con la que sólo espera un archivo.
+  if public.estado_de_fuente('ppe_oficial') <> 'via_no_disponible' then
+    raise exception 'PRUEBA 7 FALLA: la Lista de PPE de la UIF no se puede obtener por ley; '
+      'su estado es via_no_disponible y dijo "%".', public.estado_de_fuente('ppe_oficial');
   end if;
-  if public.estado_de_fuente('ppe_oficial') <> 'pendiente_determinacion' then
-    raise exception 'PRUEBA 7 FALLA: el listado de PPE está pendiente de determinación.';
+  if public.estado_de_fuente('ppe_cargos_68a') <> 'pendiente_carga' then
+    raise exception 'PRUEBA 7 FALLA: el catálogo de cargos sólo espera el archivo; su estado '
+      'es pendiente_carga y dijo "%".', public.estado_de_fuente('ppe_cargos_68a');
   end if;
-  if (select naturaleza::text from lista_fuente where codigo = 'ppe_oficial') <> 'pep' then
-    raise exception 'PRUEBA 7 FALLA: la naturaleza del listado de PPE es pep.';
+  if (select count(*) from lista_fuente
+       where codigo in ('ppe_oficial', 'ppe_cargos_68a') and naturaleza::text = 'pep') <> 2 then
+    raise exception 'PRUEBA 7 FALLA: las dos fuentes de PPE son de naturaleza pep.';
   end if;
-  raise notice 'PRUEBA  7 OK · el listado oficial de PPE está dado de alta, en determinación';
+  raise notice 'PRUEBA  7 OK · las dos fuentes de PPE, cada una en su estado';
 
   -- -------------------------------------------------------------------
   -- 8. Toda fuente que aplica declara qué produce
@@ -192,6 +215,8 @@ begin
     raise exception 'PRUEBA 9 FALLA: la UE no obliga a un sujeto obligado mexicano.';
   end if;
   raise notice 'PRUEBA  9 OK · la UE es informativa y no obliga';
+
+  delete from lista_fuente where codigo = 'prueba_sin_declarar';
 
   raise notice '--- 0066: 9 de 9 ---';
 end

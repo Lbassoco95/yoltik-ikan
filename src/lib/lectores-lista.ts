@@ -48,6 +48,7 @@ export const FUENTES_CON_LECTOR = new Set([
   'sat_69b',
   'sat_69b_bis',
   'ofac_sdn',
+  'ofac_consolidada',
   'onu_consolidada',
 ]);
 
@@ -56,8 +57,11 @@ export const FORMATO_ESPERADO: Record<string, string> = {
   sat_69b: 'El CSV del SAT, con extensión .xls. Tal cual se descarga.',
   sat_69b_bis: 'El CSV del SAT, con extensión .xls. Tal cual se descarga.',
   ofac_sdn:
-    'El XML ENHANCED de OFAC, ya extraído del .zip: CONS_ENHANCED.XML o SDN_ENHANCED.XML. ' +
-    'No el ADVANCED.',
+    'El SDN_ENHANCED.XML de OFAC, ya extraído del .zip. No el ADVANCED, y no el de la ' +
+    'Consolidada: son dos listas y cada una tiene su fuente.',
+  ofac_consolidada:
+    'El CONS_ENHANCED.XML de OFAC, ya extraído del .zip. No el ADVANCED, y no el de la ' +
+    'SDN: son dos listas y cada una tiene su fuente.',
   onu_consolidada:
     'El XML de la ONU ordenado por número de referencia permanente: ' +
     'consolidatedLegacyByPRN.xml. No el alfabético.',
@@ -172,36 +176,48 @@ export function analizarBytes(codigoFuente: string, datos: ArrayBuffer): Analisi
     };
   }
 
-  if (codigoFuente === 'ofac_sdn') {
+  if (codigoFuente === 'ofac_sdn' || codigoFuente === 'ofac_consolidada') {
     const r = leerOfac(new TextDecoder('utf-8').decode(datos));
     const registros = ofacParaCarga(r.registros);
+
+    // El archivo declara a qué lista pertenece. Si alguien sube el CONS a la
+    // fuente de la SDN —o al revés— hay que decirlo ANTES de aplicar: cada
+    // fuente se carga completa y da de baja lo que no viene, así que un
+    // archivo en la fuente equivocada daría de baja la lista entera y
+    // levantaría la otra en su lugar. Es el error más caro que se puede
+    // cometer en esta pantalla, y es de un clic.
+    const esperada = codigoFuente === 'ofac_sdn' ? 'SDN' : 'CONS';
+    const declaradas = r.listasDelArchivo.join(', ');
+    const pareceOtra =
+      declaradas.length > 0 &&
+      !r.listasDelArchivo.some((l) => l.toUpperCase().includes(esperada));
+
     return {
-      etiqueta: `OFAC · ${r.listasDelArchivo.join(', ') || 'sin lista declarada'}`,
+      etiqueta: `OFAC · ${declaradas || 'sin lista declarada'}`,
       fechaActualizacion: r.fechaActualizacion,
       registros,
       descartadas: r.descartadas.map((d) => ({
         referencia: `entidad ${d.identificador}`,
         motivo: d.motivo,
       })),
-      // PARCIAL a propósito, aunque el archivo sea completo.
-      //
-      // El catálogo tiene UNA fuente para OFAC y el Tesoro publica DOS listas:
-      // la SDN y la Consolidada de programas no-SDN. Mientras las dos entren en
-      // la misma fuente, una carga «completa» daría de baja los registros de la
-      // otra. Vale la regla que esta base ya trae escrita: ante la duda,
-      // parcial — dejar de más es recuperable, dar de baja a alguien que sigue
-      // sancionado no lo es.
-      alcanceSugerido: 'parcial',
+      // Desde que las dos listas tienen fuente propia (0071) una carga
+      // completa ya no puede dar de baja a la otra, así que se propone lo que
+      // el archivo es. Salvo que parezca el archivo equivocado: ahí se baja a
+      // parcial, porque dejar de más es recuperable y dar de baja a alguien
+      // que sigue sancionado no lo es.
+      alcanceSugerido: pareceOtra ? 'parcial' : 'completa',
       cifras: [
         ...cuenta(registros, (x) => x.tipo_entidad ?? 'sin tipo'),
         { etiqueta: 'alias', valor: totalAlias(registros, false) },
       ],
-      avisos: [
-        'Se propone alcance PARCIAL aunque el archivo sea completo: el catálogo tiene una sola ' +
-          'fuente para OFAC y el Tesoro publica dos listas (SDN y Consolidada no-SDN). Con una ' +
-          'carga completa, cada una daría de baja a la otra. Hay que separarlas en dos fuentes ' +
-          'antes de poder aplicar la diferencia.',
-      ],
+      avisos: pareceOtra
+        ? [
+            `Este archivo declara «${declaradas}» y esta fuente es la ${esperada}. Parece el ` +
+              'archivo de la otra lista de OFAC. Se propone alcance PARCIAL por precaución: ' +
+              'con alcance completo darías de baja la lista entera y la sustituirías por la ' +
+              'otra. Revisa el archivo antes de aplicar.',
+          ]
+        : [],
     };
   }
 

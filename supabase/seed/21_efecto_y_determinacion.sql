@@ -108,37 +108,59 @@ update lista_fuente set
 where codigo = 'sat_69b_bis';
 
 -- ---------------------------------------------------------------------
--- UIF · pendiente de DETERMINACIÓN, que no es lo mismo que pendiente de carga
+-- Lista de Personas Bloqueadas · retirada, no obliga
 -- ---------------------------------------------------------------------
--- Instrucción 238. Cumplimiento no da por supuesto que un sujeto obligado del
--- artículo 17 deba consultar la Lista de Personas Bloqueadas: es un
--- instrumento del régimen financiero, y la cita al «artículo 18 fracción V»
--- corresponde, en el texto anterior, a brindar facilidades para las visitas de
--- verificación. Puede ser correcta tras la renumeración de la reforma del
--- 16/07/2025 o puede no serlo.
+-- Este bloque tenía la fuente en `pendiente` esperando la instrucción 239.
+-- Está contestada: NO aplica a Actividades Vulnerables. Las expresiones
+-- «personas bloqueadas», «lista de personas bloqueadas» y «listado de personas
+-- bloqueadas» no aparecen en la Ley (reforma DOF 16/07/2025) ni en el
+-- Reglamento (reforma DOF 27/03/2026); la Célula de Cumplimiento verificó los
+-- dos textos. La lista obliga a Entidades Financieras.
 --
--- Hasta que eso se resuelva, la fuente NO dice «0 registros» —que sugeriría
--- que sólo falta un archivo— sino que está en determinación.
+-- Y el art. 18 fr. V que esta plataforma citaba como fundamento no es sobre
+-- esta lista: es sobre brindar facilidades para las visitas de verificación.
+-- La fuente no estaba pendiente de determinación, estaba mal fundada.
+--
+-- El razonamiento completo vive en la migration 0071. Aquí queda el resultado,
+-- porque en un proyecto nuevo los seeds corren DESPUÉS de las migrations y
+-- este archivo tiene la última palabra: si dijera lo de antes, volvería a
+-- poner la fuente en ámbar y desharía la 0071 en silencio.
 update lista_fuente set
+  activa = false,
+  obligatoria = false,
   efecto = null,
-  determinacion = 'pendiente',
+  determinacion = 'no_aplica',
   fundamento_determinacion =
-    'PENDIENTE DE DETERMINAR (instrucción 239, de Kawiil-Cumplimiento): (a) si la '
-    || 'obligación de consultarla existe para Actividades Vulnerables del art. 17, siendo '
-    || 'la Lista de Personas Bloqueadas un instrumento del régimen financiero; (b) cuál es '
-    || 'el artículo vigente tras la renumeración del 16/07/2025 —la cita al 18 fr. V '
-    || 'corresponde en el texto anterior a las visitas de verificación—; y (c) cómo se '
-    || 'obtiene legítimamente, porque si se comunica por oficio a sujetos determinados no '
-    || 'existe un histórico que nadie pueda entregar.',
-  notas = 'El formato de captura por oficio que propuso la plataforma queda APROBADO desde '
-       || 'ya, condicionado a que la obligación exista: un renglón por persona y por oficio, '
-       || 'con la fecha del oficio y no la de captura. Si la determinación resulta positiva, '
-       || 'se carga el histórico completo: un corte arbitrario produce un estado falso.'
-       || ' | HABILITACIÓN: esta fuente se aprovisiona por organización DESPUÉS de la '
-       || 'contratación, no viene cargada de fábrica: los oficios de la UIF se dirigen a '
-       || 'sujetos obligados determinados. Hasta entonces la organización la ve como pendiente. '
-       || 'Es también la única fuente hecha a mano que queda, tras retirar la lista interna.'
+    'NO APLICA a Actividades Vulnerables. Las expresiones «personas bloqueadas», «lista '
+    || 'de personas bloqueadas» y «listado de personas bloqueadas» no aparecen en la Ley '
+    || '(reforma DOF 16/07/2025) ni en el Reglamento (reforma DOF 27/03/2026); se verificó '
+    || 'en los dos textos. La Lista de Personas Bloqueadas obliga a Entidades Financieras, '
+    || 'no a quienes realizan las Actividades Vulnerables del art. 17. El art. 18 fr. V que '
+    || 'se citaba como fundamento NO es sobre esta lista: es sobre brindar facilidades para '
+    || 'las visitas de verificación. Célula de Cumplimiento Kawiil, Nota 2 del 8/09/2026 '
+    || '(instrucción 239), reiterado en la Nota 4 del 9/09/2026 (instrucción 315).',
+  notas =
+    'Retirada del catálogo, no borrada: que una fuente se haya evaluado y NO obligue es un '
+    || 'hecho que conviene poder mostrar. Pendiente asociado (instrucción 316): el '
+    || 'componente de provisionamiento por organización que se había pensado para esta '
+    || 'lista no se tira — Cumplimiento propone reencuadrarlo como captura de '
+    || 'comunicaciones de autoridad por organización. Decisión de producto, sin tomar.',
+  determinado_por = 'Célula de Cumplimiento Kawiil · Nota 2 (8/09/2026) y Nota 4 (9/09/2026)'
 where codigo = 'uif_bloqueadas';
+
+-- ---------------------------------------------------------------------
+-- OFAC · las dos publicaciones, mismo efecto
+-- ---------------------------------------------------------------------
+-- La Consolidada hereda el efecto de la SDN y por la misma razón: la
+-- determinación de la Adenda 3 se hizo sobre OFAC como autoridad, no sobre una
+-- de sus dos publicaciones. Es derecho extranjero, un fedatario mexicano no es
+-- U.S. person, y una coincidencia eleva la diligencia sin impedir operar.
+update lista_fuente set
+  efecto = 'eleva_diligencia',
+  determinacion = (select determinacion from lista_fuente where codigo = 'ofac_sdn'),
+  fundamento_determinacion =
+    (select fundamento_determinacion from lista_fuente where codigo = 'ofac_sdn')
+where codigo = 'ofac_consolidada';
 
 -- ---------------------------------------------------------------------
 -- Lista interna · retirada del catálogo

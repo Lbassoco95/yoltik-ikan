@@ -19,10 +19,29 @@ declare
   v_alta text;
   v_n int;
 begin
-  select id into v_fuente from lista_fuente where codigo = 'uif_bloqueadas';
-  if v_fuente is null then
-    raise exception 'FALLA: no existe la fuente uif_bloqueadas. ¿Corriste el seed 11?';
-  end if;
+  -- La fuente de prueba se crea aquí y se retira al final.
+  --
+  -- Antes esta prueba usaba `uif_bloqueadas`, la única del catálogo en modo
+  -- `movimientos`. La 0071 la retiró —la Lista de Personas Bloqueadas no
+  -- obliga a Actividades Vulnerables— y la prueba se cayó entera, aunque el
+  -- mecanismo que prueba no había cambiado en nada.
+  --
+  -- Eso era el defecto: lo que se prueba aquí es el ciclo de altas y bajas por
+  -- oficio de las migrations 0012 y 0013, no qué fuentes trae el catálogo. Una
+  -- prueba de mecanismo colgada de una determinación jurídica se vuelve roja
+  -- cada vez que un abogado cambia de opinión, y esconde si el mecanismo sigue
+  -- bien. Con su propia fuente, prueba lo que dice probar.
+  insert into lista_fuente
+    (codigo, nombre, autoridad, naturaleza, modo_actualizacion,
+     obligatoria, activa, determinacion, notas)
+  values
+    ('prueba_movimientos', 'FUENTE DE PRUEBA · ciclo de movimientos',
+     'Ninguna: es una fixture', 'sancion_aml', 'movimientos',
+     false, true, 'no_aplica',
+     'La crea y la borra probar_0012_movimientos.sql. Si aparece en una base de verdad, '
+     || 'esa prueba se murió a medias.')
+  on conflict (codigo) do update set activa = true
+  returning id into v_fuente;
 
   -- ---------- Carga 1: oficio de bloqueo ----------
   insert into lista_carga (id, fuente_id, tipo, estado, fecha_publicacion_fuente, notas)
@@ -77,18 +96,18 @@ begin
   end if;
 
   -- 5. Evidencia histórica: bloqueada entre marzo y junio, no antes ni después
-  if public.listado_en_fecha('uif_bloqueadas', date '2026-02-01', 'RAPJ800101AB1') then
+  if public.listado_en_fecha('prueba_movimientos', date '2026-02-01', 'RAPJ800101AB1') then
     raise exception 'FALLA 5: aparece bloqueada ANTES de su oficio de alta';
   end if;
-  if not public.listado_en_fecha('uif_bloqueadas', date '2026-04-15', 'RAPJ800101AB1') then
+  if not public.listado_en_fecha('prueba_movimientos', date '2026-04-15', 'RAPJ800101AB1') then
     raise exception 'FALLA 5b: NO aparece bloqueada el 15/abr, cuando sí lo estaba';
   end if;
-  if public.listado_en_fecha('uif_bloqueadas', date '2026-07-01', 'RAPJ800101AB1') then
+  if public.listado_en_fecha('prueba_movimientos', date '2026-07-01', 'RAPJ800101AB1') then
     raise exception 'FALLA 5c: sigue apareciendo bloqueada después de su baja';
   end if;
 
   -- 6. Cotejo por nombre, sin RFC, con y sin acentos
-  if not public.listado_en_fecha('uif_bloqueadas', date '2026-05-01', null, 'MARIA DE LA CRUZ SANCHEZ (PRUEBA)') then
+  if not public.listado_en_fecha('prueba_movimientos', date '2026-05-01', null, 'MARIA DE LA CRUZ SANCHEZ (PRUEBA)') then
     raise exception 'FALLA 6: el cotejo por nombre sin acentos no encontró a la persona';
   end if;
 
@@ -123,11 +142,16 @@ begin
   delete from lista_movimiento where carga_id in (v_carga1, v_carga2);
   delete from lista_registro where nombre like '%(PRUEBA)%';
   delete from lista_carga where id in (v_carga1, v_carga2);
+  delete from lista_fuente where codigo = 'prueba_movimientos';
 
   -- 10. No quedó rastro
   select count(*) into v_n from lista_registro where nombre like '%(PRUEBA)%';
   if v_n <> 0 then
     raise exception 'FALLA 10: quedaron % filas de prueba sin limpiar', v_n;
+  end if;
+  select count(*) into v_n from lista_fuente where codigo = 'prueba_movimientos';
+  if v_n <> 0 then
+    raise exception 'FALLA 10: quedó la fuente de prueba en el catálogo';
   end if;
 end
 $$;

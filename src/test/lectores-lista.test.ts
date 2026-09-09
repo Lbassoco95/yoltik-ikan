@@ -60,6 +60,7 @@ const OFAC_MINIMO =
 describe('qué fuentes tienen lector', () => {
   it('las dos del SAT, OFAC y la ONU', () => {
     expect([...FUENTES_CON_LECTOR].sort()).toEqual([
+      'ofac_consolidada',
       'ofac_sdn',
       'onu_consolidada',
       'sat_69b',
@@ -77,6 +78,11 @@ describe('qué fuentes tienen lector', () => {
     }
     // Y el aviso de no confundirse, que es el error que de verdad pasa.
     expect(FORMATO_ESPERADO.ofac_sdn).toMatch(/No el ADVANCED/);
+    expect(FORMATO_ESPERADO.ofac_consolidada).toMatch(/No el ADVANCED/);
+    // Y que cada una diga cuál de las dos de OFAC espera, que es el error
+    // nuevo que se puede cometer desde que están partidas.
+    expect(FORMATO_ESPERADO.ofac_sdn).toMatch(/SDN_ENHANCED/);
+    expect(FORMATO_ESPERADO.ofac_consolidada).toMatch(/CONS_ENHANCED/);
     expect(FORMATO_ESPERADO.onu_consolidada).toMatch(/No el alfabético/);
   });
 });
@@ -124,24 +130,50 @@ describe('la ONU', () => {
   });
 });
 
-describe('OFAC', () => {
-  it('propone PARCIAL aunque el archivo sea completo, y dice por qué', () => {
-    // El catálogo tiene una sola fuente para OFAC y el Tesoro publica dos
-    // listas. Con alcance completo, cada carga daría de baja a la otra.
+describe('OFAC · las dos listas, cada una en su fuente', () => {
+  // La fixture declara «Consolidated List», así que sirve para las dos caras:
+  // en `ofac_consolidada` es el archivo correcto, y en `ofac_sdn` es el error.
+  const SDN_MINIMO = OFAC_MINIMO.replace(/Consolidated List/g, 'SDN List');
+
+  it('el archivo correcto se propone COMPLETO, que es lo que antes no se podía', () => {
+    // Mientras las dos listas compartían fuente, una carga completa daba de
+    // baja los registros de la otra y el lector tenía que proponer parcial
+    // siempre. Partidas por la 0071, la baja por ausencia ya es correcta: sin
+    // esto, alguien a quien el Tesoro retire se queda activo para siempre.
+    const r = analizarBytes('ofac_consolidada', bytes(OFAC_MINIMO));
+    expect(r.alcanceSugerido).toBe('completa');
+    expect(r.avisos).toEqual([]);
+  });
+
+  it('la SDN también, con su propio archivo', () => {
+    const r = analizarBytes('ofac_sdn', bytes(SDN_MINIMO));
+    expect(r.alcanceSugerido).toBe('completa');
+    expect(r.avisos).toEqual([]);
+  });
+
+  it('el archivo en la fuente equivocada se detecta y baja a PARCIAL', () => {
+    // El error más caro de esta pantalla y es de un clic: con alcance completo
+    // daría de baja la lista entera y la sustituiría por la otra.
     const r = analizarBytes('ofac_sdn', bytes(OFAC_MINIMO));
     expect(r.alcanceSugerido).toBe('parcial');
-    expect(r.avisos.join(' ')).toMatch(/dos listas/);
-    expect(r.avisos.join(' ')).toMatch(/dar[íi]a de baja a la otra/);
+    expect(r.avisos.join(' ')).toMatch(/Parece el archivo de la otra lista/);
+    expect(r.avisos.join(' ')).toMatch(/dar[íi]as de baja la lista entera/);
+  });
+
+  it('y al revés, que es el mismo error en la otra dirección', () => {
+    const r = analizarBytes('ofac_consolidada', bytes(SDN_MINIMO));
+    expect(r.alcanceSugerido).toBe('parcial');
+    expect(r.avisos.join(' ')).toMatch(/Parece el archivo de la otra lista/);
   });
 
   it('lee la lista que declara el archivo en su etiqueta', () => {
-    const r = analizarBytes('ofac_sdn', bytes(OFAC_MINIMO));
+    const r = analizarBytes('ofac_consolidada', bytes(OFAC_MINIMO));
     expect(r.etiqueta).toBe('OFAC · Consolidated List');
     expect(r.fechaActualizacion).toBe('2026-07-27');
   });
 
   it('no manda RFC: OFAC es un registro de sanciones, no fiscal', () => {
-    const r = analizarBytes('ofac_sdn', bytes(OFAC_MINIMO));
+    const r = analizarBytes('ofac_consolidada', bytes(OFAC_MINIMO));
     expect(r.registros[0].rfc).toBeNull();
     expect(r.registros[0].identificador_fuente).toBe('9640');
   });

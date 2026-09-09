@@ -42,7 +42,8 @@ update lista_fuente
 update lista_fuente
    set situaciones = null,
        situaciones_bloqueantes = null
- where codigo in ('uif_bloqueadas', 'ofac_sdn', 'onu_consolidada', 'ue_sanciones');
+ where codigo in ('uif_bloqueadas', 'ofac_sdn', 'ofac_consolidada', 'onu_consolidada',
+                  'ue_sanciones');
 
 -- =====================================================================
 -- 69-B Bis · fuente SEPARADA, no una situación más del 69-B
