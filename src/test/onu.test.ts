@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { leerEntidadOnu, leerOnu, registros } from '../lib/onu';
+import { leerEntidadOnu, leerOnu, partirAlias, registros } from '../lib/onu';
 
 /** Recortes del archivo REAL del 7 de septiembre de 2026. */
 const ABRE =
@@ -210,5 +210,85 @@ describe('la traducción al camino de carga', () => {
     // El régimen y la fecha de listado no tienen columna: van como dato del
     // expediente, no se pierden.
     expect(fila.identificadores).toMatchObject({ regimen: 'Al-Qaida', listado_en: '2001-10-06' });
+  });
+});
+
+describe('partir un alias que trae varios nombres', () => {
+  it('parte por punto y coma cuando de verdad separa alias', () => {
+    // IRi.039 (Soleimani): la ONU empaca tres alias en un elemento. Sin
+    // partir, ninguno de los tres cotejaría nunca.
+    expect(partirAlias('Haj Qasem; Haji Qassem; Sardar Soleimani')).toEqual([
+      'Haj Qasem',
+      'Haji Qassem',
+      'Sardar Soleimani',
+    ]);
+  });
+
+  it('NO parte por un punto y coma que va dentro de un paréntesis', () => {
+    // QDi.299 (al-Baghdadi), el caso que rompía. Partido a ciegas producía
+    // «…al-Husayni al-Quraishi» con el paréntesis abierto sin cerrar y
+    // «Abu Bakr al-Baghdadi)» con el paréntesis pegado al final, que es
+    // justo lo que un operador NO va a teclear. En la única lista que impide
+    // operar, eso era una coincidencia perdida.
+    const r = partirAlias(
+      'أبو بكر البغدادي (Abu Bakr al-Baghdadi al-Husayni al-Quraishi; Abu Bakr al-Baghdadi)',
+    );
+    expect(r).toEqual([
+      'أبو بكر البغدادي',
+      'Abu Bakr al-Baghdadi al-Husayni al-Quraishi',
+      'Abu Bakr al-Baghdadi',
+    ]);
+    // Y ninguno queda con el paréntesis descuadrado.
+    for (const x of r) {
+      expect(x).not.toMatch(/[()]/);
+    }
+  });
+
+  it('deja en paz los paréntesis que no separan nada', () => {
+    // CDe.003: dos razones sociales, cada una con sus siglas entre
+    // paréntesis. El punto y coma sí separa, y las siglas se conservan
+    // porque forman parte del nombre con el que la entidad opera.
+    expect(
+      partirAlias('COMPAGNIE AERIENNE DES GRANDS LACS (CAGL) ; GREAT LAKES BUSINESS COMPANY (GLBC)'),
+    ).toEqual([
+      'COMPAGNIE AERIENNE DES GRANDS LACS (CAGL)',
+      'GREAT LAKES BUSINESS COMPANY (GLBC)',
+    ]);
+  });
+
+  it('un nombre suelto se devuelve tal cual', () => {
+    expect(partirAlias('Abu Ali')).toEqual(['Abu Ali']);
+    expect(partirAlias('  ')).toEqual([]);
+  });
+});
+
+describe('los alias sin nombre se cuentan, no se callan', () => {
+  // Instrucción 295 de Cumplimiento: «se descarta y se reporta, nunca en
+  // silencio», misma disciplina que las 238 filas suprimidas del 69-B. Son
+  // 294 en el archivo real. Si un día esa cifra cayera a cero sin que la ONU
+  // cambiara nada, el lector habría dejado de ver una parte del archivo — y
+  // eso hay que notarlo aquí y no en un barrido que no encuentra a nadie.
+  const CON_VACIO =
+    ABRE +
+    '  <INDIVIDUALS>\n' +
+    '    <INDIVIDUAL>\n' +
+    '      <DATAID>1</DATAID>\n' +
+    '      <FIRST_NAME>PRUEBA</FIRST_NAME>\n' +
+    '      <UN_LIST_TYPE>Test</UN_LIST_TYPE>\n' +
+    '      <REFERENCE_NUMBER>TSi.001</REFERENCE_NUMBER>\n' +
+    '      <INDIVIDUAL_ALIAS><QUALITY>Good</QUALITY><ALIAS_NAME>Buena</ALIAS_NAME></INDIVIDUAL_ALIAS>\n' +
+    '      <INDIVIDUAL_ALIAS><QUALITY></QUALITY><ALIAS_NAME></ALIAS_NAME></INDIVIDUAL_ALIAS>\n' +
+    '      <INDIVIDUAL_ALIAS><ALIAS_NAME></ALIAS_NAME></INDIVIDUAL_ALIAS>\n' +
+    '    </INDIVIDUAL>\n' +
+    '  </INDIVIDUALS>\n' +
+    '</CONSOLIDATED_LIST>\n';
+
+  it('se descartan del índice y se asienta la cuenta', () => {
+    const r = leerOnu(CON_VACIO);
+    expect(r.aliasVacios).toBe(2);
+    expect(r.registros[0].aliasVacios).toBe(2);
+    // Y no ensucian el índice con cadenas vacías.
+    expect(r.registros[0].nombresAlternos).toEqual(['Buena']);
+    expect(r.registros[0].nombresAlternosDebiles).toEqual([]);
   });
 });

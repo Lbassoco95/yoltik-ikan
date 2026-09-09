@@ -239,6 +239,7 @@ export function analizarBytes(codigoFuente: string, datos: ArrayBuffer): Analisi
       ...cuenta(registros, (x) => x.tipo_entidad ?? 'sin tipo'),
       { etiqueta: 'alias', valor: totalAlias(registros, false) },
       { etiqueta: 'alias de baja calidad', valor: debiles },
+      { etiqueta: 'alias sin nombre, descartados', valor: r.aliasVacios },
     ],
     avisos: [
       'Una coincidencia confirmada en esta lista IMPIDE operar: las resoluciones del Consejo de ' +
@@ -247,6 +248,17 @@ export function analizarBytes(codigoFuente: string, datos: ArrayBuffer): Analisi
         ? [
             `${debiles.toLocaleString('es-MX')} alias vienen marcados de baja calidad por la ` +
               'propia ONU. Se cargan aparte: levantan un candidato a revisar, no una coincidencia.',
+          ]
+        : []),
+      // Instrucción 295: se descartan y se reportan, nunca en silencio. La
+      // cifra importa aunque no haya nada que cargar: si un día baja a cero,
+      // el lector dejó de ver una parte del archivo y hay que enterarse por
+      // aquí y no por un barrido que no encuentra a nadie.
+      ...(r.aliasVacios > 0
+        ? [
+            `${r.aliasVacios.toLocaleString('es-MX')} elementos de alias vienen sin nombre en el ` +
+              'archivo y se descartan: no hay nada que cotejar en ellos. Se cuentan para que la ' +
+              'cifra pueda compararse entre cargas.',
           ]
         : []),
     ],

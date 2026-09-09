@@ -67,6 +67,17 @@ export interface RegistroOnu {
   fechaNacimientoTipo: string | null;
   /** El cargo o calidad con que se le lista. */
   designacion: string | null;
+  /**
+   * Elementos de alias sin nombre que traía este registro.
+   *
+   * Instrucción 295 de Cumplimiento: se descartan en la ingesta y se asienta
+   * la cuenta, «misma disciplina que las 238 filas suprimidas del 69-B, se
+   * descarta y se reporta, nunca en silencio». Son 294 en el archivo del 7 de
+   * septiembre de 2026. No entran al índice porque no hay nada que cotejar,
+   * pero una caída de esa cifra a cero en una carga futura significaría que el
+   * lector dejó de ver una parte del archivo, y eso hay que poder notarlo.
+   */
+  aliasVacios: number;
 }
 
 export interface ResultadoOnu {
@@ -74,6 +85,8 @@ export interface ResultadoOnu {
   fechaActualizacion: string | null;
   registros: RegistroOnu[];
   descartadas: { identificador: string; motivo: string }[];
+  /** Suma de los elementos de alias sin nombre. Instrucción 295. */
+  aliasVacios: number;
 }
 
 function desescapar(t: string): string {
@@ -104,12 +117,59 @@ function bloques(trozo: string, elemento: string): string[] {
  * No es una hipótesis: en el archivo real 22 alias vienen así —«Azim Adhajani;
  * Azim Agha-Jani»— y son 51 nombres que sin partir no cotejarían nunca. Varios
  * pertenecen al programa nuclear iraní.
+ *
+ * Pero el punto y coma no siempre separa alias. A veces va DENTRO de un
+ * paréntesis, separando transliteraciones del mismo nombre, y ahí partir a
+ * ciegas destroza el dato. El caso real es QDi.299:
+ *
+ *   «أبو بكر البغدادي الحسيني القريشي (Abu Bakr al-Baghdadi al-Husayni
+ *    al-Quraishi; Abu Bakr al-Baghdadi)»
+ *
+ * Partido a ciegas producía dos cadenas con el paréntesis descuadrado —una
+ * abierta sin cerrar y otra que terminaba en «al-Baghdadi)»— y ninguna de las
+ * dos cotejaba con lo que un operador teclearía. En la ÚNICA lista que impide
+ * operar, eso es una coincidencia que se pierde.
+ *
+ * Así que se parte sólo en el nivel cero de paréntesis, y el paréntesis se
+ * abre aparte: lo que hay dentro son formas del mismo nombre y cada una es
+ * superficie de cotejo por derecho propio. Leer el paréntesis no es inventar
+ * un nombre; dejarlo pegado sí es perder tres.
  */
-function partirAlias(valor: string): string[] {
-  return valor
-    .split(';')
-    .map((x) => x.trim())
-    .filter((x) => x.length > 0);
+export function partirAlias(valor: string): string[] {
+  const nivelCero: string[] = [];
+  let actual = '';
+  let hondura = 0;
+  for (const c of valor) {
+    if (c === '(' || c === '[') hondura++;
+    else if (c === ')' || c === ']') hondura = Math.max(0, hondura - 1);
+    if (c === ';' && hondura === 0) {
+      nivelCero.push(actual);
+      actual = '';
+    } else {
+      actual += c;
+    }
+  }
+  nivelCero.push(actual);
+
+  const salida: string[] = [];
+  for (const bruto of nivelCero) {
+    const pieza = bruto.trim();
+    if (pieza.length === 0) continue;
+
+    // «Nombre (forma A; forma B)» → el nombre a secas, más cada forma.
+    const m = pieza.match(/^(.*?)\s*[([]([^()[\]]*)[)\]]\s*$/);
+    if (m && m[2].includes(';')) {
+      const fuera = m[1].trim();
+      if (fuera.length > 0) salida.push(fuera);
+      for (const dentro of m[2].split(';')) {
+        const x = dentro.trim();
+        if (x.length > 0) salida.push(x);
+      }
+      continue;
+    }
+    salida.push(pieza);
+  }
+  return salida;
 }
 
 /** Compone la fecha de nacimiento respetando la forma en que la ONU la da. */
@@ -192,9 +252,14 @@ export function leerEntidadOnu(
   const debiles = new Set<string>();
   const etiqueta = tipoEntidad === 'persona' ? 'INDIVIDUAL_ALIAS' : 'ENTITY_ALIAS';
 
+  let aliasVacios = 0;
   for (const alias of bloques(trozo, etiqueta)) {
     const valor = texto(alias, 'ALIAS_NAME');
-    if (!valor) continue; // Los nodos vacíos son 294 y no significan nada.
+    if (!valor) {
+      // No entra al índice —no hay nada que cotejar— pero se cuenta.
+      aliasVacios++;
+      continue;
+    }
     const calidad = texto(alias, 'QUALITY');
     const destino = calidad === 'Low' ? debiles : buenos;
     for (const parte of partirAlias(valor)) destino.add(parte);
@@ -236,6 +301,7 @@ export function leerEntidadOnu(
     fechaNacimiento: conValor.map((x) => x.valor).join(' · ') || null,
     fechaNacimientoTipo: conValor[0]?.tipo ?? nacimientos[0]?.tipo ?? null,
     designacion: texto(bloques(trozo, 'DESIGNATION')[0] ?? '', 'VALUE'),
+    aliasVacios,
   };
 }
 
@@ -260,7 +326,8 @@ export function leerOnu(xml: string): ResultadoOnu {
     else salida.push(r);
   }
 
-  return { fechaActualizacion, registros: salida, descartadas };
+  const aliasVacios = salida.reduce((n, r) => n + r.aliasVacios, 0);
+  return { fechaActualizacion, registros: salida, descartadas, aliasVacios };
 }
 
 /**
@@ -286,6 +353,8 @@ export function registrosParaCarga(registros: RegistroOnu[]) {
       fecha_nacimiento: r.fechaNacimiento,
       fecha_nacimiento_tipo: r.fechaNacimientoTipo,
       designacion: r.designacion,
+      // Instrucción 295: la cuenta viaja con el registro, no sólo en el total.
+      alias_vacios: r.aliasVacios,
     },
   }));
 }
