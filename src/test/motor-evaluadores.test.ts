@@ -14,7 +14,9 @@ import {
   type Tipologia,
   type OperacionEval,
   type MotorContext,
+  type NoEvaluado,
   umaEnFecha,
+  umbralEnFecha,
 } from "../../supabase/functions/motor-pld/evaluadores";
 
 // ---------------------------------------------------------------------
@@ -1173,5 +1175,195 @@ describe('el fraccionamiento se distingue del umbral cruzado a secas', () => {
       op({ id: 'b', fecha: '2026-08-01T12:00:00Z', monto_mxn: 4000 * UMA_PRUEBA }),
     ]);
     expect(p?.operaciones).toEqual(['a', 'b']);
+  });
+});
+
+// ---------------------------------------------------------------------
+// Los umbrales se miden con la fecha del acto
+// ---------------------------------------------------------------------
+describe("el umbral se resuelve con la fecha del acto, no con la de hoy", () => {
+  // Instrucciones 312, 313, 322, 323 y 324. La reforma que entró en vigor el
+  // 17 de julio de 2025 movió el umbral de transmisión de inmueble de 16,000
+  // UMA a 8,000. Con el número escrito a mano en la regla, un acto de 2024 se
+  // medía contra el de 2026 — y como dice Cumplimiento, ahí no se falla por un
+  // peso: se falla en el sentido de la obligación.
+  const VIGENCIAS = {
+    umbral_xii_inmueble_uma: [
+      { desde: "2025-07-17", hasta: null, valor: 8000 },
+      { desde: "2013-08-17", hasta: "2025-07-17", valor: 16000 },
+    ],
+  };
+  const ctxUmbral = (over = {}) =>
+    ctx({ umaMxn: 100, umbralVigencias: VIGENCIAS, ...over });
+
+  const REGLA: Tipologia["regla_dsl"] = {
+    tipo: "agregado",
+    ventana: "6M",
+    agrupar_por: "client_id",
+    condicion: {
+      count: { op: ">=", valor: 1 },
+      suma_monto_uma: { op: ">=", parametro: "umbral_xii_inmueble_uma" },
+    },
+  };
+
+  it("resuelve el valor de cada régimen por su fecha", () => {
+    const c = ctxUmbral();
+    expect(umbralEnFecha(c, "umbral_xii_inmueble_uma", "2024-03-01")).toBe(16000);
+    expect(umbralEnFecha(c, "umbral_xii_inmueble_uma", "2026-03-01")).toBe(8000);
+  });
+
+  it("el día del corte YA es del régimen nuevo", () => {
+    // El transitorio dice «a partir de los actos realizados el 17 de julio de
+    // 2025», así que ese día cuenta hacia adelante. Un `<=` en el límite lo
+    // mandaría al régimen viejo y sería un día entero mal medido.
+    const c = ctxUmbral();
+    expect(umbralEnFecha(c, "umbral_xii_inmueble_uma", "2025-07-16")).toBe(16000);
+    expect(umbralEnFecha(c, "umbral_xii_inmueble_uma", "2025-07-17")).toBe(8000);
+  });
+
+  it("un acto de 10,000 UMA en 2026 dispara, y el MISMO acto en 2024 no", () => {
+    // El caso completo, de punta a punta: 10,000 UMA está por encima de 8,000
+    // y por debajo de 16,000. Es exactamente el tramo donde el umbral fijo
+    // producía un Aviso que ese día no procedía.
+    const nuevo = [op({ id: "a", fecha: "2026-03-01T10:00:00Z", monto_mxn: 1_000_000 })];
+    expect(evaluarTipologia(tip("XII-01", REGLA), nuevo, ctxUmbral())).toHaveLength(1);
+
+    const viejo = [op({ id: "b", fecha: "2024-03-01T10:00:00Z", monto_mxn: 1_000_000 })];
+    expect(evaluarTipologia(tip("XII-01", REGLA), viejo, ctxUmbral())).toHaveLength(0);
+  });
+
+  it("sin vigencia que cubra el acto se NIEGA a evaluar, y lo dice", () => {
+    // Instrucción 324. Lo importante no es que no dispare: es que la negativa
+    // quede asentada. Un motor que aplica el umbral de hoy a un acto sin
+    // régimen cargado no deja rastro de haberse equivocado.
+    const sinRegimenViejo = ctx({
+      umaMxn: 100,
+      umbralVigencias: {
+        umbral_xii_inmueble_uma: [{ desde: "2025-07-17", hasta: null, valor: 8000 }],
+      },
+    });
+    const ops = [op({ id: "c", fecha: "2024-03-01T10:00:00Z", monto_mxn: 1_000_000 })];
+    const negativas: NoEvaluado[] = [];
+    const r = evaluarTipologia(tip("XII-01", REGLA), ops, sinRegimenViejo, negativas);
+    expect(r).toHaveLength(0);
+    expect(negativas).toHaveLength(1);
+    expect(negativas[0].motivo).toMatch(/No hay un valor vigente/);
+    expect(negativas[0].operation_id).toBe("c");
+  });
+
+  it("y si la ventana CRUZA el cambio, tampoco elige por su cuenta", () => {
+    // Dos actos del mismo cliente, uno de cada lado del corte. Qué umbral
+    // gobierna una acumulación a caballo del cambio no está determinado por
+    // Cumplimiento, y elegir uno aquí sería inventar el criterio que la 313
+    // vino a corregir.
+    const ops = [
+      op({ id: "d", fecha: "2025-07-01T10:00:00Z", monto_mxn: 500_000 }),
+      op({ id: "e", fecha: "2025-08-01T10:00:00Z", monto_mxn: 500_000 }),
+    ];
+    const negativas: NoEvaluado[] = [];
+    const r = evaluarTipologia(tip("XII-01", REGLA), ops, ctxUmbral(), negativas);
+    expect(r).toHaveLength(0);
+    expect(negativas.length).toBeGreaterThan(0);
+    expect(negativas[0].motivo).toMatch(/cruza el cambio de umbral/);
+  });
+
+  it("una regla con umbral escrito a mano sigue funcionando igual", () => {
+    // Compatibilidad: no todos los umbrales cambian con la fecha, y obligar a
+    // versionar los que no cambian sería trabajo sin beneficio.
+    const literal: Tipologia["regla_dsl"] = {
+      tipo: "agregado",
+      ventana: "6M",
+      agrupar_por: "client_id",
+      condicion: { suma_monto_uma: { op: ">=", valor: 100 } },
+    };
+    const ops = [op({ id: "f", fecha: "2024-03-01T10:00:00Z", monto_mxn: 50_000 })];
+    expect(evaluarTipologia(tip("X", literal), ops, ctxUmbral())).toHaveLength(1);
+  });
+
+  it("y el fraccionamiento se sigue marcando cuando el umbral vino del parámetro", () => {
+    // Estuvo a punto de irse a producción rota: la bandera leía el umbral de la
+    // regla ORIGINAL, y una regla que apunta a un parámetro no trae número ahí.
+    // El hallazgo se habría creado igual, sin la bandera — o sea, el aviso por
+    // acumulación se levantaba y la señal de que fue fraccionado desaparecía en
+    // silencio, justo en XII-01 y XVI-01, que son las dos reglas acumulativas
+    // que la 0075 convirtió.
+    const c = evaluarTipologia(
+      tip("XII-01", REGLA),
+      [
+        op({ id: "a", fecha: "2026-04-01T12:00:00Z", monto_mxn: 3000 * 100 }),
+        op({ id: "b", fecha: "2026-06-01T12:00:00Z", monto_mxn: 3000 * 100 }),
+        op({ id: "c", fecha: "2026-08-01T12:00:00Z", monto_mxn: 2500 * 100 }),
+      ],
+      ctxUmbral({ ahora: new Date("2026-09-02T00:00:00Z") }),
+    );
+    expect(c).toHaveLength(1);
+    const p = c[0].regla_payload as Record<string, unknown>;
+    expect(p.posible_fraccionamiento).toBe(true);
+    // El umbral que se asienta es el que rigió, no el literal de la regla.
+    expect((p.fraccionamiento as Record<string, unknown>).umbral).toBe(8000);
+    expect((p.fraccionamiento as Record<string, unknown>).ventana).toBe("6M");
+  });
+
+  it("una operación que sola alcanza el umbral vigente NO es fraccionamiento", () => {
+    // La otra mitad: con el umbral resuelto a 8,000 la operación grande lo
+    // alcanza sola. Si la bandera leyera un umbral equivocado, esto se marcaría
+    // como patrón y el OC investigaría un acto que sólo hay que revisar.
+    const c = evaluarTipologia(
+      tip("XII-01", REGLA),
+      [
+        op({ id: "grande", fecha: "2026-04-01T12:00:00Z", monto_mxn: 8500 * 100 }),
+        op({ id: "chica", fecha: "2026-06-01T12:00:00Z", monto_mxn: 200 * 100 }),
+      ],
+      ctxUmbral({ ahora: new Date("2026-09-02T00:00:00Z") }),
+    );
+    expect(c).toHaveLength(1);
+    expect((c[0].regla_payload as Record<string, unknown>).posible_fraccionamiento)
+      .toBeUndefined();
+  });
+});
+
+describe("una regla puede declarar desde cuándo rige", () => {
+  // El caso que un parámetro no cubre: XII-04 hoy avisa SIEMPRE porque la
+  // reforma le quitó el umbral, y antes del 17 de julio de 2025 exigía 8,025
+  // UMA. No hay número que versionar — cambió la obligación entera.
+  const SIEMPRE: Tipologia["regla_dsl"] = {
+    tipo: "lookup",
+    campo: "tipo",
+    valores: ["constitucion_personas_morales"],
+    vigente_desde: "2025-07-17",
+  } as unknown as Tipologia["regla_dsl"];
+
+  it("un acto posterior se evalúa", () => {
+    const ops = [op({ id: "a", fecha: "2026-03-01T10:00:00Z", tipo: "constitucion_personas_morales" })];
+    expect(evaluarTipologia(tip("XII-04", SIEMPRE), ops, ctx()).length).toBeGreaterThan(0);
+  });
+
+  it("uno anterior NO, y la negativa queda asentada con su motivo", () => {
+    const ops = [op({ id: "b", fecha: "2024-03-01T10:00:00Z", tipo: "constitucion_personas_morales" })];
+    const negativas: NoEvaluado[] = [];
+    expect(evaluarTipologia(tip("XII-04", SIEMPRE), ops, ctx(), negativas)).toHaveLength(0);
+    expect(negativas).toHaveLength(1);
+    expect(negativas[0].motivo).toMatch(/rige desde el 2025-07-17/);
+  });
+
+  it("una corrida con actos de los dos lados evalúa los que sí puede", () => {
+    // Dejar sin evaluar los actos posteriores porque en la misma corrida venía
+    // uno anterior sería castigar al conjunto por un caso.
+    const ops = [
+      op({ id: "c", fecha: "2024-03-01T10:00:00Z", tipo: "constitucion_personas_morales" }),
+      op({ id: "d", fecha: "2026-03-01T10:00:00Z", tipo: "constitucion_personas_morales" }),
+    ];
+    const negativas: NoEvaluado[] = [];
+    const r = evaluarTipologia(tip("XII-04", SIEMPRE), ops, ctx(), negativas);
+    expect(r.map((x) => x.operation_id)).toEqual(["d"]);
+    expect(negativas.map((x) => x.operation_id)).toEqual(["c"]);
+  });
+
+  it("correrMotor recoge las negativas de todas las tipologías", () => {
+    const ops = [op({ id: "e", fecha: "2024-03-01T10:00:00Z", tipo: "constitucion_personas_morales" })];
+    const r = correrMotor([tip("XII-04", SIEMPRE)], ops, ctx());
+    expect(r.candidatos).toHaveLength(0);
+    expect(r.noEvaluados).toHaveLength(1);
+    expect(r.noEvaluados[0].tipologia_codigo).toBe("XII-04");
   });
 });

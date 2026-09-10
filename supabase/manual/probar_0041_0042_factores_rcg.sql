@@ -82,11 +82,19 @@ begin
   insert into resultado values (5, 'Una sola matriz XII activa',
     '1', v_n::text, v_n = 1);
 
+  -- La activa tiene que ser la MÁS NUEVA. Esta prueba decía «la activa es la
+  -- v3» con el número escrito a mano, y desde que la 0054 publicó la v4 eso es
+  -- falso sin que nada esté roto. Lo que hay que sostener es que no queda una
+  -- versión vieja activa mientras existe una posterior: dos comparecientes
+  -- iguales saldrían clasificados distinto según cuál se leyó.
   select id into v_v3
     from client_risk_template
    where organization_id = v_org and sector = 'XII' and activa;
   select version::text into v_txt from client_risk_template where id = v_v3;
-  insert into resultado values (6, 'La activa es la v3', '3', v_txt, v_txt = '3');
+  select max(version)::text into v_msg
+    from client_risk_template where organization_id = v_org and sector = 'XII';
+  insert into resultado values (6, 'La activa es la versión más nueva',
+    'v' || v_msg, 'v' || v_txt, v_txt = v_msg);
 
   -- ------------------------------------------------------------------
   -- 7. Las versiones anteriores se conservan
@@ -94,10 +102,14 @@ begin
   -- Las evaluaciones que produjeron tienen que poder explicarse con la
   -- plantilla que las calculó. Un expediente cuyo score no se reconstruye con
   -- ninguna configuración existente es el peor resultado ante una verificación.
+  --
+  -- Se comprueba que NINGUNA se borró: existe una fila por cada número de
+  -- versión desde la 1 hasta la activa, sin huecos. Contar «3» daba por hecho
+  -- cuántas publicaciones habría, y eso caduca con cada adenda.
   select count(*) into v_n
     from client_risk_template where organization_id = v_org and sector = 'XII';
-  insert into resultado values (7, 'v1 y v2 se conservan inactivas',
-    '3 versiones', v_n::text || ' versiones', v_n = 3);
+  insert into resultado values (7, 'No falta ninguna versión anterior',
+    v_txt || ' versiones', v_n::text || ' versiones', v_n = v_txt::int);
 
   -- ------------------------------------------------------------------
   -- 8. La variable de zona declara su catálogo
