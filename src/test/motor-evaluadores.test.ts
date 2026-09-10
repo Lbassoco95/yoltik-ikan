@@ -1279,6 +1279,47 @@ describe("el umbral se resuelve con la fecha del acto, no con la de hoy", () => 
     const ops = [op({ id: "f", fecha: "2024-03-01T10:00:00Z", monto_mxn: 50_000 })];
     expect(evaluarTipologia(tip("X", literal), ops, ctxUmbral())).toHaveLength(1);
   });
+
+  it("y el fraccionamiento se sigue marcando cuando el umbral vino del parámetro", () => {
+    // Estuvo a punto de irse a producción rota: la bandera leía el umbral de la
+    // regla ORIGINAL, y una regla que apunta a un parámetro no trae número ahí.
+    // El hallazgo se habría creado igual, sin la bandera — o sea, el aviso por
+    // acumulación se levantaba y la señal de que fue fraccionado desaparecía en
+    // silencio, justo en XII-01 y XVI-01, que son las dos reglas acumulativas
+    // que la 0075 convirtió.
+    const c = evaluarTipologia(
+      tip("XII-01", REGLA),
+      [
+        op({ id: "a", fecha: "2026-04-01T12:00:00Z", monto_mxn: 3000 * 100 }),
+        op({ id: "b", fecha: "2026-06-01T12:00:00Z", monto_mxn: 3000 * 100 }),
+        op({ id: "c", fecha: "2026-08-01T12:00:00Z", monto_mxn: 2500 * 100 }),
+      ],
+      ctxUmbral({ ahora: new Date("2026-09-02T00:00:00Z") }),
+    );
+    expect(c).toHaveLength(1);
+    const p = c[0].regla_payload as Record<string, unknown>;
+    expect(p.posible_fraccionamiento).toBe(true);
+    // El umbral que se asienta es el que rigió, no el literal de la regla.
+    expect((p.fraccionamiento as Record<string, unknown>).umbral).toBe(8000);
+    expect((p.fraccionamiento as Record<string, unknown>).ventana).toBe("6M");
+  });
+
+  it("una operación que sola alcanza el umbral vigente NO es fraccionamiento", () => {
+    // La otra mitad: con el umbral resuelto a 8,000 la operación grande lo
+    // alcanza sola. Si la bandera leyera un umbral equivocado, esto se marcaría
+    // como patrón y el OC investigaría un acto que sólo hay que revisar.
+    const c = evaluarTipologia(
+      tip("XII-01", REGLA),
+      [
+        op({ id: "grande", fecha: "2026-04-01T12:00:00Z", monto_mxn: 8500 * 100 }),
+        op({ id: "chica", fecha: "2026-06-01T12:00:00Z", monto_mxn: 200 * 100 }),
+      ],
+      ctxUmbral({ ahora: new Date("2026-09-02T00:00:00Z") }),
+    );
+    expect(c).toHaveLength(1);
+    expect((c[0].regla_payload as Record<string, unknown>).posible_fraccionamiento)
+      .toBeUndefined();
+  });
 });
 
 describe("una regla puede declarar desde cuándo rige", () => {

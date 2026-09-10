@@ -748,7 +748,12 @@ function evalAgregado(
             grupo: clave,
             metricas: met,
             operaciones: enVentana.map((o) => o.id),
-            ...banderaDeFraccionamiento(enVentana, regla, met, ctx),
+            // Se le pasa la condición YA RESUELTA, no la de la regla. Desde que
+            // el umbral puede venir como `parametro`, la de la regla no trae
+            // número: leerla ahí dejaría el umbral en undefined y la bandera no
+            // se levantaría nunca, justo en XII-01 y XVI-01, que son las reglas
+            // acumulativas donde el fraccionamiento importa.
+            ...banderaDeFraccionamiento(enVentana, regla.ventana, resuelta.condicion, met, ctx),
           }, ctx),
         );
         break; // un hallazgo por grupo (primera ventana que dispara)
@@ -782,7 +787,10 @@ function evalAgregado(
  */
 function banderaDeFraccionamiento(
   enVentana: OperacionEval[],
-  regla: Extract<ReglaDsl, { tipo: 'agregado' }>,
+  ventana: string,
+  /** La condición RESUELTA: sus umbrales ya son números, vinieran escritos en
+   *  la regla o de un parámetro por vigencia. */
+  condicion: Record<string, Condicion>,
   met: Record<string, number>,
   ctx: MotorContext,
 ): Record<string, unknown> {
@@ -790,10 +798,10 @@ function banderaDeFraccionamiento(
 
   // Sólo tiene sentido sobre umbrales de MONTO. Una regla que cuenta
   // operaciones —«cinco accesos desde IP anónima»— no se fracciona: se repite.
-  const claveMonto = Object.keys(regla.condicion).find((k) => METRICAS_MONTO.includes(k));
+  const claveMonto = Object.keys(condicion).find((k) => METRICAS_MONTO.includes(k));
   if (!claveMonto) return {};
 
-  const umbral = regla.condicion[claveMonto]?.valor;
+  const umbral = condicion[claveMonto]?.valor;
   if (typeof umbral !== 'number' || umbral <= 0) return {};
 
   // ¿Alguna alcanzaba el umbral por su cuenta? Si sí, no hubo fraccionamiento:
@@ -811,12 +819,12 @@ function banderaDeFraccionamiento(
     posible_fraccionamiento: true,
     fraccionamiento: {
       operaciones: enVentana.length,
-      ventana: regla.ventana,
+      ventana,
       metrica: claveMonto,
       umbral,
       suma: met[claveMonto],
       nota:
-        `${enVentana.length} operaciones en ${regla.ventana}, ninguna de las cuales alcanzaba ` +
+        `${enVentana.length} operaciones en ${ventana}, ninguna de las cuales alcanzaba ` +
         `el umbral de ${umbral} por sí sola, que acumuladas lo cruzan. Procede el Aviso por ` +
         'acumulación (art. 17, penúltimo párrafo, LFPIORPI).',
     },
