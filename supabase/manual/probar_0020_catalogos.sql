@@ -22,6 +22,8 @@ declare
   v_ok int := 0;
   v_n int;
   v_desc text;
+  v_version_antes int;
+  v_vacias_antes int;
 begin
   -- 1. sin ser admin de plataforma, la carga se rechaza
   perform set_config('ikan.admin', 'no', true);
@@ -100,6 +102,11 @@ begin
   end;
 
   -- 10. reemplazo: la versión nueva sustituye, la vieja NO se borra
+  select version into v_version_antes from catalogo_sat where codigo = 'entidad_federativa';
+  select count(*) into v_vacias_antes from catalogo_valor cv
+    join catalogo_sat c on c.id = cv.catalogo_id
+   where c.codigo = 'entidad_federativa' and cv.clave = '9'
+     and cv.vigente_desde = cv.vigente_hasta;
   select public.reemplazar_valores_catalogo('entidad_federativa',
     '[{"clave":"14","descripcion":"Jalisco"},{"clave":"15","descripcion":"Estado de Mexico"}]'::jsonb)
     into v_n;
@@ -113,8 +120,18 @@ begin
   v_ok := v_ok + 1;
 
   -- 11. la versión del catálogo subió
+  --
+  -- Se mide CONTRA LA DE ANTES, no contra el número 2. Esta prueba nació
+  -- afirmando «version = 2» dando por hecho que el catálogo llegaba en 1, y
+  -- desde que un seed posterior carga las entidades federativas ya llega en 2 y
+  -- la prueba fallaba sin que nada estuviera roto. Lo que hay que comprobar es
+  -- que reemplazar sube la versión exactamente una vez, y eso no depende de en
+  -- qué número venía.
   select version into v_n from catalogo_sat where codigo = 'entidad_federativa';
-  if v_n <> 2 then raise exception 'FALLA 11: version = %', v_n; end if;
+  if v_n <> v_version_antes + 1 then
+    raise exception 'FALLA 11: la versión pasó de % a %, y un reemplazo la sube de uno en uno',
+      v_version_antes, v_n;
+  end if;
   v_ok := v_ok + 1;
 
   -- 12. una clave retirada ya no valida hoy
@@ -128,11 +145,21 @@ begin
   -- corrección hecha el mismo día no es historia—, pero la fila se conserva
   -- para la auditoría. Se documenta con una prueba para que no se “arregle”
   -- por accidente.
+  --
+  -- Se cuenta el INCREMENTO, no el total. La prueba nació esperando una sola
+  -- fila con vigencia vacía, y era cierto cuando el catálogo llegaba en blanco;
+  -- desde que el seed 14 carga las entidades federativas del SAT el mismo día,
+  -- la clave 9 ya trae una vigencia vacía antes de que esta prueba empiece. Lo
+  -- que se comprueba es que un reemplazo del mismo día deja exactamente una
+  -- fila más, y eso no depende de con cuántas se arrancó.
   select count(*) into v_n from catalogo_valor cv
     join catalogo_sat c on c.id = cv.catalogo_id
    where c.codigo = 'entidad_federativa' and cv.clave = '9'
      and cv.vigente_desde = cv.vigente_hasta;
-  if v_n <> 1 then raise exception 'FALLA 12b: esperaba una vigencia vacía, hay %', v_n; end if;
+  if v_n <> v_vacias_antes + 1 then
+    raise exception 'FALLA 12b: las vigencias vacías de la clave 9 pasaron de % a %, y un '
+      'reemplazo del mismo día deja exactamente una más', v_vacias_antes, v_n;
+  end if;
   v_ok := v_ok + 1;
 
   -- 12c. Un catálogo cargado en una fecha anterior SÍ se reconstruye. Se simula

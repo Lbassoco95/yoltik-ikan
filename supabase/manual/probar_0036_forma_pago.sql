@@ -43,9 +43,18 @@ begin
   -- ------------------------------------------------------------------
   -- 2. Las tres formas que la matriz nombra se aceptan
   -- ------------------------------------------------------------------
+  -- El efectivo va junto con la forma de pago y no después: la 0046 añadió un
+  -- disparador que rechaza «mixto» o «efectivo» sin el importe en efectivo,
+  -- porque el artículo 32 se mide sobre ese importe y sin él no se puede saber
+  -- si el acto está permitido. Esta prueba es anterior a esa regla y se quedó
+  -- poniendo sólo la forma; lo que comprueba —que las tres formas de la matriz
+  -- se aceptan— no cambia.
+  --
+  -- Mil pesos, no los dos millones del acto: lo que se prueba aquí es el
+  -- catálogo de formas de pago, no el límite del 32.
   update operation set forma_pago = 'bancarizado' where id = v_op;
-  update operation set forma_pago = 'mixto' where id = v_op;
-  update operation set forma_pago = 'efectivo' where id = v_op;
+  update operation set forma_pago = 'mixto', efectivo_mxn = 1000 where id = v_op;
+  update operation set forma_pago = 'efectivo', efectivo_mxn = 1000 where id = v_op;
   select count(*) into v_n from operation where id = v_op and forma_pago = 'efectivo';
   insert into resultado values (2, 'Acepta bancarizado, mixto y efectivo', '1', v_n::text, v_n = 1);
 
