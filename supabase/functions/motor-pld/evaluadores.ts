@@ -28,7 +28,45 @@ export type Comparador = '>' | '>=' | '<' | '<=' | '==' | '!=';
 
 export interface Condicion {
   op: Comparador;
+  /** El umbral escrito a mano. Vale cuando NO cambia con la fecha del acto. */
+  valor?: number;
+  /**
+   * El umbral tomado de `parametro_regulatorio` por su código, resuelto con la
+   * FECHA DEL ACTO.
+   *
+   * Existe porque los umbrales de la reforma cambiaron el 17 de julio de 2025 y
+   * un número escrito en la regla no puede saber eso. Con el literal, un acto
+   * de 2024 se evaluaba contra el umbral de 2026 —16,000 UMA en inmuebles pasó
+   * a 8,000— y ahí no se falla por un peso: se falla en el sentido de la
+   * obligación, produciendo un Aviso de más o de menos que nadie nota.
+   *
+   * Instrucciones 312, 313, 322 y 323 de la Célula de Cumplimiento.
+   */
+  parametro?: string;
+}
+
+/** Una vigencia de un umbral: desde cuándo rige y cuánto vale. */
+export interface VigenciaUmbral {
+  desde: string;
+  hasta: string | null;
   valor: number;
+}
+
+/**
+ * Por qué una tipología NO se pudo evaluar sobre una operación.
+ *
+ * Instrucción 324: cuando falta el parámetro con el que medir un acto, el motor
+ * debe NEGARSE a evaluar y decirlo, en lugar de aplicar el umbral vigente hoy.
+ * Aplicar el umbral nuevo a un acto viejo no produce un error visible: produce
+ * un Aviso de más o de menos que nadie va a notar.
+ */
+export interface NoEvaluado {
+  tipologia_codigo: string;
+  tipologia_version: number;
+  operation_id: string | null;
+  client_id: string | null;
+  fecha: string;
+  motivo: string;
 }
 
 export type ReglaDsl =
@@ -188,6 +226,19 @@ export interface MotorContext {
    * curso.
    */
   umaVigencias?: { desde: string; valor: number }[];
+  /**
+   * Histórico de cada umbral, por código de parámetro.
+   *
+   * Es el hermano de `umaVigencias` y hace falta por lo mismo, sólo que peor:
+   * la UMA cambia de valor y el umbral cambia de NÚMERO DE UMA. La reforma del
+   * 16/07/2025 movió los umbrales de la fracción XII —16,000 UMA en inmuebles a
+   * 8,000, 8,025 en sociedades— y su transitorio Primero fija la entrada en
+   * vigor el 17 de julio de 2025 para toda la reforma.
+   *
+   * Sin esto, la regla lleva el número escrito a mano y no hay forma de que un
+   * acto anterior se mida con el régimen que le tocaba.
+   */
+  umbralVigencias?: Record<string, VigenciaUmbral[]>;
   /** Momento de referencia para ventanas relativas (`desviacion`). */
   ahora: Date;
   /** Membresía país→lista: fuente (gafi_negra, ofac_sancionado, ...) → set de iso2. */
@@ -438,6 +489,67 @@ function num(v: unknown): number {
 }
 
 /** Evalúa un mapa de condiciones (AND) contra métricas calculadas. */
+/**
+ * Resuelve los umbrales que vienen por código de parámetro, con la fecha de
+ * los actos que se están midiendo.
+ *
+ * Devuelve un motivo en vez de un resultado en dos casos, y los dos son
+ * negativas a propósito (instrucción 324):
+ *
+ *   · No hay vigencia que cubra la fecha del acto. Típicamente un acto
+ *     anterior al 17 de julio de 2025 cuyo régimen viejo todavía no se ha
+ *     cargado. Aplicar el umbral de hoy sería medir con la regla equivocada.
+ *
+ *   · La ventana CRUZA un cambio de umbral, así que los actos de un mismo
+ *     grupo se medirían con números distintos. Cumplimiento no ha resuelto qué
+ *     umbral gobierna una acumulación a caballo del cambio, y elegir uno por
+ *     mi cuenta sería inventar el criterio que la 313 vino a corregir.
+ */
+function resolverCondicion(
+  condicion: Record<string, Condicion>,
+  ops: OperacionEval[],
+  ctx: MotorContext,
+): { condicion: Record<string, Condicion> } | { motivo: string } {
+  const salida: Record<string, Condicion> = {};
+  for (const [clave, c] of Object.entries(condicion)) {
+    if (c.parametro === undefined) {
+      salida[clave] = c;
+      continue;
+    }
+    const valores = new Set<number>();
+    for (const o of ops) {
+      const v = umbralEnFecha(ctx, c.parametro, o.fecha);
+      if (v === null) {
+        return {
+          motivo:
+            `No hay un valor vigente de «${c.parametro}» para el acto del ` +
+            `${o.fecha.slice(0, 10)}. El umbral cambió con la reforma que entró en vigor el ` +
+            '17 de julio de 2025 y el régimen anterior no está cargado, así que este acto no ' +
+            'se puede medir. Aplicarle el umbral vigente hoy produciría un Aviso de más o de ' +
+            'menos sin que nada lo señale.',
+        };
+      }
+      valores.add(v);
+    }
+    if (valores.size > 1) {
+      return {
+        motivo:
+          `La ventana de esta regla contiene actos que se miden con umbrales distintos de ` +
+          `«${c.parametro}» (${[...valores].sort((a, b) => a - b).join(' y ')} UMA): cruza el ` +
+          'cambio de umbral del 17 de julio de 2025. Qué umbral gobierna una acumulación a ' +
+          'caballo del cambio no está determinado, y elegir uno aquí sería inventar el ' +
+          'criterio.',
+      };
+    }
+    const [unico] = [...valores];
+    if (unico === undefined) {
+      return { motivo: `No hay actos con los que resolver «${c.parametro}».` };
+    }
+    salida[clave] = { op: c.op, valor: unico };
+  }
+  return { condicion: salida };
+}
+
 function condicionesCumplen(
   condicion: Record<string, Condicion>,
   metricas: Record<string, number>,
@@ -447,7 +559,12 @@ function condicionesCumplen(
   for (const clave of claves) {
     const metrica = metricas[clave];
     if (metrica === undefined || Number.isNaN(metrica)) return false; // fail-closed
-    if (!comparar(condicion[clave].op, metrica, condicion[clave].valor)) return false;
+    // El umbral ya viene resuelto por `resolverCondicion`. Si llegara sin
+    // valor, no se compara contra nada: fail-closed igual que arriba, porque
+    // adivinar un umbral es peor que no disparar.
+    const umbral = condicion[clave].valor;
+    if (umbral === undefined) return false;
+    if (!comparar(condicion[clave].op, metrica, umbral)) return false;
   }
   return true;
 }
@@ -514,6 +631,32 @@ function candidato(
  * conocemos, se usa la más antigua que hay: es lo más cercano a la verdad que
  * podemos decir, y mejor que dividir por la de hoy.
  */
+/**
+ * El valor de un umbral EN LA FECHA de un acto.
+ *
+ * Devuelve `null` cuando no hay vigencia que cubra esa fecha, y ese null es la
+ * mitad del control: quien llama tiene que negarse a evaluar, no caer al valor
+ * de hoy. La instrucción 324 lo dice sin rodeos — «negarse ruidosamente es la
+ * conducta correcta cuando falta un parámetro».
+ */
+export function umbralEnFecha(
+  ctx: MotorContext,
+  codigo: string,
+  fechaIso: string,
+): number | null {
+  const vig = ctx.umbralVigencias?.[codigo];
+  if (!vig || vig.length === 0) return null;
+  const dia = fechaIso.slice(0, 10);
+  for (const v of vig) {
+    // `hasta` es el día en que ENTRA la siguiente vigencia, así que se excluye:
+    // el acto del 17 de julio de 2025 se mide con el régimen nuevo, que es lo
+    // que dice el transitorio Sexto fracción IV del Reglamento —«a partir de
+    // los actos u operaciones realizados el 17 de julio de 2025»—.
+    if (v.desde <= dia && (v.hasta === null || dia < v.hasta)) return v.valor;
+  }
+  return null;
+}
+
 export function umaEnFecha(ctx: MotorContext, fechaIso: string): number {
   const vig = ctx.umaVigencias;
   if (!vig || vig.length === 0) return ctx.umaMxn;
@@ -549,6 +692,7 @@ function evalAgregado(
   regla: Extract<ReglaDsl, { tipo: 'agregado' }>,
   ops: OperacionEval[],
   ctx: MotorContext,
+  noEvaluados?: NoEvaluado[],
 ): HallazgoCandidato[] {
   // La ventana ya NO se calcula en milisegundos: `ventanaDesde` la resuelve por
   // acto, con aritmética de calendario en los meses.
@@ -579,7 +723,24 @@ function evalAgregado(
         (o) => ms(o.fecha) >= inicio && ms(o.fecha) <= ms(fin.fecha),
       );
       const met = metricasVentana(enVentana, ctx);
-      if (condicionesCumplen(regla.condicion, met)) {
+      // El umbral se resuelve con la fecha de los actos, no con la de hoy.
+      const resuelta = resolverCondicion(regla.condicion, enVentana, ctx);
+      if ('motivo' in resuelta) {
+        noEvaluados?.push({
+          tipologia_codigo: tip.codigo,
+          tipologia_version: tip.version,
+          operation_id: fin.id,
+          client_id: fin.client_id,
+          fecha: fin.fecha,
+          motivo: resuelta.motivo,
+        });
+        // Se abandona el grupo: si no se puede medir la ventana que cierra en
+        // este acto, tampoco tiene sentido probar las siguientes con el mismo
+        // parámetro sin resolver, y acumular una negativa por ventana llenaría
+        // la constancia de ruido.
+        break;
+      }
+      if (condicionesCumplen(resuelta.condicion, met)) {
         out.push(
           candidato(fin, tip, fin.client_id, {
             ventana: regla.ventana,
@@ -732,7 +893,16 @@ function evalScore(
     const categorias = Array.isArray(cp.categorias) ? (cp.categorias as string[]) : [];
 
     let dispara = true;
-    if (condExp) dispara = dispara && !Number.isNaN(exposicion) && comparar(condExp.op, exposicion, condExp.valor);
+    // La exposición on-chain no lleva umbral por vigencia: no es un monto de
+    // la ley, es un porcentaje de una analítica. Si llegara sin valor no
+    // dispara, que es el mismo fail-closed de siempre.
+    if (condExp) {
+      dispara =
+        dispara &&
+        condExp.valor !== undefined &&
+        !Number.isNaN(exposicion) &&
+        comparar(condExp.op, exposicion, condExp.valor);
+    }
     if (condCats) dispara = dispara && categorias.some((c) => condCats.includes(c));
 
     if (dispara) {
@@ -903,11 +1073,59 @@ export function evaluarTipologia(
   tip: Tipologia,
   ops: OperacionEval[],
   ctx: MotorContext,
+  /** Dónde asentar las negativas a evaluar. Opcional: sin él se pierden, y por
+   *  eso `correrMotor` siempre lo pasa (instrucción 324). */
+  noEvaluados?: NoEvaluado[],
 ): HallazgoCandidato[] {
   const regla = tip.regla_dsl;
+
+  // ---------------------------------------------------------------
+  // Vigencia de la REGLA, antes de evaluar nada
+  // ---------------------------------------------------------------
+  // Una regla puede declarar desde cuándo rige, y los actos anteriores no se
+  // evalúan con ella: se rechazan con su motivo.
+  //
+  // Hace falta para lo que un parámetro por vigencia no alcanza a cubrir. El
+  // caso que lo obligó es XII-04: hoy la constitución o el cambio patrimonial
+  // de una persona moral genera Aviso SIEMPRE, sin umbral, porque la reforma
+  // se lo quitó. Antes del 17 de julio de 2025 exigía 8,025 UMA. Esa regla no
+  // tiene condición monetaria, así que no hay parámetro que versionar: lo que
+  // cambió es la obligación entera, y evaluar un acto de 2024 con ella
+  // produciría un Aviso que ese día no procedía.
+  //
+  // Se rechaza en vez de aplicar el régimen viejo porque el régimen viejo no
+  // está cargado. Negarse ruidosamente es la conducta correcta cuando falta el
+  // parámetro (instrucción 324); adivinarlo no lo es.
+  const desde = (regla as { vigente_desde?: string }).vigente_desde;
+  if (desde) {
+    const anteriores = ops.filter((o) => o.fecha.slice(0, 10) < desde);
+    if (anteriores.length > 0) {
+      for (const o of anteriores) {
+        noEvaluados?.push({
+          tipologia_codigo: tip.codigo,
+          tipologia_version: tip.version,
+          operation_id: o.id,
+          client_id: o.client_id,
+          fecha: o.fecha,
+          motivo:
+            `Esta regla rige desde el ${desde} y el acto es del ${o.fecha.slice(0, 10)}. La ` +
+            'obligación cambió con la reforma que entró en vigor el 17 de julio de 2025, y el ' +
+            'régimen anterior no está cargado: medir el acto con la regla de hoy produciría un ' +
+            'Aviso de más o de menos sin que nada lo señale.',
+        });
+      }
+      // Los actos anteriores se retiran, y los posteriores se siguen midiendo:
+      // una corrida puede traer actos de los dos lados del corte y no hay razón
+      // para dejar sin evaluar los que sí se pueden.
+      const evaluables = ops.filter((o) => o.fecha.slice(0, 10) >= desde);
+      if (evaluables.length === 0) return [];
+      ops = evaluables;
+    }
+  }
+
   switch (regla.tipo) {
     case 'agregado':
-      return evalAgregado(tip, regla, ops, ctx);
+      return evalAgregado(tip, regla, ops, ctx, noEvaluados);
     case 'secuencia':
       return evalSecuencia(tip, regla, ops, ctx);
     case 'score':
@@ -928,6 +1146,14 @@ export interface ResultadoMotor {
   candidatos: HallazgoCandidato[];
   porTipologia: Record<string, number>;
   tiposNoSoportados: string[];
+  /**
+   * Lo que el motor se NEGÓ a evaluar, con su motivo.
+   *
+   * No es una lista de errores: es la constancia de que el control corrió y
+   * decidió no medir un acto con el parámetro equivocado. Un motor que aplica
+   * el umbral de hoy a un acto de 2024 no deja rastro; éste sí.
+   */
+  noEvaluados: NoEvaluado[];
 }
 
 /** Corre todas las tipologías activas y devuelve candidatos deduplicados
@@ -940,6 +1166,7 @@ export function correrMotor(
   const candidatos: HallazgoCandidato[] = [];
   const porTipologia: Record<string, number> = {};
   const tiposNoSoportados: string[] = [];
+  const noEvaluados: NoEvaluado[] = [];
   const soportados = new Set(['agregado', 'secuencia', 'score', 'lookup', 'duplicado', 'desviacion']);
 
   for (const tip of tipologias) {
@@ -949,7 +1176,7 @@ export function correrMotor(
       tiposNoSoportados.push(`${tip.codigo}:${tipo ?? 'sin_tipo'}`);
       continue;
     }
-    const disparos = evaluarTipologia(tip, ops, ctx);
+    const disparos = evaluarTipologia(tip, ops, ctx, noEvaluados);
     // Passthrough genérico: si la tipología trae una `nota` en su regla_dsl
     // (p. ej. "referencia sujeta a confirmación"), viaja al regla_payload del
     // hallazgo para que el OC la vea.
@@ -969,5 +1196,5 @@ export function correrMotor(
     dedup.push(c);
   }
 
-  return { candidatos: dedup, porTipologia, tiposNoSoportados };
+  return { candidatos: dedup, porTipologia, tiposNoSoportados, noEvaluados };
 }

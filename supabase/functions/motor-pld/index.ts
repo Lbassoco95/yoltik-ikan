@@ -139,6 +139,30 @@ Deno.serve(async (req: Request) => {
     desde: String(v.vigente_desde),
     valor: Number(v.valor_numerico),
   }));
+
+  // El histórico de cada UMBRAL, que es distinto del de la UMA: la UMA cambia
+  // de valor y el umbral cambia de número de UMA. La reforma que entró en vigor
+  // el 17 de julio de 2025 movió los de la fracción XII, y sin esto la regla
+  // lleva el número escrito a mano y mide un acto de 2024 con el umbral de hoy.
+  // Instrucciones 312, 313, 322 y 323.
+  const { data: vigenciasUmbral } = await supabase
+    .from('parametro_regulatorio')
+    .select('codigo, valor_numerico, vigente_desde, vigente_hasta, unidad')
+    .eq('unidad', 'uma')
+    .order('vigente_desde', { ascending: false });
+
+  const umbralVigencias: Record<
+    string,
+    { desde: string; hasta: string | null; valor: number }[]
+  > = {};
+  for (const v of vigenciasUmbral ?? []) {
+    const codigo = String(v.codigo);
+    (umbralVigencias[codigo] ??= []).push({
+      desde: String(v.vigente_desde),
+      hasta: v.vigente_hasta === null ? null : String(v.vigente_hasta),
+      valor: Number(v.valor_numerico),
+    });
+  }
   if (!Number.isFinite(umaMxn) || umaMxn <= 0) {
     return json(
       {
@@ -276,6 +300,7 @@ Deno.serve(async (req: Request) => {
   const ctx: MotorContext = {
     umaMxn,
     umaVigencias,
+    umbralVigencias,
     ahora: new Date(),
     paisPorFuente,
     perfilMensualUmaPorCliente,
@@ -283,7 +308,11 @@ Deno.serve(async (req: Request) => {
   };
 
   // --- 4. Correr el motor --------------------------------------------
-  const { candidatos, porTipologia, tiposNoSoportados } = correrMotor(tipologias, operaciones, ctx);
+  const { candidatos, porTipologia, tiposNoSoportados, noEvaluados } = correrMotor(
+    tipologias,
+    operaciones,
+    ctx,
+  );
 
   // --- 5. Cotejar contra lo que ya existe ----------------------------
   // Tres desenlaces por candidato, y sólo el primero era el que estaba escrito:
@@ -542,6 +571,12 @@ Deno.serve(async (req: Request) => {
       tipologias_evaluadas: tipologias.length,
       por_tipologia: porTipologia,
       tipos_no_soportados: tiposNoSoportados,
+      // Instrucción 324: lo que el motor se NEGÓ a evaluar, con su motivo.
+      // Va en los metadatos de la corrida y no sólo en la respuesta HTTP,
+      // porque la constancia tiene que sobrevivir a la llamada: un acto que no
+      // se pudo medir es un hecho auditable, no un aviso de pantalla.
+      no_evaluados: noEvaluados,
+      no_evaluados_total: noEvaluados.length,
       operaciones_marcadas_aviso: opsAviso.size,
       posible_fraccionamiento: fraccionamientos,
       operaciones_evaluadas,
@@ -559,6 +594,10 @@ Deno.serve(async (req: Request) => {
     operaciones_marcadas_aviso: opsAviso.size,
     posible_fraccionamiento: fraccionamientos,
     operaciones_evaluadas,
+    // Se devuelven también aquí para que quien dispara el motor lo vea en el
+    // momento. Una negativa a evaluar que sólo vive en los metadatos se
+    // descubre en una auditoría; ésta se descubre al correr.
+    no_evaluados: noEvaluados,
     duracion_ms,
   });
 });
