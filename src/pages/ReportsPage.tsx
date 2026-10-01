@@ -37,6 +37,9 @@ import {
   periodosOfrecidos,
   situacionDelPeriodo,
 } from "@/lib/aviso/periodo";
+import { decisionMensualSinOperaciones } from "@/lib/formatos-uif/presentacion";
+import { CanalPresentacionManual } from "@/components/aviso/CanalPresentacionManual";
+import type { EstadoAvisoUif } from "@/lib/formatos-uif/presentacion";
 
 const nombreMes = (p: string) =>
   new Date(`${p}-01T12:00:00`).toLocaleDateString("es-MX", {
@@ -116,6 +119,13 @@ export default function ReportsPage() {
   const generar = useMutation({
     mutationFn: async (enCeros: boolean) => {
       if (!datos) throw new Error("El periodo todavía no carga.");
+      if (enCeros) {
+        const sinOps = decisionMensualSinOperaciones({
+          hayOperacionesReportables: false,
+          anexo14Pendiente: true, // Anexo 14 ausente en la extracción DOF
+        });
+        if (sinOps.bloqueo) throw new Error(sinOps.bloqueo);
+      }
       const entrada = enCeros
         ? { ...datos.entrada, actos: [], en_ceros: true }
         : datos.entrada;
@@ -362,9 +372,10 @@ export default function ReportsPage() {
                     <Button
                       variant="outline"
                       onClick={() => generar.mutate(true)}
-                      disabled={generar.isPending || !situacion.presentable}
+                      disabled
+                      title="Anexo 14 (informe sin operaciones) pendiente de carga. No se inventa."
                     >
-                      Informe en ceros
+                      Informe en ceros (Anexo 14 pendiente)
                     </Button>
                   )}
                 <Button
@@ -530,6 +541,8 @@ export default function ReportsPage() {
                       <span className="text-muted-foreground">
                         {" · "}
                         {new Date(a.generado_en).toLocaleString("es-MX")}
+                        {" · "}
+                        {a.estado}
                       </span>
                     </span>
                     {a.xml && (
@@ -551,6 +564,27 @@ export default function ReportsPage() {
                 ))}
               </ul>
             </div>
+          )}
+
+          {avisos[0] && (
+            <CanalPresentacionManual
+              avisoId={avisos[0].id}
+              estado={avisos[0].estado as EstadoAvisoUif}
+              tipo="mensual"
+              xml={avisos[0].xml}
+              validacion={{
+                ok: true,
+                verificado: false,
+                errores: [],
+                noValidados: [
+                  "Catálogos UIF del Portal (art. 9) aún no cargados: la presentación no se marca como verificada.",
+                ],
+              }}
+              anexo14Pendiente
+              onCambio={() =>
+                queryClient.invalidateQueries({ queryKey: ["avisos", periodo] })
+              }
+            />
           )}
         </>
       )}

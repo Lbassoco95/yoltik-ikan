@@ -33,6 +33,27 @@ values (
 on conflict (id) do update set perfil_actividad = excluded.perfil_actividad,
   sectores = excluded.sectores;
 
+-- Perfil AV (migration 0077): sin él el trigger bloquea comparecientes y actos.
+insert into organizacion_actividad_vulnerable (
+  organization_id, fraccion, codigo_anexo, clave_actividad, vigente_desde, notas
+)
+select
+  '12121212-1212-1212-1212-121212121212',
+  'XII',
+  '12-A',
+  coalesce(o.clave_actividad, 'FEP'),
+  current_date,
+  'Perfil demo fe pública · Art. 17 fr. XII · Anexo 12-A'
+from organizations o
+where o.id = '12121212-1212-1212-1212-121212121212'
+  and not exists (
+    select 1 from organizacion_actividad_vulnerable av
+     where av.organization_id = o.id
+       and av.fraccion = 'XII'
+       and av.codigo_anexo = '12-A'
+       and av.vigente_hasta is null
+  );
+
 -- =================== Listas de riesgo para la org notaría ===================
 -- (El motor filtra country_risk_list por organización; la org notaría necesita
 --  sus propias filas para que XII-03 dispare.)

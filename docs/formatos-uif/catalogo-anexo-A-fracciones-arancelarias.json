@@ -1,0 +1,1508 @@
+{
+ "catalogo": "anexo-A-fracciones-arancelarias",
+ "ambito": "Mercancías cuyo despacho constituye Actividad Vulnerable — artículo 17 fracción XIV de la Ley",
+ "publicacion_dof": "2026-09-24",
+ "total": 250,
+ "valores": [
+  {
+   "no": "1",
+   "fraccion_arancelaria": "4911.99.99",
+   "descripcion": "Productos editoriales, de la prensa y de las demás industrias gráficas; textos manuscritos o mecanografiados y planos. Los demás impresos, incluidas las estampas, grabados y fotografías. -Los demás: -- Los demás. Los demás.",
+   "pagina_dof": 159
+  },
+  {
+   "no": "2",
+   "fraccion_arancelaria": "7007.11.01",
+   "descripcion": "Vidrio y sus manufacturas. Vidrio de seguridad constituido por vidrio templado o contrachapado. - Vidrio templado:",
+   "pagina_dof": 159
+  },
+  {
+   "no": "3",
+   "fraccion_arancelaria": "7007.11.99",
+   "descripcion": "Vidrio y sus manufacturas. Vidrio de seguridad constituido por vidrio templado o contrachapado. - Vidrio templado: --De dimensiones y formatos que permitan su empleo en automóviles, aeronaves, barcos u otros vehículos. Los demás.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "4",
+   "fraccion_arancelaria": "7007.21.03",
+   "descripcion": "Vidrio y sus manufacturas. Vidrio de seguridad, constituido por vidrio templado o contrachapado. -Vidrio contrachapado: --De dimensiones y formatos que permitan su empleo en automóviles, aeronaves, barcos u otros vehículos. Reconocibles para naves aéreas.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "5",
+   "fraccion_arancelaria": "7007.21.99",
+   "descripcion": "Vidrio y sus manufacturas. Vidrio de seguridad, constituido por vidrio templado o contrachapado. - Vidrio contrachapado: --De dimensiones y formatos que permitan su empleo en automóviles, aeronaves, barcos u otros vehículos. -Los demás.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "6",
+   "fraccion_arancelaria": "7007.29.99",
+   "descripcion": "Vidrio y sus manufacturas. Vidrio de seguridad constituido por vidrio templado o contrachapado. - Vidrio contrachapado: -- Los demás. Los demás.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "7",
+   "fraccion_arancelaria": "7102.10.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Diamantes, incluso trabajados, sin montar ni engarzar. - Sin clasificar. Sin clasificar.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "8",
+   "fraccion_arancelaria": "7102.21.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Diamantes, incluso trabajados, sin montar ni engarzar. - Industriales: -- En bruto o simplemente aserrados, exfoliados o desbastados. En bruto o simplemente aserrados, exfoliados o desbastados.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "9",
+   "fraccion_arancelaria": "7102.29.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Diamantes, incluso trabajados, sin montar ni engarzar. - Industriales: -- Los demás. Los demás.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "10",
+   "fraccion_arancelaria": "7102.31.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Diamantes, incluso trabajados, sin montar ni engarzar. - No industriales: --En bruto o simplemente aserrados, exfoliados o desbastados. En bruto o simplemente aserrados, exfoliados o desbastados.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "11",
+   "fraccion_arancelaria": "7102.39.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Diamantes, incluso trabajados, sin montar ni engarzar. -No industriales: --Los demás. Los demás.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "12",
+   "fraccion_arancelaria": "7103.10.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Piedras preciosas (excepto los diamantes) o semipreciosas, naturales, incluso trabajadas o clasificadas, sin ensartar, montar ni engarzar; piedras preciosas (excepto los diamantes) o semipreciosas, naturales, sin clasificar, ensartadas temporalmente para facilitar el transporte. -- En bruto o simplemente aserradas o desbastadas. En bruto o simplemente aserradas o desbastadas.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "13",
+   "fraccion_arancelaria": "7103.91.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Piedras preciosas (excepto los diamantes) o semipreciosas, naturales, incluso trabajadas o clasificadas, sin ensartar, montar ni engarzar; piedras preciosas (excepto los diamantes) o semipreciosas, naturales, sin clasificar, ensartadas temporalmente para facilitar el transporte. - Trabajadas de otro modo: -- Rubíes, zafiros y esmeraldas. Rubíes, zafiros y esmeraldas",
+   "pagina_dof": 160
+  },
+  {
+   "no": "14",
+   "fraccion_arancelaria": "7103.99.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Piedras preciosas (excepto los diamantes) o semipreciosas, naturales, incluso trabajadas o clasificadas, sin ensartar, montar ni engarzar; piedras preciosas (excepto los diamantes) o semipreciosas, naturales, sin clasificar, ensartadas temporalmente para facilitar el transporte. - Trabajadas de otro modo: -- Las demás. Las demás.",
+   "pagina_dof": 160
+  },
+  {
+   "no": "15",
+   "fraccion_arancelaria": "7104.21.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Piedras preciosas o semipreciosas, sintéticas o reconstituidas, incluso trabajadas o clasificadas, sin ensartar, montar ni engarzar; piedras preciosas o semipreciosas, sintéticas o reconstituidas, sin clasificar, ensartadas temporalmente para facilitar el transporte. - Las demás, en bruto o simplemente aserradas o desbastadas:",
+   "pagina_dof": 160
+  },
+  {
+   "no": "16",
+   "fraccion_arancelaria": "7104.29.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Piedras preciosas o semipreciosas, sintéticas o reconstituidas, incluso trabajadas o clasificadas, sin ensartar, montar ni engarzar; piedras preciosas o semipreciosas, sintéticas o reconstituidas, sin clasificar, ensartadas temporalmente para facilitar el transporte. - Las demás, en bruto o simplemente aserradas o desbastadas: -- Las demás. Las demás.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "17",
+   "fraccion_arancelaria": "7104.91.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Piedras preciosas o semipreciosas, sintéticas o reconstituidas, incluso trabajadas o clasificadas, sin ensartar, montar ni engarzar; piedras preciosas o semipreciosas, sintéticas o reconstituidas, sin clasificar, ensartadas temporalmente para facilitar el transporte. - Las demás: -- Diamantes. Diamantes.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "18",
+   "fraccion_arancelaria": "7104.99.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Piedras preciosas o semipreciosas, sintéticas o reconstituidas, incluso trabajadas o clasificadas, sin ensartar, montar ni engarzar; piedras preciosas o semipreciosas, sintéticas o reconstituidas, sin clasificar, ensartadas temporalmente para facilitar el transporte. - Las demás: -- Las demás. Las demás.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "19",
+   "fraccion_arancelaria": "7105.10.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Polvo de piedras preciosas o semipreciosas, naturales o sintéticas. - De diamante. De diamante.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "20",
+   "fraccion_arancelaria": "7105.90.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Polvo de piedras preciosas o semipreciosas, naturales o sintéticas. - Los demás. Los demás.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "21",
+   "fraccion_arancelaria": "7106.10.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Plata (incluida la plata dorada y la platinada) en bruto, semilabrada o en polvo. -Polvo. Polvo.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "22",
+   "fraccion_arancelaria": "7106.91.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Plata (incluida la plata dorada y la platinada) en bruto, semilabrada o en polvo. - Las demás: -- En bruto. En bruto.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "23",
+   "fraccion_arancelaria": "7106.92.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Plata (incluida la plata dorada y la platinada) en bruto, semilabrada o en polvo. - Las demás: -- Semilabrada. Semilabrada.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "24",
+   "fraccion_arancelaria": "7107.00.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Chapado (plaqué) de plata sobre metal común, en bruto o semilabrado. Chapado (plaqué) de plata sobre metal común, en bruto o semilabrado. Chapado (plaqué) de plata sobre metal común, en bruto o semilabrado.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "25",
+   "fraccion_arancelaria": "7108.11.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Oro (incluido el oro platinado) en bruto, semilabrado o en polvo. - Para uso no monetario: -- Polvo. Polvo.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "26",
+   "fraccion_arancelaria": "7108.12.91",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Oro (incluido el oro platinado) en bruto, semilabrado o en polvo. - Para uso no monetario: -- Las demás formas en bruto. Las demás formas en bruto.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "27",
+   "fraccion_arancelaria": "7108.13.91",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Oro (incluido el oro platinado) en bruto, semilabrado o en polvo. - Para uso no monetario: -- Las demás formas semilabradas. Las demás formas semilabradas.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "28",
+   "fraccion_arancelaria": "7108.20.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Oro (incluido el oro platinado) en bruto, semilabrado o en polvo.",
+   "pagina_dof": 161
+  },
+  {
+   "no": "29",
+   "fraccion_arancelaria": "7108.20.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas Oro (incluido el oro platinado) en bruto, semilabrado o en polvo. - Para uso monetario. Los demás.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "30",
+   "fraccion_arancelaria": "7109.00.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Chapado (plaqué) de oro sobre metal común o sobre plata, en bruto o semilabrado. Chapado (plaqué) de oro sobre metal común o sobre plata, en bruto o semilabrado. Chapado (plaqué) de oro sobre metal común o sobre plata, en bruto o semilabrado.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "31",
+   "fraccion_arancelaria": "7110.11.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Platino en bruto, semilabrado o en polvo. - Platino: -- En bruto o en polvo. En bruto o en polvo.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "32",
+   "fraccion_arancelaria": "7110.19.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Platino en bruto, semilabrado o en polvo. - Platino: -- Los demás. Los demás.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "33",
+   "fraccion_arancelaria": "7110.21.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Platino en bruto, semilabrado o en polvo. - Paladio: --En bruto o en polvo. En bruto o en polvo.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "34",
+   "fraccion_arancelaria": "7111.00.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Chapado (plaqué) de platino sobre metal común, plata u oro, en bruto o semilabrado. Chapado (plaqué) de platino sobre metal común, plata u oro, en bruto o semilabrado. Chapado (plaqué) de platino sobre metal común, plata u oro, en bruto o semilabrado.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "35",
+   "fraccion_arancelaria": "7112.30.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Desperdicios y desechos, de metal precioso o de chapado de metal precioso (plaqué); demás desperdicios y desechos que contengan metal precioso o compuestos de metal precioso, de los tipos utilizados principalmente para la recuperación del metal precioso, distintos de los productos de la partida 85.49. - Cenizas que contengan metal precioso o compuestos de metal precioso. Cenizas que contengan metal precioso o compuestos de metal precioso.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "36",
+   "fraccion_arancelaria": "7112.91.02",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Desperdicios y desechos, de metal precioso o de chapado de metal precioso (plaqué); demás desperdicios y desechos que contengan metal precioso o compuestos de metal precioso, de los tipos utilizados principalmente para la recuperación del metal precioso, distintos de los productos de la partida 85.49. - Los demás: -- De oro o de chapado (plaqué) de oro, excepto las barreduras que contengan otro metal precioso. De oro o de chapado (plaqué) de oro, excepto las barreduras que contengan otro metal precioso.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "37",
+   "fraccion_arancelaria": "7112.92.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Desperdicios y desechos, de metal precioso o de chapado de metal precioso (plaqué); demás desperdicios y desechos que contengan metal precioso o compuestos de metal precioso, de los tipos utilizados principalmente para la recuperación del metal precioso, distintos de los productos de la partida 85.49. - Los demás: --De platino o de chapado (plaqué) de platino, excepto las barreduras que contengan otro metal precioso. De platino o de chapado (plaqué) de platino, excepto las barreduras que contengan otro metal precioso.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "38",
+   "fraccion_arancelaria": "7112.99.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Desperdicios y desechos, de metal precioso o de chapado de metal precioso (plaqué); demás desperdicios y desechos que contengan metal precioso o compuestos de metal precioso, de los tipos utilizados principalmente para la recuperación del metal precioso, distintos de los productos de la partida 85.49. -Los demás: --Los demás. Los demás.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "39",
+   "fraccion_arancelaria": "7113.11.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Artículos de joyería y sus partes, de metal precioso o de chapado de metal precioso (plaqué). - De metal precioso, incluso revestido o chapado de metal precioso (plaqué): -- De plata, incluso revestida o chapada de otro metal precioso (plaqué). Sujetadores (\"broches\") de plata, incluso revestida o chapada de otro metal precioso.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "40",
+   "fraccion_arancelaria": "7113.11.02",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Artículos de joyería y sus partes, de metal precioso o de chapado de metal precioso (plaqué). - De metal precioso, incluso revestido o chapado de metal precioso (plaqué): -- De plata, incluso revestida o chapada de otro metal precioso (plaqué). Cadenas en rollo continuo, de longitud superior o igual a 10 m.",
+   "pagina_dof": 162
+  },
+  {
+   "no": "41",
+   "fraccion_arancelaria": "7113.11.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Artículos de joyería y sus partes, de metal precioso o de chapado de metal precioso (plaqué). - De metal precioso, incluso revestido o chapado de metal precioso (plaqué): -- De plata, incluso revestida o chapada de otro metal precioso (plaqué).",
+   "pagina_dof": 162
+  },
+  {
+   "no": "42",
+   "fraccion_arancelaria": "7113.19.03",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Artículos de joyería y sus partes, de metal precioso o de chapado de metal precioso (plaqué). - De metal precioso, incluso revestido o chapado de metal precioso (plaqué): -- De los demás metales preciosos, incluso revestidos o chapados de metal precioso (plaqué). Cadenas en rollo continuo, de longitud superior o igual a 10 m.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "43",
+   "fraccion_arancelaria": "7113.19.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Artículos de joyería y sus partes, de metal precioso o de chapado de metal precioso (plaqué). - De metal precioso, incluso revestido o chapado de metal precioso (plaqué): -- De los demás metales preciosos, incluso revestidos o chapados de metal precioso (plaqué). - Los demás.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "44",
+   "fraccion_arancelaria": "7113.20.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Artículos de joyería y sus partes, de metal precioso o de chapado de metal precioso (plaqué). - De chapado de metal precioso (plaqué) sobre metal común. De chapado de metal precioso (plaqué) sobre metal común.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "45",
+   "fraccion_arancelaria": "7114.11.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Artículos de orfebrería y sus partes, de metal precioso o de chapado de metal precioso (plaqué). -De metal precioso, incluso revestido o chapado de metal precioso (plaqué): -- De plata, incluso revestida o chapada de otro metal precioso (plaqué). De plata, incluso revestida o chapada de otro metal precioso (plaqué).",
+   "pagina_dof": 163
+  },
+  {
+   "no": "46",
+   "fraccion_arancelaria": "7114.19.91",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Artículos de orfebrería y sus partes, de metal precioso o de chapado de metal precioso (plaqué). - De metal precioso, incluso revestido o chapado de metal precioso (plaqué): --De los demás metales preciosos, incluso revestidos o chapados de metal precioso (plaqué). De los demás metales preciosos, incluso revestidos o chapados de metal precioso (plaqué).",
+   "pagina_dof": 163
+  },
+  {
+   "no": "47",
+   "fraccion_arancelaria": "7114.20.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Artículos de orfebrería y sus partes, de metal precioso o de chapado de metal precioso (plaqué): - De chapado de metal precioso (plaqué) sobre metal común. De chapado de metal precioso (plaqué) sobre metal común.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "48",
+   "fraccion_arancelaria": "7115.10.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Las demás manufacturas de metal precioso o de chapado de metal precioso (plaqué). - Catalizadores de platino en forma de tela o enrejado. Catalizadores de platino en forma de tela o enrejado.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "49",
+   "fraccion_arancelaria": "7115.90.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Las demás manufacturas de metal precioso o de chapado de metal precioso (plaqué). - Las demás. Las demás.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "50",
+   "fraccion_arancelaria": "7116.10.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Manufacturas de perlas naturales (finas) o cultivadas, de piedras preciosas o semipreciosas (naturales, sintéticas o reconstituidas). - De perlas naturales (finas) o cultivadas. De perlas naturales (finas) o cultivadas.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "51",
+   "fraccion_arancelaria": "7116.20.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Manufacturas de perlas naturales (finas) o cultivadas, de piedras preciosas o semipreciosas (naturales, sintéticas o reconstituidas). - De piedras preciosas o semipreciosas (naturales, sintéticas o reconstituidas). De piedras preciosas o semipreciosas (naturales, sintéticas o reconstituidas).",
+   "pagina_dof": 163
+  },
+  {
+   "no": "52",
+   "fraccion_arancelaria": "7118.10.01",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Monedas. - Monedas sin curso legal, excepto las de oro. Monedas sin curso legal, excepto las de oro.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "53",
+   "fraccion_arancelaria": "7118.90.99",
+   "descripcion": "Perlas naturales (finas) o cultivadas, piedras preciosas o semipreciosas, metales preciosos, chapados de metal precioso (plaqué) y manufacturas de estas materias; bisutería; monedas. Monedas. - Las demás. Las demás.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "54",
+   "fraccion_arancelaria": "7225.40.91",
+   "descripcion": "Fundición, hierro y acero. Productos laminados planos de los demás aceros aleados, de anchura superior o igual a 600 mm. - Los demás, simplemente laminados en caliente, sin enrollar. Los demás, simplemente laminados en caliente, sin enrollar.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "55",
+   "fraccion_arancelaria": "7225.50.91",
+   "descripcion": "Fundición, hierro y acero. Productos laminados planos de los demás aceros alewados, de anchura superior a 600 mm. -Los demás, simplemente laminados en frío. Los demás, simplemente laminados en frío.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "56",
+   "fraccion_arancelaria": "7225.92.01",
+   "descripcion": "Fundición, hierro y acero. Productos laminados planos de los demás aceros alewados, de anchura superior a 600 mm. - Los demás: -- Cincados de otro modo.",
+   "pagina_dof": 163
+  },
+  {
+   "no": "57",
+   "fraccion_arancelaria": "7326.90.99",
+   "descripcion": "Manufacturas de fundición, hierro o acero. Las demás manufacturas de hierro o acero. - Las demás.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "58",
+   "fraccion_arancelaria": "8523.21.02",
+   "descripcion": "Máquinas, aparatos y material eléctrico, y sus partes; aparatos de grabación o reproducción de sonido, aparatos de grabación o reproducción de imagen y sonido en televisión, y las partes y accesorios de estos aparatos. Discos, cintas, dispositivos de almacenamiento permanente de datos a base de semiconductores, tarjetas inteligentes (\"smart cards\") y demás soportes para grabar sonido o grabaciones análogas, grabados o no, incluso las matrices y moldes galvánicos para fabricación de discos, excepto los productos del Capítulo 37. - Soportes magnéticos: -- Tarjetas con banda magnética incorporada. Tarjetas con banda magnética incorporada.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "59",
+   "fraccion_arancelaria": "8523.29.99",
+   "descripcion": "Máquinas, aparatos y material eléctrico, y sus partes; aparatos de grabación o reproducción de sonido, aparatos de grabación o reproducción de imagen y sonido en televisión, y las partes y accesorios de estos aparatos. Discos, cintas, dispositivos de almacenamiento permanente de datos a base de semiconductores, tarjetas inteligentes (\"smart cards\") y demás soportes para grabar sonido o grabaciones análogas, grabados o no, incluso las matrices y moldes galvánicos para fabricación de discos, excepto los productos del Capítulo 37. - Soportes magnéticos: --Los demás. Los demás.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "60",
+   "fraccion_arancelaria": "8523.52.03",
+   "descripcion": "Máquinas, aparatos y material eléctrico, y sus partes; aparatos de grabación o reproducción de sonido, aparatos de grabación o reproducción de imagen y sonido en televisión, y las partes y accesorios de estos aparatos. Discos, cintas, dispositivos de almacenamiento permanente de datos a base de semiconductores, tarjetas inteligentes (\"smart cards\") y demás soportes para grabar sonido o grabaciones análogas, grabados o no, incluso las matrices y moldes galvánicos para fabricación de discos, excepto los productos del Capítulo 37. - Soportes semiconductores: -- Tarjetas inteligentes (\"smart cards\"). Tarjetas inteligentes (\"smart cards\").",
+   "pagina_dof": 164
+  },
+  {
+   "no": "61",
+   "fraccion_arancelaria": "8523.59.01",
+   "descripcion": "Máquinas, aparatos y material eléctrico, y sus partes; aparatos de grabación o reproducción de sonido, aparatos de grabación o reproducción de imagen y sonido en televisión, y las partes y accesorios de estos aparatos. Discos, cintas, dispositivos de almacenamiento permanente de datos a base de semiconductores, tarjetas inteligentes (\"smart cards\") y demás soportes para grabar sonido o grabaciones análogas, grabados o no, incluso las matrices y moldes galvánicos para fabricación de discos, excepto los productos del Capítulo 37. - Soportes semiconductores: -- Los demás. Tarjetas y etiquetas de activación por proximidad.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "62",
+   "fraccion_arancelaria": "8523.59.99",
+   "descripcion": "Máquinas, aparatos y material eléctrico, y sus partes; aparatos de grabación o reproducción de sonido, aparatos de grabación o reproducción de imagen y sonido en televisión, y las partes y accesorios de estos aparatos. Discos, cintas, dispositivos de almacenamiento permanente de datos a base de semiconductores, tarjetas inteligentes (\"smart cards\") y demás soportes para grabar sonido o grabaciones análogas, grabados o no, incluso las matrices y moldes galvánicos para fabricación de discos, excepto los productos del Capítulo 37. - Soportes semiconductores: -- Los demás. Los demás.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "63",
+   "fraccion_arancelaria": "8523.80.99",
+   "descripcion": "Máquinas, aparatos y material eléctrico, y sus partes; aparatos de grabación o reproducción de sonido, aparatos de grabación o reproducción de imagen y sonido en televisión, y las partes y accesorios de estos aparatos. Discos, cintas, dispositivos de almacenamiento permanente de datos a base de semiconductores, tarjetas inteligentes (\"smart cards\") y demás soportes para grabar sonido o grabaciones análogas, grabados o no, incluso las matrices y moldes galvánicos para fabricación de discos, excepto los productos del Capítulo 37. - Los demás. Los demás.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "64",
+   "fraccion_arancelaria": "8701.10.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de un solo eje. Tractores de un solo eje.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "65",
+   "fraccion_arancelaria": "8701.21.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: -- Únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel). Usados.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "66",
+   "fraccion_arancelaria": "8701.21.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: -- Únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel). Los demás.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "67",
+   "fraccion_arancelaria": "8701.22.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: --Equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico. Usados.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "68",
+   "fraccion_arancelaria": "8701.22.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: -- Equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico. Los demás.",
+   "pagina_dof": 164
+  },
+  {
+   "no": "69",
+   "fraccion_arancelaria": "8701.23.01",
+   "descripcion": "Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: --Equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico. Usados.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "70",
+   "fraccion_arancelaria": "8701.23.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: -- Equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico. - Los demás.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "71",
+   "fraccion_arancelaria": "8701.24.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: -- Únicamente propulsados con motor eléctrico. Usados.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "72",
+   "fraccion_arancelaria": "8701.24.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: -- Únicamente propulsados con motor eléctrico. Los demás.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "73",
+   "fraccion_arancelaria": "8701.29.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: -- Los demás. Usados.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "74",
+   "fraccion_arancelaria": "8701.29.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de carretera para semirremolques: -- Los demás. - Los demás.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "75",
+   "fraccion_arancelaria": "8701.30.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). -Tractores de orugas. Tractores de orugas con potencia al volante del motor superior o igual a 105 CP sin exceder de 380 CP, medida a 1900 RPM, incluso con hoja empujadora.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "76",
+   "fraccion_arancelaria": "8701.30.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Tractores de orugas. Los demás.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "77",
+   "fraccion_arancelaria": "8701.91.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Los demás, con motor de potencia: -- Inferior o igual a 18 kW. Los demás.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "78",
+   "fraccion_arancelaria": "8701.92.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Los demás, con motor de potencia: -- Superior a 18 kW pero inferior o igual a 37 kW. Los demás.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "79",
+   "fraccion_arancelaria": "8701.93.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Los demás, con motor de potencia: -- Superior a 37 kW pero inferior o igual a 75 kW. Los demás.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "80",
+   "fraccion_arancelaria": "8701.94.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Los demás, con motor de potencia: -- Superior a 75 kW pero inferior o igual a 130 kW. Tractores de ruedas con toma de fuerza o enganche de tres puntos, para acoplamiento de implementos agrícolas, excepto lo comprendido en las fracciones arancelarias 8701.94.02, 8701.94.03 y 8701.94.04.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "81",
+   "fraccion_arancelaria": "8701.94.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Los demás, con motor de potencia: -- Superior a 75 kW pero inferior o igual a 130 kW. Tractores de ruedas con toma de fuerza o enganche de tres puntos, para acoplamiento de implementos agrícolas cuyo número de serie o modelo sea al menos 2 años anterior al vigente.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "82",
+   "fraccion_arancelaria": "8701.94.03",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Los demás, con motor de potencia: -- Superior a 75 kW pero inferior o igual a 130 kW. Tractores de ruedas con toma de fuerza o enganche de tres puntos, para acoplamiento de implementos agrícolas, con potencia superior o igual a 140 CP, transmisión manual y tablero de instrumentos analógico, excepto lo comprendido en la fracción arancelaria 8701.94.02.",
+   "pagina_dof": 165
+  },
+  {
+   "no": "83",
+   "fraccion_arancelaria": "8701.94.04",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Los demás, con motor de potencia: -- Superior a 75 kW pero inferior o igual a 130 kW. Tractores de ruedas con toma de fuerza o enganche de tres puntos, para acoplamiento de implementos agrícolas, con potencia superior o igual a 106 CP pero inferior a 140 CP, con cabina con aire acondicionado y transmisión",
+   "pagina_dof": 165
+  },
+  {
+   "no": "84",
+   "fraccion_arancelaria": "8701.94.05",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Los demás, con motor de potencia: -- Superior a 75 kW pero inferior o igual a 130 kW. Tractores de ruedas con toma de fuerza o enganche de tres puntos, para acoplamiento de implementos agrícolas, incompletos o sin terminar, con transmisión manual sincronizada de 12 por 12 e inversor de marcha, que no incorpore al menos nueve de los siguientes elementos: el conjunto de rines, toldo, brazos de levante, contrapesos, tubo de escape, eje delantero, soporte frontal, radiador, salpicaduras, barra de tiro, horquilla barra de tiro, escalón y soportes, excepto lo comprendido en las fracciones arancelarias 8701.94.02, 8701.94.03 y 8701.94.04.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "85",
+   "fraccion_arancelaria": "8701.94.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09).",
+   "pagina_dof": 166
+  },
+  {
+   "no": "86",
+   "fraccion_arancelaria": "8701.95.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tractores (excepto las carretillas tractor de la partida 87.09). - Los demás, con motor de potencia: -- Superior a 130 kW. Los demás.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "87",
+   "fraccion_arancelaria": "8702.10.05",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de diez o más personas, incluido el conductor. - Únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel). Usados.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "88",
+   "fraccion_arancelaria": "8702.10.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de diez o más personas, incluido el conductor. - Únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel). Los demás.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "89",
+   "fraccion_arancelaria": "8702.20.05",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de diez o más personas, incluido el conductor. -Equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico. Usados.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "90",
+   "fraccion_arancelaria": "8702.20.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de diez o más personas, incluido el conductor. -Equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico. Los demás.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "91",
+   "fraccion_arancelaria": "8702.30.05",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de diez o más personas, incluido el conductor. - Equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico. Usados.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "92",
+   "fraccion_arancelaria": "8702.30.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de diez o más personas, incluido el conductor. - Equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico. Los demás.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "93",
+   "fraccion_arancelaria": "8702.40.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de diez o más personas, incluido el conductor. - Únicamente propulsados con motor eléctrico. Eléctricos, excepto usados.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "94",
+   "fraccion_arancelaria": "8702.40.06",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de diez o más personas, incluido el conductor. - Únicamente propulsados con motor eléctrico. Usados.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "95",
+   "fraccion_arancelaria": "8702.90.06",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de diez o más personas, incluido el conductor. - Los demás. Usados, excepto lo comprendido en la fracción arancelaria 8702.90.08.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "96",
+   "fraccion_arancelaria": "8702.90.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. - Vehículos automóviles para transporte de diez o más personas, incluido el conductor. - Los demás. Los demás.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "97",
+   "fraccion_arancelaria": "8703.10.04",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Vehículos especialmente diseñados para desplazarse sobre nieve; vehículos especiales para transporte de personas en campos de golf y vehículos similares. Vehículos especialmente diseñados para desplazarse sobre nieve; vehículos especiales para transporte de personas en campos de golf y vehículos similares.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "98",
+   "fraccion_arancelaria": "8703.21.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De cilindrada inferior o igual a 1,000 cm³. Motociclos de tres ruedas (trimotos) que presenten una dirección tipo automóvil o, al mismo tiempo, diferencial y reversa; motociclos de cuatro ruedas (cuadrimotos) con dirección tipo automóvil.",
+   "pagina_dof": 166
+  },
+  {
+   "no": "99",
+   "fraccion_arancelaria": "8703.21.02",
+   "descripcion": "Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De cilindrada inferior o igual a 1,000 cm³. Usados, excepto lo comprendido en la fracción arancelaria 8703.21.01.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "100",
+   "fraccion_arancelaria": "8703.21.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por chispa: --De cilindrada inferior o igual a 1,000 cm³. Los demás.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "101",
+   "fraccion_arancelaria": "8703.22.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De cilindrada superior a 1,000 cm³ pero inferior o igual a 1,500 cm³. Usados.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "102",
+   "fraccion_arancelaria": "8703.22.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De cilindrada superior a 1,000 cm³ pero inferior o igual a 1,500 cm³. Los demás.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "103",
+   "fraccion_arancelaria": "8703.23.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De cilindrada superior a 1,500 cm³ pero inferior o igual a 3,000 cm³. Usados.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "104",
+   "fraccion_arancelaria": "8703.23.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De cilindrada superior a 1,500 cm³ pero inferior o igual a 3,000 cm³. Los demás.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "105",
+   "fraccion_arancelaria": "8703.24.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De cilindrada superior a 3,000 cm³. Usados.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "106",
+   "fraccion_arancelaria": "8703.24.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De cilindrada superior a 3,000 cm³. Los demás.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "107",
+   "fraccion_arancelaria": "8703.31.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi- diésel): -- De cilindrada inferior o igual a 1,500 cm³. Usados.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "108",
+   "fraccion_arancelaria": "8703.31.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi- diésel): -- De cilindrada inferior o igual a 1,500 cm³. Los demás.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "109",
+   "fraccion_arancelaria": "8703.32.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi- diésel): -- De cilindrada superior a 1,500 cm³ pero inferior o igual a 2,500 cm³. Usados.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "110",
+   "fraccion_arancelaria": "8703.32.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi- diésel): -- De cilindrada superior a 1,500 cm³ pero inferior o igual a 2,500 cm³. Los demás.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "111",
+   "fraccion_arancelaria": "8703.33.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi- diésel): -- De cilindrada superior a 2,500 cm³. Usados.",
+   "pagina_dof": 167
+  },
+  {
+   "no": "112",
+   "fraccion_arancelaria": "8703.33.99",
+   "descripcion": "Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi- diésel): -- De cilindrada superior a 2,500 cm³. Los demás.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "113",
+   "fraccion_arancelaria": "8703.40.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico, excepto los que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica. Usados, excepto lo comprendido en la fracción arancelaria 8703.40.03.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "114",
+   "fraccion_arancelaria": "8703.40.03",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico, excepto los que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica. Motociclos de tres ruedas (trimotos), de cilindrada inferior o igual a 1,000 cm³, que presenten una dirección tipo automóvil o, al mismo tiempo, diferencial y reversa; motociclos de cuatro ruedas (cuadrimotos) con dirección tipo automóvil.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "115",
+   "fraccion_arancelaria": "8703.40.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. -Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico, excepto los que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "116",
+   "fraccion_arancelaria": "8703.50.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico, excepto los que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica. Usados.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "117",
+   "fraccion_arancelaria": "8703.50.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico, excepto los que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica. - Los demás.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "118",
+   "fraccion_arancelaria": "8703.60.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. -Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico, que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica. Usados, excepto lo comprendido en la fracción arancelaria 8703.60.03.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "119",
+   "fraccion_arancelaria": "8703.60.03",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico, que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica. Motociclos de tres ruedas (trimotos), de cilindrada inferior o igual a 1,000 cm³, que presenten una dirección tipo automóvil o, al mismo tiempo, diferencial y reversa; motociclos de cuatro ruedas (cuadrimotos) con dirección tipo automóvil.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "120",
+   "fraccion_arancelaria": "8703.60.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico, que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica. Los demás.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "121",
+   "fraccion_arancelaria": "8703.70.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico, que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica. Usados.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "122",
+   "fraccion_arancelaria": "8703.70.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico, que se puedan cargar mediante conexión a una fuente externa de alimentación eléctrica. Los demás.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "123",
+   "fraccion_arancelaria": "8703.80.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás vehículos, propulsados únicamente con motor eléctrico. Eléctricos, excepto usados.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "124",
+   "fraccion_arancelaria": "8703.80.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras.",
+   "pagina_dof": 168
+  },
+  {
+   "no": "125",
+   "fraccion_arancelaria": "8703.90.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás. Usados.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "126",
+   "fraccion_arancelaria": "8703.90.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Automóviles de turismo y demás vehículos automóviles diseñados principalmente para el transporte de personas (excepto los de la partida 87.02), incluidos los del tipo familiar (\"break\" o \"station wagon\") y los de carreras. - Los demás. Los demás.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "127",
+   "fraccion_arancelaria": "8704.10.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Volquetes automotores diseñados para utilizarlos fuera de la red de carreteras. Volquetes automotores diseñados para utilizarlos fuera de la red de carreteras.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "128",
+   "fraccion_arancelaria": "8704.21.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel): -- De peso total con carga máxima inferior o igual a 5 t. Acarreadores de escoria, excepto para la recolección de basura doméstica.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "129",
+   "fraccion_arancelaria": "8704.21.04",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel): -- De peso total con carga máxima inferior o igual a 5 t. Usados, excepto lo comprendido en la fracción arancelaria 8704.21.01.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "130",
+   "fraccion_arancelaria": "8704.21.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel): -- De peso total con carga máxima inferior o igual a 5 t. Los demás.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "131",
+   "fraccion_arancelaria": "8704.22.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel): -- De peso total con carga máxima superior a 5 t pero inferior o igual a 20 t. Acarreadores de escoria, excepto para la recolección de basura doméstica.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "132",
+   "fraccion_arancelaria": "8704.22.07",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel): -- De peso total con carga máxima superior a 5 t pero inferior o igual a 20 t. - Usados, excepto lo comprendido en la fracción arancelaria 8704.22.01.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "133",
+   "fraccion_arancelaria": "8704.22.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel): -- De peso total con carga máxima superior a 5 t pero inferior o igual a 20 t. Los demás.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "134",
+   "fraccion_arancelaria": "8704.23.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel): --De peso total con carga máxima superior a 20 t. Acarreadores de escoria.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "135",
+   "fraccion_arancelaria": "8704.23.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel): -- De peso total con carga máxima superior a 20 t. Usados, excepto lo comprendido en la fracción arancelaria 8704.23.01.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "136",
+   "fraccion_arancelaria": "8704.23.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel): -- De peso total con carga máxima superior a 20 t. Los demás.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "137",
+   "fraccion_arancelaria": "8704.31.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De peso total con carga máxima inferior o igual a 5 t. Acarreadores de escoria, excepto para la recolección de basura doméstica.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "138",
+   "fraccion_arancelaria": "8704.31.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De peso total con carga máxima inferior o igual a 5 t. Motociclos de tres ruedas (trimotos) que presenten una dirección tipo automóvil o, al mismo tiempo, diferencial y reversa; motociclos de cuatro ruedas (cuadrimotos) con dirección tipo automóvil.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "139",
+   "fraccion_arancelaria": "8704.31.05",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De peso total con carga máxima inferior o igual a 5 t. Usados, excepto lo comprendido en las fracciones arancelarias 8704.31.01 y 8704.31.02.",
+   "pagina_dof": 169
+  },
+  {
+   "no": "140",
+   "fraccion_arancelaria": "8704.31.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De peso total con carga máxima inferior o igual a 5 t. Los demás.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "141",
+   "fraccion_arancelaria": "8704.32.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De peso total con carga máxima superior a 5 t. Acarreadores de escoria, excepto para la recolección de basura doméstica.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "142",
+   "fraccion_arancelaria": "8704.32.07",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De peso total con carga máxima superior a 5 t. Usados, excepto lo comprendido en la fracción arancelaria 8704.32.01.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "143",
+   "fraccion_arancelaria": "8704.32.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente con motor de émbolo (pistón), de encendido por chispa: -- De peso total con carga máxima superior a 5 t. Los demás.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "144",
+   "fraccion_arancelaria": "8704.41.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico: -- De peso total con carga máxima inferior o igual a 5 t. Usados, excepto lo comprendido en la fracción arancelaria 8704.41.01.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "145",
+   "fraccion_arancelaria": "8704.41.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico: -- De peso total con carga máxima inferior o igual a 5 t. Los demás.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "146",
+   "fraccion_arancelaria": "8704.42.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico: -- De peso total con carga máxima superior a 5 t pero inferior o igual a 20 t. Usados, excepto lo comprendido en la fracción arancelaria 8704.42.01.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "147",
+   "fraccion_arancelaria": "8704.42.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico: -- De peso total con carga máxima superior a 5 t pero inferior o igual a 20 t. Los demás.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "148",
+   "fraccion_arancelaria": "8704.43.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico: -- De peso total con carga máxima superior a 20 t. Usados, excepto lo comprendido en la fracción arancelaria 8704.43.01.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "149",
+   "fraccion_arancelaria": "8704.43.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por compresión (diésel o semi-diésel) y con motor eléctrico: -- De peso total con carga máxima superior a 20 t. Los demás.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "150",
+   "fraccion_arancelaria": "8704.51.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico: -- De peso total con carga máxima inferior o igual a 5 t. Motociclos de tres ruedas (trimotos) que presenten una dirección tipo automóvil o, al mismo tiempo, diferencial y reversa; motociclos de cuatro ruedas (cuadrimotos) con dirección tipo automóvil.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "151",
+   "fraccion_arancelaria": "8704.51.03",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico: -- De peso total con carga máxima inferior o igual a 5 t. Usados, excepto lo comprendido en las fracciones arancelarias 8704.51.01 y 8704.51.02.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "152",
+   "fraccion_arancelaria": "8704.51.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico: -- De peso total con carga máxima inferior o igual a 5 t. Los demás.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "153",
+   "fraccion_arancelaria": "8704.52.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico: -- De peso total con carga máxima superior a 5 t.",
+   "pagina_dof": 170
+  },
+  {
+   "no": "154",
+   "fraccion_arancelaria": "8704.52.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, equipados para la propulsión con motor de émbolo (pistón), de encendido por chispa y con motor eléctrico: -- De peso total con carga máxima superior a 5 t. Los demás.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "155",
+   "fraccion_arancelaria": "8704.60.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente propulsados con motor eléctrico. Usados.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "156",
+   "fraccion_arancelaria": "8704.60.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás, únicamente propulsados con motor eléctrico. Eléctricos, excepto usados.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "157",
+   "fraccion_arancelaria": "8704.90.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para transporte de mercancías. - Los demás. Los demás.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "158",
+   "fraccion_arancelaria": "8705.10.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para usos especiales, excepto los diseñados principalmente para transporte de personas o mercancías (por ejemplo: coches para reparaciones (auxilio mecánico), camiones grúa, camiones de bomberos, camiones hormigonera, coches barredera, coches esparcidores, coches taller, coches radiológicos). - Camiones grúa. Camiones grúa.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "159",
+   "fraccion_arancelaria": "8705.40.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para usos especiales, excepto los diseñados principalmente para transporte de personas o mercancías (por ejemplo: coches para reparaciones (auxilio mecánico), camiones grúa, camiones de bomberos, camiones hormigonera, coches barredera, coches esparcidores, coches taller, coches radiológicos). - Camiones hormigonera. Camiones hormigonera, excepto lo comprendido en la fracción arancelaria 8705.40.02.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "160",
+   "fraccion_arancelaria": "8705.40.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para usos especiales, excepto los diseñados principalmente para transporte de personas o mercancías (por ejemplo: coches para reparaciones (auxilio mecánico), camiones grúa, camiones de bomberos, camiones hormigonera, coches barredera, coches esparcidores, coches taller, coches radiológicos). - Camiones hormigonera. Usados.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "161",
+   "fraccion_arancelaria": "8705.90.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Vehículos automóviles para usos especiales, excepto los diseñados principalmente para transporte de personas o mercancías (por ejemplo: coches para reparaciones (auxilio mecánico), camiones grúa, camiones de bomberos, camiones hormigonera, coches barredera, coches esparcidores, coches taller, coches radiológicos). - Los demás. Para aplicación de fertilizantes fluidos.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "162",
+   "fraccion_arancelaria": "8710.00.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Tanques y demás vehículos automóviles blindados de combate, incluso con su armamento; sus partes. Tanques y demás vehículos automóviles blindados de combate, incluso con su armamento; sus partes. Tanques y demás vehículos automóviles blindados de combate, incluso con su armamento; sus partes.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "163",
+   "fraccion_arancelaria": "8711.10.03",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Motocicletas (incluidos los ciclomotores) y velocípedos equipados con motor auxiliar, con sidecar o sin él; sidecares. - Con motor de émbolo (pistón) de cilindrada inferior o igual a 50 cm³. Con motor de émbolo (pistón) de cilindrada inferior o igual a 50 cm³.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "164",
+   "fraccion_arancelaria": "8711.20.05",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Motocicletas (incluidos los ciclomotores) y velocípedos equipados con motor auxiliar, con sidecar o sin él; sidecares. - Con motor de émbolo (pistón) de cilindrada superior a 50 cm³ pero inferior o igual a 250 cm³. Con motor de émbolo (pistón) de cilindrada superior a 50 cm³ pero inferior o igual a 250 cm³.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "165",
+   "fraccion_arancelaria": "8711.30.04",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Motocicletas (incluidos los ciclomotores) y velocípedos equipados con motor auxiliar, con sidecar o sin él; sidecares. - Con motor de émbolo (pistón) de cilindrada superior a 250 cm³ pero inferior o igual a 500 cm³. Con motor de émbolo (pistón) de cilindrada superior a 250 cm³ pero inferior o igual a 500 cm³.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "166",
+   "fraccion_arancelaria": "8711.40.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Motocicletas (incluidos los ciclomotores) y velocípedos equipados con motor auxiliar, con sidecar o sin él; sidecares. - Con motor de émbolo (pistón) de cilindrada superior a 500 cm³, pero inferior o igual a 800 cm³. Motociclos de tres ruedas (trimotos) que no presenten una dirección tipo automóvil o, al mismo tiempo, diferencial y reversa.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "167",
+   "fraccion_arancelaria": "8711.40.02",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Motocicletas (incluidos los ciclomotores) y velocípedos equipados con motor auxiliar, con sidecar o sin él; sidecares. - Con motor de émbolo (pistón) de cilindrada superior a 500 cm³, pero inferior o igual a 800 cm³. Esbozo de motocicleta conteniendo conjunto formado con bastidor (cuadro) y motor de émbolo (pistón) de cilindrada superior a 500 cm³ pero inferior o igual a 550 cm³, ensamblado o sin ensamblar.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "168",
+   "fraccion_arancelaria": "8711.40.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Motocicletas (incluidos los ciclomotores) y velocípedos equipados con motor auxiliar, con sidecar o sin él; sidecares. - Con motor de émbolo (pistón) de cilindrada superior a 500 cm³, pero inferior o igual a 800 cm³. Los demás.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "169",
+   "fraccion_arancelaria": "8711.50.03",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Motocicletas (incluidos los ciclomotores) y velocípedos equipados con motor auxiliar, con sidecar o sin él; sidecares. - Con motor de émbolo (pistón) de cilindrada superior a 800 cm³. Con motor de émbolo (pistón) de cilindrada superior a 800 cm³.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "170",
+   "fraccion_arancelaria": "8711.60.01",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Motocicletas (incluidos los ciclomotores) y velocípedos equipados con motor auxiliar, con sidecar o sin él; sidecares.",
+   "pagina_dof": 171
+  },
+  {
+   "no": "171",
+   "fraccion_arancelaria": "8711.90.99",
+   "descripcion": "Vehículos automóviles, tractores, velocípedos y demás vehículos terrestres; sus partes y accesorios. Motocicletas (incluidos los ciclomotores) y velocípedos equipados con motor auxiliar, con sidecar o sin él; sidecares. - Los demás. Los demás.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "172",
+   "fraccion_arancelaria": "8802.11.01",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Helicópteros. -- De peso en vacío inferior o igual a 2,000 kg. Helicópteros para fumigar, hasta de 3 plazas.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "173",
+   "fraccion_arancelaria": "8802.11.99",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Helicópteros. -- De peso en vacío inferior o igual a 2,000 kg. Los demás.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "174",
+   "fraccion_arancelaria": "8802.12.01",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Helicópteros. -- De peso en vacío superior a 2,000 kg. Helicópteros para fumigar, hasta de 3 plazas.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "175",
+   "fraccion_arancelaria": "8802.12.99",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Helicópteros: -- De peso en vacío superior a 2,000 kg. Los demás.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "176",
+   "fraccion_arancelaria": "8802.20.01",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Aviones y demás aeronaves, de peso en vacío inferior o igual a 2,000 kg. Aviones monomotores, de una plaza, reconocibles como diseñados exclusivamente para fumigar, rociar o esparcir líquidos o sólidos, con tolva de carga.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "177",
+   "fraccion_arancelaria": "8802.20.99",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Aviones y demás aeronaves, de peso en vacío inferior o igual a 2,000 kg.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "178",
+   "fraccion_arancelaria": "8802.30.01",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Aviones y demás aeronaves, de peso en vacío superior a 2,000 kg pero inferior o igual a 15,000 kg. Aviones monomotores, de una plaza, reconocibles como diseñados exclusivamente para fumigar, rociar o esparcir líquidos o sólidos, con tolva de carga.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "179",
+   "fraccion_arancelaria": "8802.30.02",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Aviones y demás aeronaves, de peso en vacío superior a 2,000 kg pero inferior o igual a 15,000 kg. Aviones con motor a reacción, con peso en vacío superior o igual a 10,000 Kg.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "180",
+   "fraccion_arancelaria": "8802.30.99",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Aviones y demás aeronaves, de peso en vacío superior a 2,000 kg pero inferior o igual a 15,000 kg. - Los demás.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "181",
+   "fraccion_arancelaria": "8802.40.01",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes. Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Aviones y demás aeronaves, de peso en vacío superior a 15,000 kg. Aviones y demás aeronaves, de peso en vacío superior a 15,000 kg.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "182",
+   "fraccion_arancelaria": "8802.60.01",
+   "descripcion": "Aeronaves, vehículos espaciales, y sus partes Las demás aeronaves (por ejemplo: helicópteros, aviones), excepto las aeronaves no tripuladas de la partida 88.06; vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. - Vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales. Vehículos espaciales (incluidos los satélites) y sus vehículos de lanzamiento y vehículos suborbitales.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "183",
+   "fraccion_arancelaria": "8901.10.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. - Transatlánticos, barcos para excursiones (de cruceros) y barcos similares diseñados principalmente para transporte de personas; transbordadores. Con longitud inferior o igual a 35 m de eslora.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "184",
+   "fraccion_arancelaria": "8901.10.99",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. - Transatlánticos, barcos para excursiones (de cruceros) y barcos similares diseñados principalmente para transporte de personas; transbordadores. Los demás.",
+   "pagina_dof": 172
+  },
+  {
+   "no": "185",
+   "fraccion_arancelaria": "8901.20.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. - Barcos cisterna. Con longitud inferior o igual a 35 m de eslora.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "186",
+   "fraccion_arancelaria": "8901.20.99",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. - Barcos cisterna. Los demás.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "187",
+   "fraccion_arancelaria": "8901.30.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. - Barcos frigorífico, excepto los de la subpartida 8901.20. Con longitud inferior o igual a 35 m de eslora.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "188",
+   "fraccion_arancelaria": "8901.30.99",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. - Barcos frigorífico, excepto los de la subpartida 8901.20. Los demás.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "189",
+   "fraccion_arancelaria": "8901.90.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. -Los demás barcos para transporte de mercancías y demás barcos diseñados para transporte mixto de personas y mercancías. Con motor fueraborda.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "190",
+   "fraccion_arancelaria": "8901.90.02",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. - Los demás barcos para transporte de mercancías y demás barcos diseñados para transporte mixto de personas y mercancías. Con longitud inferior o igual a 35 m de eslora.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "191",
+   "fraccion_arancelaria": "8901.90.03",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. - Los demás barcos para transporte de mercancías y demás barcos diseñados para transporte mixto de personas y mercancías. Con casco de aluminio, para transportar hasta 80 personas y con capacidad de carga, en cubierta hasta 36 t, sin cabinas de refrigeración ni bodegas de carga.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "192",
+   "fraccion_arancelaria": "8901.90.99",
+   "descripcion": "Barcos y demás artefactos flotantes. Transatlánticos, barcos para excursiones (de cruceros), transbordadores, cargueros, gabarras (barcazas) y barcos similares para transporte de personas o mercancías. - Los demás barcos para transporte de mercancías y demás barcos diseñados para transporte mixto de personas y mercancías. Los demás.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "193",
+   "fraccion_arancelaria": "8902.00.03",
+   "descripcion": "Barcos y demás artefactos flotantes. Barcos de pesca; barcos factoría y demás barcos para la preparación o la conservación de los productos de la pesca. - Barcos de pesca; barcos factoría y demás barcos para la preparación o la conservación de los productos de la pesca. Barcos de pesca; barcos factoría y demás barcos para la preparación o la conservación de los productos de la pesca",
+   "pagina_dof": 173
+  },
+  {
+   "no": "194",
+   "fraccion_arancelaria": "8903.21.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Yates y demás barcos y embarcaciones de recreo o deporte; barcas (botes) de remo y canoas. -Barcos de vela, distintos de los inflables, incluso con motor auxiliar: -- De longitud inferior o igual a 7.5 m. De longitud inferior o igual a 7.5 m.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "195",
+   "fraccion_arancelaria": "8903.22.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Yates y demás barcos y embarcaciones de recreo o deporte; barcas (botes) de remo y canoas. -Barcos de vela, distintos de los inflables, incluso con motor auxiliar: -- De longitud superior a 7.5 m pero inferior o igual a 24 m. De longitud superior a 7.5 m pero inferior o igual a 24 m.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "196",
+   "fraccion_arancelaria": "8903.23.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Yates y demás barcos y embarcaciones de recreo o deporte; barcas (botes) de remo y canoas. -Barcos de vela, distintos de los inflables, incluso con motor auxiliar: -- De longitud superior a 24 m. De longitud superior a 24 m.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "197",
+   "fraccion_arancelaria": "8903.31.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Yates y demás barcos y embarcaciones de recreo o deporte; barcas (botes) de remo y canoas. - Barcos de motor, distintos de los inflables, excepto los de motor fueraborda: -- De longitud inferior o igual a 7.5 m. De longitud inferior o igual a 7.5 m.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "198",
+   "fraccion_arancelaria": "8903.32.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Yates y demás barcos y embarcaciones de recreo o deporte; barcas (botes) de remo y canoas. - Barcos de motor, distintos de los inflables, excepto los de motor fueraborda: -- De longitud superior a 7.5 m pero inferior o igual a 24 m. De longitud superior a 7.5 m pero inferior o igual a 24 m.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "199",
+   "fraccion_arancelaria": "8903.33.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Yates y demás barcos y embarcaciones de recreo o deporte; barcas (botes) de remo y canoas. - Barcos de motor, distintos de los inflables, excepto los de motor fueraborda: -- De longitud superior a 24 m.",
+   "pagina_dof": 173
+  },
+  {
+   "no": "200",
+   "fraccion_arancelaria": "8903.93.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Yates y demás barcos y embarcaciones de recreo o deporte; barcas (botes) de remo y canoas. - Los demás: -- De longitud inferior o igual a 7.5 m. De longitud inferior o igual a 7.5 m.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "201",
+   "fraccion_arancelaria": "8903.99.99",
+   "descripcion": "Barcos y demás artefactos flotantes. Yates y demás barcos y embarcaciones de recreo o deporte; barcas (botes) de remo y canoas. - Los demás: -- Los demás. Los demás",
+   "pagina_dof": 174
+  },
+  {
+   "no": "202",
+   "fraccion_arancelaria": "8906.10.01",
+   "descripcion": "Barcos y demás artefactos flotantes. Los demás barcos, incluidos los navíos de guerra y barcos de salvamento excepto los de remo. - Navíos de guerra. Navios de guerra.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "203",
+   "fraccion_arancelaria": "8906.90.99",
+   "descripcion": "Barcos y demás artefactos flotantes. Los demás barcos, incluidos los navíos de guerra y barcos de salvamento excepto los de remo. - Los demás. Los demás.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "204",
+   "fraccion_arancelaria": "9101.11.01",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), con caja de metal precioso o chapado de metal precioso (plaqué). - Relojes de pulsera, eléctricos, incluso con contador de tiempo incorporado: -- Con indicador mecánico solamente. Con indicador mecánico solamente.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "205",
+   "fraccion_arancelaria": "9101.19.99",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), con caja de metal precioso o chapado de metal precioso (plaqué). - Relojes de pulsera, eléctricos, incluso con contador de tiempo incorporado. -- Los demás. Los demás.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "206",
+   "fraccion_arancelaria": "9101.21.01",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), con caja de metal precioso o chapado de metal precioso (plaqué). - Los demás relojes de pulsera, incluso con contador de tiempo incorporado: -- Automáticos. Automáticos.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "207",
+   "fraccion_arancelaria": "9101.29.99",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), con caja de metal precioso o chapado de metal precioso (plaqué). - Los demás relojes de pulsera, incluso con contador de tiempo incorporado: -- Los demás. Los demás.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "208",
+   "fraccion_arancelaria": "9101.91.01",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), con caja de metal precioso o chapado de metal precioso (plaqué). - Los demás: -- Eléctricos. Eléctricos.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "209",
+   "fraccion_arancelaria": "9101.99.99",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), con caja de metal precioso o chapado de metal precioso (plaqué). - Los demás: -- Los demás. Los demás.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "210",
+   "fraccion_arancelaria": "9102.11.01",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), excepto los de la partida 91.01. - Relojes de pulsera, eléctricos, incluso con contador de tiempo incorporado: -- Con indicador mecánico solamente. Con indicador mecánico solamente.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "211",
+   "fraccion_arancelaria": "9102.12.01",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), excepto los de la partida 91.01. - Relojes de pulsera, eléctricos, incluso con contador de tiempo incorporado: -- Con indicador optoelectrónico solamente. Con indicador optoelectrónico solamente.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "212",
+   "fraccion_arancelaria": "9102.19.99",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), excepto los de la partida 91.01. - Relojes de pulsera, eléctricos, incluso con contador de tiempo incorporado: -- Los demás. Los demás.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "213",
+   "fraccion_arancelaria": "9102.21.01",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), excepto los de la partida 91.01. - Los demás relojes de pulsera, incluso con contador de tiempo incorporado: -- Automáticos. Automáticos.",
+   "pagina_dof": 174
+  },
+  {
+   "no": "214",
+   "fraccion_arancelaria": "9102.29.99",
+   "descripcion": "Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), excepto los de la partida 91.01. - Los demás relojes de pulsera, incluso con contador de tiempo incorporado: -- Los demás. Los demás.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "215",
+   "fraccion_arancelaria": "9102.91.01",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), excepto los de la partida 91.01. - Los demás: -- Eléctricos. Eléctricos.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "216",
+   "fraccion_arancelaria": "9102.99.99",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de pulsera, bolsillo y similares (incluidos los contadores de tiempo de los mismos tipos), excepto los de la partida 91.01. - Los demás: -- Los demás. Los demás.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "217",
+   "fraccion_arancelaria": "9104.00.04",
+   "descripcion": "Aparatos de relojería y sus partes. Relojes de tablero de instrumentos y relojes similares, para automóviles, aeronaves, barcos o demás vehículos. Relojes de tablero de instrumentos y relojes similares, para automóviles, aeronaves, barcos o demás vehículos. Relojes de tablero de instrumentos y relojes similares, para automóviles, aeronaves, barcos o demás vehículos.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "218",
+   "fraccion_arancelaria": "9111.10.02",
+   "descripcion": "Aparatos de relojería y sus partes. Cajas de los relojes de las partidas 91.01 o 91.02, y sus partes. - Cajas de metal precioso o chapado de metal precioso (plaqué). Cajas de metal precioso o chapado de metal precioso (plaqué).",
+   "pagina_dof": 175
+  },
+  {
+   "no": "219",
+   "fraccion_arancelaria": "9113.10.02",
+   "descripcion": "Aparatos de relojería y sus partes. Pulseras para reloj y sus partes. - De metal precioso o chapado de metal precioso (plaqué). De metal precioso o chapado de metal precioso (plaqué).",
+   "pagina_dof": 175
+  },
+  {
+   "no": "220",
+   "fraccion_arancelaria": "9504.30.01",
+   "descripcion": "Juguetes, juegos y artículos para recreo o deporte; sus partes y accesorios. Videoconsolas y máquinas de videojuego, juegos de sociedad, incluidos los juegos con motor o mecanismo, billares, mesas especiales para juegos de casino y juegos de bolos automáticos (\"bowlings\"), juegos activados con monedas, billetes de banco, tarjetas bancarias, fichas o por cualquier otro medio de pago. - Los demás juegos activados con monedas, billetes de banco, tarjetas bancarias, fichas o por cualquier otro medio de pago, excepto los juegos de bolos automáticos (\"bowlings\"). Partes y accesorios.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "221",
+   "fraccion_arancelaria": "9504.30.02",
+   "descripcion": "Juguetes, juegos y artículos para recreo o deporte; sus partes y accesorios. Videoconsolas y máquinas de videojuego, juegos de sociedad, incluidos los juegos con motor o mecanismo, billares, mesas especiales para juegos de casino y juegos de bolos automáticos (\"bowlings\"), juegos activados con monedas, billetes de banco, tarjetas bancarias, fichas o por cualquier otro medio de pago. - Los demás juegos activados con monedas, billetes de banco, tarjetas bancarias, fichas o por cualquier otro medio de pago, excepto los juegos de bolos automáticos (\"bowlings\"). Máquinas de funcionamiento eléctrico, electrónico, mecánico o combinación de ellos, a través de las cuales se realicen sorteos con números o símbolos, que están sujetos al azar.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "222",
+   "fraccion_arancelaria": "9504.30.99",
+   "descripcion": "Juguetes, juegos y artículos para recreo o deporte; sus partes y accesorios. Videoconsolas y máquinas de videojuego, juegos de sociedad, incluidos los juegos con motor o mecanismo, billares, mesas especiales para juegos de casino y juegos de bolos automáticos (\"bowlings\"), juegos activados con monedas, billetes de banco, tarjetas bancarias, fichas o por cualquier otro medio de pago. - Los demás juegos activados con monedas, billetes de banco, tarjetas bancarias, fichas o por cualquier otro medio de pago, excepto los juegos de bolos automáticos (\"bowlings\"). Los demás.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "223",
+   "fraccion_arancelaria": "9504.90.99",
+   "descripcion": "Juguetes, juegos y artículos para recreo o deporte; sus partes y accesorios. Videoconsolas y máquinas de videojuego, juegos de sociedad, incluidos los juegos con motor o mecanismo, billares, mesas especiales para juegos de casino y juegos de bolos automáticos (\"bowlings\"), juegos activados con monedas, billetes de banco, tarjetas bancarias, fichas o por cualquier otro medio de pago. - Los demás. Los demás.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "224",
+   "fraccion_arancelaria": "9608.99.12",
+   "descripcion": "Manufacturas diversas. Bolígrafos; rotuladores y marcadores con punta de fieltro u otra punta porosa; estilográficas y demás plumas; estiletes o punzones para clisés de mimeógrafo (\"stencils\"); portaminas; portaplumas, portalápices y artículos similares; partes de estos artículos (incluidos los capuchones y sujetadores), excepto las de la partida 96.09. - Los demás: -- Los demás. De oro de plata o de platino, total o parcialmente, excepto partes.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "225",
+   "fraccion_arancelaria": "9701.21.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Pinturas y dibujos, hechos totalmente a mano, excepto los dibujos de la partida 49.06 y artículos manufacturados decorados a mano; collages, mosaicos y cuadros similares. - De más de 100 años: -- Pinturas y dibujos. Pinturas y dibujos.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "226",
+   "fraccion_arancelaria": "9701.22.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Pinturas y dibujos, hechos totalmente a mano, excepto los dibujos de la partida 49.06 y artículos manufacturados decorados a mano; collages, mosaicos y cuadros similares. - De más de 100 años: -- Mosaicos. Mosaicos.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "227",
+   "fraccion_arancelaria": "9701.29.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Pinturas y dibujos, hechos totalmente a mano, excepto los dibujos de la partida 49.06 y artículos manufacturados decorados a mano; collages, mosaicos y cuadros similares. - De más de 100 años: -- Los demás. Los demás.",
+   "pagina_dof": 175
+  },
+  {
+   "no": "228",
+   "fraccion_arancelaria": "9701.91.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Pinturas y dibujos, hechos totalmente a mano, excepto los dibujos de la partida 49.06 y artículos manufacturados decorados a mano; collages, mosaicos y cuadros similares. - Los demás: -- Pinturas y dibujos. Pinturas y dibujos.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "229",
+   "fraccion_arancelaria": "9701.92.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Pinturas y dibujos, hechos totalmente a mano, excepto los dibujos de la partida 49.06 y artículos manufacturados decorados a mano; collages, mosaicos y cuadros similares. - Los demás: -- Mosaicos. Mosaicos.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "230",
+   "fraccion_arancelaria": "9701.99.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Pinturas y dibujos, hechos totalmente a mano, excepto los dibujos de la partida 49.06 y artículos manufacturados decorados a mano; collages, mosaicos y cuadros similares. - Los demás: --Los demás. Los demás.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "231",
+   "fraccion_arancelaria": "9702.10.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Grabados, estampas y litografías, originales. - De más de 100 años. De más de 100 años.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "232",
+   "fraccion_arancelaria": "9702.90.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Grabados, estampas y litografías, originales. - Los demás. Los demás.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "233",
+   "fraccion_arancelaria": "9703.10.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Obras originales de estatuaria o escultura, de cualquier materia. - De más de 100 años. De más de 100 años.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "234",
+   "fraccion_arancelaria": "9703.90.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Obras originales de estatuaria o escultura, de cualquier materia. - Las demás. Las demás.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "235",
+   "fraccion_arancelaria": "9704.00.02",
+   "descripcion": "Objetos de arte o colección y antigüedades. Sellos (estampillas) de correo, timbres fiscales, marcas postales, sobres primer día, enteros postales, demás artículos franqueados y análogos, incluso obliterados, excepto los artículos de la partida 49.07. Sellos (estampillas) de correo, timbres fiscales, marcas postales, sobres primer día, enteros postales, demás artículos franqueados y análogos, incluso obliterados, excepto los artículos de la partida 49.07. Sellos (estampillas) de correo, timbres fiscales, marcas postales, sobres primer día, enteros postales, demás artículos franqueados y análogos, incluso obliterados, excepto los artículos de la partida 49.07.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "236",
+   "fraccion_arancelaria": "9705.10.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. - Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico o histórico. Bienes que hayan sido declarados monumentos arqueológicos de conformidad con la declaratoria que al respecto emita el Presidente de la República o el Secretario de Cultura, por conducto del titular del Instituto competente.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "237",
+   "fraccion_arancelaria": "9705.10.02",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. - Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico o histórico. Objetos de interés histórico o etnográfico, que no hayan sido declarados monumentos arqueológicos o históricos de conformidad con la declaratoria que al respecto emita el Presidente de la República o el Secretario de Cultura, por conducto del titular del Instituto competente.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "238",
+   "fraccion_arancelaria": "9705.10.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. - Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico o histórico.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "239",
+   "fraccion_arancelaria": "9705.21.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. -Colecciones y piezas de colección que tengan un interés zoológico, botánico, mineralógico, anatómico o paleontológico: --Especímenes humanos y sus partes. Objetos de interés paleontológico, que no hayan sido declarados monumentos arqueológicos o históricos de conformidad con la declaratoria que al respecto emita el Presidente de la República o el Secretario de Cultura, por conducto del titular del Instituto competente.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "240",
+   "fraccion_arancelaria": "9705.21.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. -Colecciones y piezas de colección que tengan un interés zoológico, botánico, mineralógico, anatómico o paleontológico: -- Especímenes humanos y sus partes. Los demás.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "241",
+   "fraccion_arancelaria": "9705.22.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. - Colecciones y piezas de colección que tengan un interés zoológico, botánico, mineralógico, anatómico o paleontológico: --Especies extintas o en peligro de extinción, y sus partes.",
+   "pagina_dof": 176
+  },
+  {
+   "no": "242",
+   "fraccion_arancelaria": "9705.22.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. - Colecciones y piezas de colección que tengan un interés zoológico, botánico, mineralógico, anatómico o paleontológico: -- Especies extintas o en peligro de extinción, y sus partes. Los demás.",
+   "pagina_dof": 177
+  },
+  {
+   "no": "243",
+   "fraccion_arancelaria": "9705.29.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. - Colecciones y piezas de colección que tengan un interés zoológico, botánico, mineralógico, anatómico o paleontológico: -- Las demás. Objetos de interés paleontológico, que no hayan sido declarados monumentos arqueológicos o históricos de conformidad con la declaratoria que al respecto emita el Presidente de la República o el Secretario de Cultura, por conducto del titular del Instituto competente.",
+   "pagina_dof": 177
+  },
+  {
+   "no": "244",
+   "fraccion_arancelaria": "9705.29.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. -Colecciones y piezas de colección que tengan un interés zoológico, botánico, mineralógico, anatómico o paleontológico. -- Los demás. Las demás.",
+   "pagina_dof": 177
+  },
+  {
+   "no": "245",
+   "fraccion_arancelaria": "9705.31.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. -Colecciones y piezas de colección que tengan un interés numismático: -- De más de 100 años. Objetos de interés histórico, que no hayan sido declarados monumentos arqueológicos o históricos de conformidad con la declaratoria que al respecto emita el Presidente de la República o el Secretario de Cultura, por conducto del titular del Instituto competente.",
+   "pagina_dof": 177
+  },
+  {
+   "no": "246",
+   "fraccion_arancelaria": "9705.31.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. - Colecciones y piezas de colección que tengan un interés numismático. -- De más de 100 años. Las demás",
+   "pagina_dof": 177
+  },
+  {
+   "no": "247",
+   "fraccion_arancelaria": "9705.39.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. - Colecciones y piezas de colección que tengan un interés numismático. -- Las demás. Objetos de interés histórico, que no hayan sido declarados monumentos arqueológicos o históricos de conformidad con la declaratoria que al respecto emita el Presidente de la República o el Secretario de Cultura, por conducto del titular del Instituto competente.",
+   "pagina_dof": 177
+  },
+  {
+   "no": "248",
+   "fraccion_arancelaria": "9705.39.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Colecciones y piezas de colección que tengan un interés arqueológico, etnográfico, histórico, zoológico, botánico, mineralógico, anatómico, paleontológico o numismático. - Colecciones y piezas de colección que tengan un interés numismático. -- Las demás. Las demás.",
+   "pagina_dof": 177
+  },
+  {
+   "no": "249",
+   "fraccion_arancelaria": "9706.10.01",
+   "descripcion": "Objetos de arte o colección y antigüedades. Antigüedades de más de cien años. - De más de 250 años. De más de 250 años.",
+   "pagina_dof": 177
+  },
+  {
+   "no": "250",
+   "fraccion_arancelaria": "9706.90.99",
+   "descripcion": "Objetos de arte o colección y antigüedades. Antigüedades de más de cien años. - Las demás. Las demás.",
+   "pagina_dof": 177
+  }
+ ]
+}

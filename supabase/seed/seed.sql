@@ -44,6 +44,8 @@
 -- =====================================================================
 
 \i 01_organization_ixim_pay.sql
+-- Perfil AV antes de clientes/operaciones (trigger 0077).
+\i 01b_perfil_av_ixim.sql
 \i 02_metodologia_ebr_xvi.sql
 \i 03_tipologias_xvi.sql
 \i 04_catalogos_paises_entidades.sql
@@ -70,3 +72,16 @@
 -- en un seed y no sólo en la migration porque las migrations corren antes: en
 -- un proyecto nuevo la 0050 no encuentra estas organizaciones todavía.
 \i 19_organizaciones_de_referencia.sql
+-- Formatos oficiales UIF (DOF 24/09/2026): 19 anexos, 4008 campos, Anexo A.
+-- Requiere migrations 0076–0079. Generado por scripts/generar-seed-formatos-uif.mjs.
+-- 24. Formatos oficiales UIF
+-- 25. (reservado)
+--
+-- ORDEN (continuación):
+--  20–23. Asientos metodológicos / efecto / umbrales / matriz XII
+--  24. Formatos oficiales UIF + Anexo A (verificación dura 4008/250)
+\i 20_asientos_metodologicos.sql
+\i 21_efecto_y_determinacion.sql
+\i 22_umbrales_por_fecha.sql
+\i 23_matriz_xii_al_dia.sql
+\i 24_formatos_oficiales_uif.sql

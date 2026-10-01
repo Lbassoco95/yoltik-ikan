@@ -25,6 +25,14 @@ export async function listarOperacionesDeCliente(clientId: string): Promise<Oper
 /** Registra una operación capturada por el Operador. */
 export async function crearOperacion(input: NuevaOperacionInput): Promise<Operation> {
   const { uid, organizationId } = await contextoSesion();
+
+  const { organizacionTienePerfilAv } = await import('@/lib/api/formatos-uif');
+  if (!(await organizacionTienePerfilAv())) {
+    throw new Error(
+      'Sin perfil de actividad vulnerable no se puede registrar operaciones. Configure la fracción y el anexo de la organización antes de continuar.',
+    );
+  }
+
   const fila = {
     organization_id: organizationId,
     client_id: input.client_id,
