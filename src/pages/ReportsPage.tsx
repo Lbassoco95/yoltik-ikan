@@ -572,12 +572,19 @@ export default function ReportsPage() {
               estado={avisos[0].estado as EstadoAvisoUif}
               tipo="mensual"
               xml={avisos[0].xml}
+              layout={avisos[0].layout || "fep"}
+              formatoVersion="dof-2026-09-24"
+              fechaConocimiento={avisos[0].fecha_conocimiento}
+              plazoLimite24h={avisos[0].plazo_limite_24h}
               validacion={{
-                ok: true,
+                // No se declara verificado contra DOF 2026 mientras el XML sea fep.
+                ok: false,
                 verificado: false,
-                errores: [],
+                errores: [
+                  "El XML emitido usa layout fep (estructura anterior). No está validado contra el formato oficial DOF 24/09/2026.",
+                ],
                 noValidados: [
-                  "Catálogos UIF del Portal (art. 9) aún no cargados: la presentación no se marca como verificada.",
+                  "Catálogos UIF del Portal (art. 9) aún no cargados.",
                 ],
               }}
               anexo14Pendiente

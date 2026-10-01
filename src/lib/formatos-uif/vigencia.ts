@@ -49,6 +49,19 @@ function soloFecha(d: Date | string): string {
  * Anexos con entrada anticipada (p. ej. 14-A / 26 Bis) se evalúan aparte con
  * `formatoVigenteParaAnexo`.
  */
+/**
+ * Régimen del aviso según la fecha del ACTO.
+ * `fechaCaptura` se acepta sólo para dejar explícito que NO interviene
+ * (acto 15-nov-2026 capturado en ene-2027 → sigue siendo nov_2026).
+ */
+export function regimenDelActo(
+  fechaActo: Date | string,
+  _fechaCaptura?: Date | string | null,
+): ResolucionVigencia {
+  void _fechaCaptura;
+  return resolverRegimen(fechaActo);
+}
+
 export function resolverRegimen(fechaActo: Date | string): ResolucionVigencia {
   const f = soloFecha(fechaActo);
   const { nov_2026, dic_2026, jun_2027, modificatorios_formato_anterior_hasta, jul_2027 } =

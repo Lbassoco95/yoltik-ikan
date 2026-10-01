@@ -181,28 +181,64 @@ export async function registrarAcuseManual(input: {
   avisoId: string;
   resultado: 'aceptado' | 'rechazo';
   acuseTexto: string;
+  /** Folio de la autoridad; obligatorio si resultado = aceptado. */
+  folio?: string | null;
   nombreArchivo?: string;
 }): Promise<void> {
+  const { estadoTrasAcuseConFolio, plazosTrasAcuse } = await import(
+    '@/lib/formatos-uif/presentacion'
+  );
+
+  // Leer plazos actuales: el rechazo no los toca.
+  const { data: aviso, error: eAviso } = await db
+    .from('aviso')
+    .select('fecha_conocimiento, plazo_limite_24h')
+    .eq('id', input.avisoId)
+    .single();
+  if (eAviso) throw eAviso;
+
+  const plazoLimite = aviso?.plazo_limite_24h ?? new Date().toISOString();
+  const decision = estadoTrasAcuseConFolio({
+    resultado: input.resultado,
+    folio: input.folio ?? (input.resultado === 'aceptado' ? input.acuseTexto : null),
+    plazoLimite,
+  });
+
   const doc = await registrarDocumentoAviso({
     avisoId: input.avisoId,
     tipo: 'acuse',
     nombreArchivo: input.nombreArchivo ?? 'acuse.txt',
     contenido: input.acuseTexto,
-    metadata: { resultado: input.resultado },
+    metadata: {
+      resultado: input.resultado,
+      folio: decision.folio,
+      estado: decision.estado,
+    },
   });
-  const estado = input.resultado === 'aceptado' ? 'acuse_aceptado' : 'acuse_rechazo';
-  const { error } = await db
-    .from('aviso')
-    .update({
-      estado,
-      acuse_resultado: input.resultado,
-      acuse: {
-        resultado: input.resultado,
-        documento_id: doc.id,
-        sha256: doc.sha256,
-        registrado_en: new Date().toISOString(),
-      },
-    })
-    .eq('id', input.avisoId);
+
+  const update: Record<string, unknown> = {
+    estado: decision.estado,
+    acuse_resultado: input.resultado,
+    acuse: {
+      resultado: input.resultado,
+      folio: decision.folio,
+      documento_id: doc.id,
+      sha256: doc.sha256,
+      registrado_en: new Date().toISOString(),
+    },
+  };
+
+  // Rechazo: reafirmar plazos originales (no mutarlos).
+  if (input.resultado === 'rechazo' && aviso?.fecha_conocimiento && aviso?.plazo_limite_24h) {
+    const conservados = plazosTrasAcuse({
+      resultado: 'rechazo',
+      fechaConocimiento: new Date(aviso.fecha_conocimiento),
+      plazoLimite: new Date(aviso.plazo_limite_24h),
+    });
+    update.fecha_conocimiento = conservados.fechaConocimiento.toISOString();
+    update.plazo_limite_24h = conservados.plazoLimite.toISOString();
+  }
+
+  const { error } = await db.from('aviso').update(update).eq('id', input.avisoId);
   if (error) throw error;
 }

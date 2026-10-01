@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Contador24h } from '@/components/aviso/Contador24h';
 import {
   confirmarPresentacionManual,
   registrarAcuseManual,
@@ -14,7 +15,6 @@ import {
 } from '@/lib/api/formatos-uif';
 import {
   decidirPresentacion,
-  estadoTrasAcuse,
   type EstadoAvisoUif,
   type TipoAvisoUif,
 } from '@/lib/formatos-uif/presentacion';
@@ -28,6 +28,10 @@ export function CanalPresentacionManual({
   xml,
   validacion,
   anexo14Pendiente = true,
+  layout = 'fep',
+  formatoVersion = 'dof-2026-09-24',
+  fechaConocimiento,
+  plazoLimite24h,
   onCambio,
 }: {
   avisoId: string;
@@ -36,9 +40,14 @@ export function CanalPresentacionManual({
   xml: string | null;
   validacion: Pick<ResumenValidacion, 'ok' | 'verificado' | 'errores' | 'noValidados'>;
   anexo14Pendiente?: boolean;
+  layout?: string;
+  formatoVersion?: string;
+  fechaConocimiento?: string | null;
+  plazoLimite24h?: string | null;
   onCambio?: () => void;
 }) {
   const [acuseTexto, setAcuseTexto] = useState('');
+  const [folio, setFolio] = useState('');
   const [busy, setBusy] = useState(false);
 
   const decision = decidirPresentacion({
@@ -47,6 +56,8 @@ export function CanalPresentacionManual({
     tieneXml: Boolean(xml),
     validacion,
     anexoInformeSinOpsPendiente: anexo14Pendiente,
+    layout,
+    formatoVersion,
   });
 
   async function descargar() {
@@ -96,7 +107,11 @@ export function CanalPresentacionManual({
 
   async function registrarAcuse(resultado: 'aceptado' | 'rechazo') {
     if (!acuseTexto.trim()) {
-      toast.error('Pegue el texto o folio del acuse antes de registrarlo.');
+      toast.error('Pegue el texto del acuse antes de registrarlo.');
+      return;
+    }
+    if (resultado === 'aceptado' && !folio.trim()) {
+      toast.error('La aceptación requiere el folio de la autoridad.');
       return;
     }
     setBusy(true);
@@ -105,12 +120,14 @@ export function CanalPresentacionManual({
         avisoId,
         resultado,
         acuseTexto: acuseTexto.trim(),
+        folio: folio.trim() || null,
       });
-      const nuevo = estadoTrasAcuse(resultado);
       if (resultado === 'rechazo') {
-        toast.message('Acuse de rechazo registrado. El aviso NO se cierra; puede regenerar y volver a presentar.');
+        toast.message(
+          'Acuse de rechazo registrado. El aviso NO se cierra; el contador de 24 h conserva el plazo original.',
+        );
       } else {
-        toast.success(`Acuse aceptado. Estado: ${nuevo}.`);
+        toast.success(`Acuse aceptado con folio ${folio.trim()}. Aviso cerrado.`);
       }
       onCambio?.();
     } catch (e) {
@@ -132,7 +149,20 @@ export function CanalPresentacionManual({
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
           DEMO — sin integración real con el portal SPPLD / UIF
         </p>
+        {layout === 'fep' && (
+          <p className="mt-2 text-xs text-destructive">
+            XML con layout fep (estructura anterior): no se presenta como validado contra el
+            formato oficial DOF 24/09/2026.
+          </p>
+        )}
       </div>
+
+      {fechaConocimiento && (
+        <Contador24h
+          fechaConocimiento={fechaConocimiento}
+          plazoLimite={plazoLimite24h}
+        />
+      )}
 
       {!decision.puedePresentar && decision.bloqueos.length > 0 && (
         <ul className="space-y-1 text-sm text-destructive">
@@ -166,20 +196,30 @@ export function CanalPresentacionManual({
 
       {(estado === 'presentado' || estado === 'acuse_rechazo' || estado === 'enviado') && (
         <div className="space-y-3 border-t border-border pt-4">
+          <label className="block text-sm font-medium" htmlFor="acuse-folio">
+            Folio del acuse (obligatorio para aceptar)
+          </label>
+          <input
+            id="acuse-folio"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            placeholder="Folio asignado por la autoridad…"
+            value={folio}
+            onChange={(e) => setFolio(e.target.value)}
+          />
           <label className="block text-sm font-medium" htmlFor="acuse-texto">
-            Acuse de la autoridad
+            Texto del acuse
           </label>
           <textarea
             id="acuse-texto"
             className="min-h-[88px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            placeholder="Pegue el folio o el texto del acuse…"
+            placeholder="Pegue el texto del acuse…"
             value={acuseTexto}
             onChange={(e) => setAcuseTexto(e.target.value)}
           />
           <div className="flex flex-wrap gap-2">
             <Button type="button" disabled={busy} onClick={() => registrarAcuse('aceptado')}>
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              Registrar acuse aceptado
+              Registrar acuse aceptado y cerrar
             </Button>
             <Button
               type="button"

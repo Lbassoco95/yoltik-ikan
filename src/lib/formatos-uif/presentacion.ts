@@ -21,7 +21,8 @@ export type EstadoAvisoUif =
   | 'acuse_aceptado'
   | 'acuse_rechazo'
   | 'acusado'
-  | 'cerrado';
+  | 'cerrado'
+  | 'incumplido';
 
 export type TipoAvisoUif = '24h' | 'mensual' | 'modificatorio' | 'informe_sin_operaciones';
 
@@ -31,12 +32,13 @@ const TRANSICIONES: Record<EstadoAvisoUif, EstadoAvisoUif[]> = {
   validado: ['listo_firma', 'borrador'],
   listo_firma: ['generado', 'borrador', 'enviado'],
   generado: ['presentado', 'borrador', 'enviado'],
-  enviado: ['presentado', 'acuse_aceptado', 'acuse_rechazo', 'acusado'],
-  presentado: ['acuse_aceptado', 'acuse_rechazo', 'acusado'],
+  enviado: ['presentado', 'acuse_aceptado', 'acuse_rechazo', 'acusado', 'incumplido'],
+  presentado: ['acuse_aceptado', 'acuse_rechazo', 'acusado', 'cerrado', 'incumplido'],
   acuse_aceptado: ['cerrado', 'acusado'],
   acusado: ['cerrado', 'acuse_aceptado'],
-  acuse_rechazo: ['generado', 'borrador', 'listo_firma'],
+  acuse_rechazo: ['generado', 'borrador', 'listo_firma', 'incumplido'],
   cerrado: [],
+  incumplido: [],
 };
 
 export function transicionPermitida(desde: EstadoAvisoUif, hasta: EstadoAvisoUif): boolean {
@@ -58,12 +60,40 @@ export interface DecisionPresentacion {
  *   sólo como NO verificado.
  * - Informe sin operaciones (Anexo 14) pendiente → bloqueo explícito.
  */
+export function xmlCompatibleConFormatoOficial(input: {
+  layout: string;
+  formatoVersion?: string | null;
+}): { ok: boolean; motivo: string } {
+  const layout = (input.layout || '').toLowerCase();
+  const formato = input.formatoVersion || '';
+  // Grave: emitir estructura anterior (fep) y pretender validación DOF 2026.
+  if (layout === 'fep' && /^dof-2026/.test(formato)) {
+    return {
+      ok: false,
+      motivo:
+        'El XML fue generado con layout fep (estructura anterior). No es compatible con el formato oficial DOF 2026-09-24: no se presenta como validado contra ese formato.',
+    };
+  }
+  if (layout === 'fep') {
+    return {
+      ok: false,
+      motivo:
+        'XML con layout fep: no se declara validado contra los formatos oficiales UIF DOF 24/09/2026.',
+    };
+  }
+  return { ok: true, motivo: 'Layout compatible con el formato oficial declarado.' };
+}
+
 export function decidirPresentacion(input: {
   estado: EstadoAvisoUif;
   tipo: TipoAvisoUif;
   tieneXml: boolean;
   validacion: Pick<ResumenValidacion, 'ok' | 'verificado' | 'errores' | 'noValidados'>;
   anexoInformeSinOpsPendiente?: boolean;
+  /** Layout del XML emitido (p. ej. fep). */
+  layout?: string;
+  /** Versión de formato oficial contra la que se pretende validar. */
+  formatoVersion?: string | null;
 }): DecisionPresentacion {
   const bloqueos: string[] = [];
   const advertencias: string[] = [];
@@ -81,6 +111,13 @@ export function decidirPresentacion(input: {
     bloqueos.push(
       'Anexo 14 (informe sin operaciones) pendiente de carga. No se inventa el formato; no se puede presentar este tipo hasta cargarlo.',
     );
+  }
+  if (input.layout != null) {
+    const compat = xmlCompatibleConFormatoOficial({
+      layout: input.layout,
+      formatoVersion: input.formatoVersion ?? 'dof-2026-09-24',
+    });
+    if (!compat.ok) bloqueos.push(compat.motivo);
   }
   if (input.validacion.noValidados.length) {
     advertencias.push(
@@ -104,6 +141,7 @@ export function decidirPresentacion(input: {
 
 /**
  * Registrar acuse. Rechazo → estado acuse_rechazo (no cierra).
+ * Conservado por compatibilidad; preferir `estadoTrasAcuseConFolio`.
  */
 export function estadoTrasAcuse(resultado: 'aceptado' | 'rechazo'): EstadoAvisoUif {
   return resultado === 'aceptado' ? 'acuse_aceptado' : 'acuse_rechazo';
@@ -111,6 +149,68 @@ export function estadoTrasAcuse(resultado: 'aceptado' | 'rechazo'): EstadoAvisoU
 
 export function acuseCierraAviso(resultado: 'aceptado' | 'rechazo'): boolean {
   return resultado === 'aceptado';
+}
+
+export interface ResultadoAcuseFolio {
+  estado: EstadoAvisoUif;
+  cierra: boolean;
+  folio: string | null;
+}
+
+/**
+ * Aceptación exige folio y cierra. Rechazo no cierra; si el plazo ya venció
+ * el estado pasa a `incumplido`.
+ */
+export function estadoTrasAcuseConFolio(input: {
+  resultado: 'aceptado' | 'rechazo';
+  folio: string | null | undefined;
+  plazoLimite: Date | string;
+  ahora?: Date;
+}): ResultadoAcuseFolio {
+  if (input.resultado === 'aceptado') {
+    const folio = (input.folio ?? '').trim();
+    if (!folio) {
+      throw new Error('La aceptación del acuse requiere folio de la autoridad.');
+    }
+    return { estado: 'cerrado', cierra: true, folio };
+  }
+  const cumplimiento = clasificarCumplimiento24h({
+    estado: 'acuse_rechazo',
+    plazoLimite: input.plazoLimite,
+    ahora: input.ahora,
+  });
+  return {
+    estado: cumplimiento === 'incumplido' ? 'incumplido' : 'acuse_rechazo',
+    cierra: false,
+    folio: null,
+  };
+}
+
+/** Tras un acuse de rechazo los plazos originales se conservan tal cual. */
+export function plazosTrasAcuse(input: {
+  resultado: 'aceptado' | 'rechazo';
+  fechaConocimiento: Date;
+  plazoLimite: Date;
+}): { fechaConocimiento: Date; plazoLimite: Date } {
+  return {
+    fechaConocimiento: input.fechaConocimiento,
+    plazoLimite: input.plazoLimite,
+  };
+}
+
+export function clasificarCumplimiento24h(input: {
+  estado: EstadoAvisoUif | string;
+  plazoLimite: Date | string;
+  ahora?: Date;
+}): 'en_plazo' | 'incumplido' | 'no_aplica' {
+  if (input.estado !== 'acuse_rechazo' && input.estado !== 'incumplido') {
+    return 'no_aplica';
+  }
+  const limite = typeof input.plazoLimite === 'string'
+    ? new Date(input.plazoLimite)
+    : input.plazoLimite;
+  const ahora = input.ahora ?? new Date();
+  return ahora.getTime() > limite.getTime() ? 'incumplido' : 'en_plazo';
 }
 
 /** Ventana de modificatorio: 1 vez / 30 días desde la presentación del original. */

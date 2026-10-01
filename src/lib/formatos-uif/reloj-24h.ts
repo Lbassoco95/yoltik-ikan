@@ -2,8 +2,8 @@
  * Proceso de 24 horas (avisos de conocimiento).
  *
  * El reloj corre desde el CONOCIMIENTO del acto u operación relevante, no
- * desde su celebración. No se exige que la operación esté celebrada para
- * abrir el plazo. El contador es visible para el Oficial de Cumplimiento.
+ * desde su celebración ni desde created_at/generado_en. El plazo se persiste
+ * al abrir el aviso y, tras `generado`, no se muta.
  */
 
 export interface Reloj24h {
@@ -18,31 +18,65 @@ export interface Reloj24h {
   consumidoPct: number;
 }
 
+export interface Plazo24hPersistido {
+  fechaConocimiento: Date;
+  plazoLimite: Date;
+}
+
 const MS_24H = 24 * 60 * 60 * 1000;
 
-export function iniciarReloj24h(
-  fechaConocimiento: Date | string,
-  ahora: Date = new Date(),
-): Reloj24h {
-  const inicio = typeof fechaConocimiento === 'string'
-    ? new Date(fechaConocimiento)
-    : new Date(fechaConocimiento.getTime());
-  if (Number.isNaN(inicio.getTime())) {
-    throw new Error('fecha_conocimiento inválida');
-  }
-  const plazoLimite = new Date(inicio.getTime() + MS_24H);
-  const restanteMs = plazoLimite.getTime() - ahora.getTime();
-  const vencido = restanteMs < 0;
-  const consumidoPct = Math.min(100, Math.max(0, ((MS_24H - restanteMs) / MS_24H) * 100));
+function comoFecha(d: Date | string): Date {
+  const x = typeof d === 'string' ? new Date(d) : new Date(d.getTime());
+  if (Number.isNaN(x.getTime())) throw new Error('fecha_conocimiento inválida');
+  return x;
+}
 
+/** Calcula y devuelve el plazo a persistir (ancla inmutable). */
+export function abrirPlazo24h(fechaConocimiento: Date | string): Plazo24hPersistido {
+  const inicio = comoFecha(fechaConocimiento);
   return {
     fechaConocimiento: inicio,
-    plazoLimite,
+    plazoLimite: new Date(inicio.getTime() + MS_24H),
+  };
+}
+
+/**
+ * Contador a partir del plazo YA persistido.
+ * No recalcula el límite desde “ahora”; usa `plazoLimite` guardado.
+ */
+export function relojDesdePlazoPersistido(
+  fechaConocimiento: Date | string,
+  plazoLimite: Date | string,
+  ahora: Date = new Date(),
+): Reloj24h {
+  const inicio = comoFecha(fechaConocimiento);
+  const limite = comoFecha(plazoLimite);
+  const restanteMs = limite.getTime() - ahora.getTime();
+  const vencido = restanteMs < 0;
+  const total = limite.getTime() - inicio.getTime() || MS_24H;
+  const consumidoPct = Math.min(100, Math.max(0, ((total - restanteMs) / total) * 100));
+  return {
+    fechaConocimiento: inicio,
+    plazoLimite: limite,
     restanteMs,
     vencido,
     consumidoPct,
     etiqueta: etiquetaReloj(restanteMs, vencido),
   };
+}
+
+/** Compat: deriva el plazo y cuenta. Preferir persistir con `abrirPlazo24h`. */
+export function iniciarReloj24h(
+  fechaConocimiento: Date | string,
+  ahora: Date = new Date(),
+): Reloj24h {
+  const plazo = abrirPlazo24h(fechaConocimiento);
+  return relojDesdePlazoPersistido(plazo.fechaConocimiento, plazo.plazoLimite, ahora);
+}
+
+/** Tras generado/presentado/acuse el plazo de 24 h no se reescribe. */
+export function puedeMutarPlazo24h(estado: string): boolean {
+  return estado === 'borrador' || estado === 'validado' || estado === 'listo_firma';
 }
 
 export function etiquetaReloj(restanteMs: number, vencido: boolean): string {

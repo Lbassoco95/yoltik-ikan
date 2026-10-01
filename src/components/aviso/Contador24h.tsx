@@ -1,27 +1,41 @@
 /**
  * Contador visible del plazo de 24 h para el Oficial de Cumplimiento.
- * El reloj corre desde el conocimiento; no exige operación celebrada.
+ * Ancla: fecha_conocimiento + plazo_limite persistidos (no created_at).
  */
 import { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
-import { iniciarReloj24h, type Reloj24h } from '@/lib/formatos-uif/reloj-24h';
+import {
+  abrirPlazo24h,
+  relojDesdePlazoPersistido,
+  type Reloj24h,
+} from '@/lib/formatos-uif/reloj-24h';
 import { cn } from '@/lib/utils';
 
 export function Contador24h({
   fechaConocimiento,
+  plazoLimite,
   className,
 }: {
   fechaConocimiento: string | Date;
+  /** Si viene de BD, se usa tal cual (inmutable). Si no, se deriva una vez. */
+  plazoLimite?: string | Date | null;
   className?: string;
 }) {
-  const [reloj, setReloj] = useState<Reloj24h>(() => iniciarReloj24h(fechaConocimiento));
+  const ancla = plazoLimite
+    ? { fechaConocimiento, plazoLimite }
+    : abrirPlazo24h(fechaConocimiento);
+
+  const [reloj, setReloj] = useState<Reloj24h>(() =>
+    relojDesdePlazoPersistido(ancla.fechaConocimiento, ancla.plazoLimite),
+  );
 
   useEffect(() => {
-    const tick = () => setReloj(iniciarReloj24h(fechaConocimiento));
+    const tick = () =>
+      setReloj(relojDesdePlazoPersistido(ancla.fechaConocimiento, ancla.plazoLimite));
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [fechaConocimiento]);
+  }, [ancla.fechaConocimiento, ancla.plazoLimite]);
 
   return (
     <div
