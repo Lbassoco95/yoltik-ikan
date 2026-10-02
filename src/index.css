@@ -264,16 +264,13 @@
      radios grandes, píldora en etiquetas y botones).
      ───────────────────────────────────────────────────────────────────── */
 
-  /* La placa: la superficie base. Desde ESTELA fluida es vidrio —relleno
-     translúcido, borde de luz y sombra suave— con radio de 28 px. Se conserva
-     el nombre porque media aplicación la usa y lo que dice sigue siendo
-     cierto: es la superficie sobre la que va el texto. */
-  .estela-placa {
-    @apply estela-vidrio;
-  }
-
+  /* `.estela-placa`, `.ikan-card` y `.metric-card` son vidrio desde ESTELA
+     fluida: relleno translúcido, borde de luz, sombra suave y radio de
+     28 px (ver estela-fluido.css). Se conservan los nombres porque media
+     aplicación los usa y lo que dicen sigue siendo cierto: son la superficie
+     sobre la que va el texto. */
   .metric-card {
-    @apply estela-placa relative overflow-hidden p-4 transition-colors duration-200;
+    @apply relative overflow-hidden p-4 transition-colors duration-200;
   }
 
   .status-badge {
@@ -281,7 +278,7 @@
   }
 
   .ikan-card {
-    @apply estela-vidrio p-4;
+    @apply p-4;
   }
 
   /* Jade oscuro y no jade: el blanco sobre #00917C da 4.0:1 y no llega a AA

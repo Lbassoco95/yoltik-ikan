@@ -41,45 +41,54 @@
   --ola-2: #12405a;
 }
 
+/* ───────── Vidrio ─────────
+   Fuera de @layer a propósito: así Tailwind lo coloca antes de sus
+   utilidades y cualquier `rounded-*`, `bg-*`, `border-t-*` o `shadow-*` del
+   className gana sin pelear especificidad. `.estela-placa`, `.ikan-card` y
+   `.metric-card` son los nombres heredados de la misma superficie. */
+
+/* Superficie de vidrio: tarjetas, cabeceras, listas, paneles.
+   No apilar más de dos capas. El texto va siempre en foreground. */
+.estela-vidrio,
+.estela-placa,
+.ikan-card,
+.metric-card {
+  background: var(--vidrio-relleno);
+  -webkit-backdrop-filter: blur(var(--vidrio-blur)) saturate(160%);
+  backdrop-filter: blur(var(--vidrio-blur)) saturate(160%);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: var(--radius);
+  box-shadow: var(--vidrio-sombra);
+}
+
+/* Vidrio navy: la barra lateral y la firma de la célula. Es la estructura
+   de la estela, así que se queda navy en los dos modos. Casi opaco: encima
+   va texto claro y el fondo no puede aclararlo. */
+.estela-vidrio-navy {
+  background: linear-gradient(180deg, rgb(12 35 64 / 0.94), rgb(7 21 37 / 0.94));
+  -webkit-backdrop-filter: blur(var(--vidrio-blur)) saturate(140%);
+  backdrop-filter: blur(var(--vidrio-blur)) saturate(140%);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow: var(--vidrio-sombra);
+}
+
+/* Sin soporte de backdrop-filter, el vidrio sube a casi opaco para
+   conservar el contraste del texto. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .estela-vidrio, .estela-placa, .ikan-card, .metric-card { background: rgb(255 255 255 / 0.92); }
+  .dark .estela-vidrio, .dark .estela-placa, .dark .ikan-card, .dark .metric-card { background: rgb(15 36 56 / 0.95); }
+  .estela-vidrio-navy { background: rgb(12 35 64 / 0.98); }
+}
+
+/* Separador de vidrio: la línea entre filas dentro de una superficie. */
+.estela-separador {
+  border-color: rgb(12 35 64 / 0.12);
+}
+.dark .estela-separador {
+  border-color: rgb(255 255 255 / 0.12);
+}
+
 @layer utilities {
-  /* Superficie de vidrio: tarjetas, cabeceras, listas, paneles.
-     No apilar más de dos capas. El texto va siempre en foreground. */
-  .estela-vidrio {
-    background: var(--vidrio-relleno);
-    -webkit-backdrop-filter: blur(var(--vidrio-blur)) saturate(160%);
-    backdrop-filter: blur(var(--vidrio-blur)) saturate(160%);
-    border: 1px solid var(--vidrio-borde);
-    border-radius: var(--radius);
-    box-shadow: var(--vidrio-sombra);
-  }
-
-  /* Sin soporte de backdrop-filter, el vidrio sube a casi opaco para
-     conservar el contraste del texto. */
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .estela-vidrio { background: rgb(255 255 255 / 0.92); }
-    .dark .estela-vidrio { background: rgb(15 36 56 / 0.95); }
-    .estela-vidrio-navy { background: rgb(12 35 64 / 0.98); }
-  }
-
-  /* Vidrio navy: la barra lateral y la firma de la célula. Es la estructura
-     de la estela, así que se queda navy en los dos modos. Casi opaco: encima
-     va texto claro y el fondo no puede aclararlo. */
-  .estela-vidrio-navy {
-    background: linear-gradient(180deg, rgb(12 35 64 / 0.94), rgb(7 21 37 / 0.94));
-    -webkit-backdrop-filter: blur(var(--vidrio-blur)) saturate(140%);
-    backdrop-filter: blur(var(--vidrio-blur)) saturate(140%);
-    border: 1px solid rgb(255 255 255 / 0.1);
-    box-shadow: var(--vidrio-sombra);
-  }
-
-  /* Separador de vidrio: la línea entre filas dentro de una superficie. */
-  .estela-separador {
-    border-color: rgb(12 35 64 / 0.1);
-  }
-  .dark .estela-separador {
-    border-color: rgb(255 255 255 / 0.1);
-  }
-
   /* Ola: sustituye a la greca en el H1, bajo el título de sección. */
   .estela-titulo::after {
     content: "";
