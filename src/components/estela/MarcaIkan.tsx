@@ -3,21 +3,23 @@ import { EndosoYoltik } from "@/components/estela/EndosoYoltik";
 
 /** Sobre qué activo usar en cada sitio:
  *
- * El icono a color se aguanta sobre navy y sobre blanco —el hexágono es jade
- * oscuro con anillo mint, y los dos contrastan contra los dos fondos—, así que
- * es el que va casi siempre. El blanco existe para las piezas en las que la
- * marca tiene que quedar en una sola tinta: un fondo de foto, un membrete, un
- * PDF a una tinta. En la aplicación no aparece hoy, pero se queda empaquetado
- * porque en cuanto salga el primer documento generado hará falta.
+ * El icono a color se aguanta sobre blanco y sobre el vidrio claro. Sobre
+ * navy, a tamaño pequeño, la hoja del escudo se pierde: ahí va dentro de un
+ * chip blanco redondeado. El blanco a una tinta existe para las piezas en las
+ * que la marca tiene que quedar en una sola tinta: un fondo de foto, un
+ * membrete, un PDF a una tinta.
  *
- * El logotipo va compuesto (icono + «Ikán» en Sora 800) y no como imagen: así
- * hereda la tipografía y el color del sistema, escala sin pixelarse y el
- * lector de pantalla lee un texto, no un `alt`.
+ * El logotipo va compuesto: el icono más la palabra «Ikán» oficial
+ * (`ikan-palabra.png` sobre fondo claro, `ikan-palabra-blanco.png` sobre navy
+ * o en modo oscuro). Las imágenes son decorativas; el lector de pantalla lee
+ * el texto «Ikán», no un `alt`.
  *
- * El producto es **Ikán**; **Yoltik** es el endoso —«Por Yoltik»—, nunca al
- * revés. La mascota Yoli no aparece aquí. */
+ * El producto es **Ikán**; **Yoltik** es el endoso —«Powered by Yoltik»—,
+ * nunca al revés. La mascota Yoli no aparece aquí. */
 const ICONO = "/marca/ikan-icono.png";
 const ICONO_BLANCO = "/marca/ikan-icono-blanco.png";
+const PALABRA = "/marca/ikan-palabra.png";
+const PALABRA_BLANCO = "/marca/ikan-palabra-blanco.png";
 
 interface IconoIkanProps {
   /** Lado del icono en píxeles. */
@@ -45,6 +47,19 @@ export function IconoIkan({
   );
 }
 
+/** El icono dentro del chip blanco (radio 12, aire de 5 px), para navy. */
+function IconoEnChip({ size }: { size: number }) {
+  return (
+    <span
+      aria-hidden
+      className="flex shrink-0 items-center justify-center rounded-[12px] bg-white p-[5px] shadow-[0_6px_14px_-6px_rgba(0,0,0,0.5)]"
+      style={{ width: size, height: size }}
+    >
+      <IconoIkan size={size - 10} />
+    </span>
+  );
+}
+
 interface MarcaIkanProps {
   /** `claro` para fondos navy (barra lateral, login); `oscuro` para papel. */
   tono?: "claro" | "oscuro";
@@ -63,28 +78,51 @@ export function MarcaIkan({
   size = 34,
   className,
 }: MarcaIkanProps) {
+  const claro = tono === "claro";
+  const altoPalabra = Math.round(size * 0.55);
+
   if (soloIcono) {
-    return <IconoIkan size={size} className={className} />;
+    return claro ? (
+      <span className={cn("inline-flex", className)}>
+        <IconoEnChip size={size} />
+        <span className="sr-only">Ikán</span>
+      </span>
+    ) : (
+      <IconoIkan size={size} className={className} />
+    );
   }
 
   return (
     <span className={cn("flex items-center gap-2.5", className)}>
-      <IconoIkan size={size} />
+      {claro ? <IconoEnChip size={size} /> : <IconoIkan size={size} />}
       <span className="flex flex-col leading-none min-w-0">
-        <span
-          className={cn(
-            "font-extrabold tracking-tight",
-            tono === "claro"
-              ? "text-white"
-              : "text-ikan-navy dark:text-foreground",
-          )}
-          style={{ fontSize: Math.round(size * 0.5) }}
-        >
-          Ikán
-        </span>
-        {/* «Por Yoltik» era una palabra en gris que se leía como un pie de
-            página. El endoso ahora se ve: el logotipo de Yoltik, pequeño,
-            detrás de un «Powered by». */}
+        <span className="sr-only">Ikán</span>
+        {claro ? (
+          <img
+            src={PALABRA_BLANCO}
+            alt=""
+            aria-hidden
+            className="w-auto self-start object-contain"
+            style={{ height: altoPalabra }}
+          />
+        ) : (
+          <>
+            <img
+              src={PALABRA}
+              alt=""
+              aria-hidden
+              className="w-auto self-start object-contain dark:hidden"
+              style={{ height: altoPalabra }}
+            />
+            <img
+              src={PALABRA_BLANCO}
+              alt=""
+              aria-hidden
+              className="hidden w-auto self-start object-contain dark:block"
+              style={{ height: altoPalabra }}
+            />
+          </>
+        )}
         {!sinEndoso && (
           <EndosoYoltik
             tono={tono}

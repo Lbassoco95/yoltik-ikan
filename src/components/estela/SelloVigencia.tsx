@@ -16,8 +16,9 @@ interface SelloVigenciaProps {
 }
 
 /**
- * El sello de tinta: circular, jade Ikán, anillo mint discontinuo, girado −6°
- * como si lo hubieran estampado a mano.
+ * El sello de tinta: disco con degradado de jade a jade oscuro, anillo mint
+ * punteado que gira muy despacio, girado −6° como si lo hubieran estampado a
+ * mano. Con «reducir movimiento» el anillo se queda quieto.
  *
  * Dice una cosa concreta y no decorativa: esta versión es la que rige hoy, y
  * quedó cerrada. Va donde hay versionado real —motor de reglas, matriz de
@@ -35,12 +36,16 @@ export function SelloVigencia({
       role="img"
       aria-label={`Versión ${version}, ${estado.toLowerCase()}${leyenda ? `, ${leyenda.toLowerCase()}` : ""}`}
       className={cn(
-        "flex shrink-0 -rotate-6 items-center justify-center rounded-full border-[3px] border-dashed border-ikan-mint bg-ikan-jade-oscuro p-2 shadow-[0_0_0_4px_rgba(0,107,91,0.12)]",
+        "relative flex shrink-0 -rotate-6 items-center justify-center rounded-full bg-gradient-to-br from-ikan-jade to-ikan-jade-oscuro p-2 shadow-[0_0_0_4px_rgba(0,107,91,0.14),0_12px_24px_-10px_rgba(0,107,91,0.7)]",
         className,
       )}
       style={{ width: size, height: size }}
     >
-      <div className="text-center leading-tight text-white">
+      <span
+        aria-hidden
+        className="sello-anillo pointer-events-none absolute inset-[5px] rounded-full border-2 border-dotted border-ikan-mint"
+      />
+      <div className="relative text-center leading-tight text-white">
         <p className="m-0 text-[9px] font-extrabold tracking-wider">
           VERSIÓN {version}
         </p>

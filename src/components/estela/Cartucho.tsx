@@ -30,9 +30,11 @@ interface CartuchoProps {
  * cumple: **ninguna cifra aparece sin su fuente al lado**. Quien la lee tiene
  * que poder ir al DOF y comprobarla sin preguntarle a nadie.
  *
- * Visualmente: fondo verde hielo, canto izquierdo tallado con la greca en
- * jade —no un borde plano—, cifra en JetBrains Mono, cita legal en gris
- * técnico debajo.
+ * Visualmente: vidrio con radio de 20 px, la ola en jade como canto
+ * izquierdo —no un borde plano—, cifra en JetBrains Mono, cita legal en gris
+ * técnico debajo. El antetítulo sólo va en ámbar cuando `acento="ambar"`: en
+ * claro un ámbar oscuro que sí se lee sobre vidrio (#7A4F00), en oscuro el de
+ * marca.
  */
 export function Cartucho({
   titulo,
@@ -45,15 +47,17 @@ export function Cartucho({
   return (
     <div
       className={cn(
-        "estela-canto rounded-md bg-ikan-hielo dark:bg-white/[0.04]",
-        compacto ? "py-2.5 pl-4 pr-3.5" : "py-4 pl-[22px] pr-[18px]",
+        "estela-vidrio estela-canto rounded-md shadow-suave",
+        compacto ? "py-2.5 pl-[34px] pr-3.5" : "py-4 pl-[38px] pr-[18px]",
         className,
       )}
     >
       <p
         className={cn(
-          "estela-antetitulo text-muted-foreground m-0",
-          acento === "ambar" && "text-ikan-ambar",
+          "estela-antetitulo m-0",
+          acento === "ambar"
+            ? "text-[#7A4F00] dark:text-ikan-ambar"
+            : "text-muted-foreground",
         )}
       >
         {titulo}
