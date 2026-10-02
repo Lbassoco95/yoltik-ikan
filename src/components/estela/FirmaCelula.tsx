@@ -40,12 +40,12 @@ export function FirmaCelula({
       className={cn(
         "flex flex-col gap-2.5",
         claro
-          ? "border-t border-white/[0.12] px-[18px] py-4"
+          ? "estela-vidrio-navy mx-3 mb-3 rounded-md px-4 py-4"
           : "estela-placa p-4",
         className,
       )}
     >
-      <span className={cn("estela-antetitulo text-muted-foreground", claro && "text-[#8FA9A5]")}>
+      <span className={cn("estela-antetitulo text-muted-foreground", claro && "text-[#A9BFBB]")}>
         Tu célula de cumplimiento
       </span>
 
@@ -53,7 +53,7 @@ export function FirmaCelula({
         <div key={persona.nombre} className="flex items-center gap-2">
           <span
             aria-hidden
-            className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-ikan-jade text-[11px] font-bold text-white"
+            className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-ikan-jade-oscuro text-[11px] font-bold text-white ring-2 ring-ikan-mint/70 shadow-[0_0_10px_rgba(29,219,168,0.45)]"
           >
             {inicialesDe(persona.nombre)}
           </span>
@@ -72,7 +72,7 @@ export function FirmaCelula({
         <p
           className={cn(
             "m-0 text-[11px] leading-relaxed",
-            claro ? "text-[#8FA9A5]" : "text-muted-foreground",
+            claro ? "text-[#A9BFBB]" : "text-muted-foreground",
           )}
         >
           {[COMPROMISO_CELULA, nota].filter(Boolean).join(" · ")}
@@ -82,7 +82,7 @@ export function FirmaCelula({
       {CORREO_CELULA && (
         <a
           href={`mailto:${CORREO_CELULA}`}
-          className="mt-0.5 flex items-center justify-center gap-1.5 rounded-md bg-ikan-jade px-2.5 py-2 text-xs font-bold text-white no-underline transition-colors hover:bg-ikan-jade-oscuro"
+          className="mt-0.5 flex items-center justify-center gap-1.5 rounded-full bg-ikan-jade-oscuro px-3 py-2 text-xs font-bold text-white no-underline transition-colors hover:bg-[#005A4C]"
         >
           <Mail className="h-3.5 w-3.5" aria-hidden />
           Escribir a la célula

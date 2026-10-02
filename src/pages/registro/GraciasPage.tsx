@@ -2,12 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { MarcaIkan } from "@/components/estela/MarcaIkan";
+import { FondoFluido } from "@/components/estela/FondoFluido";
 
 const GraciasPage = () => {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <div className="estela-cenefa" aria-hidden />
-      <div className="flex flex-1 items-center justify-center p-4">
+    <div className="relative flex min-h-screen flex-col">
+      <FondoFluido className="fixed" />
+      <div className="relative z-10 flex flex-1 items-center justify-center p-4">
       <div className="container mx-auto max-w-2xl">
         <Card className="estela-filo border-t-success">
           <CardHeader className="pb-4 text-center">

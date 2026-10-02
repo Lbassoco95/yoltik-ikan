@@ -11,11 +11,12 @@ interface EncabezadoSeccionProps {
 }
 
 /**
- * La cabecera de toda pantalla: H1, subtítulo y la regla de greca debajo.
+ * La cabecera de toda pantalla: una placa de vidrio con el H1, la ola debajo
+ * y el subtítulo.
  *
- * La regla es el segundo de los tres usos permitidos del motivo. Es lo que
- * hace que dos pantallas distintas se lean como la misma aplicación sin tener
- * que repetir el logotipo en cada una.
+ * La ola bajo el H1 es uno de sus dos usos permitidos. Es lo que hace que dos
+ * pantallas distintas se lean como la misma aplicación sin tener que repetir
+ * el logotipo en cada una.
  */
 export function EncabezadoSeccion({
   titulo,
@@ -26,12 +27,12 @@ export function EncabezadoSeccion({
   return (
     <div
       className={cn(
-        "mb-4 flex flex-wrap items-start justify-between gap-4",
+        "estela-vidrio mb-4 flex flex-wrap items-start justify-between gap-4 px-6 py-[18px]",
         className,
       )}
     >
       <div className="min-w-0">
-        <h1 className="estela-titulo m-0 text-2xl font-extrabold tracking-tight text-foreground">
+        <h1 className="estela-titulo m-0 text-2xl font-extrabold tracking-tight text-ikan-navy dark:text-foreground">
           {titulo}
         </h1>
         {descripcion && (

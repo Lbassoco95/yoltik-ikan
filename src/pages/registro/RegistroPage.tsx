@@ -7,6 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MarcaIkan } from "@/components/estela/MarcaIkan";
+import { FondoFluido } from "@/components/estela/FondoFluido";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -194,17 +195,17 @@ const RegistroPage = ({
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* La cenefa y la marca. Esta pantalla la abre alguien que llega desde
-          el sitio y todavía no es cliente: si no lleva la marca, lo que ve es
-          un formulario cualquiera y no el alta de Ikán. */}
-      <div className="estela-cenefa" aria-hidden />
+    <div className="relative min-h-screen">
+      {/* El fondo fluido y la marca. Esta pantalla la abre alguien que llega
+          desde el sitio y todavía no es cliente: si no lleva la marca, lo que
+          ve es un formulario cualquiera y no el alta de Ikán. */}
+      <FondoFluido className="fixed" />
 
-      <div className="container mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-8 flex justify-center">
+      <div className="container relative z-10 mx-auto max-w-4xl px-4 py-8">
+        <div className="estela-vidrio mx-auto mb-8 flex w-fit justify-center px-6 py-4">
           <MarcaIkan size={44} />
         </div>
-        <div className="mb-8">
+        <div className="estela-vidrio mb-8 p-6">
           <Button 
             variant="ghost" 
             onClick={() => window.location.href = "https://www.yoltik.mx"}
@@ -215,14 +216,10 @@ const RegistroPage = ({
           </Button>
           
           <div className="text-center mb-8">
-            <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+            <h1 className="estela-titulo mb-2 text-3xl font-extrabold tracking-tight text-ikan-navy after:mx-auto dark:text-foreground sm:text-4xl">
               {titulo}
             </h1>
             <p className="text-base text-muted-foreground">{subtitulo}</p>
-            {/* La regla de greca centrada: es la única de la aplicación que no
-                va a la izquierda, porque aquí la cabecera está centrada y una
-                regla descolgada al margen se leería como un descuadre. */}
-            <div className="estela-regla mx-auto mt-3" aria-hidden />
           </div>
 
           <div className="flex justify-center mb-8">
@@ -232,7 +229,7 @@ const RegistroPage = ({
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       step <= currentStep
-                        ? "bg-accent text-white"
+                        ? "bg-ikan-jade-oscuro text-white"
                         : "bg-border text-muted-foreground"
                     }`}
                   >

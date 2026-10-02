@@ -81,7 +81,7 @@ function Metrica({
       <p
         className={cn(
           "mt-1 text-2xl font-extrabold tabular-nums",
-          alerta ? "text-ikan-ambar" : "text-foreground",
+          alerta ? "text-[#7A4F00] dark:text-ikan-ambar" : "text-foreground",
         )}
       >
         {valor}

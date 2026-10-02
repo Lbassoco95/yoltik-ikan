@@ -24,9 +24,9 @@ export function AvisoDemostracion() {
       // el ámbar de «lo que le toca atender» que hay dentro de la pantalla, y
       // entonces ninguno de los dos señala nada. El distintivo DEMO concentra
       // el color en 40 px y la barra se lee sin gritar.
-      className="flex items-start gap-2.5 border-b-2 border-ikan-ambar bg-gradient-to-r from-ikan-navy-claro to-ikan-navy px-4 py-2 text-sm sm:px-6"
+      className="flex items-start gap-2.5 border-b-2 border-ikan-ambar bg-gradient-to-r from-ikan-navy-claro to-ikan-navy px-4 py-2 text-sm sm:px-6 md:rounded-md md:shadow-suave"
     >
-      <span className="mt-px shrink-0 rounded-sm bg-ikan-ambar px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-ikan-navy">
+      <span className="mt-px shrink-0 rounded-full bg-ikan-ambar px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-ikan-navy">
         Demo
       </span>
       <FlaskConical

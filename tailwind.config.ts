@@ -81,6 +81,10 @@ export default {
            sistema semántico (lo accionable, lo que urge, lo roto); éstos son
            la marca cuando hace falta nombrarla directa —la cenefa, el sello,
            el cartucho—. No mezclar: si existe el token semántico, gana él. */
+        ola: {
+          1: "var(--ola-1)",
+          2: "var(--ola-2)",
+        },
         ikan: {
           navy: "#0C2340",
           "navy-base": "#071525",   // fondo del modo oscuro
@@ -97,10 +101,19 @@ export default {
           "borde-oscuro": "#1B3A5C",
         },
       },
+      // ESTELA fluida: 12 px campos y chips, 20 px botones y cartuchos,
+      // 28 px tarjetas y placas, 40 px la placa de acceso.
       borderRadius: {
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        xl: "var(--radius-xl)",
+      },
+      boxShadow: {
+        vidrio: "var(--vidrio-sombra)",
+        suave: "0 10px 30px -12px rgb(12 35 64 / 0.18)",
+        "placa-acceso":
+          "0 0 0 1px rgb(0 145 124 / 0.35), 0 18px 50px -12px rgb(0 0 0 / 0.55)",
       },
       keyframes: {
         "accordion-down": {

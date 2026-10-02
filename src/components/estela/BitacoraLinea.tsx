@@ -13,8 +13,9 @@ interface BitacoraLineaProps {
 }
 
 /**
- * Una línea de bitácora: sello de tiempo y hash en ancho fijo, descripción en
- * texto corrido, separadas por hairline.
+ * Una línea de bitácora: sello de tiempo y hash en ancho fijo —el hash en una
+ * píldora jade oscuro—, descripción en texto corrido, separadas por una línea
+ * de vidrio.
  *
  * El hash no está para que nadie lo lea entero: está para que se vea que
  * existe. Es la diferencia entre un registro de actividad y una bitácora que
@@ -30,7 +31,7 @@ export function BitacoraLinea({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-border py-2.5 first:border-t-0",
+        "estela-separador flex flex-wrap items-center gap-x-3 gap-y-1 border-t py-2.5 first:border-t-0",
         className,
       )}
     >
@@ -39,7 +40,7 @@ export function BitacoraLinea({
       </span>
       {hash && (
         <span
-          className="estela-dato shrink-0 text-[11px] text-ikan-jade"
+          className="estela-dato shrink-0 rounded-full bg-ikan-jade-oscuro px-2.5 py-0.5 text-[11px] text-white"
           title={hash}
         >
           {hash.slice(0, 10)}

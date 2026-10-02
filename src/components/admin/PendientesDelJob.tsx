@@ -77,7 +77,7 @@ export function PendientesDelJob() {
       {(errores.data ?? []).map((e) => (
         <div
           key={e.id}
-          className="flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3"
+          className="flex items-start gap-3 rounded-md border border-destructive/40 estela-aviso bg-gradient-to-r from-destructive/10 to-destructive/5 px-4 py-3"
         >
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-destructive" />
           <div className="flex-1 text-sm">

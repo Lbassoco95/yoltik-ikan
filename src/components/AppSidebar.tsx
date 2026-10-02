@@ -9,6 +9,7 @@ import { navEntriesForRole } from "@/lib/role-routes";
 import { NAV_LABEL_OVERRIDES } from "@/lib/perfil-actividad";
 import { MarcaIkan } from "@/components/estela/MarcaIkan";
 import { FirmaCelula } from "@/components/estela/FirmaCelula";
+import { EndosoYoltik } from "@/components/estela/EndosoYoltik";
 
 interface AppSidebarProps {
   /** Para que el marco decida si va fija o superpuesta en un teléfono. */
@@ -44,11 +45,11 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        // ESTELA: la barra es el canto de la estela. Degradado navy en
-        // diagonal —no un plano— y una columna de greca a 0.06 de opacidad al
-        // borde derecho: se intuye al mirarla de reojo y no compite con nada.
+        // ESTELA: la barra es la estructura de la estela. Vidrio navy casi
+        // opaco —el fondo fluido no puede aclarar el texto— y, en escritorio,
+        // una placa flotante que se queda a la vista al desplazar la página.
         // Se queda navy en los dos modos: la estructura no se invierte.
-        "estela-canto-barra relative flex shrink-0 flex-col bg-ikan-navy text-ikan-hielo transition-all duration-300 ease-in-out",
+        "estela-vidrio-navy relative flex shrink-0 flex-col text-ikan-hielo transition-all duration-300 ease-in-out md:sticky md:top-4 md:h-[calc(100vh-2rem)] md:self-start md:rounded-lg",
         collapsed ? "w-[68px]" : "w-[260px]",
         className,
       )}
@@ -62,11 +63,7 @@ export function AppSidebar({
           collapsed && "justify-center px-0",
         )}
       >
-        <MarcaIkan
-          tono="claro"
-          soloIcono={collapsed}
-          size={collapsed ? 32 : 40}
-        />
+        <MarcaIkan tono="claro" soloIcono={collapsed} size={40} sinEndoso />
       </div>
 
       {/* Main Nav */}
@@ -81,21 +78,12 @@ export function AppSidebar({
               key={item.to}
               to={item.to}
               className={cn(
-                "group relative flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors",
+                "group relative flex items-center gap-2.5 rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-white/[0.09] text-white"
-                  : "text-ikan-hielo/70 hover:bg-white/[0.05] hover:text-white",
+                  ? "bg-ikan-jade-oscuro font-bold text-white shadow-[0_8px_20px_-10px_rgba(0,107,91,0.9)]"
+                  : "text-[#D4E3E0] hover:bg-white/[0.08] hover:text-white",
               )}
             >
-              {/* El Mint es realce, nunca relleno: aquí es el único sitio de
-                  la barra donde aparece, y sólo como la marca de 3 px de la
-                  sección abierta. */}
-              {isActive && (
-                <span
-                  aria-hidden
-                  className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-sm bg-ikan-mint"
-                />
-              )}
               <item.icon className="h-[18px] w-[18px] shrink-0" />
               {!collapsed && (
                 <span className="truncate">
@@ -131,18 +119,12 @@ export function AppSidebar({
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "relative flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors",
+                  "relative flex items-center gap-2.5 rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-white/[0.09] text-white"
-                    : "text-ikan-hielo/70 hover:bg-white/[0.05] hover:text-white",
+                    ? "bg-ikan-jade-oscuro font-bold text-white shadow-[0_8px_20px_-10px_rgba(0,107,91,0.9)]"
+                    : "text-[#D4E3E0] hover:bg-white/[0.08] hover:text-white",
                 )}
               >
-                {isActive && (
-                  <span
-                    aria-hidden
-                    className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-sm bg-ikan-mint"
-                  />
-                )}
                 <item.icon className="h-[18px] w-[18px] shrink-0" />
                 {!collapsed && (
                   <span className="truncate">
@@ -158,6 +140,13 @@ export function AppSidebar({
       {/* Quién responde por lo que la aplicación afirma. No se dibuja mientras
           no haya una célula configurada de verdad —ver src/lib/celula.ts—. */}
       {!collapsed && <FirmaCelula variante="barra" />}
+
+      {/* El endoso al pie: Yoltik en blanco, debajo de todo lo demás. */}
+      {!collapsed && (
+        <div className="border-t border-white/[0.12] px-5 py-3.5">
+          <EndosoYoltik tono="claro" alto={14} />
+        </div>
+      )}
 
       {/* Collapse Toggle */}
       <button

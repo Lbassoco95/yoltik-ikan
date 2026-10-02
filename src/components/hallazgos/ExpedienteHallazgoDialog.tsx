@@ -262,7 +262,7 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
         </DialogHeader>
 
         {!puedeEscribir && (
-          <div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          <div className="flex items-start gap-2 rounded-md border border-border estela-aviso px-3 py-2 text-xs text-muted-foreground">
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
             <span>
               Expediente en solo lectura. Cargar documentos, capturar notas y cambiar el estado
@@ -380,13 +380,13 @@ export default function ExpedienteHallazgoDialog({ hallazgo, open, onOpenChange 
             </div>
 
             {notaReferencia && (
-              <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+              <div className="rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 px-3 py-2 text-xs text-warning-foreground">
                 <strong>Nota de la regla:</strong> {notaReferencia}
               </div>
             )}
 
             {esMock && (
-              <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+              <div className="flex items-start gap-2 rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 px-3 py-2 text-xs text-warning-foreground">
                 <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-ikan-ambar" />
                 <span>
                   <strong>DEMO — sin integración real.</strong> Este hallazgo usa datos simulados

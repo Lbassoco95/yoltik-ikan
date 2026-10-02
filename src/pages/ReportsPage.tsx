@@ -198,7 +198,7 @@ export default function ReportsPage() {
       {situacion.limite != null && situacion.diasParaElLimite != null && (
         <div
           className={cn(
-            "estela-filo flex flex-wrap items-center justify-between gap-4 rounded-md border bg-card p-5",
+            "estela-filo flex flex-wrap items-center justify-between gap-4 rounded-md border estela-vidrio p-5",
             situacion.estado === "fuera_de_plazo"
               ? "border-ikan-barro/40 border-t-ikan-barro"
               : situacion.estado === "presentado"
@@ -217,7 +217,7 @@ export default function ReportsPage() {
                   : situacion.estado === "presentado"
                     ? "text-success"
                     : situacion.diasParaElLimite <= 7
-                      ? "text-ikan-ambar"
+                      ? "text-[#7A4F00] dark:text-ikan-ambar"
                       : undefined,
               )}
             >
@@ -252,7 +252,7 @@ export default function ReportsPage() {
           <Loader2 className="w-4 h-4 animate-spin" /> Cargando el periodo…
         </div>
       ) : isError ? (
-        <div className="rounded-md border border-destructive/30 bg-card p-5 text-sm text-destructive">
+        <div className="rounded-md border border-destructive/30 estela-vidrio p-5 text-sm text-destructive">
           No se pudo cargar el periodo: {(error as Error)?.message}
         </div>
       ) : (
@@ -607,10 +607,10 @@ function Aviso({
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-md border p-4",
+        "estela-aviso flex items-start gap-3 rounded-md border p-4",
         bloqueo
-          ? "border-destructive/30 bg-destructive/5"
-          : "border-border bg-muted/50",
+          ? "border-destructive/30 bg-gradient-to-r from-destructive/10 to-destructive/5"
+          : "border-border",
       )}
     >
       {bloqueo ? (

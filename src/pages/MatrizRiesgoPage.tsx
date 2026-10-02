@@ -140,7 +140,7 @@ export default function MatrizRiesgoPage() {
       {/* La ponderación NO está validada, pero el cálculo sí existe: la matriz
           evalúa y persiste el assessment desde 864ec92. El aviso anterior decía
           que no calculaba, y era falso. */}
-      <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
+      <div className="flex items-start gap-3 rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 px-4 py-3 text-sm text-foreground">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ikan-ambar" aria-hidden />
         <span>
           <strong>Ponderación sin validar.</strong> El puntaje sí se calcula y se guarda

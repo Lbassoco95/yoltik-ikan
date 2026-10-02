@@ -11,6 +11,7 @@ import {
   type InscripcionMfa,
 } from "@/lib/api/mfa";
 import { useAuth } from "@/lib/auth-context";
+import { PlacaAcceso } from "@/components/estela/PlacaAcceso";
 
 /**
  * Alta del segundo factor.
@@ -108,8 +109,8 @@ export default function AltaSegundoFactorPage() {
   }
 
   return (
-    <div className="min-h-screen grid place-items-center bg-background p-6">
-      <div className="ikan-card w-full max-w-md space-y-5">
+    <PlacaAcceso subtitulo="Cumplimiento PLD">
+      <div className="space-y-5">
         <div className="flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 mt-0.5 text-primary shrink-0" />
           <div>
@@ -138,7 +139,7 @@ export default function AltaSegundoFactorPage() {
                 encima del código. Va en un <img>, sin recomponer la cadena.
                 Fondo blanco siempre: en tema oscuro, un QR con los colores
                 invertidos no lo lee la mitad de las cámaras. */}
-            <div className="rounded-md bg-white p-4 grid place-items-center">
+            <div className="rounded-sm bg-white p-4 grid place-items-center">
               <img
                 src={inscripcion.qr}
                 alt="Código QR para dar de alta el segundo factor"
@@ -217,6 +218,6 @@ export default function AltaSegundoFactorPage() {
           </div>
         )}
       </div>
-    </div>
+    </PlacaAcceso>
   );
 }

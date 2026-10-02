@@ -196,7 +196,7 @@ export default function ConfigPage() {
         </div>
       </section>
 
-      <div className="flex items-start gap-3 rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
+      <div className="flex items-start gap-3 rounded-md border border-border estela-aviso px-4 py-3 text-sm">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
         <span className="text-muted-foreground">
           <strong className="text-foreground">Pantalla de sólo lectura.</strong> Cambiar la razón

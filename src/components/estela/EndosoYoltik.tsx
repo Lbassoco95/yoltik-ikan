@@ -9,14 +9,9 @@ import { cn } from "@/lib/utils";
  * página. Con el logotipo de Yoltik el endoso se ve en vez de leerse, que es
  * lo que hace un endoso: prestar reconocimiento visual, no explicar.
  *
- * El archivo puede no estar todavía. Si no está, no se rompe nada ni queda un
- * hueco: se cae con elegancia al logotipo tipográfico en Sora, que es lo que
- * había antes. En cuanto el PNG aparezca en `public/marca/`, la imagen entra
- * sola sin tocar código.
- *
- * TODO[Sprint D-2]: subir a `public/marca/` el logotipo de Yoltik que entregó
- * Dirección —`yoltik.png` para fondo claro y `yoltik-blanco.png` para navy—.
- * Mientras no estén, esto enseña la palabra.
+ * `yoltik.png` va sobre fondo claro y `yoltik-blanco.png` sobre navy o sobre
+ * el papel del modo oscuro. Si el archivo no carga, no se rompe nada ni queda
+ * un hueco: se cae con elegancia al logotipo tipográfico en Sora.
  */
 const LOGO = "/marca/yoltik.png";
 const LOGO_BLANCO = "/marca/yoltik-blanco.png";
@@ -48,7 +43,7 @@ export function EndosoYoltik({
         aria-hidden
         className={cn(
           "font-medium",
-          claro ? "text-[#8FA9A5]" : "text-muted-foreground",
+          claro ? "text-[#A9BFBB]" : "text-muted-foreground",
         )}
         style={{ fontSize: Math.max(10, Math.round(alto * 0.6)) }}
       >
@@ -66,15 +61,36 @@ export function EndosoYoltik({
         >
           Yoltik
         </span>
-      ) : (
+      ) : claro ? (
         <img
-          src={claro ? LOGO_BLANCO : LOGO}
+          src={LOGO_BLANCO}
           alt=""
           aria-hidden
           className="w-auto object-contain"
           style={{ height: alto }}
           onError={() => setSinImagen(true)}
         />
+      ) : (
+        <>
+          {/* Sobre papel claro, el logotipo navy; en modo oscuro el papel
+              también es navy y entra el blanco. */}
+          <img
+            src={LOGO}
+            alt=""
+            aria-hidden
+            className="w-auto object-contain dark:hidden"
+            style={{ height: alto }}
+            onError={() => setSinImagen(true)}
+          />
+          <img
+            src={LOGO_BLANCO}
+            alt=""
+            aria-hidden
+            className="hidden w-auto object-contain dark:block"
+            style={{ height: alto }}
+            onError={() => setSinImagen(true)}
+          />
+        </>
       )}
     </span>
   );

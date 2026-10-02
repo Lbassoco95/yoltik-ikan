@@ -304,7 +304,7 @@ export default function AdminListasPage() {
 
         {/* ---------------- Fuentes ---------------- */}
         <TabsContent value="fuentes" className="space-y-4">
-          <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+          <div className="flex items-start gap-3 rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 px-4 py-3 text-sm">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
             <span>
               <strong>Los listados del SAT ya se pueden cargar</strong> (69-B y 69-B Bis), con
@@ -387,7 +387,7 @@ export default function AdminListasPage() {
 
           <div className="space-y-3">
             {lineas.map((l, i) => (
-              <div key={i} className="rounded-md border border-border p-4 space-y-3 bg-muted/20">
+              <div key={i} className="rounded-md border border-border p-4 space-y-3 estela-aviso">
                 <div className="flex items-center justify-between">
                   <span className="estela-antetitulo text-muted-foreground">
                     Persona {i + 1}

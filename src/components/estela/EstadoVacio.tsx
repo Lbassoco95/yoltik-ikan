@@ -16,6 +16,9 @@ interface EstadoVacioProps {
  * El vacío lleva el hexágono de Ikán y una línea en voz de marca —no un icono
  * genérico de carpeta y un «No data»—. Y sobre todo: no lleva a Yoli. La
  * mascota queda fuera de la aplicación formal.
+ *
+ * Va sobre vidrio y el icono flota despacio; con «reducir movimiento» se
+ * queda quieto.
  */
 export function EstadoVacio({
   titulo,
@@ -26,12 +29,12 @@ export function EstadoVacio({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border px-6 py-12 text-center",
+        "estela-vidrio flex flex-col items-center justify-center gap-3 px-6 py-12 text-center",
         className,
       )}
     >
-      <IconoIkan size={44} className="opacity-40" />
-      <p className="m-0 text-sm font-bold text-foreground">{titulo}</p>
+      <IconoIkan size={44} className="estela-flota opacity-60" />
+      <p className="m-0 text-sm font-bold text-ikan-navy dark:text-foreground">{titulo}</p>
       {descripcion && (
         <p className="m-0 max-w-md text-[13px] leading-relaxed text-muted-foreground">
           {descripcion}

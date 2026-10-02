@@ -7,21 +7,26 @@ código — basta con dejarlo aquí con el nombre exacto y hacer commit.
 
 ## Los que ya están
 
-| Archivo | Dónde aparece |
-|---|---|
-| `ikan-icono.png` | Barra lateral, login, consola, estados vacíos, favicon |
-| `ikan-icono-blanco.png` | Reservado: piezas a una tinta (membretes, PDF) |
+| Archivo | Para qué fondo | Dónde aparece |
+|---|---|---|
+| `ikan-icono.png` | Claro y oscuro (sobre navy va en un chip blanco) | Barra lateral, acceso, consola, estados vacíos, favicon |
+| `ikan-icono-blanco.png` | Oscuro, a una tinta | Reservado: piezas a una tinta (membretes, PDF) |
+| `ikan-palabra.png` | Claro | La palabra «Ikán» junto al icono sobre papel o vidrio claro |
+| `ikan-palabra-blanco.png` | Oscuro | La palabra «Ikán» sobre la barra navy y la placa de acceso |
+| `ikan-vertical.png` | Claro | Logotipo vertical (icono encima de la palabra) para piezas sobre papel |
+| `ikan-vertical-claro.png` | Oscuro | El mismo logotipo vertical en tinta clara, para navy |
+| `yoltik.png` | Claro | El endoso «Powered by» sobre papel o vidrio claro |
+| `yoltik-blanco.png` | Oscuro | El mismo endoso sobre el navy de la barra lateral y del acceso |
+| `yoltik-vertical.png` | Claro | Logotipo vertical de Yoltik, para piezas sobre papel |
+| `yoltik-vertical-claro.png` | Oscuro | Logotipo vertical de Yoltik en tinta clara, para navy |
 
-## Los que faltan
+`yoltik.png` y `yoltik-blanco.png` se recortaron de los logotipos verticales
+entregados. Si Dirección entrega los originales horizontales, se reemplazan
+aquí con el mismo nombre y entran solos.
 
-| Archivo | Dónde aparece |
-|---|---|
-| `yoltik.png` | El endoso «Powered by» sobre papel: pie del login y alta pública |
-| `yoltik-blanco.png` | El mismo endoso sobre el navy de la barra lateral |
-
-Mientras no estén, `<EndosoYoltik>` se cae con elegancia al logotipo
-tipográfico en Sora —enseña la palabra «Yoltik»— en vez de dejar un hueco o un
-icono roto. En cuanto los archivos aparezcan, la imagen entra sola.
+Si alguno de los dos del endoso faltara, `<EndosoYoltik>` se cae con elegancia
+al logotipo tipográfico en Sora —enseña la palabra «Yoltik»— en vez de dejar un
+hueco o un icono roto.
 
 ### Cómo tienen que venir
 

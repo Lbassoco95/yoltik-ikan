@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { EstadoVacio } from "@/components/estela/EstadoVacio";
+import { FondoFluido } from "@/components/estela/FondoFluido";
 
 /**
  * La página que no existe.
@@ -18,11 +19,11 @@ export default function NotFound() {
   }, [pathname]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <div className="estela-cenefa" aria-hidden />
-      <div className="grid flex-1 place-items-center p-6">
+    <div className="relative flex min-h-screen flex-col">
+      <FondoFluido className="fixed" />
+      <div className="relative z-10 grid flex-1 place-items-center p-6">
         <EstadoVacio
-          className="max-w-md border-solid bg-card"
+          className="max-w-md"
           titulo="Esta página no existe"
           descripcion={
             <>
@@ -35,7 +36,7 @@ export default function NotFound() {
           accion={
             <Link
               to="/"
-              className="inline-flex items-center rounded-md bg-accent px-4 py-2 text-sm font-bold text-accent-foreground transition-colors hover:bg-ikan-jade-oscuro"
+              className="inline-flex items-center rounded-full bg-ikan-jade-oscuro px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#005A4C]"
             >
               Ir al tablero
             </Link>

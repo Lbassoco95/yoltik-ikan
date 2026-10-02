@@ -79,7 +79,7 @@ export default function AuditPage() {
           sale de la LFPIORPI —su artículo 18 habla de cinco—. Se corrige y se
           marca como referencia, igual que el resto de cifras regulatorias del
           repo, hasta que Kawiil-Cumplimiento la confirme. */}
-      <div className="flex items-start gap-3 rounded-md border border-border bg-muted/50 px-4 py-3">
+      <div className="flex items-start gap-3 rounded-md border border-border estela-aviso px-4 py-3">
         <Shield className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
         {/* Decía «es inmutable», que afirma más de lo que el sistema sostiene:
             quien tenga acceso de administrador a la base sí puede escribir. Lo
