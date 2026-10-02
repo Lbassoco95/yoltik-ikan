@@ -40,7 +40,33 @@ en los JSON.** La corrección corresponde a Cumplimiento.
    normaliza el valor del usuario. Quedan `no_validado` (mismo efecto que
    catálogo ausente: el aviso no se presenta como verificado). Corrección =
    nueva extracción o dictamen de Cumplimiento, no parche en JSON.
+8. **Fragmentos de patrón partidos** (13 campos): la extracción cortó el
+   `Patrón:`/`Formato:` y dejó prosa «en donde…» o trozos `L=…` / `Z) letra…`.
+   No se reconstruye el token. → `no_validado`.
+9. **Teléfono** (`Formato: Clave de región + número telefónico`, 17 campos):
+   sin catálogo de claves de región ni patrón DOF tokenizable. → `no_validado`.
+10. **Prosa validada** (no es inconsistencia): montos «14 dígitos con 2
+    decimales obligatorios» / «2 a 10 decimales», y enumeraciones
+    `SI`/`NO` y `A`/`B`. Reglas en `formato-regla.ts`.
 
-Fecha de este registro: 2026-10-02 (actualización patrones/correo). Cualquier
+### Fragmentos partidos (13) — `no_validado`
+
+| Anexo | Campo | Etiqueta | Valor en JSON (inicio) |
+|---|---|---|---|
+| 11 | `3.7.1.2.6.2.1.3` | `<rfc>` | `donde, L=(A-Z) letra o caracteres & o Ñ…` |
+| 12-A | `3.6.1.3.6.2.8.3.1.1.5` | `<rfc>` | `L=(A-Z) letra o caracteres & o Ñ…` |
+| 12-A | `3.6.1.3.9.3.1.1.5` | `<rfc>` | `L=(A-Z) letra o caracteres & o Ñ…` |
+| 12-A | `3.6.1.3.9.4.3.1.6` | `<curp>` | `en donde, L=(A-Z) letra…` |
+| 12-A | `3.6.1.3.10.4.2.1.1.5` | `<rfc>` | `donde, L=(A-Z) letra…` |
+| 12-B | `3.5.1.2.4.3.7.1.1.6` | `<curp>` | `MM=mes, DD=día, G=M ó H…` |
+| 12-B | `3.5.1.2.5.4.1.1.6` | `<curp>` | `LLLLAAMMDDGEFCCCHH; en donde…` (sin prefijo `Patrón:`) |
+| 12-B | `3.5.1.2.5.6.3.2.3` | `<rfc>` | `caracteres & o Ñ, AA=año…` |
+| 13 | `3.5.1.3.2` | `<rfc>` | `Z) letra o caracteres & o Ñ…` |
+| 15 | `3.6.1.1.3.4.5` | `<rfc>` | `letra o caracteres & o Ñ…` |
+| 16 | `3.5.3.6.2.1.1` | `<fecha_hora_operacion>` | `12), DD=día (2 dígitos…` (cola de AAAAMMDDHHMISS) |
+| 2-C | `3.5.1.2.6.6` | `<curp>` | `LLLLAAMMDDGEFCCCHH; en donde…` (sin prefijo) |
+| 5-A | `3.5.1.5.1.3.2` | `<rfc>` | `Z) letra o caracteres & o Ñ…` |
+
+Fecha de este registro: 2026-10-02 (cierre huecos patrón/prosa). Cualquier
 corrección debe versionarse de nuevo desde la extracción, no editarse a mano
 en los JSON.

@@ -12,6 +12,9 @@
  */
 
 import { derivarPatronDof } from './patron-dof';
+import { clasificarFormato, validarProsa } from './formato-regla';
+
+export { clasificarFormato } from './formato-regla';
 
 export type ResultadoCampo =
   | { estado: 'ok' }
@@ -229,14 +232,20 @@ export function validarCampo(campo: CampoFormato, ctx: ContextoValidacion): Resu
   const tipoErr = validarTipoDato(campo.tipo_dato, valor, campo.numero);
   if (tipoErr) return tipoErr;
 
-  const patron = derivarPatronDof(campo.formato);
-  if (patron.estado === 'no_validado') {
+  // Formato: derivado (L/A/M/D/9/X) | prosa (montos/enums) | no_validado. Sin silencio.
+  const reglaFmt = clasificarFormato(campo.formato);
+  if (reglaFmt.cubo === 'no_validado') {
     return {
       estado: 'no_validado',
-      motivo: `Campo ${campo.numero}: patrón no validado — ${patron.motivo}`,
+      motivo: `Campo ${campo.numero}: formato no validado — ${reglaFmt.motivo}`,
     };
   }
-  if (patron.estado === 'derivado') {
+  if (reglaFmt.cubo === 'prosa') {
+    const pr = validarProsa(reglaFmt.regla, valor, campo.numero);
+    if (pr.estado === 'error') return pr;
+  }
+  if (reglaFmt.cubo === 'derivado') {
+    const patron = reglaFmt.patron;
     if (!patron.regex.test(valor)) {
       return {
         estado: 'error',
@@ -253,6 +262,7 @@ export function validarCampo(campo: CampoFormato, ctx: ContextoValidacion): Resu
       }
     }
   }
+  // cubo ausente (N/A): sin regla de formato; longitud/tipo bastan.
 
   const resolver = ctx.catalogoDeCampo ?? detectarCatalogo;
   const cat = resolver(campo);

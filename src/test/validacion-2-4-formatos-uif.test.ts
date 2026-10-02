@@ -5,7 +5,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { readdirSync } from 'node:fs';
 import {
+  clasificarFormato,
   longitudDeclarada,
   validarCampo,
   type CampoFormato,
@@ -37,6 +39,12 @@ function campo(anexo: CampoFormato[], numero: string): CampoFormato {
 
 const a16 = cargarAnexo('anexo-16.json');
 const a12a = cargarAnexo('anexo-12-A.json');
+const a14a = cargarAnexo('anexo-14-A.json');
+
+function tieneFormato(c: CampoFormato): boolean {
+  const f = (c.formato ?? '').trim();
+  return Boolean(f) && !/^n\/a$/i.test(f);
+}
 
 describe('2.4 tabla brief — válido e inválido', () => {
   it('rfc 16/3.5.2.1.1.5 — longitud 13 + LLLLAAMMDDXXX', () => {
@@ -89,14 +97,17 @@ describe('2.4 tabla brief — válido e inválido', () => {
     expect((bad as { motivo: string }).motivo).toMatch(/3\.7/);
   });
 
-  it('monto_operacion 16/3.5.3.3.1.3 — rango 4-25', () => {
+  it('monto_operacion 16/3.5.3.3.1.3 — rango 4-25 + decimales obligatorios', () => {
     const c = campo(a16, '3.5.3.3.1.3');
     expect(
       validarCampo(c, { valores: { monto_operacion: '1234.56' }, catalogos: {} }).estado,
     ).toBe('ok');
-    const bad = validarCampo(c, { valores: { monto_operacion: '12' }, catalogos: {} });
-    expect(bad.estado).toBe('error');
-    expect((bad as { motivo: string }).motivo).toMatch(/4-25/);
+    const badLen = validarCampo(c, { valores: { monto_operacion: '12' }, catalogos: {} });
+    expect(badLen.estado).toBe('error');
+    expect((badLen as { motivo: string }).motivo).toMatch(/4-25/);
+    const sinDec = validarCampo(c, { valores: { monto_operacion: '1234' }, catalogos: {} });
+    expect(sinDec.estado).toBe('error');
+    expect((sinDec as { motivo: string }).motivo).toMatch(/decimales obligatorios/);
   });
 
   it('mes_reportado 16/1 — AAAAMM', () => {
@@ -236,4 +247,81 @@ describe('2.4 cobertura anexo 16 — longitud declarada', () => {
       expect((r as { motivo: string }).motivo).toMatch(/longitud|esperada|rango/);
     }
   });
+});
+
+describe('2.4 prosa — montos y enumeraciones', () => {
+  it('acumulacion SI/NO: válido / inválido', () => {
+    const c = campo(a16, '3.7');
+    expect(clasificarFormato(c.formato).cubo).toBe('prosa');
+    expect(validarCampo(c, { valores: { acumulacion: 'NO' }, catalogos: {} }).estado).toBe('ok');
+    const bad = validarCampo(c, { valores: { acumulacion: 'si' }, catalogos: {} });
+    expect(bad.estado).toBe('error');
+    expect((bad as { motivo: string }).motivo).toMatch(/SI\|NO/);
+  });
+
+  it('monto 2–10 decimales (prosa)', () => {
+    const c = a16.find(
+      (x) =>
+        x.etiqueta_xml.includes('monto') &&
+        /2 a 10 decimales/i.test(x.formato) &&
+        !/obligatorios/i.test(x.formato),
+    );
+    expect(c).toBeTruthy();
+    if (!c) return;
+    expect(clasificarFormato(c.formato).cubo).toBe('prosa');
+    expect(
+      validarCampo(c, { valores: { [c.numero]: '1234.567890' }, catalogos: {} }).estado,
+    ).toBe('ok');
+    const sinDec = validarCampo(c, { valores: { [c.numero]: '12345' }, catalogos: {} });
+    expect(sinDec.estado).toBe('error');
+  });
+});
+
+describe('2.4 cuadrado global formato = 1660', () => {
+  it('derivados + prosa + no_validado = 1660; cero silencio', () => {
+    const counts = { derivado: 0, prosa: 0, no_validado: 0, ausente: 0 };
+    for (const f of readdirSync(DIR).filter((x) => /^anexo-.*\.json$/.test(x))) {
+      for (const c of cargarAnexo(f)) {
+        if (!tieneFormato(c)) continue;
+        const r = clasificarFormato(c.formato);
+        counts[r.cubo]++;
+      }
+    }
+    expect(counts.ausente).toBe(0);
+    expect(counts.derivado + counts.prosa + counts.no_validado).toBe(1660);
+    expect(counts).toEqual({ derivado: 1409, prosa: 203, no_validado: 48, ausente: 0 });
+  });
+});
+
+describe('2.4 cobertura formato — anexos 16, 12-A, 14-A', () => {
+  for (const [nombre, campos] of [
+    ['16', a16],
+    ['12-A', a12a],
+    ['14-A', a14a],
+  ] as const) {
+    it(`anexo ${nombre}: todo formato con contenido → derivado|prosa|no_validado`, () => {
+      const conFmt = campos.filter(tieneFormato);
+      expect(conFmt.length).toBeGreaterThan(0);
+      for (const c of conFmt) {
+        const r = clasificarFormato(c.formato);
+        expect(
+          r.cubo,
+          `${nombre}/${c.numero} silencio: ${c.formato.slice(0, 80)}`,
+        ).not.toBe('ausente');
+        expect(['derivado', 'prosa', 'no_validado']).toContain(r.cubo);
+
+        // Si hay valor, la validación no se traga el formato en silencio:
+        // o ok/error (regla activa) o no_validado.
+        const muestra =
+          r.cubo === 'prosa' && r.regla.clase === 'enum'
+            ? r.regla.valores[0]
+            : r.cubo === 'prosa' && r.regla.clase === 'monto'
+              ? '1'.repeat(4) + '.' + '0'.repeat(r.regla.minDec)
+              : 'X';
+        const res = validarCampo(c, { valores: { [c.numero]: muestra }, catalogos: {} });
+        // omitido = etiqueta estructural (formato informativo, sin valor).
+        expect(['ok', 'error', 'no_validado', 'omitido']).toContain(res.estado);
+      }
+    });
+  }
 });
