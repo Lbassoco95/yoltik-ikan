@@ -522,7 +522,7 @@ export default function OperationsPage() {
           </div>
         </div>
       ) : (
-        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-6 gap-y-1">
+        <div className="estela-aviso flex w-fit flex-wrap gap-x-6 gap-y-1 rounded-full border border-border px-4 py-2 text-xs text-muted-foreground">
           <span>
             Aviso por operación ({umbralOperacionUma?.toLocaleString("es-MX") ?? "—"} UMA):{" "}
             <strong>{umbralOperacionMxn != null ? formatMxn(umbralOperacionMxn) : "—"}</strong>

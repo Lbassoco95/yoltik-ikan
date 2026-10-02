@@ -607,10 +607,10 @@ function Aviso({
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-md border p-4",
+        "estela-aviso flex items-start gap-3 rounded-md border p-4",
         bloqueo
-          ? "border-destructive/30 bg-destructive/5"
-          : "border-border bg-muted/50",
+          ? "border-destructive/30 bg-gradient-to-r from-destructive/10 to-destructive/5"
+          : "border-border",
       )}
     >
       {bloqueo ? (
