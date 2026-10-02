@@ -58,9 +58,9 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
   });
 
   return (
-    // ESTELA: hairline en vez de sombra. La cabecera es papel; la barra
-    // lateral es la que lleva el navy.
-    <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 sm:px-6">
+    // ESTELA: la cabecera es una placa de vidrio; la barra lateral es la que
+    // lleva el navy.
+    <header className="estela-vidrio flex h-16 shrink-0 items-center justify-between gap-2 rounded-none border-x-0 border-t-0 px-3 sm:px-6 md:rounded-lg md:border-x md:border-t">
       <div className="flex items-center gap-3 min-w-0">
         {/* Este botón existía en las props desde el andamiaje y nadie lo había
             conectado. Sin él, en un teléfono no había manera de recuperar los
@@ -83,7 +83,7 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && buscar()}
-            className="w-64 border border-border bg-background pl-10 focus-visible:ring-1 lg:w-80"
+            className="w-64 border border-border bg-white/70 pl-10 focus-visible:ring-1 dark:bg-white/[0.06] lg:w-80"
           />
         </div>
       </div>
@@ -131,7 +131,7 @@ export function AppHeader({ onToggleSidebar }: AppHeaderProps) {
           </Button>
         )}
 
-        <div className="flex items-center gap-2 sm:px-3 py-1.5 rounded-md shrink-0">
+        <div className="flex items-center gap-2 sm:px-3 py-1.5 rounded-full shrink-0">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
             {getInitials(profile?.nombre)}
           </div>
