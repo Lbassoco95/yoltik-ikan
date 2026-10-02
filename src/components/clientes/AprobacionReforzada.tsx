@@ -144,7 +144,7 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
       </div>
 
       {vigente ? (
-        <div className="space-y-1 rounded-md border border-success/30 bg-success/5 p-3">
+        <div className="space-y-1 rounded-md border border-success/30 estela-aviso bg-gradient-to-r from-success/10 to-success/5 p-3">
           <p className="text-sm font-medium text-foreground flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
             Aprobado y vigente
@@ -174,7 +174,7 @@ export function AprobacionReforzada({ clientId }: { clientId: string }) {
           )}
         </div>
       ) : (
-        <div className="rounded-md border border-warning/40 bg-warning/5 p-3 space-y-1">
+        <div className="rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/10 to-warning/5 p-3 space-y-1">
           <p className="text-sm font-medium text-foreground flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-ikan-ambar" />
             {aprobacion?.aprobado_en

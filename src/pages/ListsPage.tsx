@@ -112,7 +112,7 @@ export default function ListsPage() {
             ) : resultados.isError ? (
               <p className="text-sm text-destructive">{(resultados.error as Error).message}</p>
             ) : (barrido?.coincidencias.length ?? 0) === 0 ? (
-              <div className="flex items-start gap-3 rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">
+              <div className="flex items-start gap-3 rounded-md border border-border estela-aviso px-4 py-3 text-sm">
                 <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
                 <span>
                   Sin coincidencias para «{busqueda.trim()}» en las listas cargadas.
@@ -221,7 +221,7 @@ export default function ListsPage() {
                 NO-COINCIDENCIA DEMOSTRADA, y asentarla es mejor prueba de que
                 el control corrió que no haberla producido nunca. */}
             {(barrido?.descartadas.length ?? 0) > 0 && (
-              <div className="mt-3 rounded-md border border-border bg-muted/30 px-4 py-3 text-xs">
+              <div className="mt-3 rounded-md border border-border estela-aviso px-4 py-3 text-xs">
                 <p className="font-medium text-foreground">
                   {barrido!.descartadas.length === 1
                     ? "Una coincidencia quedó descartada por contradicción"
@@ -248,7 +248,7 @@ export default function ListsPage() {
 
       {/* Aviso cuando faltan listas por cargar */}
       {pendienteCarga.length > 0 && !estado.isLoading && (
-        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>
@@ -264,7 +264,7 @@ export default function ListsPage() {
       )}
 
       {pendienteDeterminacion.length > 0 && (
-        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 px-4 py-3 text-sm">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>

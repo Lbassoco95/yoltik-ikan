@@ -242,7 +242,7 @@ export default function AdminUsuariosPage() {
                 {/* Decirlo antes, no después: entre que se repone y que la
                     persona vuelve a darse de alta, su cuenta se abre con sólo
                     la contraseña. */}
-                <p className="rounded-md border border-warning/40 bg-warning/15 p-3 text-warning-ink">
+                <p className="rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/20 to-warning/10 p-3 text-warning-ink">
                   Hasta que vuelva a dar de alta su autenticador, esa cuenta se abre con sólo la
                   contraseña. Confirma por un canal aparte que quien lo pide es la persona.
                 </p>

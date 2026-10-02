@@ -128,7 +128,7 @@ export default function DashboardPage() {
 
   if (isError) {
     return (
-      <div className="rounded-md border border-destructive/30 bg-card p-5 text-sm text-destructive">
+      <div className="rounded-md border border-destructive/30 estela-vidrio p-5 text-sm text-destructive">
         {(error as Error).message}
       </div>
     );
@@ -152,7 +152,7 @@ export default function DashboardPage() {
           cuatro cifras salían del mismo tamaño y con el mismo peso, así que
           «hallazgos por atender» pesaba igual que «clientes activos» y quien
           abría el tablero tenía que leer las cuatro para saber si le tocaba
-          hacer algo. Ahora lo urgente ocupa una tarjeta ancha con muesca y el
+          hacer algo. Ahora lo urgente ocupa una tarjeta ancha con filo y el
           resto se demota a fila de cifras.
 
           La tarjeta cambia de tono con lo que hay, no de forma: ámbar cuando
@@ -161,7 +161,7 @@ export default function DashboardPage() {
       {!isLoading && (
         <div
           className={cn(
-            "estela-filo rounded-md border bg-card p-5 sm:p-6",
+            "estela-filo rounded-md border estela-vidrio p-5 sm:p-6",
             urgeAlgo
               ? "border-ikan-ambar/40 border-t-ikan-ambar"
               : "border-border border-t-accent",
@@ -172,7 +172,7 @@ export default function DashboardPage() {
               <p
                 className={cn(
                   "estela-antetitulo text-muted-foreground m-0",
-                  urgeAlgo ? "text-ikan-ambar" : "text-accent",
+                  urgeAlgo ? "text-[#7A4F00] dark:text-ikan-ambar" : "text-accent",
                 )}
               >
                 {urgeAlgo ? "Lo que urge hoy" : "Al corriente"}
@@ -201,7 +201,7 @@ export default function DashboardPage() {
           {abiertos > 0 && (
             <Link
               to="/alertas"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent px-3.5 py-2 text-xs font-bold text-accent-foreground transition-colors hover:bg-ikan-jade-oscuro"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-ikan-jade-oscuro px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#005A4C]"
             >
               Ir a la bandeja de hallazgos
             </Link>
@@ -228,7 +228,7 @@ export default function DashboardPage() {
             </div>
             <span className={cn(
               "mt-1.5 block text-2xl font-extrabold tabular-nums",
-              t.alerta ? "text-ikan-ambar" : "text-foreground",
+              t.alerta ? "text-[#7A4F00] dark:text-ikan-ambar" : "text-foreground",
             )}>
               {isLoading ? "—" : (t.valor ?? 0).toLocaleString("es-MX")}
             </span>
@@ -244,7 +244,7 @@ export default function DashboardPage() {
       {uma && <CartuchoParametro parametro={uma} titulo="UMA vigente" />}
 
       {isLoading ? (
-        <div className="flex items-center justify-center gap-2 rounded-md border border-border bg-card p-10 text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 rounded-md border border-border estela-vidrio p-10 text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" /> Cargando el tablero…
         </div>
       ) : (
@@ -260,7 +260,7 @@ export default function DashboardPage() {
                   (n, e) => n + (data?.hallazgosPorEstado[e] ?? 0), 0,
                 );
                 return (
-                  <div key={col.titulo} className="rounded-md border border-border bg-muted/40 p-4">
+                  <div key={col.titulo} className="rounded-md border border-border estela-aviso p-4">
                     <div className="flex items-baseline justify-between">
                       <span className="estela-antetitulo text-muted-foreground">{col.titulo}</span>
                       <span className="text-xl font-bold tabular-nums">{total}</span>

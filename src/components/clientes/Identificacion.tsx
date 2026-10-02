@@ -525,7 +525,7 @@ export function Identificacion({ client }: { client: Client }) {
 
       {/* Lo que no corre. Sin banner, un notario podría dar por hecha una
           comprobación que nadie hizo. */}
-      <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3">
+      <div className="flex items-start gap-3 rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 px-4 py-3">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
         <p className="text-[13px] text-foreground">
           <strong className="text-warning-ink">

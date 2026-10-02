@@ -95,7 +95,7 @@ export default function AlertsPage() {
       />
 
       {hayMock && (
-        <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
+        <div className="flex items-start gap-3 rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 px-4 py-3 text-sm text-warning-foreground">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ikan-ambar" />
           <span>
             <strong>DEMO — sin integración real.</strong> Algunos hallazgos usan datos simulados
@@ -119,7 +119,7 @@ export default function AlertsPage() {
           {columns.map((col) => {
             const items = hallazgos.filter((h) => col.estados.includes(h.estado));
             return (
-              <div key={col.title} className={cn("flex flex-col rounded-md border border-border border-t-[3px] bg-card p-3.5", col.color)}>
+              <div key={col.title} className={cn("flex flex-col rounded-md border border-border border-t-[3px] estela-vidrio p-3.5", col.color)}>
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <h2 className="estela-antetitulo text-foreground">{col.title}</h2>
                   <span className="estela-dato rounded-sm bg-muted px-1.5 py-0.5 text-xs font-bold text-foreground">
@@ -135,7 +135,7 @@ export default function AlertsPage() {
                       type="button"
                       onClick={() => setExpedienteId(h.id)}
                       aria-label={`Abrir expediente del hallazgo ${h.tipologia_codigo} — ${h.tipologia_nombre}`}
-                      className="w-full cursor-pointer rounded-md border border-border bg-muted/40 p-3.5 text-left transition-colors hover:border-accent/50 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="w-full cursor-pointer rounded-md border border-border estela-aviso p-3.5 text-left transition-colors hover:border-accent/50 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="estela-dato text-xs font-bold text-accent">

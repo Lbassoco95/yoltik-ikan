@@ -80,6 +80,20 @@
   .estela-vidrio-navy { background: rgb(12 35 64 / 0.98); }
 }
 
+/* Aviso sobre vidrio: las franjas de advertencia, error o nota que viven
+   sueltas en la página. El vidrio va en background-color y el tinte del
+   estado en un degradado encima (bg-gradient-to-r from-warning/15 …), así
+   el texto nunca queda directo sobre el fondo fluido. */
+.estela-aviso {
+  background-color: var(--vidrio-relleno);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .estela-aviso { background-color: rgb(255 255 255 / 0.92); }
+  .dark .estela-aviso { background-color: rgb(15 36 56 / 0.95); }
+}
+
 /* Separador de vidrio: la línea entre filas dentro de una superficie. */
 .estela-separador {
   border-color: rgb(12 35 64 / 0.12);

@@ -77,7 +77,7 @@ export default function RulesEnginePage() {
           <Loader2 className="h-4 w-4 animate-spin" /> Cargando parámetros regulatorios…
         </div>
       ) : isError ? (
-        <p className="rounded-md border border-destructive/30 bg-card p-4 text-sm text-destructive">
+        <p className="rounded-md border border-destructive/30 estela-vidrio p-4 text-sm text-destructive">
           No se pudieron leer los parámetros regulatorios: {(error as Error)?.message}
         </p>
       ) : uma ? (
@@ -90,7 +90,7 @@ export default function RulesEnginePage() {
           )}
         </div>
       ) : (
-        <p className="rounded-md border border-warning/40 bg-warning/10 p-4 text-sm text-warning-ink">
+        <p className="rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 p-4 text-sm text-warning-ink">
           No hay una UMA vigente registrada. Cárgala en parámetros regulatorios antes de
           operar: sin ella el motor no puede calcular umbrales.
         </p>
@@ -168,7 +168,7 @@ export default function RulesEnginePage() {
         )}
       </section>
 
-      <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm">
+      <div className="flex items-start gap-3 rounded-md border border-warning/40 estela-aviso bg-gradient-to-r from-warning/15 to-warning/5 px-4 py-3 text-sm">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-ikan-ambar" />
         <span className="text-foreground">
           <strong>DEMO — sin configuración real.</strong> Las dos secciones
