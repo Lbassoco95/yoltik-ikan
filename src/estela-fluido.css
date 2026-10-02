@@ -14,7 +14,7 @@
   --radius-xl: 2.5rem;          /* 40 px: placa de acceso     */
 
   /* Vidrio. */
-  --vidrio-relleno: rgb(255 255 255 / 0.58);
+  --vidrio-relleno: rgb(255 255 255 / 0.72);
   --vidrio-borde: rgb(255 255 255 / 0.75);
   --vidrio-blur: 24px;
   --vidrio-sombra: 0 24px 60px -24px rgb(7 21 37 / 0.45),
@@ -33,7 +33,7 @@
 }
 
 .dark {
-  --vidrio-relleno: rgb(15 36 56 / 0.5);
+  --vidrio-relleno: rgb(15 36 56 / 0.66);
   --vidrio-borde: rgb(255 255 255 / 0.14);
   --fluido-base: #071525;
   --fluido-opacidad: 0.75;
@@ -92,6 +92,23 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .estela-aviso { background-color: rgb(255 255 255 / 0.92); }
   .dark .estela-aviso { background-color: rgb(15 36 56 / 0.95); }
+}
+
+/* Velo del área de trabajo: un vidrio tenue bajo todo el contenido de la
+   página. Las tarjetas siguen flotando encima con su propio vidrio; el velo
+   existe para que los títulos de sección, las pestañas y los enlaces sueltos
+   tampoco queden directo sobre el fondo fluido. */
+.estela-velo {
+  background-color: rgb(255 255 255 / 0.55);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  border-radius: var(--radius);
+}
+.dark .estela-velo {
+  background-color: rgb(7 21 37 / 0.5);
+}
+@media (max-width: 767px) {
+  .estela-velo { border-radius: 0; }
 }
 
 /* Separador de vidrio: la línea entre filas dentro de una superficie. */
@@ -183,7 +200,7 @@
 
 /* Accesibilidad: sin movimiento si el usuario lo pide. */
 @media (prefers-reduced-motion: reduce) {
-  .fondo-fluido i, .fondo-fluido svg, .fondo-fluido .burbuja, .fondo-fluido .destello { animation: none; }
+  .fondo-fluido i, .fondo-fluido svg, .fondo-fluido .burbuja, .fondo-fluido .destello { animation: none !important; }
 }
 /* Ahorro: en pantallas pequeñas y equipos modestos, menos desenfoque. */
 @media (max-width: 640px) {
@@ -206,8 +223,17 @@
 
 /* Pantallas de trabajo con tablas largas: las manchas se quedan quietas. */
 .fondo-fluido--quieto i,
-.fondo-fluido--quieto svg {
+.fondo-fluido--quieto svg,
+.fondo-fluido--quieto .burbuja,
+.fondo-fluido--quieto .destello {
   animation: none;
+}
+
+/* Foco con teclado sobre la barra navy: el anillo del navegador es oscuro y
+   desaparece sobre el navy, así que ahí va un contorno blanco. */
+.estela-vidrio-navy :focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -242,4 +268,28 @@
 }
 .estela-acceso .ikan-btn-primary:hover {
   background: linear-gradient(90deg, #005a4c, #006b5b);
+}
+
+/* Texto sobre vidrio. El vidrio deja pasar las manchas del fondo, así que el
+   gris secundario, el jade y el ámbar de texto pierden contraste frente a la
+   misma tinta sobre blanco liso. Aquí se oscurecen (en claro) o se aclaran (en
+   oscuro) sólo cuando van sobre vidrio, sin tocar los tokens semánticos.
+   Medido: cuerpo >= 4.5:1 sobre la superficie real compuesta. */
+:is(.estela-vidrio, .estela-placa, .ikan-card, .metric-card, .estela-aviso, .estela-velo) .text-muted-foreground {
+  color: hsl(171 18% 29%);
+}
+:is(.estela-vidrio, .estela-placa, .ikan-card, .metric-card, .estela-aviso, .estela-velo) .text-accent {
+  color: #006b5b;
+}
+:is(.estela-vidrio, .estela-placa, .ikan-card, .metric-card, .estela-aviso, .estela-velo) .text-warning-ink {
+  color: #7a4f00;
+}
+.dark :is(.estela-vidrio, .estela-placa, .ikan-card, .metric-card, .estela-aviso, .estela-velo) .text-muted-foreground {
+  color: hsl(168 18% 80%);
+}
+.dark :is(.estela-vidrio, .estela-placa, .ikan-card, .metric-card, .estela-aviso, .estela-velo) .text-accent {
+  color: #5fd6bd;
+}
+.dark :is(.estela-vidrio, .estela-placa, .ikan-card, .metric-card, .estela-aviso, .estela-velo) .text-warning-ink {
+  color: #ffd27a;
 }

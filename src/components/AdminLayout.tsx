@@ -44,7 +44,7 @@ export function AdminLayout() {
           la cabecera entera en vez de una barra lateral —quien entra tiene que
           notar en el primer vistazo que está tocando configuración que afecta
           a todas las organizaciones—. */}
-      <FondoFluido className="fixed" />
+      <FondoFluido className="fixed fondo-fluido--quieto" />
       <div className="relative z-10 flex flex-1 flex-col md:gap-4 md:p-4">
         <header className="estela-vidrio-navy text-sidebar-foreground md:rounded-lg">
           {/* La navegación no colapsaba ni se desplazaba: cuatro secciones con
@@ -58,7 +58,7 @@ export function AdminLayout() {
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-white p-[5px]">
                 <IconoIkan size={30} />
               </span>
-              <div className="leading-tight hidden sm:block">
+              <div className="leading-tight hidden shrink-0 whitespace-nowrap sm:block">
                 <span className="block text-sm font-bold tracking-tight text-sidebar-accent-foreground">
                   Ikán · Plataforma
                 </span>
@@ -90,7 +90,7 @@ export function AdminLayout() {
             </nav>
 
             <div className="ml-auto flex items-center gap-4">
-              <span className="text-xs text-sidebar-foreground/70 hidden sm:block">
+              <span className="text-xs text-sidebar-foreground/70 hidden whitespace-nowrap sm:block">
                 {profile?.nombre ?? session?.user?.email}
               </span>
               <Button
@@ -107,7 +107,7 @@ export function AdminLayout() {
 
         {/* Recordatorio permanente del alcance: nada de lo que se toca aquí es
           de una sola organización. */}
-        <div className="estela-vidrio rounded-none border-x-0 border-t-0 border-warning/40 bg-warning/15 px-6 py-2 md:rounded-full md:border">
+        <div className="estela-vidrio rounded-none border-x-0 border-t-0 border-warning/40 bg-gradient-to-r from-warning/20 to-warning/10 px-6 py-2 md:rounded-full md:border">
           <p className="text-xs text-warning-foreground dark:text-foreground">
             Lo que se configure aquí aplica a{" "}
             <strong>todas las organizaciones</strong> de la plataforma, sin
@@ -115,7 +115,7 @@ export function AdminLayout() {
           </p>
         </div>
 
-        <main className="flex-1 p-6 md:p-1 max-w-[1400px] w-full mx-auto">
+        <main className="estela-vidrio mx-auto w-full max-w-[1400px] flex-1 rounded-none border-x-0 p-6 md:rounded-lg md:border-x">
           <ErrorBoundary key={location.pathname}>
             <Outlet />
           </ErrorBoundary>

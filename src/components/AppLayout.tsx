@@ -30,7 +30,7 @@ export default function AppLayout() {
       {/* ESTELA: el fondo fluido, quieto detrás de todo (z-0) y fijo a la
           ventana para que las manchas no se estiren con páginas largas. El
           texto nunca va directo sobre él: todo va en vidrio o en la barra. */}
-      <FondoFluido className="fixed" />
+      <FondoFluido className="fixed fondo-fluido--quieto" />
 
       <div className="relative z-10 flex min-h-0 w-full flex-1 md:gap-4 md:p-4">
         {menuMovil && (
@@ -60,7 +60,7 @@ export default function AppLayout() {
               setColapsada((v) => (window.innerWidth >= 768 ? !v : v));
             }}
           />
-          <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-1 overflow-auto">
+          <main className="estela-velo flex-1 min-w-0 overflow-auto p-4 sm:p-6 md:p-4">
             <ErrorBoundary key={pathname}>
               <Outlet />
             </ErrorBoundary>
