@@ -1,9 +1,24 @@
-/* Sistema visual ESTELA — Ikán
+/* Sistema visual ESTELA fluida — Ikán
  *
- * Ikán como estela digital: una piedra tallada donde cada cifra queda fechada,
- * con fuente y firmada. De ahí las tres decisiones que gobiernan todo lo demás:
- * el radio de 6 px (tallado, no burbuja), el borde de 1 px en vez de sombra, y
- * la greca —el motivo de escalones— usada en tres sitios y en ninguno más.
+ * Ikán como estela digital: cada cifra queda fechada, con fuente y firmada.
+ * La forma cambió —la piedra tallada pasó a ser agua—, el concepto no:
+ *
+ *   - Vidrio. Tarjetas, cabeceras, listas y paneles son superficies
+ *     translúcidas con desenfoque, borde de luz y sombra suave
+ *     (`.estela-vidrio`). Todo texto va sobre vidrio o sobre la barra navy;
+ *     nunca directo sobre el fondo.
+ *   - Fondo fluido. Detrás del marco de la aplicación, manchas difusas de
+ *     jade, aqua, navy y un toque de ámbar que derivan despacio sobre una ola
+ *     (`<FondoFluido />`). En el acceso va en versión viva. Es decorativo,
+ *     respeta «reducir movimiento» y no se imprime.
+ *   - Ola. Sustituye a la greca de escalones en sus dos usos: bajo el H1 de
+ *     cada sección (`.estela-titulo::after`) y como canto vertical del
+ *     cartucho (`.estela-canto`).
+ *   - Radios grandes: 28 px tarjetas y placas, 20 px botones y cartuchos,
+ *     12 px campos y chips, 40 px la placa de acceso, píldora en etiquetas.
+ *
+ * La capa de forma, vidrio y fondo vive en `estela-fluido.css`. Este archivo
+ * conserva los tokens semánticos del color, que no cambian de significado.
  *
  * La tipografía va EMPAQUETADA, no desde el CDN de Google.
  *
@@ -12,13 +27,12 @@
  * tipografía —y además le cuenta a Google quién abre la plataforma de
  * cumplimiento de un notario, que no es asunto suyo.
  *
- * ESTELA resuelve la pregunta que quedó abierta el 30/08/2026: la familia es
- * **Sora**, como pedía el brandbook v2.1 §06. Y añade una segunda familia con
- * un trabajo que la primera no puede hacer: **JetBrains Mono** para el dato de
- * expediente —RFC, CURP, folios, hashes, importes en UMA, sellos de tiempo,
- * códigos de regla—. No es decoración: en una cifra que se coteja contra un
- * documento oficial, el ancho fijo es lo que deja comparar carácter por
- * carácter. Sora para leer, Mono para cotejar. */
+ * La familia es **Sora**, como pide el brandbook v2.1 §06. Y hay una segunda
+ * familia con un trabajo que la primera no puede hacer: **JetBrains Mono**
+ * para el dato de expediente —RFC, CURP, folios, hashes, importes en UMA,
+ * sellos de tiempo, códigos de regla—. No es decoración: en una cifra que se
+ * coteja contra un documento oficial, el ancho fijo es lo que deja comparar
+ * carácter por carácter. Sora para leer, Mono para cotejar. */
 @import "@fontsource/sora/400.css";
 @import "@fontsource/sora/500.css";
 @import "@fontsource/sora/600.css";
@@ -27,6 +41,10 @@
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/jetbrains-mono/700.css";
+/* La capa ESTELA fluida. Va aquí y no al final del archivo porque un @import
+   sólo vale antes de cualquier otra regla; sus bloques @layer los coloca
+   Tailwind en su sitio igual, y sus variables no chocan con las de abajo. */
+@import "./estela-fluido.css";
 
 @tailwind base;
 @tailwind components;
@@ -98,17 +116,13 @@
     --success: 160 50% 33%;
     --success-foreground: 0 0% 100%;
 
-    /* Borde #DCE7E4 — la hairline que sustituye a la sombra. En ESTELA la
-       estructura se dibuja con línea, no con profundidad. */
+    /* Borde #DCE7E4 — la línea fina de tablas, campos y separadores. Las
+       superficies de vidrio llevan su propio borde de luz. */
     --border: 168 20% 88%;
     --input: 168 20% 88%;
     /* El foco es Jade, como el resto de lo accionable. Estaba en el navy
        viejo, que se confunde con el borde y no se ve al tabular. */
     --ring: 171 100% 28%;
-
-    /* 6 px. El scaffold traía 10 px, que redondea la tarjeta hasta que parece
-       una burbuja de mensajería. Una estela tiene canto. */
-    --radius: 0.375rem;
 
     /* Mismo Navy Profundo que --primary: la barra y la estructura son lo mismo */
     --sidebar-background: 213 68% 15%;
@@ -124,10 +138,10 @@
     --sidebar-muted: 213 40% 27%;
   }
 
-  /* Modo oscuro. La barra lateral y las cabeceras NO cambian: siguen siendo
-     navy en los dos modos, porque son la estructura de la estela y la
-     estructura no se invierte. Lo que cambia es el papel: el fondo pasa del
-     Verde Hielo al Navy base #071525 y la superficie de tarjeta al #0F2438. */
+  /* Modo oscuro. La barra lateral NO cambia: sigue siendo navy en los dos
+     modos, porque es la estructura de la estela y la estructura no se
+     invierte. Lo que cambia es el papel: el fondo pasa del Verde Hielo al
+     Navy base #071525 y la superficie de tarjeta al #0F2438. */
   .dark {
     --background: 210 58% 8%;
     --foreground: 168 20% 95%;
@@ -198,74 +212,11 @@
 }
 
 @layer utilities {
-  /* ─────────────────────────────────────────────────────────────────────
-     ESTELA — la greca (motivo de escalones). Tres usos y ninguno más:
-       1. cenefa      — franja horizontal en el marco y bajo cada H1
-       2. canto       — borde vertical tallado del <Cartucho>
-       3. filo        — canto de acento de la tarjeta (.estela-filo)
-     Nunca como textura de fondo repetida, nunca sobre texto, nunca en
-     colores fuera del jade y el ámbar.
-     ───────────────────────────────────────────────────────────────────── */
+  /* La greca de escalones se retiró: la ola la sustituye bajo el H1
+     (`.estela-titulo`) y en el canto del cartucho (`.estela-canto`). Las dos
+     viven en estela-fluido.css. */
 
-  /* Cenefa de 12 px: navy de fondo, línea jade, puntos mint en los picos.
-     Va arriba del marco de la aplicación. */
-  .estela-cenefa {
-    height: 12px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12'%3E%3Crect width='24' height='12' fill='%230C2340'/%3E%3Cpolyline points='0,12 0,7 6,7 6,2 12,2 12,7 18,7 18,2 24,2 24,7' fill='none' stroke='%2300917C' stroke-width='2'/%3E%3Ccircle cx='6' cy='7' r='1.4' fill='%231DDBA8'/%3E%3Ccircle cx='18' cy='7' r='1.4' fill='%231DDBA8'/%3E%3C/svg%3E");
-    background-repeat: repeat-x;
-  }
-
-  /* Regla corta bajo un H1 de sección: la misma greca, sin fondo. */
-  .estela-regla {
-    width: 64px;
-    height: 10px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='10'%3E%3Cpolyline points='0,10 0,6 5,6 5,2 10,2 10,6 15,6 15,2 20,2 20,6 25,6 25,2 30,2 30,6' fill='none' stroke='%2300917C' stroke-width='2'/%3E%3C/svg%3E");
-    background-repeat: repeat-x;
-  }
-
-  /* La misma regla, pero dentro del propio H1 en vez de como hermano.
-     Puesta como elemento aparte se convertía en hijo del flex de la cabecera
-     —y se colocaba entre el título y el botón de la derecha— o le caía encima
-     el `space-y` del contenedor y quedaba a 24 px de despegue. Dentro del H1
-     no le pasa ninguna de las dos cosas, y de paso una pantalla nueva la
-     hereda con sólo poner la clase. */
-  .estela-titulo::after {
-    content: "";
-    display: block;
-    width: 64px;
-    height: 10px;
-    margin-top: 8px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='10'%3E%3Cpolyline points='0,10 0,6 5,6 5,2 10,2 10,6 15,6 15,2 20,2 20,6 25,6 25,2 30,2 30,6' fill='none' stroke='%2300917C' stroke-width='2'/%3E%3C/svg%3E");
-    background-repeat: repeat-x;
-  }
-
-  /* Canto tallado: reemplaza el borde izquierdo plano de un bloque de
-     fundamento. 8×20, trazo jade. */
-  .estela-canto {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='20'%3E%3Cpolyline points='8,0 3,0 3,5 8,5 8,10 3,10 3,15 8,15 8,20' fill='none' stroke='%2300917C' stroke-width='2'/%3E%3C/svg%3E");
-    background-repeat: repeat-y;
-    background-position: left top;
-  }
-
-  /* El canto de la barra lateral: el degradado navy en diagonal y, encima, la
-     columna de greca a 0.06 de opacidad —se intuye al mirarla de reojo y no
-     compite con la navegación—.
-     Las dos capas van en la MISMA regla a propósito. Puestas por separado
-     —una en esta clase y el degradado con `bg-gradient-to-b`— las dos escriben
-     `background-image` y sólo sobrevive la que quede después en la hoja: o se
-     perdía el degradado o se perdía la greca, según el orden con que Tailwind
-     emitiera las utilidades. */
-  .estela-canto-barra {
-    background-image:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='40'%3E%3Cpolyline points='16,0 8,0 8,10 16,10 16,20 8,20 8,30 16,30 16,40' fill='none' stroke='%231DDBA8' stroke-width='1.5' opacity='0.06'/%3E%3C/svg%3E"),
-      linear-gradient(160deg, #0f2a4d 0%, #0c2340 45%, #081a30 100%);
-    background-repeat: repeat-y, no-repeat;
-    background-position:
-      right top,
-      0 0;
-  }
-
-  /* Filo de acento: 3 px de color en el canto superior de la tarjeta.
+  /* Filo de acento: 3 px de color en el borde superior de la tarjeta.
      Es lo que distingue una tarjeta que señala algo —lo que urge, un umbral,
      un hallazgo— de una tarjeta cualquiera.
 
@@ -309,21 +260,16 @@
   }
 
   /* ─────────────────────────────────────────────────────────────────────
-     Utilidades heredadas del andamiaje, alineadas a ESTELA (radio 6 px,
-     borde de 1 px en vez de sombra).
+     Utilidades heredadas del andamiaje, alineadas a ESTELA fluida (vidrio,
+     radios grandes, píldora en etiquetas y botones).
      ───────────────────────────────────────────────────────────────────── */
 
-  /* La placa: la superficie base de ESTELA. 6 px de canto y una hairline de
-     1 px, sin sombra.
-
-     Se llamaba `.glass-card`, que viene del andamiaje y dice exactamente lo
-     contrario de lo que hace esta interfaz: «glass» es vidrio esmerilado
-     flotando por encima de la página. Aquí nada flota —la sombra se cambió
-     por línea a propósito— y una tarjeta de expediente es una placa grabada,
-     no un cristal. Un nombre que contradice al sistema es el primer sitio por
-     donde el sistema se deshace. */
+  /* La placa: la superficie base. Desde ESTELA fluida es vidrio —relleno
+     translúcido, borde de luz y sombra suave— con radio de 28 px. Se conserva
+     el nombre porque media aplicación la usa y lo que dice sigue siendo
+     cierto: es la superficie sobre la que va el texto. */
   .estela-placa {
-    @apply rounded-md border border-border bg-card;
+    @apply estela-vidrio;
   }
 
   .metric-card {
@@ -331,34 +277,56 @@
   }
 
   .status-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded text-xs font-semibold;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
   }
 
   .ikan-card {
-    @apply bg-card rounded-md border border-border p-4;
+    @apply estela-vidrio p-4;
   }
 
+  /* Jade oscuro y no jade: el blanco sobre #00917C da 4.0:1 y no llega a AA
+     en texto pequeño; sobre #006B5B da 6.4:1. */
   .ikan-btn-primary {
-    @apply bg-ikan-jade text-white px-4 py-2 rounded-md font-bold hover:bg-ikan-jade-oscuro transition-colors;
+    @apply bg-ikan-jade-oscuro text-white px-4 py-2 rounded-full font-bold shadow-[0_8px_20px_-8px_rgba(0,107,91,0.7)] hover:bg-[#005A4C] transition-colors;
   }
 
   .ikan-btn-secondary {
-    @apply bg-card text-ikan-navy border border-border px-4 py-2 rounded-md font-bold hover:bg-muted transition-colors;
+    @apply bg-white/60 text-ikan-navy border border-border px-4 py-2 rounded-full font-bold hover:bg-white/80 transition-colors dark:bg-white/10 dark:text-foreground dark:hover:bg-white/15;
   }
 
   .ikan-badge-bajo {
-    @apply inline-flex items-center bg-success/10 text-success px-2 py-0.5 rounded text-xs font-semibold;
+    @apply inline-flex items-center bg-success/10 text-success px-2 py-0.5 rounded-full text-xs font-semibold;
   }
 
   .ikan-badge-medio {
-    @apply inline-flex items-center bg-warning/15 text-warning-foreground px-2 py-0.5 rounded text-xs font-semibold;
+    @apply inline-flex items-center bg-warning/15 text-warning-foreground px-2 py-0.5 rounded-full text-xs font-semibold;
   }
 
   .ikan-badge-alto {
-    @apply inline-flex items-center bg-destructive/10 text-destructive px-2 py-0.5 rounded text-xs font-semibold;
+    @apply inline-flex items-center bg-destructive/10 text-destructive px-2 py-0.5 rounded-full text-xs font-semibold;
   }
 
   .demo-banner {
-    @apply inline-flex items-center gap-1 bg-warning/10 border border-warning text-warning-foreground px-3 py-1 text-xs rounded font-semibold;
+    @apply inline-flex items-center gap-1 bg-warning/10 border border-warning text-warning-foreground px-3 py-1 text-xs rounded-full font-semibold;
+  }
+}
+
+/* Impresión y PDF: sin fondo fluido y el vidrio pasa a papel blanco sin
+   sombra. Un expediente impreso no lleva manchas de color ni desenfoque. */
+@media print {
+  .fondo-fluido {
+    display: none !important;
+  }
+
+  .estela-vidrio,
+  .estela-vidrio-navy,
+  .estela-placa,
+  .ikan-card,
+  .metric-card {
+    background: #fff !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-color: #dce7e4 !important;
   }
 }
