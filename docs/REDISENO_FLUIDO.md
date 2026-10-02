@@ -34,11 +34,11 @@ El rediseño cambia la forma, no la función. No se tocaron `supabase/`, `script
 - `AppSidebar.tsx`: vidrio navy, activo en jade oscuro, icono en chip blanco 40x40, endoso al pie. Respeta la barra plegada.
 
 ### Primitivos shadcn
-- `button.tsx`: píldora; variante principal pequeña en jade oscuro con texto blanco.
+- `button.tsx`: píldora; la variante principal usa jade oscuro con texto blanco (el blanco de 14 px sobre jade de marca no llega a 4.5:1); `outline` translúcida.
 - `card.tsx`: clase de vidrio.
 - `badge.tsx`: píldora y sin salto de línea.
 - `input.tsx`, `textarea.tsx`, `select.tsx`: radio 12 px.
-- `dialog.tsx`: vidrio y radio de tarjeta.
+- `dialog.tsx`: radio de tarjeta; conserva el fondo `bg-card` opaco para que el diálogo se lea sobre cualquier pantalla.
 - `table`, `tabs`, `sheet`, `dropdown-menu`, `popover`: heredan el radio por variables; no hizo falta tocarlos.
 
 ### Páginas
