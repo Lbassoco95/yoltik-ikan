@@ -209,9 +209,7 @@ export async function guardarAviso(entrada: {
   const { regimenDelActo } = await import('@/lib/formatos-uif/vigencia');
   const fechaActo = entrada.fecha_acto ?? `${entrada.periodo}-01`;
   const regimen = regimenDelActo(fechaActo);
-  // Columnas/enums nuevos (0077+) hasta regenerar database.ts (defecto 3.4).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('aviso')
     .insert({
       organization_id: organizationId,
@@ -232,7 +230,7 @@ export async function guardarAviso(entrada: {
     .select('id')
     .single();
   if (error) throw error;
-  return data.id as string;
+  return data.id;
 }
 
 /**
@@ -252,8 +250,7 @@ export async function abrirAviso24h(entrada: {
   });
   if (!apertura.ok) throw new Error(apertura.motivo);
   const plazo = abrirPlazo24h(entrada.fechaConocimiento);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('aviso')
     .insert({
       organization_id: organizationId,
@@ -271,7 +268,7 @@ export async function abrirAviso24h(entrada: {
     .single();
   if (error) throw error;
   return {
-    id: data.id as string,
+    id: data.id,
     plazoLimite: data.plazo_limite_24h as string,
   };
 }
@@ -296,13 +293,14 @@ export interface AvisoGuardado {
 /** Los avisos ya generados de un periodo, del más reciente al más viejo. */
 export async function listarAvisos(periodo: string): Promise<AvisoGuardado[]> {
   const { organizationId } = await contextoSesion();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('aviso')
-    .select('id, periodo, referencia, exento, estado, operation_ids, layout, layout_version, generado_en, xml, fecha_conocimiento, plazo_limite_24h, fecha_acto, regimen_aplicado')
+    .select(
+      'id, periodo, referencia, exento, estado, operation_ids, layout, layout_version, generado_en, xml, fecha_conocimiento, plazo_limite_24h, fecha_acto, regimen_aplicado',
+    )
     .eq('organization_id', organizationId)
     .eq('periodo', periodo)
     .order('generado_en', { ascending: false });
   if (error) throw error;
-  return (data ?? []) as unknown as AvisoGuardado[];
+  return (data ?? []) as AvisoGuardado[];
 }

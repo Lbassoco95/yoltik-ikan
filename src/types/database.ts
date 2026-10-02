@@ -353,70 +353,189 @@ export type Database = {
       aviso: {
         Row: {
           acuse: Json | null
+          acuse_resultado: string | null
+          aviso_original_id: string | null
+          campos_no_validados: string[]
+          canal_presentacion: string
           de_demostracion: boolean
           estado: Database["public"]["Enums"]["estado_aviso"]
           exento: boolean
+          fecha_acto: string | null
+          fecha_conocimiento: string | null
           firmado_en: string | null
           firmado_por: string | null
+          formato_id: string | null
           generado_en: string
           generado_por: string | null
           hallazgo_ids: string[]
           id: string
           layout: string
           layout_version: string | null
+          modificatorio_en_ventana: boolean
           operation_ids: string[]
           organization_id: string
           payload: Json
           periodo: string | null
+          plazo_limite_24h: string | null
+          presentado_en: string | null
+          presentado_por: string | null
           referencia: string | null
+          regimen_aplicado:
+            | Database["public"]["Enums"]["regimen_formato_uif"]
+            | null
           tipo: Database["public"]["Enums"]["tipo_aviso"]
+          validacion_completa: boolean
           xml: string | null
+          xml_sha256: string | null
         }
         Insert: {
           acuse?: Json | null
+          acuse_resultado?: string | null
+          aviso_original_id?: string | null
+          campos_no_validados?: string[]
+          canal_presentacion?: string
           de_demostracion?: boolean
           estado?: Database["public"]["Enums"]["estado_aviso"]
           exento?: boolean
+          fecha_acto?: string | null
+          fecha_conocimiento?: string | null
           firmado_en?: string | null
           firmado_por?: string | null
+          formato_id?: string | null
           generado_en?: string
           generado_por?: string | null
           hallazgo_ids?: string[]
           id?: string
           layout?: string
           layout_version?: string | null
+          modificatorio_en_ventana?: boolean
           operation_ids?: string[]
           organization_id: string
           payload: Json
           periodo?: string | null
+          plazo_limite_24h?: string | null
+          presentado_en?: string | null
+          presentado_por?: string | null
           referencia?: string | null
+          regimen_aplicado?:
+            | Database["public"]["Enums"]["regimen_formato_uif"]
+            | null
           tipo: Database["public"]["Enums"]["tipo_aviso"]
+          validacion_completa?: boolean
           xml?: string | null
+          xml_sha256?: string | null
         }
         Update: {
           acuse?: Json | null
+          acuse_resultado?: string | null
+          aviso_original_id?: string | null
+          campos_no_validados?: string[]
+          canal_presentacion?: string
           de_demostracion?: boolean
           estado?: Database["public"]["Enums"]["estado_aviso"]
           exento?: boolean
+          fecha_acto?: string | null
+          fecha_conocimiento?: string | null
           firmado_en?: string | null
           firmado_por?: string | null
+          formato_id?: string | null
           generado_en?: string
           generado_por?: string | null
           hallazgo_ids?: string[]
           id?: string
           layout?: string
           layout_version?: string | null
+          modificatorio_en_ventana?: boolean
           operation_ids?: string[]
           organization_id?: string
           payload?: Json
           periodo?: string | null
+          plazo_limite_24h?: string | null
+          presentado_en?: string | null
+          presentado_por?: string | null
           referencia?: string | null
+          regimen_aplicado?:
+            | Database["public"]["Enums"]["regimen_formato_uif"]
+            | null
           tipo?: Database["public"]["Enums"]["tipo_aviso"]
+          validacion_completa?: boolean
           xml?: string | null
+          xml_sha256?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "aviso_aviso_original_id_fkey"
+            columns: ["aviso_original_id"]
+            isOneToOne: false
+            referencedRelation: "aviso"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aviso_formato_id_fkey"
+            columns: ["formato_id"]
+            isOneToOne: false
+            referencedRelation: "formato_oficial"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "aviso_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aviso_documento: {
+        Row: {
+          aviso_id: string
+          contenido: string | null
+          contenido_bytea: string | null
+          creado_en: string
+          creado_por: string | null
+          id: string
+          metadata: Json
+          nombre_archivo: string | null
+          organization_id: string
+          sha256: string
+          tipo: string
+        }
+        Insert: {
+          aviso_id: string
+          contenido?: string | null
+          contenido_bytea?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          metadata?: Json
+          nombre_archivo?: string | null
+          organization_id: string
+          sha256: string
+          tipo: string
+        }
+        Update: {
+          aviso_id?: string
+          contenido?: string | null
+          contenido_bytea?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          metadata?: Json
+          nombre_archivo?: string | null
+          organization_id?: string
+          sha256?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aviso_documento_aviso_id_fkey"
+            columns: ["aviso_id"]
+            isOneToOne: false
+            referencedRelation: "aviso"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aviso_documento_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -622,6 +741,77 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_formato: {
+        Row: {
+          codigo: string
+          creado_en: string
+          descripcion: string | null
+          fuente: string
+          id: string
+          nombre: string
+          version: number
+        }
+        Insert: {
+          codigo: string
+          creado_en?: string
+          descripcion?: string | null
+          fuente?: string
+          id?: string
+          nombre: string
+          version?: number
+        }
+        Update: {
+          codigo?: string
+          creado_en?: string
+          descripcion?: string | null
+          fuente?: string
+          id?: string
+          nombre?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      catalogo_formato_valor: {
+        Row: {
+          catalogo_id: string
+          clave: string
+          descripcion: string
+          id: string
+          orden: number | null
+          version_carga: number
+          vigente_desde: string
+          vigente_hasta: string | null
+        }
+        Insert: {
+          catalogo_id: string
+          clave: string
+          descripcion: string
+          id?: string
+          orden?: number | null
+          version_carga?: number
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Update: {
+          catalogo_id?: string
+          clave?: string
+          descripcion?: string
+          id?: string
+          orden?: number | null
+          version_carga?: number
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_formato_valor_catalogo_id_fkey"
+            columns: ["catalogo_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_formato"
             referencedColumns: ["id"]
           },
         ]
@@ -2210,6 +2400,110 @@ export type Database = {
           },
         ]
       }
+      formato_oficial: {
+        Row: {
+          ambito: string
+          archivo_origen: string | null
+          codigo_anexo: string
+          creado_en: string
+          estado: Database["public"]["Enums"]["estado_formato_oficial"]
+          fuente: string
+          id: string
+          notas: string | null
+          regimen_entrada: Database["public"]["Enums"]["regimen_formato_uif"]
+          total_campos: number
+          version: string
+          vigente_desde: string
+          vigente_hasta: string | null
+        }
+        Insert: {
+          ambito: string
+          archivo_origen?: string | null
+          codigo_anexo: string
+          creado_en?: string
+          estado?: Database["public"]["Enums"]["estado_formato_oficial"]
+          fuente?: string
+          id?: string
+          notas?: string | null
+          regimen_entrada?: Database["public"]["Enums"]["regimen_formato_uif"]
+          total_campos?: number
+          version?: string
+          vigente_desde: string
+          vigente_hasta?: string | null
+        }
+        Update: {
+          ambito?: string
+          archivo_origen?: string | null
+          codigo_anexo?: string
+          creado_en?: string
+          estado?: Database["public"]["Enums"]["estado_formato_oficial"]
+          fuente?: string
+          id?: string
+          notas?: string | null
+          regimen_entrada?: Database["public"]["Enums"]["regimen_formato_uif"]
+          total_campos?: number
+          version?: string
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Relationships: []
+      }
+      formato_oficial_campo: {
+        Row: {
+          catalogo_codigo: string | null
+          etiqueta_xml: string
+          formato: string
+          formato_id: string
+          id: string
+          longitud: string
+          nombre: string
+          numero: string
+          obligatoriedad: string
+          orden: number
+          padre: string | null
+          pagina_dof: number | null
+          tipo_dato: string
+        }
+        Insert: {
+          catalogo_codigo?: string | null
+          etiqueta_xml: string
+          formato: string
+          formato_id: string
+          id?: string
+          longitud: string
+          nombre: string
+          numero: string
+          obligatoriedad: string
+          orden: number
+          padre?: string | null
+          pagina_dof?: number | null
+          tipo_dato: string
+        }
+        Update: {
+          catalogo_codigo?: string | null
+          etiqueta_xml?: string
+          formato?: string
+          formato_id?: string
+          id?: string
+          longitud?: string
+          nombre?: string
+          numero?: string
+          obligatoriedad?: string
+          orden?: number
+          padre?: string | null
+          pagina_dof?: number | null
+          tipo_dato?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formato_oficial_campo_formato_id_fkey"
+            columns: ["formato_id"]
+            isOneToOne: false
+            referencedRelation: "formato_oficial"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hallazgo: {
         Row: {
           asignado_a: string | null
@@ -2623,13 +2917,12 @@ export type Database = {
           efecto?: Database["public"]["Enums"]["efecto_lista"] | null
           efectos_por_situacion?: Json | null
           frecuencia_objetivo?: string | null
-          fundamento?:
-            | Database["public"]["Enums"]["fundamento_consulta"]
-            | null
+          fundamento?: Database["public"]["Enums"]["fundamento_consulta"] | null
           fundamento_determinacion?: string | null
           fundamento_norma?: string | null
           id?: string
           modo_actualizacion: Database["public"]["Enums"]["modo_actualizacion_lista"]
+          modo_operacion?: Database["public"]["Enums"]["modo_operacion_fuente"]
           naturaleza: Database["public"]["Enums"]["naturaleza_lista"]
           nombre: string
           notas?: string | null
@@ -2649,9 +2942,7 @@ export type Database = {
           efecto?: Database["public"]["Enums"]["efecto_lista"] | null
           efectos_por_situacion?: Json | null
           frecuencia_objetivo?: string | null
-          fundamento?:
-            | Database["public"]["Enums"]["fundamento_consulta"]
-            | null
+          fundamento?: Database["public"]["Enums"]["fundamento_consulta"] | null
           fundamento_determinacion?: string | null
           fundamento_norma?: string | null
           id?: string
@@ -2825,9 +3116,9 @@ export type Database = {
           id: string
           identificador_fuente: string | null
           identificadores: Json
+          motivo_revision: string | null
           nombre: string
           nombre_normalizado: string | null
-          motivo_revision: string | null
           nombres_alternos: string[]
           nombres_alternos_debiles: string[]
           nombres_alternos_debiles_norm: string[] | null
@@ -2850,15 +3141,18 @@ export type Database = {
           baja_oficio?: string | null
           carga_ultima?: string | null
           curp?: string | null
+          fecha_situacion?: string | null
           fuente_id: string
           id?: string
           identificador_fuente?: string | null
           identificadores?: Json
+          motivo_revision?: string | null
           nombre: string
           nombre_normalizado?: string | null
-          motivo_revision?: string | null
           nombres_alternos?: string[]
           nombres_alternos_debiles?: string[]
+          nombres_alternos_debiles_norm?: string[] | null
+          nombres_alternos_norm?: string[] | null
           oficio_situacion?: string | null
           orden_origen_ultimo?: number | null
           pais?: string | null
@@ -2882,11 +3176,13 @@ export type Database = {
           id?: string
           identificador_fuente?: string | null
           identificadores?: Json
+          motivo_revision?: string | null
           nombre?: string
           nombre_normalizado?: string | null
-          motivo_revision?: string | null
           nombres_alternos?: string[]
           nombres_alternos_debiles?: string[]
+          nombres_alternos_debiles_norm?: string[] | null
+          nombres_alternos_norm?: string[] | null
           oficio_situacion?: string | null
           orden_origen_ultimo?: number | null
           pais?: string | null
@@ -2897,6 +3193,13 @@ export type Database = {
           tipo_entidad?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lista_registro_carga_ultima_fkey"
+            columns: ["carga_ultima"]
+            isOneToOne: false
+            referencedRelation: "lista_carga"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lista_registro_fuente_id_fkey"
             columns: ["fuente_id"]
@@ -3110,6 +3413,101 @@ export type Database = {
           },
         ]
       }
+      organizacion_actividad_vulnerable: {
+        Row: {
+          clave_actividad: string | null
+          codigo_anexo: string
+          configurado_en: string
+          configurado_por: string | null
+          formato_id: string | null
+          fraccion: string
+          id: string
+          notas: string | null
+          organization_id: string
+          vigente_desde: string
+          vigente_hasta: string | null
+        }
+        Insert: {
+          clave_actividad?: string | null
+          codigo_anexo: string
+          configurado_en?: string
+          configurado_por?: string | null
+          formato_id?: string | null
+          fraccion: string
+          id?: string
+          notas?: string | null
+          organization_id: string
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Update: {
+          clave_actividad?: string | null
+          codigo_anexo?: string
+          configurado_en?: string
+          configurado_por?: string | null
+          formato_id?: string | null
+          fraccion?: string
+          id?: string
+          notas?: string | null
+          organization_id?: string
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizacion_actividad_vulnerable_formato_id_fkey"
+            columns: ["formato_id"]
+            isOneToOne: false
+            referencedRelation: "formato_oficial"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizacion_actividad_vulnerable_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizacion_config_constancia: {
+        Row: {
+          creado_en: string
+          creado_por: string | null
+          id: string
+          motivo: string
+          organization_id: string
+          sha256: string
+          snapshot: Json
+        }
+        Insert: {
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          motivo?: string
+          organization_id: string
+          sha256: string
+          snapshot: Json
+        }
+        Update: {
+          creado_en?: string
+          creado_por?: string | null
+          id?: string
+          motivo?: string
+          organization_id?: string
+          sha256?: string
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizacion_config_constancia_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           clave_actividad: string | null
@@ -3121,8 +3519,8 @@ export type Database = {
           es_demostracion: boolean
           es_referencia: boolean
           fecha_alta_sat: string | null
-          manual_pld_asentado_en: string | null
           id: string
+          manual_pld_asentado_en: string | null
           oc_designado_en: string | null
           oc_encargado_user_id: string | null
           oc_es_titular: boolean
@@ -3143,8 +3541,8 @@ export type Database = {
           es_demostracion?: boolean
           es_referencia?: boolean
           fecha_alta_sat?: string | null
-          manual_pld_asentado_en?: string | null
           id?: string
+          manual_pld_asentado_en?: string | null
           oc_designado_en?: string | null
           oc_encargado_user_id?: string | null
           oc_es_titular?: boolean
@@ -3165,8 +3563,8 @@ export type Database = {
           es_demostracion?: boolean
           es_referencia?: boolean
           fecha_alta_sat?: string | null
-          manual_pld_asentado_en?: string | null
           id?: string
+          manual_pld_asentado_en?: string | null
           oc_designado_en?: string | null
           oc_encargado_user_id?: string | null
           oc_es_titular?: boolean
@@ -4271,21 +4669,28 @@ export type Database = {
           actualizada_al: string | null
           autoridad: string | null
           codigo: string | null
-          fundamento:
-            | Database["public"]["Enums"]["fundamento_consulta"]
+          determinacion:
+            | Database["public"]["Enums"]["determinacion_fuente"]
             | null
+          efecto: Database["public"]["Enums"]["efecto_lista"] | null
+          efectos_por_situacion: Json | null
+          estado: string | null
+          fundamento: Database["public"]["Enums"]["fundamento_consulta"] | null
+          fundamento_determinacion: string | null
           fundamento_efectivo: string | null
-          modo_operacion:
-            | Database["public"]["Enums"]["modo_operacion_fuente"]
-            | null
           fundamento_norma: string | null
           modo_actualizacion:
             | Database["public"]["Enums"]["modo_actualizacion_lista"]
+            | null
+          modo_operacion:
+            | Database["public"]["Enums"]["modo_operacion_fuente"]
             | null
           naturaleza: Database["public"]["Enums"]["naturaleza_lista"] | null
           nombre: string | null
           obligatoria: boolean | null
           registros_bloqueantes: number | null
+          registros_eleva_diligencia: number | null
+          registros_sin_efecto_declarado: number | null
           registros_vigentes: number | null
           situaciones: string[] | null
           situaciones_bloqueantes: string[] | null
@@ -4295,21 +4700,28 @@ export type Database = {
           actualizada_al?: never
           autoridad?: string | null
           codigo?: string | null
-          fundamento?:
-            | Database["public"]["Enums"]["fundamento_consulta"]
+          determinacion?:
+            | Database["public"]["Enums"]["determinacion_fuente"]
             | null
+          efecto?: Database["public"]["Enums"]["efecto_lista"] | null
+          efectos_por_situacion?: Json | null
+          estado?: never
+          fundamento?: Database["public"]["Enums"]["fundamento_consulta"] | null
+          fundamento_determinacion?: string | null
           fundamento_efectivo?: never
-          modo_operacion?:
-            | Database["public"]["Enums"]["modo_operacion_fuente"]
-            | null
           fundamento_norma?: string | null
           modo_actualizacion?:
             | Database["public"]["Enums"]["modo_actualizacion_lista"]
+            | null
+          modo_operacion?:
+            | Database["public"]["Enums"]["modo_operacion_fuente"]
             | null
           naturaleza?: Database["public"]["Enums"]["naturaleza_lista"] | null
           nombre?: string | null
           obligatoria?: boolean | null
           registros_bloqueantes?: never
+          registros_eleva_diligencia?: never
+          registros_sin_efecto_declarado?: never
           registros_vigentes?: never
           situaciones?: string[] | null
           situaciones_bloqueantes?: string[] | null
@@ -4319,21 +4731,28 @@ export type Database = {
           actualizada_al?: never
           autoridad?: string | null
           codigo?: string | null
-          fundamento?:
-            | Database["public"]["Enums"]["fundamento_consulta"]
+          determinacion?:
+            | Database["public"]["Enums"]["determinacion_fuente"]
             | null
+          efecto?: Database["public"]["Enums"]["efecto_lista"] | null
+          efectos_por_situacion?: Json | null
+          estado?: never
+          fundamento?: Database["public"]["Enums"]["fundamento_consulta"] | null
+          fundamento_determinacion?: string | null
           fundamento_efectivo?: never
-          modo_operacion?:
-            | Database["public"]["Enums"]["modo_operacion_fuente"]
-            | null
           fundamento_norma?: string | null
           modo_actualizacion?:
             | Database["public"]["Enums"]["modo_actualizacion_lista"]
+            | null
+          modo_operacion?:
+            | Database["public"]["Enums"]["modo_operacion_fuente"]
             | null
           naturaleza?: Database["public"]["Enums"]["naturaleza_lista"] | null
           nombre?: string | null
           obligatoria?: boolean | null
           registros_bloqueantes?: never
+          registros_eleva_diligencia?: never
+          registros_sin_efecto_declarado?: never
           registros_vigentes?: never
           situaciones?: string[] | null
           situaciones_bloqueantes?: string[] | null
@@ -4656,10 +5075,92 @@ export type Database = {
           tamizada_por: string
         }[]
       }
+      cobertura_del_barrido: {
+        Args: never
+        Returns: {
+          fuente: string
+          fuente_nombre: string
+          motivo: string
+          registros_vigentes: number
+          se_barrio: boolean
+        }[]
+      }
+      coincidencias_descartadas: {
+        Args: {
+          p_documento?: string
+          p_fecha_nacimiento?: string
+          p_nacionalidad?: string
+          p_nombre?: string
+          p_rfc?: string
+        }
+        Returns: {
+          campo: string
+          detalle: string
+          fuente: string
+          fuente_nombre: string
+          identificador_fuente: string
+          nombre: string
+          registro_id: string
+        }[]
+      }
+      coincidencias_en_listas: {
+        Args: {
+          p_documento?: string
+          p_fecha_nacimiento?: string
+          p_incluir_debiles?: boolean
+          p_nacionalidad?: string
+          p_nombre?: string
+          p_rfc?: string
+        }
+        Returns: {
+          alta_fecha: string
+          coincide_por: string
+          corroboracion: Database["public"]["Enums"]["desenlace_corroboracion"]
+          corroboracion_detalle: string
+          corroborado_por: string
+          datos: Json
+          determinacion_fuente: string
+          efecto: Database["public"]["Enums"]["efecto_lista"]
+          fuente: string
+          fuente_nombre: string
+          identificador_fuente: string
+          nombre: string
+          pais: string
+          registro_id: string
+          rfc: string
+          situacion: string
+          tipo_entidad: string
+        }[]
+      }
+      coincidencias_suprimidas: {
+        Args: {
+          p_documento?: string
+          p_fecha_nacimiento?: string
+          p_nacionalidad?: string
+          p_nombre?: string
+          p_rfc?: string
+        }
+        Returns: {
+          contradichas: number
+          no_corroborables: number
+        }[]
+      }
       configuracion_matriz_valida: { Args: { p_cfg: Json }; Returns: boolean }
       confirmar_parametro: {
         Args: { p_id: string; p_quien: string }
         Returns: undefined
+      }
+      conflictos_de_carga: {
+        Args: { p_carga_id: string }
+        Returns: {
+          fecha_vigente: string
+          fechas: string[]
+          nombre: string
+          requiere_revision: boolean
+          rfc: string
+          situacion_vigente: string
+          situaciones: string[]
+        }[]
       }
       corregir_parametro: {
         Args: {
@@ -4670,6 +5171,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      corroborar_coincidencia: {
+        Args: {
+          p_documento?: string
+          p_fecha_nacimiento?: string
+          p_nacionalidad?: string
+          p_registro_id: string
+        }
+        Returns: {
+          campo: string
+          desenlace: Database["public"]["Enums"]["desenlace_corroboracion"]
+          detalle: string
+        }[]
+      }
+      cotejo_con_calidad_de_alias: { Args: never; Returns: boolean }
       crear_borrador_matriz: {
         Args: {
           p_notas?: string
@@ -4715,111 +5230,6 @@ export type Database = {
           listo: boolean
         }[]
       }
-      conflictos_de_carga: {
-        Args: { p_carga_id: string }
-        Returns: {
-          fecha_vigente: string
-          fechas: string[]
-          nombre: string
-          requiere_revision: boolean
-          rfc: string
-          situacion_vigente: string
-          situaciones: string[]
-        }[]
-      }
-      orden_etapa_69b: { Args: { p_situacion: string }; Returns: number }
-      coincidencias_en_listas: {
-        Args: {
-          p_documento?: string
-          p_fecha_nacimiento?: string
-          p_incluir_debiles?: boolean
-          p_nacionalidad?: string
-          p_nombre?: string
-          p_rfc?: string
-        }
-        Returns: {
-          alta_fecha: string | null
-          coincide_por: string
-          corroboracion:
-            | Database["public"]["Enums"]["desenlace_corroboracion"]
-            | null
-          corroboracion_detalle: string | null
-          corroborado_por: string | null
-          datos: Json
-          determinacion_fuente: string
-          efecto: Database["public"]["Enums"]["efecto_lista"]
-          fuente: string
-          fuente_nombre: string
-          identificador_fuente: string
-          nombre: string
-          pais: string
-          registro_id: string
-          rfc: string | null
-          situacion: string
-          tipo_entidad: string
-        }[]
-      }
-      coincidencias_suprimidas: {
-        Args: {
-          p_documento?: string
-          p_fecha_nacimiento?: string
-          p_nacionalidad?: string
-          p_nombre?: string
-          p_rfc?: string
-        }
-        Returns: { contradichas: number; no_corroborables: number }[]
-      }
-      coincidencias_descartadas: {
-        Args: {
-          p_documento?: string
-          p_fecha_nacimiento?: string
-          p_nacionalidad?: string
-          p_nombre?: string
-          p_rfc?: string
-        }
-        Returns: {
-          campo: string | null
-          detalle: string | null
-          fuente: string
-          fuente_nombre: string
-          identificador_fuente: string | null
-          nombre: string
-          registro_id: string
-        }[]
-      }
-      corroborar_coincidencia: {
-        Args: {
-          p_documento?: string
-          p_fecha_nacimiento?: string
-          p_nacionalidad?: string
-          p_registro_id: string
-        }
-        Returns: {
-          campo: string | null
-          desenlace: Database["public"]["Enums"]["desenlace_corroboracion"]
-          detalle: string | null
-        }[]
-      }
-      cobertura_del_barrido: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          fuente: string
-          fuente_nombre: string
-          motivo: string | null
-          registros_vigentes: number
-          se_barrio: boolean
-        }[]
-      }
-      cotejo_con_calidad_de_alias: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      normalizar_nombres: { Args: { p_nombres: string[] }; Returns: string[] }
-      efecto_de_coincidencia: {
-        Args: { p_fuente: string; p_situacion?: string }
-        Returns: Database["public"]["Enums"]["efecto_lista"]
-      }
-      estado_de_fuente: { Args: { p_fuente: string }; Returns: string }
       diferencia_carga_borrador: {
         Args: { p_carga_id: string }
         Returns: {
@@ -4828,11 +5238,16 @@ export type Database = {
           nota: string
         }[]
       }
+      efecto_de_coincidencia: {
+        Args: { p_fuente: string; p_situacion?: string }
+        Returns: Database["public"]["Enums"]["efecto_lista"]
+      }
       emitir_folio_hallazgo: {
         Args: { p_hallazgo_id: string }
         Returns: string
       }
       es_admin_kawiil: { Args: never; Returns: boolean }
+      estado_de_fuente: { Args: { p_fuente: string }; Returns: string }
       expediente_exportable: {
         Args: { p_client: string }
         Returns: {
@@ -4924,6 +5339,12 @@ export type Database = {
         }[]
       }
       normalizar_nombre: { Args: { p_texto: string }; Returns: string }
+      normalizar_nombres: { Args: { p_nombres: string[] }; Returns: string[] }
+      orden_etapa_69b: { Args: { p_situacion: string }; Returns: number }
+      organizacion_tiene_perfil_av: {
+        Args: { p_org: string }
+        Returns: boolean
+      }
       paises_sancionados_sin_catalogo: {
         Args: { p_lectura?: string }
         Returns: {
@@ -5078,6 +5499,13 @@ export type Database = {
           regla: string
         }[]
       }
+      transicion_aviso_permitida: {
+        Args: {
+          p_desde: Database["public"]["Enums"]["estado_aviso"]
+          p_hasta: Database["public"]["Enums"]["estado_aviso"]
+        }
+        Returns: boolean
+      }
       urgencia_de_regla: {
         Args: { regla: Json }
         Returns: Database["public"]["Enums"]["clasificacion_urgencia"]
@@ -5122,8 +5550,26 @@ export type Database = {
         | "directivo_designado"
       clasificacion_riesgo: "bajo" | "medio" | "alto" | "alto_oficio"
       clasificacion_urgencia: "24_horas" | "por_umbral"
+      desenlace_corroboracion: "corroborada" | "no_corroborable" | "contradicha"
+      determinacion_fuente:
+        | "aplica"
+        | "no_aplica"
+        | "pendiente"
+        | "no_disponible"
+      efecto_lista: "impedimento" | "eleva_diligencia" | "dato"
       estado_aprobacion: "pendiente" | "aprobada" | "rechazada"
-      estado_aviso: "borrador" | "listo_firma" | "enviado" | "acusado"
+      estado_aviso:
+        | "borrador"
+        | "listo_firma"
+        | "enviado"
+        | "acusado"
+        | "validado"
+        | "generado"
+        | "presentado"
+        | "acuse_aceptado"
+        | "acuse_rechazo"
+        | "cerrado"
+        | "incumplido"
       estado_carga_lista: "borrador" | "aplicada" | "revertida"
       estado_consulta_se:
         | "no_aplica"
@@ -5132,6 +5578,7 @@ export type Database = {
         | "no_disponible"
       estado_cuestionario: "borrador" | "firmado" | "obsoleto"
       estado_declaracion: "si" | "no" | "no_declarado"
+      estado_formato_oficial: "activo" | "pendiente" | "retirado"
       estado_hallazgo:
         | "abierto"
         | "en_revision"
@@ -5170,26 +5617,16 @@ export type Database = {
         | "pep_nacional"
         | "pep_extranjero"
         | "manual"
-      mecanismo_firma:
-        | "efirma_sat"
-        | "prestador_reconocido"
-        | "constancia_conservacion"
-      determinacion_fuente:
-        | "aplica"
-        | "no_aplica"
-        | "pendiente"
-        | "no_disponible"
-      desenlace_corroboracion:
-        | "corroborada"
-        | "no_corroborable"
-        | "contradicha"
-      efecto_lista: "impedimento" | "eleva_diligencia" | "dato"
-      modo_operacion_fuente: "validacion" | "operativa"
       fundamento_consulta:
         | "obligacion_ley"
         | "metodologia_manual"
         | "informativa"
+      mecanismo_firma:
+        | "efirma_sat"
+        | "prestador_reconocido"
+        | "constancia_conservacion"
       modo_actualizacion_lista: "snapshot" | "movimientos"
+      modo_operacion_fuente: "validacion" | "operativa"
       naturaleza_allegado:
         | "conyuge"
         | "concubina_concubinario"
@@ -5203,6 +5640,7 @@ export type Database = {
         | "pep"
         | "interna"
       nivel_kyc: "N1" | "N2" | "N3"
+      regimen_formato_uif: "nov_2026" | "dic_2026" | "jun_2027" | "jul_2027"
       resultado_consulta_se: "coincide" | "discrepa" | "sin_informacion"
       resultado_job_lista: "exito" | "sin_cambios" | "error"
       rol_usuario: "operador" | "oc" | "admin"
@@ -5213,7 +5651,11 @@ export type Database = {
         | "documento_reverso"
         | "documento_frente_completo"
         | "documento_reverso_completo"
-      tipo_aviso: "24h" | "mensual"
+      tipo_aviso:
+        | "24h"
+        | "mensual"
+        | "modificatorio"
+        | "informe_sin_operaciones"
       tipo_bitacora_hallazgo:
         | "cambio_estado"
         | "nota"
@@ -5370,8 +5812,32 @@ export const Constants = {
       ],
       clasificacion_riesgo: ["bajo", "medio", "alto", "alto_oficio"],
       clasificacion_urgencia: ["24_horas", "por_umbral"],
+      desenlace_corroboracion: [
+        "corroborada",
+        "no_corroborable",
+        "contradicha",
+      ],
+      determinacion_fuente: [
+        "aplica",
+        "no_aplica",
+        "pendiente",
+        "no_disponible",
+      ],
+      efecto_lista: ["impedimento", "eleva_diligencia", "dato"],
       estado_aprobacion: ["pendiente", "aprobada", "rechazada"],
-      estado_aviso: ["borrador", "listo_firma", "enviado", "acusado"],
+      estado_aviso: [
+        "borrador",
+        "listo_firma",
+        "enviado",
+        "acusado",
+        "validado",
+        "generado",
+        "presentado",
+        "acuse_aceptado",
+        "acuse_rechazo",
+        "cerrado",
+        "incumplido",
+      ],
       estado_carga_lista: ["borrador", "aplicada", "revertida"],
       estado_consulta_se: [
         "no_aplica",
@@ -5381,6 +5847,7 @@ export const Constants = {
       ],
       estado_cuestionario: ["borrador", "firmado", "obsoleto"],
       estado_declaracion: ["si", "no", "no_declarado"],
+      estado_formato_oficial: ["activo", "pendiente", "retirado"],
       estado_hallazgo: [
         "abierto",
         "en_revision",
@@ -5424,25 +5891,18 @@ export const Constants = {
         "pep_extranjero",
         "manual",
       ],
-      mecanismo_firma: [
-        "efirma_sat",
-        "prestador_reconocido",
-        "constancia_conservacion",
-      ],
-      determinacion_fuente: ["aplica", "no_aplica", "pendiente"],
-      desenlace_corroboracion: [
-        "corroborada",
-        "no_corroborable",
-        "contradicha",
-      ],
-      efecto_lista: ["impedimento", "eleva_diligencia", "dato"],
-      modo_operacion_fuente: ["validacion", "operativa"],
       fundamento_consulta: [
         "obligacion_ley",
         "metodologia_manual",
         "informativa",
       ],
+      mecanismo_firma: [
+        "efirma_sat",
+        "prestador_reconocido",
+        "constancia_conservacion",
+      ],
       modo_actualizacion_lista: ["snapshot", "movimientos"],
+      modo_operacion_fuente: ["validacion", "operativa"],
       naturaleza_allegado: [
         "conyuge",
         "concubina_concubinario",
@@ -5458,6 +5918,7 @@ export const Constants = {
         "interna",
       ],
       nivel_kyc: ["N1", "N2", "N3"],
+      regimen_formato_uif: ["nov_2026", "dic_2026", "jun_2027", "jul_2027"],
       resultado_consulta_se: ["coincide", "discrepa", "sin_informacion"],
       resultado_job_lista: ["exito", "sin_cambios", "error"],
       rol_usuario: ["operador", "oc", "admin"],
@@ -5469,7 +5930,12 @@ export const Constants = {
         "documento_frente_completo",
         "documento_reverso_completo",
       ],
-      tipo_aviso: ["24h", "mensual"],
+      tipo_aviso: [
+        "24h",
+        "mensual",
+        "modificatorio",
+        "informe_sin_operaciones",
+      ],
       tipo_bitacora_hallazgo: [
         "cambio_estado",
         "nota",

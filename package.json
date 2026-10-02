@@ -16,7 +16,7 @@
     "supabase:start": "supabase start",
     "supabase:db:push": "supabase db push",
     "supabase:db:reset": "supabase db reset",
-    "supabase:gen:types": "supabase gen types typescript --linked > src/types/database.ts",
+    "supabase:gen:types": "npx supabase gen types typescript --project-id cibpguwwggwzdhhpdomz > src/types/database.ts",
     "bootstrap:users": "tsx scripts/bootstrap-users.ts"
   },
   "dependencies": {

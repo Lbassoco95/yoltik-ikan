@@ -5,10 +5,9 @@ import { supabase } from '@/lib/supabase';
 import { contextoSesion } from './contexto';
 import { huellaSha256 } from '@/lib/formatos-uif/presentacion';
 import type { CampoFormato } from '@/lib/formatos-uif/validacion';
+import { comoJson } from './json';
 
-/** Tablas nuevas (0076–0079) hasta regenerar `database.ts`. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = supabase as any;
+const db = supabase;
 
 export interface FormatoOficialRow {
   id: string;
@@ -148,13 +147,13 @@ export async function registrarDocumentoAviso(input: {
       nombre_archivo: input.nombreArchivo ?? null,
       contenido: input.contenido,
       sha256,
-      metadata: input.metadata ?? {},
+      metadata: comoJson(input.metadata ?? {}),
       creado_por: uid,
     })
     .select('id, sha256')
     .single();
   if (error) throw error;
-  return { id: data.id as string, sha256: data.sha256 as string };
+  return { id: data.id, sha256: data.sha256 };
 }
 
 export async function confirmarPresentacionManual(input: {
@@ -216,16 +215,22 @@ export async function registrarAcuseManual(input: {
     },
   });
 
-  const update: Record<string, unknown> = {
+  const update: {
+    estado: typeof decision.estado;
+    acuse_resultado: 'aceptado' | 'rechazo';
+    acuse: ReturnType<typeof comoJson>;
+    fecha_conocimiento?: string;
+    plazo_limite_24h?: string;
+  } = {
     estado: decision.estado,
     acuse_resultado: input.resultado,
-    acuse: {
+    acuse: comoJson({
       resultado: input.resultado,
       folio: decision.folio,
       documento_id: doc.id,
       sha256: doc.sha256,
       registrado_en: new Date().toISOString(),
-    },
+    }),
   };
 
   // Rechazo: reafirmar plazos originales (no mutarlos).

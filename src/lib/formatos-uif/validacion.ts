@@ -3,11 +3,15 @@
  *
  * Reglas:
  * - Condicional / obligatoriedad: se evalúa lo declarado; no se “arreglan” erratas.
- * - Longitud y patrón: según `longitud` y `formato` del JSON.
- * - Catálogo: si el catálogo no está cargado → el campo queda `no_validado`
- *   (nunca se acepta un valor libre como válido). Sin validación completa no
- *   se presenta el aviso como verificado.
+ * - Longitud: exacta o min/máx (el mínimo se exige).
+ * - Patrón: derivación determinista DOF (L/A/M/D/9/X); ambigüedad → `no_validado`.
+ * - Tipo: Numérico / Alfabético / Alfanumérico según lo declarado.
+ * - Catálogo: si no está cargado → `no_validado` (nunca valor libre como válido).
+ * - Incumplimiento: mensaje con número de campo + valor esperado.
+ * - Longitud/patrón/tipo se suman a obligatoriedad; no la duplican.
  */
+
+import { derivarPatronDof } from './patron-dof';
 
 export type ResultadoCampo =
   | { estado: 'ok' }
@@ -81,35 +85,41 @@ export function esCondicionalNoEvaluable(obligatoriedad: string): boolean {
   return /^obligat/i.test(o);
 }
 
-/** Extrae longitud máxima numérica. Soporta "13", "1-40", "N/A". */
-export function longitudMaxima(longitud: string): number | null {
-  if (!longitud || /^n\/a$/i.test(longitud.trim())) return null;
+export type LongitudDeclarada =
+  | { clase: 'exacta'; n: number; esperado: string }
+  | { clase: 'rango'; min: number; max: number; esperado: string }
+  | { clase: 'ausente' }
+  | { clase: 'no_interpretable'; crudo: string };
+
+/** Interpreta `longitud` del DOF: "13", "1-40", "4 - 25", "N/A". */
+export function longitudDeclarada(longitud: string): LongitudDeclarada {
+  if (!longitud || /^n\/a$/i.test(longitud.trim())) return { clase: 'ausente' };
   const rango = longitud.trim().match(/^(\d+)\s*-\s*(\d+)$/);
-  if (rango) return Number(rango[2]);
+  if (rango) {
+    const min = Number(rango[1]);
+    const max = Number(rango[2]);
+    return { clase: 'rango', min, max, esperado: `${min}-${max}` };
+  }
   const n = longitud.trim().match(/^(\d+)$/);
-  return n ? Number(n[1]) : null;
+  if (n) {
+    const exacta = Number(n[1]);
+    return { clase: 'exacta', n: exacta, esperado: String(exacta) };
+  }
+  return { clase: 'no_interpretable', crudo: longitud };
 }
 
-/**
- * Extrae un patrón usable desde el texto `formato` del DOF.
- * Sólo reconoce formas explícitas "Patrón: …". No inventa regex.
- */
-export function patronDeclarado(formato: string): RegExp | null {
-  if (!formato || /^n\/a$/i.test(formato.trim())) return null;
-  const m = formato.match(/Patr[oó]n:\s*([^;]+)/i);
-  if (!m) return null;
-  const crudo = m[1].trim();
-  // Patrones tipo LLLLAAMMDDXXX no son regex: se documentan, no se ejecutan
-  // como tal. Sólo compilamos si el texto ya trae una expresión entre / /.
-  const slash = crudo.match(/^\/(.+)\/([a-z]*)$/i);
-  if (slash) {
-    try {
-      return new RegExp(slash[1], slash[2]);
-    } catch {
-      return null;
-    }
-  }
+/** @deprecated Preferir `longitudDeclarada`. Conservado para pruebas existentes. */
+export function longitudMaxima(longitud: string): number | null {
+  const d = longitudDeclarada(longitud);
+  if (d.clase === 'exacta') return d.n;
+  if (d.clase === 'rango') return d.max;
   return null;
+}
+
+/** @deprecated Preferir `derivarPatronDof` en `patron-dof.ts`. */
+export function patronDeclarado(formato: string): RegExp | null {
+  const p = derivarPatronDof(formato);
+  return p.estado === 'derivado' ? p.regex : null;
 }
 
 /** Heurística conservadora: el formato menciona catálogo / clave de catálogo. */
@@ -118,7 +128,6 @@ export function detectarCatalogo(campo: CampoFormato): string | null {
   const f = `${campo.formato} ${campo.nombre}`.toLowerCase();
   if (/fracci[oó]n arancelaria/.test(f)) return 'anexo_a_fracciones_arancelarias';
   if (/cat[aá]logo/.test(f) || /clave del cat[aá]logo/.test(f)) {
-    // Catálogo genérico no identificado: se marca no_validado sin inventar código.
     return '__catalogo_no_identificado__';
   }
   return null;
@@ -129,6 +138,47 @@ function valorDe(campo: CampoFormato, valores: Record<string, string | null | un
   if (porNumero != null && String(porNumero).length) return String(porNumero);
   const porEtiqueta = valores[claveDeEtiqueta(campo.etiqueta_xml)];
   if (porEtiqueta != null && String(porEtiqueta).length) return String(porEtiqueta);
+  return null;
+}
+
+function longitudDeValor(valor: string): number {
+  return [...valor].length;
+}
+
+/**
+ * Tipo declarado. Alfanumérico no restringe el alfabeto (textos libres del DOF).
+ * No se normaliza el valor: minúsculas fallan si el tipo exige A-Z.
+ */
+export function validarTipoDato(
+  tipoDato: string,
+  valor: string,
+  numeroCampo: string,
+): ResultadoCampo | null {
+  const t = tipoDato.trim();
+  if (!t || /^n\/a$/i.test(t) || /^etiqueta$/i.test(t)) return null;
+
+  if (/^num[eé]rico$/i.test(t)) {
+    if (!/^[0-9]+([.][0-9]+)?$/.test(valor)) {
+      return {
+        estado: 'error',
+        motivo: `Campo ${numeroCampo}: tipo Numérico esperado; valor no numérico.`,
+      };
+    }
+    return null;
+  }
+
+  if (/^alfab[eé]tic[oa]$/i.test(t)) {
+    // Constructor: evita que tsc interprete mal la clase con Ñ/ñ.
+    if (!new RegExp('^[A-Za-z\u00D1\u00F1]+$').test(valor)) {
+      return {
+        estado: 'error',
+        motivo: `Campo ${numeroCampo}: tipo Alfabético esperado (solo letras); valor incompatible.`,
+      };
+    }
+    return null;
+  }
+
+  // Alfanumérico / otros: sin restricción de alfabeto más allá de longitud/patrón.
   return null;
 }
 
@@ -154,20 +204,54 @@ export function validarCampo(campo: CampoFormato, ctx: ContextoValidacion): Resu
     return { estado: 'omitido', motivo: 'Opcional sin valor.' };
   }
 
-  const max = longitudMaxima(campo.longitud);
-  if (max != null && [...valor].length > max) {
+  // Longitud (exacta o min/máx). Se suma a obligatoriedad; no se re-emite el vacío.
+  const long = longitudDeclarada(campo.longitud);
+  const len = longitudDeValor(valor);
+  if (long.clase === 'exacta' && len !== long.n) {
     return {
       estado: 'error',
-      motivo: `Longitud ${[...valor].length} excede el máximo declarado ${max} (${campo.numero}).`,
+      motivo: `Campo ${campo.numero}: longitud ${len} ≠ esperada ${long.esperado}.`,
+    };
+  }
+  if (long.clase === 'rango' && (len < long.min || len > long.max)) {
+    return {
+      estado: 'error',
+      motivo: `Campo ${campo.numero}: longitud ${len} fuera de rango esperado ${long.esperado}.`,
+    };
+  }
+  if (long.clase === 'no_interpretable') {
+    return {
+      estado: 'no_validado',
+      motivo: `Campo ${campo.numero}: longitud «${long.crudo}» no interpretable.`,
     };
   }
 
-  const re = patronDeclarado(campo.formato);
-  if (re && !re.test(valor)) {
+  const tipoErr = validarTipoDato(campo.tipo_dato, valor, campo.numero);
+  if (tipoErr) return tipoErr;
+
+  const patron = derivarPatronDof(campo.formato);
+  if (patron.estado === 'no_validado') {
     return {
-      estado: 'error',
-      motivo: `No cumple el patrón declarado en el formato (${campo.numero}).`,
+      estado: 'no_validado',
+      motivo: `Campo ${campo.numero}: patrón no validado — ${patron.motivo}`,
     };
+  }
+  if (patron.estado === 'derivado') {
+    if (!patron.regex.test(valor)) {
+      return {
+        estado: 'error',
+        motivo: `Campo ${campo.numero}: no cumple patrón esperado ${patron.esperado}.`,
+      };
+    }
+    if (patron.sinCerosIzquierda) {
+      const cola = valor.includes('-') ? valor.slice(valor.indexOf('-') + 1) : valor;
+      if (cola.length > 1 && cola.startsWith('0')) {
+        return {
+          estado: 'error',
+          motivo: `Campo ${campo.numero}: patrón ${patron.esperado} sin ceros a la izquierda.`,
+        };
+      }
+    }
   }
 
   const resolver = ctx.catalogoDeCampo ?? detectarCatalogo;
@@ -186,7 +270,7 @@ export function validarCampo(campo: CampoFormato, ctx: ContextoValidacion): Resu
     if (!claves.has(valor)) {
       return {
         estado: 'error',
-        motivo: `Valor «${valor}» no existe en el catálogo ${cat} (${campo.numero}).`,
+        motivo: `Campo ${campo.numero}: valor «${valor}» no existe en el catálogo ${cat} (esperado: clave del catálogo).`,
       };
     }
   }
