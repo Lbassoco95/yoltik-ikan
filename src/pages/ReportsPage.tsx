@@ -39,6 +39,7 @@ import {
 } from "@/lib/aviso/periodo";
 import { decisionMensualSinOperaciones } from "@/lib/formatos-uif/presentacion";
 import { CanalPresentacionManual } from "@/components/aviso/CanalPresentacionManual";
+import { PlantillaFormatoDof } from "@/components/aviso/PlantillaFormatoDof";
 import type { EstadoAvisoUif } from "@/lib/formatos-uif/presentacion";
 
 const nombreMes = (p: string) =>
@@ -256,6 +257,9 @@ export default function ReportsPage() {
           </p>
         </div>
       )}
+
+      {/* Plantilla DOF del anexo ligado al perfil AV (12-A notaría / 16 Ixim). */}
+      <PlantillaFormatoDof />
 
       {isLoading ? (
         <div className="estela-placa flex items-center justify-center gap-2 p-8 text-muted-foreground">

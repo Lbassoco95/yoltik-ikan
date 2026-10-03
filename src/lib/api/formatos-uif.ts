@@ -21,17 +21,35 @@ export interface FormatoOficialRow {
   total_campos: number;
   archivo_origen: string | null;
   notas: string | null;
+  /** Publicación DOF / resolución (texto de seed, no inventado). */
+  fuente: string | null;
 }
 
 export async function listarFormatosOficiales(): Promise<FormatoOficialRow[]> {
   const { data, error } = await db
     .from('formato_oficial')
     .select(
-      'id, codigo_anexo, ambito, version, estado, regimen_entrada, vigente_desde, vigente_hasta, total_campos, archivo_origen, notas',
+      'id, codigo_anexo, ambito, version, estado, regimen_entrada, vigente_desde, vigente_hasta, total_campos, archivo_origen, notas, fuente',
     )
     .order('codigo_anexo');
   if (error) throw error;
   return (data ?? []) as FormatoOficialRow[];
+}
+
+export async function formatoPorCodigo(
+  codigoAnexo: string,
+  version = 'dof-2026-09-24',
+): Promise<FormatoOficialRow | null> {
+  const { data, error } = await db
+    .from('formato_oficial')
+    .select(
+      'id, codigo_anexo, ambito, version, estado, regimen_entrada, vigente_desde, vigente_hasta, total_campos, archivo_origen, notas, fuente',
+    )
+    .eq('codigo_anexo', codigoAnexo)
+    .eq('version', version)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as FormatoOficialRow | null) ?? null;
 }
 
 export async function camposDeFormato(formatoId: string): Promise<CampoFormato[]> {
@@ -109,6 +127,40 @@ export async function listarPerfilAv(): Promise<PerfilAv[]> {
 export async function organizacionTienePerfilAv(): Promise<boolean> {
   const perfiles = await listarPerfilAv();
   return perfiles.length > 0;
+}
+
+/**
+ * Plantilla del anexo DOF ligada al perfil AV de la organización.
+ * Datos del catálogo versionado (`formato_oficial` + campos); no hardcode.
+ */
+export async function cargarPlantillaPerfilAv(): Promise<{
+  perfil: PerfilAv;
+  formato: FormatoOficialRow;
+  campos: CampoFormato[];
+} | null> {
+  const perfiles = await listarPerfilAv();
+  const perfil = perfiles[0];
+  if (!perfil) return null;
+
+  let formato: FormatoOficialRow | null = null;
+  if (perfil.formato_id) {
+    const { data, error } = await db
+      .from('formato_oficial')
+      .select(
+        'id, codigo_anexo, ambito, version, estado, regimen_entrada, vigente_desde, vigente_hasta, total_campos, archivo_origen, notas, fuente',
+      )
+      .eq('id', perfil.formato_id)
+      .maybeSingle();
+    if (error) throw error;
+    formato = (data as FormatoOficialRow | null) ?? null;
+  }
+  if (!formato) {
+    formato = await formatoPorCodigo(perfil.codigo_anexo);
+  }
+  if (!formato) return null;
+
+  const campos = await camposDeFormato(formato.id);
+  return { perfil, formato, campos };
 }
 
 /** Claves vigentes de un catálogo de formato (vacío = no cargado). */
