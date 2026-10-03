@@ -202,8 +202,13 @@ export async function guardarAviso(entrada: {
   operation_ids: string[];
   exento: boolean;
   layout_version?: string;
+  /** Fecha del acto (vigencia del formato). No la de captura. */
+  fecha_acto?: string;
 }): Promise<string> {
   const { uid, organizationId } = await contextoSesion();
+  const { regimenDelActo } = await import('@/lib/formatos-uif/vigencia');
+  const fechaActo = entrada.fecha_acto ?? `${entrada.periodo}-01`;
+  const regimen = regimenDelActo(fechaActo);
   const { data, error } = await supabase
     .from('aviso')
     .insert({
@@ -217,12 +222,55 @@ export async function guardarAviso(entrada: {
       exento: entrada.exento,
       layout: 'fep',
       layout_version: entrada.layout_version ?? null,
+      fecha_acto: fechaActo,
+      regimen_aplicado: regimen.regimen,
+      estado: 'generado',
       generado_por: uid,
     })
     .select('id')
     .single();
   if (error) throw error;
-  return (data as { id: string }).id;
+  return data.id;
+}
+
+/**
+ * Abre un aviso de 24 h anclado a la hora de conocimiento.
+ * No exige operación celebrada. Persiste plazo_limite_24h (inmutable tras generado).
+ */
+export async function abrirAviso24h(entrada: {
+  fechaConocimiento: string;
+  referencia?: string;
+  operation_ids?: string[];
+}): Promise<{ id: string; plazoLimite: string }> {
+  const { uid, organizationId } = await contextoSesion();
+  const { abrirPlazo24h, puedeAbrirAviso24h } = await import('@/lib/formatos-uif/reloj-24h');
+  const apertura = puedeAbrirAviso24h({
+    fechaConocimiento: entrada.fechaConocimiento,
+    operacionCelebrada: false,
+  });
+  if (!apertura.ok) throw new Error(apertura.motivo);
+  const plazo = abrirPlazo24h(entrada.fechaConocimiento);
+  const { data, error } = await supabase
+    .from('aviso')
+    .insert({
+      organization_id: organizationId,
+      tipo: '24h',
+      payload: { sin_operacion_celebrada: true },
+      operation_ids: entrada.operation_ids ?? [],
+      referencia: entrada.referencia ?? null,
+      layout: 'fep',
+      fecha_conocimiento: plazo.fechaConocimiento.toISOString(),
+      plazo_limite_24h: plazo.plazoLimite.toISOString(),
+      estado: 'borrador',
+      generado_por: uid,
+    })
+    .select('id, plazo_limite_24h')
+    .single();
+  if (error) throw error;
+  return {
+    id: data.id,
+    plazoLimite: data.plazo_limite_24h as string,
+  };
 }
 
 export interface AvisoGuardado {
@@ -236,6 +284,10 @@ export interface AvisoGuardado {
   layout_version: string | null;
   generado_en: string;
   xml: string | null;
+  fecha_conocimiento?: string | null;
+  plazo_limite_24h?: string | null;
+  fecha_acto?: string | null;
+  regimen_aplicado?: string | null;
 }
 
 /** Los avisos ya generados de un periodo, del más reciente al más viejo. */
@@ -243,10 +295,12 @@ export async function listarAvisos(periodo: string): Promise<AvisoGuardado[]> {
   const { organizationId } = await contextoSesion();
   const { data, error } = await supabase
     .from('aviso')
-    .select('id, periodo, referencia, exento, estado, operation_ids, layout, layout_version, generado_en, xml')
+    .select(
+      'id, periodo, referencia, exento, estado, operation_ids, layout, layout_version, generado_en, xml, fecha_conocimiento, plazo_limite_24h, fecha_acto, regimen_aplicado',
+    )
     .eq('organization_id', organizationId)
     .eq('periodo', periodo)
     .order('generado_en', { ascending: false });
   if (error) throw error;
-  return (data ?? []) as unknown as AvisoGuardado[];
+  return (data ?? []) as AvisoGuardado[];
 }

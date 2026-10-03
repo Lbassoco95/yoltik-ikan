@@ -1,0 +1,134 @@
+{
+ "fuente": "DOF 24/09/2026 — Resolución que modifica la diversa por la que se expiden los formatos oficiales de los avisos e informes (UIF, SHCP; firmada 11-sep-2026)",
+ "extraido": "2026-10-01",
+ "metodo": "extracción determinista de las tablas del DOF; sin transcripción manual",
+ "vigencias": {
+  "general": "2027-06-01",
+  "avisos_26bis_26bis1_26bis2_27_de_las_Reglas": "2026-12-01",
+  "modificatorios_con_formato_anterior_hasta": "2027-06-30",
+  "formatos_anteriores_dejan_de_existir": "2027-07-01"
+ },
+ "faltantes": [
+  "anexo-4 (art.17 fr. IV)",
+  "anexo-10 (art.17 fr. X)",
+  "anexo-14 (informe sin operaciones, art. 3 Bis)"
+ ],
+ "catalogos_de_valores": "No vienen en el DOF. Los publica la UIF en el Portal (art. 9 y sexto transitorio). Sin ellos no se puede validar existencia de clave.",
+ "anexos": [
+  {
+   "anexo": "1",
+   "archivo": "anexo-1.json",
+   "ambito": "Artículo 17, fracción I de la Ley",
+   "total_campos": 105
+  },
+  {
+   "anexo": "11",
+   "archivo": "anexo-11.json",
+   "ambito": "Artículo 17, fracción XI de la Ley",
+   "total_campos": 498
+  },
+  {
+   "anexo": "12-A",
+   "archivo": "anexo-12-A.json",
+   "ambito": "Artículo 17, fracción XII, Apartados A y B de la Ley",
+   "total_campos": 775
+  },
+  {
+   "anexo": "12-B",
+   "archivo": "anexo-12-B.json",
+   "ambito": "Artículo 17, fracción XII, Apartado C de la Ley",
+   "total_campos": 587
+  },
+  {
+   "anexo": "12-C",
+   "archivo": "anexo-12-C.json",
+   "ambito": "Artículo 17, fracción XII, apartado D de la Ley",
+   "total_campos": 110
+  },
+  {
+   "anexo": "13",
+   "archivo": "anexo-13.json",
+   "ambito": "Artículo 17, fracción XIII de la Ley",
+   "total_campos": 108
+  },
+  {
+   "anexo": "14-A",
+   "archivo": "anexo-14-A.json",
+   "ambito": "Artículo 17, fracción XIV de la Ley",
+   "total_campos": 110
+  },
+  {
+   "anexo": "15",
+   "archivo": "anexo-15.json",
+   "ambito": "Artículo 17, fracción XV de la Ley",
+   "total_campos": 119
+  },
+  {
+   "anexo": "16",
+   "archivo": "anexo-16.json",
+   "ambito": "Artículo 17, fracción XVI de la Ley",
+   "total_campos": 244
+  },
+  {
+   "anexo": "2-A",
+   "archivo": "anexo-2-A.json",
+   "ambito": "Artículo 17, fracción II, inciso a) de la Ley",
+   "total_campos": 94
+  },
+  {
+   "anexo": "2-B",
+   "archivo": "anexo-2-B.json",
+   "ambito": "Artículo 17, fracción II, inciso b) de la Ley",
+   "total_campos": 91
+  },
+  {
+   "anexo": "2-C",
+   "archivo": "anexo-2-C.json",
+   "ambito": "Artículo 17, fracción II, inciso c) de la Ley",
+   "total_campos": 90
+  },
+  {
+   "anexo": "3",
+   "archivo": "anexo-3.json",
+   "ambito": "Artículo 17, fracción III de la Ley",
+   "total_campos": 201
+  },
+  {
+   "anexo": "5-A",
+   "archivo": "anexo-5-A.json",
+   "ambito": "Artículo 17, fracción V de la Ley",
+   "total_campos": 139
+  },
+  {
+   "anexo": "5-B",
+   "archivo": "anexo-5-B.json",
+   "ambito": "Artículo 17, fracción V Bis de la Ley",
+   "total_campos": 245
+  },
+  {
+   "anexo": "6",
+   "archivo": "anexo-6.json",
+   "ambito": "Artículo 17, fracción VI de la Ley",
+   "total_campos": 90
+  },
+  {
+   "anexo": "7",
+   "archivo": "anexo-7.json",
+   "ambito": "Artículo 17, fracción VII de la Ley",
+   "total_campos": 106
+  },
+  {
+   "anexo": "8",
+   "archivo": "anexo-8.json",
+   "ambito": "Artículo 17, fracción VIII de la Ley",
+   "total_campos": 121
+  },
+  {
+   "anexo": "9",
+   "archivo": "anexo-9.json",
+   "ambito": "Artículo 17, fracción IX de la Ley",
+   "total_campos": 175
+  }
+ ],
+ "total_campos": 4008
+}

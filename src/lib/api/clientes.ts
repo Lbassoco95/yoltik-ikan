@@ -35,6 +35,16 @@ export async function getCliente(id: string): Promise<Client | null> {
  *  se resuelven desde la sesión (no viajan en el formulario). */
 export async function crearCliente(input: NuevoClienteInput): Promise<Client> {
   const { uid, organizationId } = await contextoSesion();
+
+  // Perfil de actividad vulnerable (migration 0077): sin él la base también
+  // rechaza, pero el mensaje de Postgres es opaco; aquí se dice en claro.
+  const { organizacionTienePerfilAv } = await import('@/lib/api/formatos-uif');
+  if (!(await organizacionTienePerfilAv())) {
+    throw new Error(
+      'Sin perfil de actividad vulnerable no se puede capturar clientes. Configure la fracción y el anexo de la organización antes de continuar.',
+    );
+  }
+
   const fila = {
     organization_id: organizationId,
     tipo_persona: input.tipo_persona,

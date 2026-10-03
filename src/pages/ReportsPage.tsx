@@ -37,6 +37,10 @@ import {
   periodosOfrecidos,
   situacionDelPeriodo,
 } from "@/lib/aviso/periodo";
+import { decisionMensualSinOperaciones } from "@/lib/formatos-uif/presentacion";
+import { CanalPresentacionManual } from "@/components/aviso/CanalPresentacionManual";
+import { PlantillaFormatoDof } from "@/components/aviso/PlantillaFormatoDof";
+import type { EstadoAvisoUif } from "@/lib/formatos-uif/presentacion";
 
 const nombreMes = (p: string) =>
   new Date(`${p}-01T12:00:00`).toLocaleDateString("es-MX", {
@@ -116,6 +120,13 @@ export default function ReportsPage() {
   const generar = useMutation({
     mutationFn: async (enCeros: boolean) => {
       if (!datos) throw new Error("El periodo todavía no carga.");
+      if (enCeros) {
+        const sinOps = decisionMensualSinOperaciones({
+          hayOperacionesReportables: false,
+          anexo14Pendiente: true, // Anexo 14 ausente en la extracción DOF
+        });
+        if (sinOps.bloqueo) throw new Error(sinOps.bloqueo);
+      }
       const entrada = enCeros
         ? { ...datos.entrada, actos: [], en_ceros: true }
         : datos.entrada;
@@ -247,6 +258,9 @@ export default function ReportsPage() {
         </div>
       )}
 
+      {/* Plantilla DOF del anexo ligado al perfil AV (12-A notaría / 16 Ixim). */}
+      <PlantillaFormatoDof />
+
       {isLoading ? (
         <div className="estela-placa flex items-center justify-center gap-2 p-8 text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" /> Cargando el periodo…
@@ -362,9 +376,10 @@ export default function ReportsPage() {
                     <Button
                       variant="outline"
                       onClick={() => generar.mutate(true)}
-                      disabled={generar.isPending || !situacion.presentable}
+                      disabled
+                      title="Anexo 14 (informe sin operaciones) pendiente de carga. No se inventa."
                     >
-                      Informe en ceros
+                      Informe en ceros (Anexo 14 pendiente)
                     </Button>
                   )}
                 <Button
@@ -530,6 +545,8 @@ export default function ReportsPage() {
                       <span className="text-muted-foreground">
                         {" · "}
                         {new Date(a.generado_en).toLocaleString("es-MX")}
+                        {" · "}
+                        {a.estado}
                       </span>
                     </span>
                     {a.xml && (
@@ -551,6 +568,34 @@ export default function ReportsPage() {
                 ))}
               </ul>
             </div>
+          )}
+
+          {avisos[0] && (
+            <CanalPresentacionManual
+              avisoId={avisos[0].id}
+              estado={avisos[0].estado as EstadoAvisoUif}
+              tipo="mensual"
+              xml={avisos[0].xml}
+              layout={avisos[0].layout || "fep"}
+              formatoVersion="dof-2026-09-24"
+              fechaConocimiento={avisos[0].fecha_conocimiento}
+              plazoLimite24h={avisos[0].plazo_limite_24h}
+              validacion={{
+                // No se declara verificado contra DOF 2026 mientras el XML sea fep.
+                ok: false,
+                verificado: false,
+                errores: [
+                  "El XML emitido usa layout fep (estructura anterior). No está validado contra el formato oficial DOF 24/09/2026.",
+                ],
+                noValidados: [
+                  "Catálogos UIF del Portal (art. 9) aún no cargados.",
+                ],
+              }}
+              anexo14Pendiente
+              onCambio={() =>
+                queryClient.invalidateQueries({ queryKey: ["avisos", periodo] })
+              }
+            />
           )}
         </>
       )}

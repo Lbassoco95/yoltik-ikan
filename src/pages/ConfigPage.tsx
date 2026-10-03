@@ -126,6 +126,7 @@ export default function ConfigPage() {
               })}
             </div>
           </section>
+
         </>
       )}
 

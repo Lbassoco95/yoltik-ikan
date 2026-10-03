@@ -32,6 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { listarClientes, crearCliente, ultimasEvaluaciones } from "@/lib/api/clientes";
+import { organizacionTienePerfilAv } from "@/lib/api/formatos-uif";
 import { BadgeRiesgo } from "@/components/riesgo/BadgeRiesgo";
 import type { CanalDistribucion, NuevoClienteInput, TipoPersona } from "@/types/domain";
 import { cn } from "@/lib/utils";
@@ -158,6 +159,11 @@ export default function ClientsPage() {
   const { data: clientes = [], isLoading, isError, error } = useQuery({
     queryKey: ["clientes"],
     queryFn: listarClientes,
+  });
+
+  const perfilAv = useQuery({
+    queryKey: ["perfil-av"],
+    queryFn: organizacionTienePerfilAv,
   });
 
   // La calificación vigente de cada compareciente. Se escribía y no se leía:
@@ -360,11 +366,31 @@ export default function ClientsPage() {
       <EncabezadoSeccion
         titulo={L.clientes}
         acciones={
-          <Button className="gap-2" onClick={() => setDialogAbierto(true)}>
+          <Button
+            className="gap-2"
+            onClick={() => setDialogAbierto(true)}
+            disabled={perfilAv.data === false}
+            title={
+              perfilAv.data === false
+                ? "Sin perfil de actividad vulnerable no se puede capturar"
+                : undefined
+            }
+          >
             <Plus className="h-4 w-4" /> {L.clienteNuevoBtn}
           </Button>
         }
       />
+
+      {perfilAv.data === false && (
+        <div className="flex items-start gap-3 rounded-md border border-ikan-ambar/40 bg-ikan-ambar/10 px-4 py-3 text-sm text-foreground">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <p>
+            Sin perfil de actividad vulnerable configurado no se puede capturar
+            clientes ni operaciones. Configure la fracción y el anexo de la
+            organización (Admin / consola Kawiil) antes de continuar.
+          </p>
+        </div>
+      )}
 
       <div className="estela-placa flex flex-wrap items-center gap-3 p-4">
         <div className="relative flex-1">
